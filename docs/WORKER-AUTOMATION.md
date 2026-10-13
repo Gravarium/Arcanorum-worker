@@ -9,22 +9,22 @@ Für einen gemeinsamen 15-Minuten-Takt werden vier wiederkehrende Läufe mit je 
 - Minute `:30`
 - Minute `:45`
 
-Jeder einzelne Lauf wird stündlich geplant. Zusammen starten die Läufe alle 15 Minuten. Alle vier müssen ausschließlich dieses Repository bearbeiten.
+Jeder einzelne Lauf wird stündlich geplant. Zusammen starten die Läufe alle 15 Minuten. Alle vier bearbeiten ausschließlich das Repository `Gravarium/Arcanorum-worker`.
 
 ## Verhalten bei jedem Lauf
 
-1. Lies `README.md`, `AGENTS.md`, `docs/QUALITY-GATES.md`, diese Datei und den vom Projekteigentümer bereitgestellten Arbeitsplan.
-2. Prüfe den aktuellen Hauptstand, Aufgabenbranches und Pull Requests, den exakten HEAD-SHA sowie laufende oder wartende Pflichtprüfungen.
-3. Lies vor jeder Codearbeit den gemeinsamen Koordinationsstand `worker-control/worker-state.json`.
-4. Setze zuerst eine offene Arbeit fort, wenn sie sicher fortgesetzt werden kann. Sonst nimm den nächsten freigegebenen, offenen und nicht blockierten Auftrag aus dem Arbeitsplan.
-5. Wenn kein Produktauftrag vorliegt, arbeite nur an ausdrücklich erforderlichen Grundlagen aus den festgelegten technischen Vorgaben. Erfinde keine Produktfunktionen oder Abnahmekriterien.
+1. Lies `README.md`, `AGENTS.md`, `docs/QUALITY-GATES.md`, diese Datei und `docs/WORK-PLAN.md`.
+2. Prüfe den aktuellen Stand dieses Walker-Repos, Aufgabenbranches, Pull Requests, den exakten HEAD-SHA sowie laufende oder wartende Pflichtprüfungen.
+3. Lies vor jeder Codearbeit den gemeinsamen Koordinationsstand `worker-control/worker-state.json` vom Branch `worker-control`.
+4. Setze zuerst eine offene Arbeit fort, wenn sie sicher fortgesetzt werden kann. Sonst nimm die nächste freigegebene, offene und nicht blockierte Aufgabe aus `docs/WORK-PLAN.md`.
+5. Beginne mit `AW-001`, solange sie im Arbeitsplan auf `bereit` steht. Wenn es keine freigegebene Aufgabe gibt, keine Produktfunktionen oder Abnahmekriterien erfinden und keine Scheinänderung erzeugen.
 6. Arbeite auf einem Aufgabenbranch und stelle Änderungen als Pull Request bereit. Worker-Aufträge mergen nicht und deployen nicht.
 7. Führe alle für den exakten HEAD vorgeschriebenen Prüfungen aus. Ein fehlender oder übersprungener Pflichtlauf gilt nicht als bestanden.
 8. Aktualisiere Arbeitsplan und Übergabe mit dem tatsächlichen Ergebnis, SHA und Prüfnachweis.
 
 ## Gemeinsame Sperre für mehrere Konten
 
-Der Branch `worker-control` enthält eine gemeinsame Datei `worker-state.json`. Sie koordiniert die KI-Konten und bleibt getrennt von Produktcode und `main`.
+Der Branch `worker-control` enthält eine gemeinsame Datei `worker-state.json`. Sie koordiniert die KI-Konten und bleibt getrennt vom Produktcode und vom Hauptzweig dieses Walker-Repos.
 
 - Vor dem Programmieren muss eine KI die Datei vom Branch `worker-control` samt aktuellem Blob-SHA lesen.
 - Bei `status = "claimed"` darf kein zweites Konto eine andere Aufgabe anfangen. Es prüft den zugehörigen Branch, PR und CI-Stand und wartet, solange eine Bearbeitung oder Pflichtprüfung aktiv ist.
