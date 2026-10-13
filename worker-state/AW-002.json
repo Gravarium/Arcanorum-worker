@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "status": "idle",
+  "task_id": "AW-002",
+  "worker_id": null,
+  "run_id": null,
+  "task_branch": null,
+  "pull_request": null,
+  "claimed_at": null,
+  "heartbeat_at": null,
+  "last_progress_at": null,
+  "last_progress_sha": null,
+  "last_test_status": null,
+  "blocker": null
+}
