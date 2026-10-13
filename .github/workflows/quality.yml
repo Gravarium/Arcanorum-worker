@@ -190,8 +190,7 @@ jobs:
       - name: PostgreSQL 18 und Redis 8 verfügbar prüfen
         shell: bash
         run: |
-          php -r '$pdo = new PDO("pgsql:host=127.0.0.1;port=5432;dbname=walker_test", "walker_ci", "ci-only-test-password"); echo "PostgreSQL-Verbindung erfolgreich
-";'
+          php -r '$pdo = new PDO("pgsql:host=127.0.0.1;port=5432;dbname=walker_test", "walker_ci", "ci-only-test-password"); echo "PostgreSQL-Verbindung erfolgreich\n";'
           python3 - <<'PY'
           import socket
           with socket.create_connection(("127.0.0.1", 6379), timeout=3) as connection:
