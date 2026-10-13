@@ -3,13 +3,13 @@
   "status": "claimed",
   "task_id": "AW-001",
   "worker_id": "walker-A-00",
-  "run_id": "a00-20261013T045422288Z-8dfwfp120k",
+  "run_id": "a00-20261013T072628055Z-xsniedhlg8",
   "task_branch": "aw-001/symfony-foundation-a00",
   "pull_request": "https://github.com/Gravarium/Arcanorum-worker/pull/5",
-  "claimed_at": "2026-10-13T04:54:22.288Z",
-  "heartbeat_at": "2026-10-13T05:07:59.329Z",
+  "claimed_at": "2026-10-13T07:26:28.055Z",
+  "heartbeat_at": "2026-10-13T07:26:28.055Z",
   "last_progress_at": "2026-10-13T05:07:59.329Z",
   "last_progress_sha": "bedecc6995ed58eea82bbfb3ec6443ec8f502b6d",
-  "last_test_status": "All mandatory tests successful for previous PR merge ref; explicit PR HEAD checkout and SHA assertion added, rerun pending",
+  "last_test_status": "Workflow run 38349842979 completed successfully on exact PR HEAD bedecc6995ed58eea82bbfb3ec6443ec8f502b6d. Both required jobs and all steps passed, including Composer validate/install/audit, Symfony dev/prod, PostgreSQL 18, Redis 8, PHPStan 10, Psalm taint analysis, PHPUnit, PHP-CS-Fixer, and Rector dry-run. PR #5 remains open and unmerged for owner review.",
   "blocker": null
 }
