@@ -3,6 +3,7 @@
   "status": "idle",
   "task_id": null,
   "worker_id": null,
+  "run_id": null,
   "task_branch": null,
   "pull_request": null,
   "claimed_at": null,
