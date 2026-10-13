@@ -17,7 +17,7 @@ Jeder Auftrag braucht eine eindeutige ID, ein Ziel, Abnahmekriterien, Abhängigk
 ### AW-001 — Technisches PHP-/Symfony-Grundgerüst
 
 **Status:** in Bearbeitung
-**Koordination:** `worker-control/worker-state.json`, PR #5
+**Koordination:** Branch `worker-control`, Dateipfad `worker-state.json`, PR #5
 **Abhängigkeiten:** keine
 
 **Ziel:** Das leere Repository in eine startbare, testbare Basis für die folgenden Eigentümeraufträge überführen.
@@ -52,7 +52,7 @@ Jeder Auftrag braucht eine eindeutige ID, ein Ziel, Abnahmekriterien, Abhängigk
 
 **Status:** bereit
 **Abhängigkeiten:** keine; ausdrücklich parallel zu AW-001
-**Koordination:** eigene Sperrdatei `worker-control/worker-state/AW-002.json`
+**Koordination:** eigene Sperrdatei auf Branch `worker-control`, Dateipfad `worker-state/AW-002.json`
 **Erlaubte Dateien:** `compose.yaml`, `scripts/ci/check_compose.sh`, `docs/LOCAL-CONTAINERS.md` und Änderungen an `.github/workflows/quality.yml` ausschließlich für die Compose-Prüfung.
 
 **Ziel:** Eine lokale, reproduzierbare Testumgebung für PostgreSQL 18 und Redis 8 bereitstellen, die neben dem von AW-001 eingerichteten Symfony-Grundgerüst entwickelt werden kann.
