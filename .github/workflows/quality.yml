@@ -1,0 +1,244 @@
+name: Pflichtprüfungen
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: walker-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  repository:
+    name: Repository- und Geheimnisprüfung
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      php_project: ${{ steps.detect.outputs.php_project }}
+    steps:
+      - name: Quellstand auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: PHP 8.5 für Konfigurationsprüfungen bereitstellen
+        uses: shivammathur/setup-php@248e3ca37a3e439628c6c2b0c88808bd9632af5e # PHP 8.5
+        with:
+          php-version: '8.5'
+
+      - name: PHP-Konfigurationen und CI-YAML prüfen
+        shell: bash
+        run: |
+          php -l .php-cs-fixer.dist.php
+          php -l rector.php
+          ruby -e 'require "yaml"; YAML.load_file(".github/workflows/quality.yml", aliases: true)'
+
+      - name: Änderungen und Repository-Inhalt prüfen
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ -n "$BASE_SHA" ]; then
+            git diff --check "$BASE_SHA"...HEAD
+          elif git rev-parse --verify HEAD^ >/dev/null 2>&1; then
+            git diff --check HEAD^ HEAD
+          else
+            git diff --check
+          fi
+          python3 scripts/ci/check_repository.py
+
+      - name: PHP-Projektumfang erkennen
+        id: detect
+        shell: bash
+        run: |
+          if [ -f composer.json ]; then
+            echo "php_project=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "php_project=false" >> "$GITHUB_OUTPUT"
+            app_php="$(git ls-files -- '*.php' | grep -Ev '(^|/)(\.php-cs-fixer\.dist|rector)\.php$' || true)"
+            if [ -n "$app_php" ]; then
+              echo "::error file=composer.json::PHP-Anwendungscode ist eingecheckt, aber composer.json fehlt."
+              exit 1
+            fi
+            echo "::notice::Noch kein PHP-Anwendungsgrundgerüst vorhanden. Anwendungstests werden aktiviert, sobald composer.json hinzukommt."
+          fi
+
+  php_quality:
+    name: PHP 8.5, Symfony, PostgreSQL 18 und Redis 8
+    needs: repository
+    if: ${{ needs.repository.outputs.php_project == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    permissions:
+      contents: read
+    env:
+      APP_ENV: test
+      APP_DEBUG: '0'
+      APP_SECRET: ci-only-not-a-production-secret
+      DATABASE_URL: 'postgresql://walker_ci:ci-only-test-password@127.0.0.1:5432/walker_test?serverVersion=18&charset=utf8'
+      REDIS_URL: 'redis://127.0.0.1:6379'
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: walker_test
+          POSTGRES_USER: walker_ci
+          POSTGRES_PASSWORD: ci-only-test-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U walker_ci -d walker_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Quellstand auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Pflichtdateien und echte Testsuite prüfen
+        shell: bash
+        run: |
+          missing=0
+          for file in composer.json composer.lock phpstan.neon.dist phpunit.dist.xml .php-cs-fixer.dist.php rector.php psalm.xml bin/console src tests; do
+            if [ ! -e "$file" ]; then
+              echo "::error file=$file::Pflichtdatei oder Pflichtverzeichnis für die PHP-Prüfkette fehlt."
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+          if ! grep -Eq '^[[:space:]]*level:[[:space:]]*10[[:space:]]*$' phpstan.neon.dist; then
+            echo "::error file=phpstan.neon.dist::PHPStan muss auf Stufe 10 festgelegt sein."
+            exit 1
+          fi
+          if ! find tests -type f -name '*Test.php' -print -quit | grep -q .; then
+            echo "::error file=tests::Mindestens eine echte PHPUnit-Testsuite muss vorhanden sein."
+            exit 1
+          fi
+
+      - name: PHP 8.5 und Erweiterungen bereitstellen
+        uses: shivammathur/setup-php@248e3ca37a3e439628c6c2b0c88808bd9632af5e # PHP 8.5
+        with:
+          php-version: '8.5'
+          extensions: intl, mbstring, pcov, pdo_pgsql, redis, xml, zip
+          coverage: pcov
+          tools: composer:v2
+          ini-values: memory_limit=1G
+
+      - name: Composer-Manifest, Sperrdatei und Sicherheitsbericht prüfen
+        shell: bash
+        run: |
+          composer validate --strict --no-interaction
+          composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader
+          composer audit --locked --no-interaction
+
+      - name: PHP-Syntax jeder versionierten PHP-Datei prüfen
+        shell: bash
+        run: |
+          mapfile -d '' php_files < <(git ls-files -z -- '*.php')
+          if [ "${#php_files[@]}" -eq 0 ]; then
+            echo "::error::Es wurden keine PHP-Dateien für die Syntaxprüfung gefunden."
+            exit 1
+          fi
+          for file in "${php_files[@]}"; do
+            php -l "$file"
+          done
+
+      - name: Symfony-Konfiguration, Twig, Container und Migrationen prüfen
+        shell: bash
+        run: |
+          php bin/console lint:container --env=dev
+          APP_ENV=prod APP_DEBUG=0 php bin/console lint:container --env=prod
+          if [ -d config ]; then
+            php bin/console lint:yaml config
+          fi
+          if [ -d templates ]; then
+            php bin/console lint:twig templates
+          fi
+          if grep -q '"name":[[:space:]]*"doctrine/orm"' composer.lock; then
+            php bin/console doctrine:schema:validate --skip-sync
+          fi
+          if [ -d migrations ] && find migrations -maxdepth 1 -type f -name '*.php' -print -quit | grep -q .; then
+            APP_ENV=test php bin/console doctrine:migrations:migrate --no-interaction
+          fi
+          if php bin/console list --raw | grep -q '^asset-map:compile'; then
+            APP_ENV=prod APP_DEBUG=0 php bin/console asset-map:compile
+          fi
+
+      - name: PostgreSQL 18 und Redis 8 verfügbar prüfen
+        shell: bash
+        run: |
+          php -r '$pdo = new PDO("pgsql:host=127.0.0.1;port=5432;dbname=walker_test", "walker_ci", "ci-only-test-password"); echo "PostgreSQL-Verbindung erfolgreich
+";'
+          python3 - <<'PY'
+          import socket
+          with socket.create_connection(("127.0.0.1", 6379), timeout=3) as connection:
+              connection.sendall(b"*1\r\n$4\r\nPING\r\n")
+              response = connection.recv(64)
+          if response != b"+PONG\r\n":
+              raise SystemExit(f"Redis-Prüfung fehlgeschlagen: unerwartete Antwort {response!r}")
+          print("Redis-Verbindung erfolgreich")
+          PY
+
+      - name: PHPStan Stufe 10 mit Strict Rules
+        shell: bash
+        run: |
+          if [ ! -x vendor/bin/phpstan ]; then
+            echo "::error file=composer.json::phpstan/phpstan fehlt in den Entwicklungsabhängigkeiten."
+            exit 1
+          fi
+          vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --no-progress --error-format=github --memory-limit=1G
+
+      - name: PHP-CS-Fixer Stilprüfung mit Diff
+        shell: bash
+        run: vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --diff --using-cache=no
+
+      - name: Rector ausschließlich im Nur-Prüfen-Modus
+        shell: bash
+        run: vendor/bin/rector process --config=rector.php --dry-run --no-progress-bar --output-format=github
+
+      - name: Psalm Typ- und Taint-Analyse mit SARIF-Bericht
+        shell: bash
+        run: |
+          mkdir -p var/test-results
+          vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm.sarif
+
+      - name: PHPUnit mit Fehlerdetails und Coverage ausführen
+        shell: bash
+        run: |
+          mkdir -p var/test-results
+          vendor/bin/phpunit --configuration=phpunit.dist.xml --debug --fail-on-risky --fail-on-warning --log-junit=var/test-results/junit.xml --coverage-text --coverage-clover=var/test-results/coverage.xml
+
+      - name: JUnit-, Coverage- und Psalm-Berichte sichern
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: walker-testberichte-${{ github.sha }}
+          path: |
+            var/test-results/junit.xml
+            var/test-results/coverage.xml
+            var/test-results/psalm.sarif
+          if-no-files-found: ignore
+          retention-days: 7
