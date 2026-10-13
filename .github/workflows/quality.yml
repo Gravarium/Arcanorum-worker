@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - 'aw-*/**'
   workflow_dispatch:
 
 permissions:
@@ -254,6 +255,17 @@ jobs:
           mkdir -p var/test-results
           vendor/bin/phpunit --configuration=phpunit.dist.xml --debug --fail-on-risky --fail-on-warning --log-junit=var/test-results/junit.xml --coverage-text --coverage-clover=var/test-results/coverage.xml
 
+      - name: Pflichtberichte auf Vollständigkeit prüfen
+        if: always()
+        shell: bash
+        run: |
+          for report in var/test-results/junit.xml var/test-results/coverage.xml var/test-results/psalm.sarif; do
+            if [ ! -s "$report" ]; then
+              echo "::error file=$report::Pflichtbericht fehlt oder ist leer."
+              exit 1
+            fi
+          done
+
       - name: JUnit-, Coverage- und Psalm-Berichte sichern
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -263,5 +275,5 @@ jobs:
             var/test-results/junit.xml
             var/test-results/coverage.xml
             var/test-results/psalm.sarif
-          if-no-files-found: ignore
+          if-no-files-found: error
           retention-days: 7
