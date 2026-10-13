@@ -1,0 +1,41 @@
+name: Abhaengigkeiten fuer AW-001 aufloesen
+
+on:
+  pull_request:
+    paths:
+      - composer.json
+      - .github/workflows/resolve-lock.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lockfile:
+    name: Composer-Lock als pruefbares Artefakt vorbereiten
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Quellstand auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: PHP 8.5 und Composer installieren
+        uses: shivammathur/setup-php@248e3ca37a3e439628c6c2b0c88808bd9632af5e
+        with:
+          php-version: '8.5'
+          extensions: intl, mbstring, pdo_pgsql, redis, xml, zip
+          tools: composer:v2
+      - name: Abhaengigkeiten reproduzierbar aufloesen
+        shell: bash
+        run: |
+          composer validate --strict --no-interaction
+          composer update --no-interaction --prefer-dist --no-progress --no-scripts
+          composer validate --strict --no-interaction
+      - name: Lockdatei als Artefakt bereitstellen
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: aw-001-composer-lock
+          path: composer.lock
+          if-no-files-found: error
+          retention-days: 7

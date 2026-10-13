@@ -1,0 +1,9 @@
+/vendor/
+/var/
+.phpunit.cache
+/.phpunit.result.cache
+/.phpactor.yml
+/.phpunit-watcher.yml
+.env
+.env.*
+!.env.dist
