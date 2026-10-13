@@ -16,7 +16,7 @@ Jeder neue Auftrag braucht eine eindeutige ID, ein Ziel, Abnahmekriterien, Abhä
 
 ### AW-001 — Technisches PHP-/Symfony-Grundgerüst
 
-**Status:** bereit  
+**Status:** bereit
 **Abhängigkeiten:** keine
 
 **Ziel:** Das leere Repository in eine startbare, testbare Basis für die folgenden Eigentümeraufträge überführen.
@@ -51,11 +51,11 @@ Der Projekteigentümer ergänzt neue Aufgaben im folgenden Format:
 
 ### AW-XXX — Kurzer Titel
 
-**Status:** bereit  
+**Status:** bereit
 **Abhängigkeiten:** keine
 
-**Ziel:**  
+**Ziel:**
 **Abnahmekriterien:**
-- [ ] 
-**Sicherheits- und Datenhinweise:**  
-**Nicht-Ziele:**  
+- [ ]
+**Sicherheits- und Datenhinweise:**
+**Nicht-Ziele:**
