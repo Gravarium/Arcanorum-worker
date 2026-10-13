@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "status": "claimed",
+  "status": "idle",
   "task_id": "AW-002",
-  "worker_id": "walker-B-30",
-  "run_id": "walker-B-30-20261013T212730Z-ff7dcb3d46",
+  "worker_id": null,
+  "run_id": null,
   "task_branch": "aw-002/postgres18-redis8-compose-walker-b15",
   "pull_request": 8,
-  "claimed_at": "2026-10-13T21:27:30Z",
-  "heartbeat_at": "2026-10-13T21:32:30Z",
-  "last_progress_at": "2026-10-13T21:32:30Z",
+  "claimed_at": null,
+  "heartbeat_at": null,
+  "last_progress_at": "2026-10-13T21:34:00Z",
   "last_progress_sha": "603d4eee264f77fb4e273cc4e0f661d0e4d8c461",
-  "last_test_status": "static_passed_ci_pending",
-  "blocker": "Lokale Laufzeit enthält kein Docker; vollständige Compose-Prüfung läuft im PR-CI."
+  "last_test_status": "passed_on_exact_pr_head",
+  "blocker": null
 }
