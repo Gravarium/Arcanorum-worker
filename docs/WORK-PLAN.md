@@ -5,18 +5,20 @@ Diese Datei ist die gemeinsame Aufgabenquelle für alle KI-Konten. Der Projektei
 ## Statuswerte
 
 - `bereit`: freigegeben und noch nicht begonnen.
-- `in Bearbeitung`: durch den Koordinationsstand auf dem Branch `worker-control` beansprucht.
+- `in Bearbeitung`: durch den aufgabenspezifischen Koordinationsstand beansprucht.
 - `blockiert`: konkrete Abhängigkeit oder ein externer Fehler verhindert die Arbeit.
 - `PR offen`: Änderung ist als Pull Request eingereicht; Pflichtprüfungen laufen oder warten auf Review.
 - `erledigt`: alle erforderlichen Prüfungen sind für den endgültigen PR-SHA bestanden und der Projekteigentümer hat die Integration abgeschlossen.
 
-Jeder neue Auftrag braucht eine eindeutige ID, ein Ziel, Abnahmekriterien, Abhängigkeiten und den Status. Bei jedem Statuswechsel sind PR, exakter SHA und Prüfergebnis zu dokumentieren. Ein Status ohne Beleg zählt nicht.
+Jeder Auftrag braucht eine eindeutige ID, ein Ziel, Abnahmekriterien, Abhängigkeiten und den Status. Bei jedem Statuswechsel sind PR, exakter SHA und Prüfergebnis zu dokumentieren. Ein Status ohne Beleg zählt.
 
 ## Freigegebene Startaufgabe
 
 ### AW-001 — Technisches PHP-/Symfony-Grundgerüst
 
-**Status:** bereit
+**Status:** PR offen
+**Koordination:** `worker-control/worker-state.json`, PR #5
+**Prüfnachweis zum Statuswechsel (13.10.2026):** PR #5, Branch `aw-001/symfony-foundation-a00`, exakter PR-HEAD `bedecc6995ed58eea82bbfb3ec6443ec8f502b6d`; GitHub-Actions-Lauf #25 (`38349842979`) war für genau diesen SHA erfolgreich. Beide Pflichtjobs und alle enthaltenen Schritte bestanden, darunter Composer-Validierung/Installation/Audit, Symfony dev/prod, PostgreSQL 18, Redis 8, PHPStan 10, Psalm-Taintanalyse, PHPUnit, PHP-CS-Fixer und Rector-Dry-Run. Die Berichte wurden als CI-Artefakte hochgeladen. PR #5 bleibt offen und ungemergt; Integration durch den Projekteigentümer steht aus.
 **Abhängigkeiten:** keine
 
 **Ziel:** Das leere Repository in eine startbare, testbare Basis für die folgenden Eigentümeraufträge überführen.
@@ -45,6 +47,28 @@ Jeder neue Auftrag braucht eine eindeutige ID, ein Ziel, Abnahmekriterien, Abhä
 
 **Grenze:** Diese Aufgabe fügt keine fachlichen CMS-Funktionen, Benutzerrollen, redaktionellen Abläufe oder Gestaltung nach einer nicht im Arbeitsplan enthaltenen Vorgabe hinzu. Solche Punkte kommen als eigene Eigentümeraufträge hinzu.
 
+## Parallel freigegebene Teilaufgabe
+
+### AW-002 — Lokale PostgreSQL-/Redis-Umgebung
+
+**Status:** bereit
+**Abhängigkeiten:** keine; ausdrücklich parallel zu AW-001
+**Koordination:** eigene Sperrdatei `worker-control/worker-state/AW-002.json`
+**Erlaubte Dateien:** `compose.yaml`, `scripts/ci/check_compose.sh`, `docs/LOCAL-CONTAINERS.md` und Änderungen an `.github/workflows/quality.yml` ausschließlich für die Compose-Prüfung.
+
+**Ziel:** Eine lokale, reproduzierbare Testumgebung für PostgreSQL 18 und Redis 8 bereitstellen, die neben dem von AW-001 eingerichteten Symfony-Grundgerüst entwickelt werden kann.
+
+**Abnahmekriterien:**
+
+1. Compose verwendet PostgreSQL 18 und Redis 8, passend zu den Versionen im bestehenden Qualitätsworkflow.
+2. Dienste sind nur lokal erreichbar, haben brauchbare Healthchecks und verwenden ausschließlich klar als lokal/test-only erkennbare Werte. Keine echten Zugangsdaten oder Produktionsdaten.
+3. `scripts/ci/check_compose.sh` validiert die Compose-Konfiguration, startet beide Dienste, wartet auf Bereitschaft, prüft PostgreSQL-Version 18 und Redis `PING`/`PONG` und räumt CI-Dienste auch nach Fehlern auf.
+4. Die Repository-CI führt diese Prüfung für jeden PR-SHA aus, unabhängig davon, ob `composer.json` bereits vorhanden ist.
+5. `docs/LOCAL-CONTAINERS.md` erklärt Start, Bereitschaftsprüfung und Stoppen der lokalen Dienste.
+6. Die vollständige Compose-Prüfung besteht auf dem exakten PR-SHA. Fehlende oder übersprungene Schritte gelten nicht als bestanden.
+
+**Nicht-Ziele:** Keine Symfony-, Composer-, `src/`-, PHPUnit- oder `docs/LOCAL-DEVELOPMENT.md`-Änderungen. AW-002 bearbeitet nur die oben erlaubten Dateien und greift nicht in AW-001s Branch ein.
+
 ## Weitere Aufträge
 
 Der Projekteigentümer ergänzt neue Aufgaben im folgenden Format:
@@ -53,6 +77,8 @@ Der Projekteigentümer ergänzt neue Aufgaben im folgenden Format:
 
 **Status:** bereit
 **Abhängigkeiten:** keine
+**Parallel zu:** keine, sofern nicht ausdrücklich festgelegt
+**Erlaubte Dateien:**
 
 **Ziel:**
 **Abnahmekriterien:**
