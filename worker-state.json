@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "status": "idle",
-  "task_id": null,
-  "worker_id": null,
-  "run_id": null,
-  "task_branch": null,
+  "status": "claimed",
+  "task_id": "AW-001",
+  "worker_id": "walker-A-00",
+  "run_id": "a00-20261013T045422288Z-8dfwfp120k",
+  "task_branch": "aw-001/symfony-foundation-a00",
   "pull_request": null,
-  "claimed_at": null,
-  "heartbeat_at": null,
+  "claimed_at": "2026-10-13T04:54:22.288Z",
+  "heartbeat_at": "2026-10-13T04:54:22.288Z",
   "last_progress_at": null,
   "last_progress_sha": null,
-  "last_test_status": null,
+  "last_test_status": "not_run",
   "blocker": null
 }
