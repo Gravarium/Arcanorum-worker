@@ -16,7 +16,7 @@ final class RedisCacheTest extends KernelTestCase
         $pool = self::getContainer()->get('cache.app');
         self::assertInstanceOf(CacheItemPoolInterface::class, $pool);
 
-        $key = 'walker_ci_' . bin2hex(random_bytes(8));
+        $key = 'walker_ci_'.bin2hex(random_bytes(8));
         $item = $pool->getItem($key);
         self::assertFalse($item->isHit());
 
