@@ -29,6 +29,14 @@ Ist der letzte belegte Fortschritt mindestens 15 Minuten alt, prüfe zuerst, ob 
 
 Dokumentationsänderungen, die nur einen bereits bekannten Status oder unveränderten CI-Lauf wiederholen, sind kein Fortschritt und dürfen keine Wiederanlaufschleife erzeugen.
 
+## Dauerbetrieb
+
+- Kein KI-Lauf darf die wiederkehrende Walker-Prüfung selbst pausieren, deaktivieren oder löschen.
+- Nur der Projekteigentümer darf sie ausdrücklich abschalten.
+- Ein leerer Arbeitsplan, ein fertiger Auftrag, ein roter Test, ein technischer Blocker, ein API-Limit oder ein GitHub-Fehler beendet die Prüfung nicht. Halte den konkreten Zustand fest und prüfe beim nächsten geplanten Lauf erneut.
+- Bei einem leeren Arbeitsplan keine Produktaufgaben erfinden und keine Scheinänderungen erzeugen; die Prüfung bleibt aktiv.
+- Falls die Plattform oder ein Kontolimit eine Aufgabe automatisch pausiert, kann der KI-Lauf diese Plattformentscheidung nicht verhindern. Melde die Pause mit ihrem Grund, damit der Projekteigentümer sie wieder aktivieren kann.
+
 ## Öffentlicher Bereich
 
 Das Repository bleibt öffentlich. Keine Zugangsdaten, Schlüssel, privaten oder personenbezogenen Daten, Sicherungen oder Produktionsdaten einchecken. Anforderungen werden eigenständig umgesetzt. Arbeitsplan, Code, Tests, Commit-Nachrichten und Dokumentation bleiben frei von Namen oder Hinweisen auf nicht genannte Referenzsysteme.
