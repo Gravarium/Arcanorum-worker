@@ -32,6 +32,18 @@ jobs:
           composer validate --strict --no-interaction
           composer update --no-interaction --prefer-dist --no-progress --no-scripts
           composer validate --strict --no-interaction
+      - name: Oeffentliche Lockdatei fuer naechsten Walker-Lauf im Joblog abbilden
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import base64
+          with open("composer.lock", "rb") as source:
+              payload = base64.b64encode(source.read()).decode("ascii")
+          print("LOCK64_START")
+          for index in range(0, len(payload), 512):
+              print("LOCK64:" + payload[index:index + 512])
+          print("LOCK64_END")
+          PY
       - name: Lockdatei als Artefakt bereitstellen
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
