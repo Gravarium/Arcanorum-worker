@@ -7,9 +7,9 @@
   "task_branch": "aw-001/symfony-foundation-a00",
   "pull_request": "https://github.com/Gravarium/Arcanorum-worker/pull/5",
   "claimed_at": "2026-10-13T04:54:22.288Z",
-  "heartbeat_at": "2026-10-13T04:58:15.712Z",
-  "last_progress_at": "2026-10-13T04:58:15.712Z",
-  "last_progress_sha": "c191a3ac7bac2804866d7915985079a6b645c1aa",
-  "last_test_status": "PENDING — composer.lock not yet versioned; mandatory CI not passed",
-  "blocker": "composer.lock missing: pending resolve-lock workflow artifact and full required checks for exact PR SHA."
+  "heartbeat_at": "2026-10-13T04:59:54.106Z",
+  "last_progress_at": "2026-10-13T04:59:54.106Z",
+  "last_progress_sha": "42f5fd85e48828ad5cafe6a3c612c77ae48975c6",
+  "last_test_status": "Dependency-resolution CI succeeded for previous SHA; new lockfile extraction workflow pending; mandatory PHP suite incomplete.",
+  "blocker": "composer.lock not yet committed; previous mandatory CI failed missing composer.lock."
 }
