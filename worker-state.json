@@ -5,11 +5,11 @@
   "worker_id": "walker-A-00",
   "run_id": "a00-20261013T045422288Z-8dfwfp120k",
   "task_branch": "aw-001/symfony-foundation-a00",
-  "pull_request": null,
+  "pull_request": "https://github.com/Gravarium/Arcanorum-worker/pull/5",
   "claimed_at": "2026-10-13T04:54:22.288Z",
-  "heartbeat_at": "2026-10-13T04:54:22.288Z",
-  "last_progress_at": null,
-  "last_progress_sha": null,
-  "last_test_status": "not_run",
-  "blocker": null
+  "heartbeat_at": "2026-10-13T04:58:15.712Z",
+  "last_progress_at": "2026-10-13T04:58:15.712Z",
+  "last_progress_sha": "c191a3ac7bac2804866d7915985079a6b645c1aa",
+  "last_test_status": "PENDING — composer.lock not yet versioned; mandatory CI not passed",
+  "blocker": "composer.lock missing: pending resolve-lock workflow artifact and full required checks for exact PR SHA."
 }
