@@ -72,6 +72,28 @@ jobs:
             echo "::notice::Noch kein PHP-Anwendungsgrundgerüst vorhanden. Anwendungstests werden aktiviert, sobald composer.json hinzukommt."
           fi
 
+  compose:
+    name: Lokale PostgreSQL-18- und Redis-8-Compose-Prüfung
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Exakten Pull-Request-HEAD auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Docker Compose verfügbar prüfen
+        shell: bash
+        run: docker compose version
+
+      - name: PostgreSQL 18 und Redis 8 mit Compose prüfen
+        shell: bash
+        run: bash scripts/ci/check_compose.sh
+
   php_quality:
     name: PHP 8.5, Symfony, PostgreSQL 18 und Redis 8
     needs: repository
