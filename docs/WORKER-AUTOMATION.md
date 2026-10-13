@@ -26,15 +26,18 @@ Jeder einzelne Lauf wird stündlich geplant. Zusammen starten die Läufe alle 15
 
 Der Branch `worker-control` enthält eine gemeinsame Datei `worker-state.json`. Sie koordiniert die KI-Konten und bleibt getrennt vom Produktcode und vom Hauptzweig dieses Walker-Repos.
 
-- Vor dem Programmieren muss eine KI die Datei vom Branch `worker-control` samt aktuellem Blob-SHA lesen.
-- Bei `status = "claimed"` darf kein zweites Konto eine andere Aufgabe anfangen. Es prüft den zugehörigen Branch, PR und CI-Stand und wartet, solange eine Bearbeitung oder Pflichtprüfung aktiv ist.
-- Eine neue oder fortzusetzende Bearbeitung wird durch Aktualisieren der Datei mit genau dem zuletzt gelesenen Blob-SHA beansprucht. Gelingt die Aktualisierung wegen eines zwischenzeitlichen Commits nicht, liest die KI die Datei erneut und arbeitet nicht weiter, wenn ein anderes Konto den Anspruch übernommen hat.
-- In der Datei stehen mindestens Aufgaben-ID, KI-Kennung, Aufgabenbranch, PR, Beanspruchungszeit, letzter Heartbeat, letzter echter Fortschritt-SHA, Prüfstatus und Blocker.
+- Jede wiederkehrende Aufgabe erhält bei ihrer Einrichtung eine feste, eindeutige `worker_id`, die in ihrem eigenen Aufgabenprompt gespeichert bleibt. Verwende dafür Konto-Rolle plus Zeitfenster, zum Beispiel `walker-A-00`, `walker-A-30`, `walker-B-15` oder `walker-B-45`. Der GitHub-Anmeldename ist keine KI-Kennung: Mehrere KI-Konten dürfen denselben GitHub-Zugang verwenden.
+- Jeder einzelne Lauf erhält zusätzlich eine einmalige `run_id` und schreibt sie zusammen mit `worker_id` in den Koordinationsstand. Verwende dieselbe `worker_id` bei späteren Wiederholungen derselben Aufgabe, aber immer eine neue `run_id` je Ausführung.
+- Vor dem Programmieren muss der Lauf die Datei vom Branch `worker-control` samt aktuellem Blob-SHA lesen.
+- Bei `status = "claimed"` darf kein neuer Lauf anfangen, selbst wenn GitHub denselben Anmeldenamen zeigt oder die `worker_id` gleich ist. Nur die Ausführung, deren `worker_id` und `run_id` exakt im Koordinationsstand stehen, darf den beanspruchten Auftrag fortsetzen.
+- Eine neue oder fortzusetzende Ausführung wird durch Aktualisieren der Datei mit genau dem zuletzt gelesenen Blob-SHA beansprucht. Gelingt die Aktualisierung wegen eines zwischenzeitlichen Commits nicht, liest der Lauf die Datei erneut und arbeitet nicht weiter, wenn ein anderer Anspruch eingetragen ist.
+- Vor jeder weiteren Änderung an einem Aufgabenbranch prüft der Lauf erneut, dass `worker_id` und `run_id` weiterhin ihm gehören. Bei verlorenem Anspruch stoppt er sofort und schreibt nichts weiter.
+- In der Datei stehen mindestens Aufgaben-ID, `worker_id`, `run_id`, Aufgabenbranch, PR, Beanspruchungszeit, letzter Heartbeat, letzter echter Fortschritt-SHA, Prüfstatus und Blocker.
 - Heartbeat und echter Fortschritt sind getrennt. Ein Heartbeat verlängert die Sperre, zählt aber nicht als erledigte Arbeit.
-- Während längerer Schritte aktualisiert das aktive Konto den Heartbeat spätestens alle 10 Minuten und nach jedem abgeschlossenen Prüfblock.
-- Ist ein Heartbeat mindestens 15 Minuten alt, prüfe zuerst, ob noch ein KI-Lauf oder eine Pflichtprüfung aktiv ist. Ist etwas aktiv, darf die Sperre nicht übernommen werden. Ist nichts aktiv, setze dieselbe beanspruchte Aufgabe ab dem letzten bestätigten Stand fort.
+- Während längerer Schritte aktualisiert der aktive Lauf den Heartbeat spätestens alle 10 Minuten und nach jedem abgeschlossenen Prüfblock.
+- Ist ein Heartbeat mindestens 15 Minuten alt, prüfe den Aufgabenbranch, den PR- und CI-Stand sowie den Status der eigenen geplanten Ausführung, soweit die Plattform ihn anzeigt. Wenn ein Lauf oder eine Pflichtprüfung aktiv ist, bleibt die Sperre bestehen. Wenn kein Lauf und keine Prüfung aktiv sind, kann dieselbe Aufgabe ab dem letzten bestätigten Stand mit einer neuen `run_id` übernommen werden. Kann der Lauf den Ausführungsstatus nicht prüfen, darf er nicht parallel weiterarbeiten; er hält den Blocker fest und prüft beim nächsten geplanten Lauf erneut.
 - Bei einem Blocker dokumentiere den konkreten Grund. Gib die Sperre erst frei, wenn der Arbeitsstand gesichert, der Blocker im Plan festgehalten und kein Prüfjob mehr aktiv ist. Danach darf das nächste unabhängige freigegebene Arbeitspaket beansprucht werden.
-- Nach fertigem Auftrag bleibt die Sperre bis zum offenen PR und den bestandenen Pflichtprüfungen bestehen. Danach setze den Status auf `idle`, damit der nächste Lauf übernehmen kann.
+- Nach fertigem Auftrag bleibt die Sperre bis zum offenen PR und den bestandenen Pflichtprüfungen bestehen. Danach setze den Status auf `idle`, lösche Anspruch und `run_id`, damit der nächste Lauf übernehmen kann.
 
 ## Wiederaufnahme ohne Doppelarbeit
 
@@ -54,4 +57,4 @@ Dokumentationsänderungen, die nur einen bereits bekannten Status oder unveränd
 
 Das Repository bleibt öffentlich. Keine Zugangsdaten, Schlüssel, privaten oder personenbezogenen Daten, Sicherungen oder Produktionsdaten einchecken. Anforderungen werden eigenständig umgesetzt. Arbeitsplan, Code, Tests, Commit-Nachrichten und Dokumentation bleiben frei von Namen oder Hinweisen auf nicht genannte Referenzsysteme.
 
-Die technischen Sicherheits-, Qualitäts- und Testvorgaben aus `AGENTS.md` und `docs/QUALITY-GATES.md` gelten bei jedem Lauf unverändert.
+Die technischen Sicherheits-, Qualitäts- und Testvorgaben aus `AGENTS.md` und `docs/QUALITY-GATES.md` gelten bei jedem Lauf.
