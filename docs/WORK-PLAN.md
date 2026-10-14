@@ -16,9 +16,8 @@ Jeder Auftrag braucht eine eindeutige ID, ein Ziel, Abnahmekriterien, Abhängigk
 
 ### AW-001 — Technisches PHP-/Symfony-Grundgerüst
 
-**Status:** PR offen
+**Status:** in Bearbeitung
 **Koordination:** `worker-control/worker-state.json`, PR #5
-**Prüfnachweis:** PR #5, Branch `aw-001/symfony-foundation-a00`, HEAD `03f19c0615af05b53fde60b152d33ca3d0770b0e`; GitHub Actions Lauf `38391135725` mit beiden Pflichtjobs erfolgreich. Integration durch den Projekteigentümer steht aus.
 **Abhängigkeiten:** keine
 
 **Ziel:** Das leere Repository in eine startbare, testbare Basis für die folgenden Eigentümeraufträge überführen.
