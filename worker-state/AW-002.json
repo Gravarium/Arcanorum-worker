@@ -3,13 +3,13 @@
   "status": "claimed",
   "task_id": "AW-002",
   "worker_id": "walker-A-00",
-  "run_id": "walker-A-00-20261013T2202Z-4f87a2d9",
+  "run_id": "walker-A-00-20261014T010245424Z-ig07vhh06",
   "task_branch": "aw-002/postgres18-redis8-compose-walker-b15",
   "pull_request": 8,
-  "claimed_at": "2026-10-13T22:02:29.140Z",
-  "heartbeat_at": "2026-10-13T22:02:29.140Z",
+  "claimed_at": "2026-10-14T01:03:03.486Z",
+  "heartbeat_at": "2026-10-14T01:03:03.486Z",
   "last_progress_at": "2026-10-13T21:34:00Z",
   "last_progress_sha": "603d4eee264f77fb4e273cc4e0f661d0e4d8c461",
   "last_test_status": "passed_on_exact_pr_head",
-  "blocker": "Verifying Redis major version 8 at runtime and rerunning required AW-002 Compose checks on the resulting exact PR SHA."
+  "blocker": "Prior run ended with platform write blocker; resume Redis 8 runtime major-version validation. Previous CI success was for earlier SHA only."
 }
