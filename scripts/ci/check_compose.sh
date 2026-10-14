@@ -35,4 +35,10 @@ if [[ "$redis_response" != "PONG" ]]; then
     exit 1
 fi
 
-printf 'Compose check passed: PostgreSQL 18 and Redis PONG.\n'
+redis_version="$( "${compose[@]}" exec -T redis redis-cli --raw INFO server | sed -n 's/^redis_version://p' | tr -d '\r' )"
+if [[ ! "$redis_version" =~ ^8\. ]]; then
+    printf 'Expected Redis major version 8, got redis_version=%q\n' "$redis_version" >&2
+    exit 1
+fi
+
+printf 'Compose check passed: PostgreSQL 18 and Redis 8 PONG.\n'
