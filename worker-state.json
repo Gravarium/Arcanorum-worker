@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "status": "idle",
+  "status": "claimed",
   "task_id": "AW-001",
-  "worker_id": null,
-  "run_id": null,
+  "worker_id": "walker-A-15",
+  "run_id": "walker-A-15-20261014T0713Z-funf6ashct",
   "task_branch": "aw-001/symfony-foundation-a00",
   "pull_request": "https://github.com/Gravarium/Arcanorum-worker/pull/5",
-  "claimed_at": null,
-  "heartbeat_at": "2026-10-14T07:02:06.541Z",
+  "claimed_at": "2026-10-14T07:14:51.893Z",
+  "heartbeat_at": "2026-10-14T07:14:51.893Z",
   "last_progress_at": "2026-10-14T07:02:06.541Z",
   "last_progress_sha": "2dec8ce7ed03d3120c969c431d68b5d44a6137a7",
-  "last_test_status": "New PR HEAD 2dec8ce7ed03d3120c969c431d68b5d44a6137a7; no GitHub Actions workflow run returned yet for this SHA; mandatory CI unverified.",
-  "blocker": "Work-plan conflict resolution committed on task branch; mergeability not yet confirmed; mandatory CI pending/unverified for new HEAD."
+  "last_test_status": "CI run 38525757660 completed success for exact HEAD 2dec8ce7ed03d3120c969c431d68b5d44a6137a7: repository and PHP mandatory jobs passed, no skipped steps.",
+  "blocker": "PR #5 currently mergeable=false; docs/WORK-PLAN.md differs on main and task branch. Resolve without modifying main."
 }
