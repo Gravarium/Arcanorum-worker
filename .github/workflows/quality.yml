@@ -29,6 +29,12 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Exakten Commit prüfen
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
 
       - name: PHP 8.5 für Konfigurationsprüfungen bereitstellen
         uses: shivammathur/setup-php@248e3ca37a3e439628c6c2b0c88808bd9632af5e # PHP 8.5
@@ -75,7 +81,6 @@ jobs:
   php_quality:
     name: PHP 8.5, Symfony, PostgreSQL 18 und Redis 8
     needs: repository
-    if: ${{ needs.repository.outputs.php_project == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 50
     permissions:
@@ -115,6 +120,12 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Exakten Commit prüfen
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
 
       - name: Pflichtdateien und echte Testsuite prüfen
         shell: bash
@@ -230,6 +241,17 @@ jobs:
           mkdir -p var/test-results
           vendor/bin/phpunit --configuration=phpunit.dist.xml --debug --fail-on-risky --fail-on-warning --log-junit=var/test-results/junit.xml --coverage-text --coverage-clover=var/test-results/coverage.xml
 
+      - name: Pflichtberichte auf Vollständigkeit prüfen
+        if: always()
+        shell: bash
+        run: |
+          for report in var/test-results/junit.xml var/test-results/coverage.xml var/test-results/psalm.sarif; do
+            if [ ! -s "$report" ]; then
+              echo "::error file=$report::Pflichtbericht fehlt oder ist leer."
+              exit 1
+            fi
+          done
+
       - name: JUnit-, Coverage- und Psalm-Berichte sichern
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -239,5 +261,23 @@ jobs:
             var/test-results/junit.xml
             var/test-results/coverage.xml
             var/test-results/psalm.sarif
-          if-no-files-found: ignore
+          if-no-files-found: error
           retention-days: 7
+
+  security_gate:
+    name: Verbindliche Sicherheitsfreigabe
+    if: always()
+    needs: [repository, php_quality]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Alle Pflichtjobs müssen erfolgreich sein
+        env:
+          REPOSITORY_RESULT: ${{ needs.repository.result }}
+          PHP_RESULT: ${{ needs.php_quality.result }}
+        run: |
+          if [ "$REPOSITORY_RESULT" != success ] || [ "$PHP_RESULT" != success ]; then
+            echo "::error::Pflichtprüfung fehlgeschlagen, abgebrochen oder übersprungen (Repository=$REPOSITORY_RESULT, PHP=$PHP_RESULT)."
+            exit 1
+          fi
