@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "status": "idle",
+  "status": "claimed",
   "task_id": "AW-002",
-  "worker_id": null,
-  "run_id": null,
+  "worker_id": "walker-B-15",
+  "run_id": "walker-B-15-20261014T021742106Z-pr-evidence",
   "task_branch": "aw-002/postgres18-redis8-compose-walker-b15",
   "pull_request": 8,
-  "claimed_at": null,
-  "heartbeat_at": "2026-10-14T02:02:50.095Z",
+  "claimed_at": "2026-10-14T02:17:42.106Z",
+  "heartbeat_at": "2026-10-14T02:17:42.106Z",
   "last_progress_at": "2026-10-14T02:01:39.368Z",
   "last_progress_sha": "63f6db9f817d2fae9bc878457a3f0527434d524a",
   "last_test_status": "CI 38498862033: repository and Compose passed on 63f6db9f817d2fae9bc878457a3f0527434d524a; PHP job skipped.",
-  "blocker": null
+  "blocker": "Updating PR #8 evidence to the exact current HEAD SHA and CI run."
 }
