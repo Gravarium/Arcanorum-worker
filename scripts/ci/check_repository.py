@@ -44,7 +44,7 @@ for path in paths:
     if forbidden_path(path):
         errors.append(f"{relative}: lokaler, privater oder ausführbarer Datenpfad ist nicht zulässig")
 
-    if "baseline" in lower_name and lower_name.endswith((".neon", ".xml", ".php", ".json")):
+    if "baseline" in lower_name and lower_name.endswith((".neon", ".xml", ".php", ".json", ".yaml", ".yml")):
         errors.append(f"{relative}: Analyse-Baselines sind nicht zulässig")
 
     try:
@@ -87,6 +87,33 @@ for path in paths:
             if not reference.startswith("./") and re.search(r"@[0-9a-f]{40}$", reference) is None:
                 errors.append(f"{relative}:{line_number}: externe Action muss auf einen vollständigen Commit-SHA gepinnt sein")
 
+# Fail closed on blanket suppression of static-analysis findings. This check
+# complements (and does not replace) PHPStan, Psalm and their own config validation.
+for path in paths:
+    relative = path.relative_to(ROOT).as_posix()
+    if path.suffix.lower() not in {".php", ".neon", ".xml"}:
+        continue
+    if path.suffix.lower() == ".php" and not (
+        relative.startswith(("src/", "tests/")) or relative in {".php-cs-fixer.dist.php", "rector.php"}
+    ):
+        continue
+    try:
+        content = path.read_text(encoding="utf-8")
+    except (UnicodeError, OSError):
+        continue
+    patterns = (
+        r"@phpstan-ignore\\s+all\\b",
+        r"@psalm-suppress\\s+all\\b",
+        r"@psalm-suppress\\s+Mixed\\w*\\b",
+        r"@phpstan-ignore-next-line\\b",
+        r"@phpstan-ignore-line\\b",
+        r"@psalm-suppress\\b",
+    )
+    for pattern in patterns:
+        for match in re.finditer(pattern, content, flags=re.IGNORECASE):
+            line = content.count("\\n", 0, match.start()) + 1
+            errors.append(f"{relative}:{line}: lokale Analyse-Unterdrückung ist nicht zulässig")
+
 phpstan_path = ROOT / "phpstan.neon.dist"
 if not phpstan_path.is_file():
     errors.append("phpstan.neon.dist: Pflichtkonfiguration fehlt")
@@ -96,6 +123,10 @@ else:
         errors.append("phpstan.neon.dist: PHPStan muss fest auf Stufe 10 stehen")
     if "phpstan-strict-rules/rules.neon" not in phpstan:
         errors.append("phpstan.neon.dist: phpstan-strict-rules muss aktiviert sein")
+    if re.search(r"(?m)^\\s*(ignoreErrors|excludePaths|universalObjectCratesClasses|scanDirectories)\\s*:", phpstan):
+        errors.append("phpstan.neon.dist: pauschale Ignorier- oder Ausschlussregeln sind verboten")
+    if re.search(r"(?im)^\\s*-\\s*[^#\\n]*baseline[^#\\n]*$", phpstan):
+        errors.append("phpstan.neon.dist: Baseline-Einbindung ist verboten")
 
 psalm_path = ROOT / "psalm.xml"
 if not psalm_path.is_file():
@@ -104,6 +135,15 @@ else:
     psalm = ET.parse(psalm_path).getroot()
     if psalm.get("errorLevel") != "1" or psalm.get("runTaintAnalysis") != "true":
         errors.append("psalm.xml: Fehlerstufe 1 und Taintanalyse sind Pflicht")
+    for element in psalm.iter():
+        tag = element.tag.rsplit("}", 1)[-1]
+        if tag in {"issueHandlers", "fileExtensions"}:
+            errors.append(f"psalm.xml: {tag} darf Sicherheitsanalysen nicht unterdrücken")
+        if tag == "ignoreFiles":
+            for child in element:
+                name = child.get("name", "")
+                if name != "vendor":
+                    errors.append(f"psalm.xml: unerlaubter Ausschluss {name!r}")
 
 phpunit_path = ROOT / "phpunit.dist.xml"
 if phpunit_path.is_file():
