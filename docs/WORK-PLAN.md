@@ -18,7 +18,7 @@ Jeder Auftrag braucht eine eindeutige ID, ein Ziel, Abnahmekriterien, Abhängigk
 
 **Status:** PR offen
 **Koordination:** `worker-control/worker-state.json`, PR #5
-**Prüfnachweis zum Statuswechsel (13.10.2026):** PR #5, Branch `aw-001/symfony-foundation-a00`, exakter PR-HEAD `bedecc6995ed58eea82bbfb3ec6443ec8f502b6d`; GitHub-Actions-Lauf #25 (`38349842979`) war für genau diesen SHA erfolgreich. Beide Pflichtjobs und alle enthaltenen Schritte bestanden, darunter Composer-Validierung/Installation/Audit, Symfony dev/prod, PostgreSQL 18, Redis 8, PHPStan 10, Psalm-Taintanalyse, PHPUnit, PHP-CS-Fixer und Rector-Dry-Run. Die Berichte wurden als CI-Artefakte hochgeladen. PR #5 bleibt offen und ungemergt; Integration durch den Projekteigentümer steht aus.
+**Prüfnachweis:** PR #5, Branch `aw-001/symfony-foundation-a00`, HEAD `03f19c0615af05b53fde60b152d33ca3d0770b0e`; GitHub Actions Lauf `38391135725` mit beiden Pflichtjobs erfolgreich. Integration durch den Projekteigentümer steht aus.
 **Abhängigkeiten:** keine
 
 **Ziel:** Das leere Repository in eine startbare, testbare Basis für die folgenden Eigentümeraufträge überführen.
