@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "status": "claimed",
+  "status": "idle",
   "task_id": "AW-001",
-  "worker_id": "walker-A-45",
-  "run_id": "walker-A-45-20261014T070147192Z-d2hmgjos",
+  "worker_id": null,
+  "run_id": null,
   "task_branch": "aw-001/symfony-foundation-a00",
   "pull_request": "https://github.com/Gravarium/Arcanorum-worker/pull/5",
-  "claimed_at": "2026-10-14T07:01:47.192Z",
-  "heartbeat_at": "2026-10-14T07:01:47.192Z",
-  "last_progress_at": "2026-10-13T11:36:51.539Z",
-  "last_progress_sha": "03f19c0615af05b53fde60b152d33ca3d0770b0e",
-  "last_test_status": "GitHub Actions run 38391135725 success on exact PR HEAD 03f19c0615af05b53fde60b152d33ca3d0770b0e; repository and php_quality both success; required JUnit/Coverage/Psalm reports present, retained seven days; PR #5 open as draft pending project-owner review.",
-  "blocker": null
+  "claimed_at": null,
+  "heartbeat_at": "2026-10-14T07:02:06.541Z",
+  "last_progress_at": "2026-10-14T07:02:06.541Z",
+  "last_progress_sha": "2dec8ce7ed03d3120c969c431d68b5d44a6137a7",
+  "last_test_status": "New PR HEAD 2dec8ce7ed03d3120c969c431d68b5d44a6137a7; no GitHub Actions workflow run returned yet for this SHA; mandatory CI unverified.",
+  "blocker": "Work-plan conflict resolution committed on task branch; mergeability not yet confirmed; mandatory CI pending/unverified for new HEAD."
 }
