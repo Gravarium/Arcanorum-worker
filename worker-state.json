@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "status": "claimed",
+  "status": "idle",
   "task_id": "AW-001",
-  "worker_id": "walker-A-45",
-  "run_id": "walker-A-45-20261014T054215654Z-pepfye5m",
+  "worker_id": null,
+  "run_id": null,
   "task_branch": "aw-001/symfony-foundation-a00",
   "pull_request": "https://github.com/Gravarium/Arcanorum-worker/pull/5",
-  "claimed_at": "2026-10-14T05:42:37.526Z",
-  "heartbeat_at": "2026-10-14T05:42:37.526Z",
+  "claimed_at": null,
+  "heartbeat_at": "2026-10-14T05:43:05.024Z",
   "last_progress_at": "2026-10-13T11:36:51.539Z",
   "last_progress_sha": "03f19c0615af05b53fde60b152d33ca3d0770b0e",
   "last_test_status": "GitHub Actions run 38391135725 success on exact PR HEAD 03f19c0615af05b53fde60b152d33ca3d0770b0e; repository and php_quality both success; required JUnit/Coverage/Psalm reports present, retained seven days; PR #5 open as draft pending project-owner review.",
-  "blocker": "PR #5 merge conflict in docs/WORK-PLAN.md; investigating resolution without merging."
+  "blocker": "PR #5 merge conflict (docs/WORK-PLAN.md). 2026-10-14: attempted task-branch conflict fix rejected by GitHub connector safety checks; no branch changes. Requires permitted write operation; do not mark resolved."
 }
