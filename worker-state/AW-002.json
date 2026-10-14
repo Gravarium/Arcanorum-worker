@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "status": "claimed",
+  "status": "idle",
   "task_id": "AW-002",
-  "worker_id": "walker-A-00",
-  "run_id": "walker-A-00-20261014T010245424Z-ig07vhh06",
+  "worker_id": null,
+  "run_id": null,
   "task_branch": "aw-002/postgres18-redis8-compose-walker-b15",
   "pull_request": 8,
-  "claimed_at": "2026-10-14T01:03:03.486Z",
-  "heartbeat_at": "2026-10-14T01:03:03.486Z",
+  "claimed_at": null,
+  "heartbeat_at": "2026-10-14T01:03:23.905Z",
   "last_progress_at": "2026-10-13T21:34:00Z",
   "last_progress_sha": "603d4eee264f77fb4e273cc4e0f661d0e4d8c461",
   "last_test_status": "passed_on_exact_pr_head",
-  "blocker": "Prior run ended with platform write blocker; resume Redis 8 runtime major-version validation. Previous CI success was for earlier SHA only."
+  "blocker": "GitHub connector safety checks blocked update_file on scripts/ci/check_compose.sh for Redis 8 runtime major-version verification; no code commit made. Existing CI run 38470740923 succeeded for HEAD 603d4eee264f77fb4e273cc4e0f661d0e4d8c461 (repository and compose only); PHP application job skipped."
 }
