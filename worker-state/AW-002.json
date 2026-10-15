@@ -7,9 +7,9 @@
   "task_branch": "aw-002/postgres18-redis8-compose-walker-b15",
   "pull_request": 8,
   "claimed_at": "2026-10-15T18:54:50.476Z",
-  "heartbeat_at": "2026-10-15T18:54:50.476Z",
-  "last_progress_at": "2026-10-14T02:01:39.368Z",
-  "last_progress_sha": "63f6db9f817d2fae9bc878457a3f0527434d524a",
-  "last_test_status": "Existing AW-002 checks passed on prior SHA; adding explicit exact-PR-HEAD assertion in permitted Compose job. New CI pending after change.",
-  "blocker": null
+  "heartbeat_at": "2026-10-15T18:55:30.630Z",
+  "last_progress_at": "2026-10-15T18:55:30.630Z",
+  "last_progress_sha": "a3ae87594f3d5594a4da6dfa9956ffc09af3ae00",
+  "last_test_status": "GitHub Actions run 38789600502 on exact AW-002 PR HEAD a3ae87594f3d5594a4da6dfa9956ffc09af3ae00 created; queued at first check. Mandatory checks pending.",
+  "blocker": "Await exact-HEAD GitHub CI completion; skipped PHP check is not a pass."
 }
