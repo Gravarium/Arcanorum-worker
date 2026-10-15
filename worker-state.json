@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "status": "claimed",
+  "status": "idle",
   "task_id": "AW-001",
-  "worker_id": "walker-A-15",
-  "run_id": "walker-A-15-20261015T011345705Z-1frzxorl",
+  "worker_id": null,
+  "run_id": null,
   "task_branch": "aw-001/symfony-foundation-a00",
   "pull_request": "https://github.com/Gravarium/Arcanorum-worker/pull/5",
-  "claimed_at": "2026-10-15T01:14:02.635Z",
-  "heartbeat_at": "2026-10-15T01:14:02.635Z",
-  "last_progress_at": "2026-10-14T07:02:06.541Z",
-  "last_progress_sha": "2dec8ce7ed03d3120c969c431d68b5d44a6137a7",
-  "last_test_status": "CI run 38525757660 completed success for exact HEAD 2dec8ce7ed03d3120c969c431d68b5d44a6137a7: repository and PHP mandatory jobs passed, no skipped steps.",
-  "blocker": "PR #5 currently mergeable=false; docs/WORK-PLAN.md differs on main and task branch. Resolve without modifying main."
+  "claimed_at": null,
+  "heartbeat_at": null,
+  "last_progress_at": "2026-10-14T09:19:48Z",
+  "last_progress_sha": "96969770aa4e77617c6096a6d332896d5f0fe4de",
+  "last_test_status": "PR #5 HEAD 96969770aa4e77617c6096a6d332896d5f0fe4de: CI 38541391551 success; both mandatory jobs and all steps passed; test artifact present.",
+  "blocker": "PR #5 awaits owner review. PR description still references older SHA; update blocked by connector."
 }
