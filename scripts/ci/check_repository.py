@@ -11,6 +11,29 @@ import xml.etree.ElementTree as ET
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 errors: list[str] = []
 
+LOCAL_SUPPRESSION_PATTERNS = (
+    ("PHPStan blanket ignore", re.compile(r"@phpstan-ignore\s+all\b", re.IGNORECASE)),
+    ("PHPStan line ignore", re.compile(r"@phpstan-ignore-(?:next-)?line\b", re.IGNORECASE)),
+    ("Psalm suppression", re.compile(r"@psalm-suppress\b", re.IGNORECASE)),
+)
+PHPSTAN_FORBIDDEN_CONFIG_PATTERN = re.compile(
+    r"(?im)^\s*(?:ignoreErrors|excludePaths|universalObjectCratesClasses|scanDirectories)\s*:"
+)
+PHPSTAN_BASELINE_REFERENCE_PATTERN = re.compile(r"(?im)^\s*-\s*[^#\n]*baseline[^#\n]*$")
+SECURITY_GUARD_PATTERN_TESTS = (
+    ("PHPStan blanket ignore", LOCAL_SUPPRESSION_PATTERNS[0][1], "@phpstan-ignore all", True),
+    ("PHPStan next-line ignore", LOCAL_SUPPRESSION_PATTERNS[1][1], "@phpstan-ignore-next-line", True),
+    ("PHPStan line ignore", LOCAL_SUPPRESSION_PATTERNS[1][1], "@phpstan-ignore-line", True),
+    ("Psalm suppression", LOCAL_SUPPRESSION_PATTERNS[2][1], "@psalm-suppress MissingReturnType", True),
+    ("PHPStan ignoreErrors option", PHPSTAN_FORBIDDEN_CONFIG_PATTERN, "parameters:\n    ignoreErrors: []", True),
+    ("PHPStan excludePaths option", PHPSTAN_FORBIDDEN_CONFIG_PATTERN, "parameters:\n    excludePaths:\n        analyse: []", True),
+    ("PHPStan baseline include", PHPSTAN_BASELINE_REFERENCE_PATTERN, "includes:\n    - phpstan-baseline.neon", True),
+    ("ordinary PHPStan level", PHPSTAN_FORBIDDEN_CONFIG_PATTERN, "parameters:\n    level: 10", False),
+)
+for label, pattern, sample, expected_match in SECURITY_GUARD_PATTERN_TESTS:
+    if (pattern.search(sample) is not None) != expected_match:
+        errors.append(f"security guard self-test failed: {label}")
+
 
 def tracked_paths() -> list[pathlib.Path]:
     raw = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT)
@@ -101,18 +124,10 @@ for path in paths:
         content = path.read_text(encoding="utf-8")
     except (UnicodeError, OSError):
         continue
-    patterns = (
-        r"@phpstan-ignore\\s+all\\b",
-        r"@psalm-suppress\\s+all\\b",
-        r"@psalm-suppress\\s+Mixed\\w*\\b",
-        r"@phpstan-ignore-next-line\\b",
-        r"@phpstan-ignore-line\\b",
-        r"@psalm-suppress\\b",
-    )
-    for pattern in patterns:
-        for match in re.finditer(pattern, content, flags=re.IGNORECASE):
-            line = content.count("\\n", 0, match.start()) + 1
-            errors.append(f"{relative}:{line}: lokale Analyse-Unterdrückung ist nicht zulässig")
+    for label, pattern in LOCAL_SUPPRESSION_PATTERNS:
+        for match in pattern.finditer(content):
+            line = content.count("\n", 0, match.start()) + 1
+            errors.append(f"{relative}:{line}: lokale Analyse-Unterdrückung ist nicht zulässig ({label})")
 
 phpstan_path = ROOT / "phpstan.neon.dist"
 if not phpstan_path.is_file():
@@ -123,9 +138,9 @@ else:
         errors.append("phpstan.neon.dist: PHPStan muss fest auf Stufe 10 stehen")
     if "phpstan-strict-rules/rules.neon" not in phpstan:
         errors.append("phpstan.neon.dist: phpstan-strict-rules muss aktiviert sein")
-    if re.search(r"(?m)^\\s*(ignoreErrors|excludePaths|universalObjectCratesClasses|scanDirectories)\\s*:", phpstan):
+    if PHPSTAN_FORBIDDEN_CONFIG_PATTERN.search(phpstan):
         errors.append("phpstan.neon.dist: pauschale Ignorier- oder Ausschlussregeln sind verboten")
-    if re.search(r"(?im)^\\s*-\\s*[^#\\n]*baseline[^#\\n]*$", phpstan):
+    if PHPSTAN_BASELINE_REFERENCE_PATTERN.search(phpstan):
         errors.append("phpstan.neon.dist: Baseline-Einbindung ist verboten")
 
 psalm_path = ROOT / "psalm.xml"
