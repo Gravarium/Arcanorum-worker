@@ -86,6 +86,17 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Exakten Compose-PR-HEAD prüfen
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          actual_sha="$(git rev-parse HEAD)"
+          if [ "$actual_sha" != "$EXPECTED_SHA" ]; then
+            echo "::error::Compose-Checkout weicht vom erwarteten PR-HEAD-SHA ab."
+            exit 1
+          fi
+
       - name: Docker Compose verfügbar prüfen
         shell: bash
         run: docker compose version
