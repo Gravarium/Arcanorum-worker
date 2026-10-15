@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "status": "idle",
+  "status": "claimed",
   "task_id": "AW-002",
-  "worker_id": null,
-  "run_id": null,
+  "worker_id": "walker-A-00",
+  "run_id": "walker-A-00-20261015T185450476Z-mojiffgntc",
   "task_branch": "aw-002/postgres18-redis8-compose-walker-b15",
   "pull_request": 8,
-  "claimed_at": null,
-  "heartbeat_at": null,
+  "claimed_at": "2026-10-15T18:54:50.476Z",
+  "heartbeat_at": "2026-10-15T18:54:50.476Z",
   "last_progress_at": "2026-10-14T02:01:39.368Z",
   "last_progress_sha": "63f6db9f817d2fae9bc878457a3f0527434d524a",
-  "last_test_status": "AW-002 exact PR HEAD 63f6db9f817d2fae9bc878457a3f0527434d524a: CI 38498862033 repository and Compose success, PHP job skipped (not passed). Separate integration audit PR #10 SHA 3d3eebe75a5a5817d645985c5453d1a8a60bcc98: CI 38583134073 all four mandatory jobs success incl PHP and security gate; this does not replace AW-002 PR-HEAD evidence.",
-  "blocker": "PR #8 awaits owner review/integration; PHP job skipped on AW-002 PR HEAD. No further AW-002-only code changes justified by current acceptance criteria; separate integration PR #10 has complete passing tests."
+  "last_test_status": "Existing AW-002 checks passed on prior SHA; adding explicit exact-PR-HEAD assertion in permitted Compose job. New CI pending after change.",
+  "blocker": null
 }
