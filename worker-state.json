@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "status": "idle",
+  "status": "claimed",
   "task_id": "AW-001",
-  "worker_id": null,
-  "run_id": null,
+  "worker_id": "walker-A-15",
+  "run_id": "walker-A-15-20261015T221647638Z-dty86hnq",
   "task_branch": "aw-001/symfony-foundation-a00",
   "pull_request": "https://github.com/Gravarium/Arcanorum-worker/pull/5",
-  "claimed_at": null,
-  "heartbeat_at": null,
+  "claimed_at": "2026-10-15T22:17:09.711Z",
+  "heartbeat_at": "2026-10-15T22:17:09.711Z",
   "last_progress_at": "2026-10-15T20:27:03.667Z",
   "last_progress_sha": "a0867f45c744789a621e665390fb61401c4ab41e",
   "last_test_status": "PR #5 HEAD a0867f45c744789a621e665390fb61401c4ab41e: Actions run 38801747677 success; both jobs and all required steps passed, no skipped steps; reports artifact walker-testberichte-a0867f45c744789a621e665390fb61401c4ab41e uploaded.",
-  "blocker": "PR #5 is open as Draft and awaits owner review/integration. No merge or deployment."
+  "blocker": "PR #5 mergeable=false due to diverged docs/WORK-PLAN.md; resolve only within AW-001 task branch, preserve main's current owner plan; recheck CI for new HEAD. No merge/deploy."
 }
