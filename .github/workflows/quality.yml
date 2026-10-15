@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - main
+      - 'aw-*/**'
+      - 'security/full-code-audit-*'
   workflow_dispatch:
 
 permissions:
@@ -29,6 +31,18 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Exakten PR-HEAD-SHA pruefen
+        shell: bash
+        env:
+          REQUIRED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          actual_sha="$(git rev-parse HEAD)"
+          if [ "$actual_sha" != "$REQUIRED_SHA" ]; then
+            echo "::error::Checkout-Commit stimmt nicht mit dem geforderten PR-HEAD-SHA ueberein."
+            exit 1
+          fi
 
       - name: PHP 8.5 für Konfigurationsprüfungen bereitstellen
         uses: shivammathur/setup-php@248e3ca37a3e439628c6c2b0c88808bd9632af5e # PHP 8.5
@@ -72,10 +86,31 @@ jobs:
             echo "::notice::Noch kein PHP-Anwendungsgrundgerüst vorhanden. Anwendungstests werden aktiviert, sobald composer.json hinzukommt."
           fi
 
+  compose:
+    name: Lokale PostgreSQL-18- und Redis-8-Compose-Prüfung
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Exakten Pull-Request-HEAD auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Exakten Commit prüfen
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - name: Docker Compose verfügbar prüfen
+        run: docker compose version
+      - name: PostgreSQL 18 und Redis 8 mit Compose prüfen
+        run: bash scripts/ci/check_compose.sh
+
   php_quality:
     name: PHP 8.5, Symfony, PostgreSQL 18 und Redis 8
     needs: repository
-    if: ${{ needs.repository.outputs.php_project == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 50
     permissions:
@@ -115,6 +150,18 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Exakten PR-HEAD-SHA pruefen
+        shell: bash
+        env:
+          REQUIRED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          actual_sha="$(git rev-parse HEAD)"
+          if [ "$actual_sha" != "$REQUIRED_SHA" ]; then
+            echo "::error::Checkout-Commit stimmt nicht mit dem geforderten PR-HEAD-SHA ueberein."
+            exit 1
+          fi
 
       - name: Pflichtdateien und echte Testsuite prüfen
         shell: bash
@@ -230,14 +277,44 @@ jobs:
           mkdir -p var/test-results
           vendor/bin/phpunit --configuration=phpunit.dist.xml --debug --fail-on-risky --fail-on-warning --log-junit=var/test-results/junit.xml --coverage-text --coverage-clover=var/test-results/coverage.xml
 
+      - name: Pflichtberichte auf Vollständigkeit prüfen
+        if: always()
+        shell: bash
+        run: |
+          for report in var/test-results/junit.xml var/test-results/coverage.xml var/test-results/psalm.sarif; do
+            if [ ! -s "$report" ]; then
+              echo "::error file=$report::Pflichtbericht fehlt oder ist leer."
+              exit 1
+            fi
+          done
+
       - name: JUnit-, Coverage- und Psalm-Berichte sichern
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: walker-testberichte-${{ github.sha }}
+          name: walker-testberichte-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
             var/test-results/junit.xml
             var/test-results/coverage.xml
             var/test-results/psalm.sarif
-          if-no-files-found: ignore
+          if-no-files-found: error
           retention-days: 7
+
+  security_gate:
+    name: Verbindliche Sicherheitsfreigabe
+    if: always()
+    needs: [repository, compose, php_quality]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Alle Pflichtjobs müssen erfolgreich sein
+        env:
+          REPOSITORY_RESULT: ${{ needs.repository.result }}
+          COMPOSE_RESULT: ${{ needs.compose.result }}
+          PHP_RESULT: ${{ needs.php_quality.result }}
+        run: |
+          if [ "$REPOSITORY_RESULT" != success ] || [ "$COMPOSE_RESULT" != success ] || [ "$PHP_RESULT" != success ]; then
+            echo "::error::Pflichtjob fehlgeschlagen, abgebrochen oder übersprungen: Repository=$REPOSITORY_RESULT Compose=$COMPOSE_RESULT PHP=$PHP_RESULT"
+            exit 1
+          fi
