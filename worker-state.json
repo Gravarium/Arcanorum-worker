@@ -7,9 +7,9 @@
   "task_branch": "aw-001/symfony-foundation-a00",
   "pull_request": "https://github.com/Gravarium/Arcanorum-worker/pull/5",
   "claimed_at": "2026-10-15T20:20:30.035Z",
-  "heartbeat_at": "2026-10-15T20:25:09.032Z",
-  "last_progress_at": "2026-10-15T20:25:09.032Z",
+  "heartbeat_at": "2026-10-15T20:25:37.563Z",
+  "last_progress_at": "2026-10-15T20:25:37.563Z",
   "last_progress_sha": "a0867f45c744789a621e665390fb61401c4ab41e",
-  "last_test_status": "PR #5 HEAD 6686a9019ddf07116f8f13183ef77c6c098a7372: run 38801448858 passed all jobs and steps; work-plan status commit a0867f45c744789a621e665390fb61401c4ab41e now needs its own exact-HEAD rerun.",
+  "last_test_status": "PR #5 HEAD a0867f45c744789a621e665390fb61401c4ab41e: run 38801747677 exact-HEAD/repository and secrets checks passed; PHP 8.5 job initializing.",
   "blocker": ""
 }
