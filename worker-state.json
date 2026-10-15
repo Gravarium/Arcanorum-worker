@@ -11,5 +11,5 @@
   "last_progress_at": "2026-10-14T09:19:48Z",
   "last_progress_sha": "96969770aa4e77617c6096a6d332896d5f0fe4de",
   "last_test_status": "PR #5 HEAD 96969770aa4e77617c6096a6d332896d5f0fe4de: CI 38541391551 success; both mandatory jobs and all steps passed; test artifact present.",
-  "blocker": "PR #5 awaits owner review. PR description still references older SHA; update blocked by connector."
+  "blocker": "PR #5 awaits owner review/integration. PR description now references exact HEAD 96969770aa4e77617c6096a6d332896d5f0fe4de and verified CI 38541391551; no branch/code changes."
 }
