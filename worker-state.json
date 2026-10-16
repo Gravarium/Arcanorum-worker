@@ -3,13 +3,13 @@
   "status": "claimed",
   "task_id": "AW-001",
   "worker_id": "walker-A-15",
-  "run_id": "walker-A-15-20261016T001355656Z-960huckg",
+  "run_id": "walker-A-15-20261016T061512165Z-t10-7c6a",
   "task_branch": "aw-001/symfony-foundation-a00",
   "pull_request": "https://github.com/Gravarium/Arcanorum-worker/pull/5",
-  "claimed_at": "2026-10-16T00:14:30.709Z",
-  "heartbeat_at": "2026-10-16T00:14:30.709Z",
+  "claimed_at": "2026-10-16T06:15:19.252Z",
+  "heartbeat_at": "2026-10-16T06:15:19.252Z",
   "last_progress_at": "2026-10-15T20:27:03.667Z",
   "last_progress_sha": "a0867f45c744789a621e665390fb61401c4ab41e",
   "last_test_status": "PR #5 HEAD a0867f45c744789a621e665390fb61401c4ab41e: Actions run 38801747677 success; both jobs and all required steps passed, no skipped steps; reports artifact walker-testberichte-a0867f45c744789a621e665390fb61401c4ab41e uploaded.",
-  "blocker": "AW-001 PR #5 conflict in docs/WORK-PLAN.md; existing full CI passed on prior HEAD. Verifying safe branch-only conflict resolution; no main change or merge."
+  "blocker": "AW-001 PR #5 merge conflict in docs/WORK-PLAN.md. Prior claim stale >15 minutes; PR #5 and known CI run checked, no active known jobs. Taking over to resolve conflict on task branch only; no main change or merge."
 }
