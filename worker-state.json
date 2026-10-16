@@ -3,13 +3,13 @@
   "status": "claimed",
   "task_id": "AW-001",
   "worker_id": "walker-A-15",
-  "run_id": "walker-A-15-20261016T061512165Z-t10-7c6a",
+  "run_id": "walker-A-15-20261016T131927Z-10-6f4a",
   "task_branch": "aw-001/symfony-foundation-a00",
   "pull_request": "https://github.com/Gravarium/Arcanorum-worker/pull/5",
-  "claimed_at": "2026-10-16T06:15:19.252Z",
-  "heartbeat_at": "2026-10-16T06:15:40.969Z",
+  "claimed_at": "2026-10-16T13:19:27Z",
+  "heartbeat_at": "2026-10-16T13:19:27Z",
   "last_progress_at": "2026-10-16T06:15:30Z",
   "last_progress_sha": "22fd208b75e3cb279f206fe175e6770f3a7c9c88",
-  "last_test_status": "Prior HEAD a0867f45c744789a621e665390fb61401c4ab41e passed Actions run 38801747677. New HEAD 22fd208b75e3cb279f206fe175e6770f3a7c9c88 fixes docs/WORK-PLAN.md conflict; mandatory CI for new SHA not yet verified.",
-  "blocker": "Merge conflict resolved on AW-001 branch; PR #5 mergeable=true. Awaiting exact new HEAD mandatory CI, not yet counted as passed."
+  "last_test_status": "PR #5 HEAD 22fd208b75e3cb279f206fe175e6770f3a7c9c88: Actions 38860194229 completed success; repository and PHP application jobs, all mandatory steps passed; no skipped steps. PR mergeable=true.",
+  "blocker": "PR #5 body references superseded SHA a0867f45...; update evidence to current verified SHA, then release lock. No code changes required."
 }
