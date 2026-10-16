@@ -16,7 +16,7 @@ Jeder Auftrag braucht eine eindeutige ID, ein Ziel, Abnahmekriterien, Abhängigk
 
 ### AW-001 — Technisches PHP-/Symfony-Grundgerüst
 
-**Status:** PR offen
+**Status:** in Bearbeitung
 **Koordination:** `worker-control/worker-state.json`, PR #5
 **Abhängigkeiten:** keine
 
