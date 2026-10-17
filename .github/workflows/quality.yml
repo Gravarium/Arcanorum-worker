@@ -56,6 +56,10 @@ jobs:
           php -l rector.php
           ruby -e 'require "yaml"; YAML.load_file(".github/workflows/quality.yml", aliases: true)'
 
+      - name: Unveränderliche CI-Pflichtchecks mit Negativtests absichern
+        shell: bash
+        run: ruby scripts/ci/assert_mandatory_quality_gate.rb
+
       - name: Änderungen und Repository-Inhalt prüfen
         shell: bash
         env:
@@ -68,7 +72,10 @@ jobs:
           else
             git diff --check
           fi
-          python3 scripts/ci/check_repository.py
+
+      - name: Repository- und Geheimnisprüfung ausführen
+        shell: bash
+        run: python3 scripts/ci/check_repository.py
 
       - name: PHP-Projektumfang erkennen
         id: detect
@@ -104,8 +111,10 @@ jobs:
           EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
       - name: Docker Compose verfügbar prüfen
+        shell: bash
         run: docker compose version
       - name: PostgreSQL 18 und Redis 8 mit Compose prüfen
+        shell: bash
         run: bash scripts/ci/check_compose.sh
 
   php_quality:
@@ -194,12 +203,17 @@ jobs:
           tools: composer:v2
           ini-values: memory_limit=1G
 
-      - name: Composer-Manifest, Sperrdatei und Sicherheitsbericht prüfen
+      - name: Composer-Manifest validieren
         shell: bash
-        run: |
-          composer validate --strict --no-interaction
-          composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader
-          composer audit --locked --no-interaction
+        run: composer validate --strict --no-interaction
+
+      - name: Composer-Abhängigkeiten installieren
+        shell: bash
+        run: composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader
+
+      - name: Composer-Sicherheitsbericht prüfen
+        shell: bash
+        run: composer audit --locked --no-interaction
 
       - name: PHP-Syntax jeder versionierten PHP-Datei prüfen
         shell: bash
@@ -250,12 +264,7 @@ jobs:
 
       - name: PHPStan Stufe 10 mit Strict Rules
         shell: bash
-        run: |
-          if [ ! -x vendor/bin/phpstan ]; then
-            echo "::error file=composer.json::phpstan/phpstan fehlt in den Entwicklungsabhängigkeiten."
-            exit 1
-          fi
-          vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --no-progress --error-format=github --memory-limit=1G
+        run: vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --no-progress --error-format=github --memory-limit=1G
 
       - name: PHP-CS-Fixer Stilprüfung mit Diff
         shell: bash
@@ -265,17 +274,17 @@ jobs:
         shell: bash
         run: vendor/bin/rector process --config=rector.php --dry-run --no-progress-bar --output-format=github
 
+      - name: Berichtsverzeichnis vorbereiten
+        shell: bash
+        run: mkdir -p var/test-results
+
       - name: Psalm Typ- und Taint-Analyse mit SARIF-Bericht
         shell: bash
-        run: |
-          mkdir -p var/test-results
-          vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm.sarif
+        run: vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm.sarif
 
       - name: PHPUnit mit Fehlerdetails und Coverage ausführen
         shell: bash
-        run: |
-          mkdir -p var/test-results
-          vendor/bin/phpunit --configuration=phpunit.dist.xml --debug --fail-on-risky --fail-on-warning --log-junit=var/test-results/junit.xml --coverage-text --coverage-clover=var/test-results/coverage.xml
+        run: vendor/bin/phpunit --configuration=phpunit.dist.xml --debug --fail-on-risky --fail-on-warning --log-junit=var/test-results/junit.xml --coverage-text --coverage-clover=var/test-results/coverage.xml
 
       - name: Pflichtberichte auf Vollständigkeit prüfen
         if: always()
@@ -309,6 +318,7 @@ jobs:
       contents: read
     steps:
       - name: Alle Pflichtjobs müssen erfolgreich sein
+        shell: bash
         env:
           REPOSITORY_RESULT: ${{ needs.repository.result }}
           COMPOSE_RESULT: ${{ needs.compose.result }}
