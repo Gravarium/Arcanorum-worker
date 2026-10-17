@@ -16,8 +16,9 @@ Jeder Auftrag braucht eine eindeutige ID, ein Ziel, Abnahmekriterien, Abhängigk
 
 ### AW-001 — Technisches PHP-/Symfony-Grundgerüst
 
-**Status:** in Bearbeitung
+**Status:** PR offen
 **Koordination:** `worker-control/worker-state.json`, PR #5
+**Prüfstand:** Branch `aw-001/symfony-foundation-a00`, HEAD `645eb88505ead0874b1c1740831f6be7793a24f5`; gegenüber `main` (`5e55acae49ca2ecaf8bc71138b401fab43a8ac6a)) 14 Commits voraus, 0 dahinter. GitHub Actions Lauf [39049173317](https://github.com/Gravarium/Arcanorum-worker/actions/runs/39049173317) auf exakt diesem SHA erfolgreich; alle Pflichtschritte bestanden, keine übersprungen. Berichte: `walker-testberichte-645eb88505ead0874b1c1740831f6be7793a24f5` (bis 24. Oktober 2026).
 **Abhängigkeiten:** keine
 
 **Ziel:** Das leere Repository in eine startbare, testbare Basis für die folgenden Eigentümeraufträge überführen.
