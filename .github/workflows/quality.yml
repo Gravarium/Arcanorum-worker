@@ -56,6 +56,10 @@ jobs:
           php -l rector.php
           ruby -e 'require "yaml"; YAML.load_file(".github/workflows/quality.yml", aliases: true)'
 
+      - name: Unveränderliche CI-Pflichtchecks mit Negativtests absichern
+        shell: bash
+        run: ruby scripts/ci/assert_mandatory_quality_gate.rb
+
       - name: Änderungen und Repository-Inhalt prüfen
         shell: bash
         env:
