@@ -7,9 +7,9 @@
   "task_branch": "aw-002/postgres18-redis8-compose-walker-b15",
   "pull_request": 8,
   "claimed_at": "2026-10-17T06:59:51.655Z",
-  "heartbeat_at": "2026-10-17T06:59:51.655Z",
-  "last_progress_at": "2026-10-17T06:18:46.553Z",
-  "last_progress_sha": "777ae02553fef7f81038e4a2128c8384fd73f462",
-  "last_test_status": "AW-002 PR #8 HEAD 777ae02553fef7f81038e4a2128c8384fd73f462, CI 39009135679: repository+Compose success, PHP failure due to missing composer.json, security gate failure as required (no false-success). Positive integrated PR #12 HEAD 9f2f720300fe9cb5c8882ff9991b2876f1ac3ffc, CI 39009253885 push and 39009276023 PR: all 4 mandatory jobs success, no skipped mandatory steps. Security guard 4 mutation negative tests; artifact walker-testberichte-9f2f720300fe9cb5c8882ff9991b2876f1ac3ffc verified.",
-  "blocker": "AW-002 owner-approved service validation improvement: add real PostgreSQL temporary-table round-trip and Redis cache write/read/expiry verification; mandatory fail-closed PHP CI unchanged."
+  "heartbeat_at": "2026-10-17T07:02:03.933Z",
+  "last_progress_at": "2026-10-17T07:02:03.933Z",
+  "last_progress_sha": "a1c95363f20d648c12f87873db2d40db958b9201",
+  "last_test_status": "AW-002 exact HEAD a1c95363f20d648c12f87873db2d40db958b9201 Actions 39012074919 in_progress. Integrated PR #12 HEAD 5805aba5a442f7c56474cc7044b429823b226db8 Actions 39012103636 PR + 39012101353 push pending; none counted passed.",
+  "blocker": "Await exact-SHA execution of new PostgreSQL write/read and Redis TTL expiry tests, plus all integrated mandatory CI jobs."
 }
