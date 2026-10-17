@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "status": "claimed",
+  "status": "idle",
   "task_id": "AW-002",
-  "worker_id": "walker-A-00",
-  "run_id": "walker-A-00-20261017T151413Z-aw002-pmb7k7",
+  "worker_id": null,
+  "run_id": null,
   "task_branch": "aw-002/integration-loopback-guard-20261017",
   "pull_request": 12,
-  "claimed_at": "2026-10-17T15:14:13.632Z",
-  "heartbeat_at": "2026-10-17T15:15:49.922Z",
-  "last_progress_at": "2026-10-17T15:15:49.922Z",
+  "claimed_at": null,
+  "heartbeat_at": null,
+  "last_progress_at": "2026-10-17T15:17:41.533Z",
   "last_progress_sha": "85ed4ed13fb9feb670dbb3b93d2f91a1164479b8",
-  "last_test_status": "Integrated branch history updated at exact HEAD 85ed4ed13fb9feb670dbb3b93d2f91a1164479b8 with both PR #12 and PR #11 as parents; Git tree matches the previously tested PR #12 tree. Waiting for the full mandatory CI run on this exact SHA.",
-  "blocker": "Mandatory CI and the security gate for exact HEAD 85ed4ed13fb9feb670dbb3b93d2f91a1164479b8 are pending; no PR merge or deployment."
+  "last_test_status": "AW-002 integrated PR #12 exact HEAD 85ed4ed13fb9feb670dbb3b93d2f91a1164479b8; PR CI 39044259928 completed success: 4/4 required jobs, all steps success with none skipped; artifact walker-testberichte-85ed4ed13fb9feb670dbb3b93d2f91a1164479b8 verified. Branch is based on current PR #11 HEAD d389a4957dc53150783851b36bf0b4207bb87e48 (8 ahead, 0 behind).",
+  "blocker": "PR #12 remains open as draft for project-owner review and integration. Final integration and branch-protection configuration remain owner-controlled. No merge or deployment."
 }
