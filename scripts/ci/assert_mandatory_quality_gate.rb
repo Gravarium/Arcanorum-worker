@@ -13,26 +13,34 @@ RESULT_VARIABLES = {
 }.freeze
 PHP_COMMAND_GROUPS = {
   'Composer validation, install, and audit' => [
-    'composer validate',
-    'composer install',
-    'composer audit'
+    'composer validate --strict --no-interaction',
+    'composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader',
+    'composer audit --locked --no-interaction'
   ],
-  'PHPStan level 10' => ['vendor/bin/phpstan analyse', '--configuration=phpstan.neon.dist'],
-  'PHP-CS-Fixer check' => ['vendor/bin/php-cs-fixer check', '--config=.php-cs-fixer.dist.php'],
-  'Rector dry run' => ['vendor/bin/rector process', '--dry-run'],
+  'PHPStan level 10' => [
+    'vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --no-progress --error-format=github --memory-limit=1G'
+  ],
+  'PHP-CS-Fixer check' => [
+    'vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --diff --using-cache=no'
+  ],
+  'Rector dry run' => [
+    'vendor/bin/rector process --config=rector.php --dry-run --no-progress-bar --output-format=github'
+  ],
   'Psalm taint analysis and report' => [
-    'vendor/bin/psalm',
-    '--taint-analysis',
-    '--report=var/test-results/psalm.sarif'
+    'vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm.sarif'
   ],
   'PHPUnit with reports and strict failure flags' => [
-    'vendor/bin/phpunit',
-    '--fail-on-risky',
-    '--fail-on-warning',
-    '--log-junit=var/test-results/junit.xml',
-    '--coverage-clover=var/test-results/coverage.xml'
+    'vendor/bin/phpunit --configuration=phpunit.dist.xml --debug --fail-on-risky --fail-on-warning --log-junit=var/test-results/junit.xml --coverage-text --coverage-clover=var/test-results/coverage.xml'
   ]
 }.freeze
+REPOSITORY_COMMANDS = [
+  ['ruby scripts/ci/assert_mandatory_quality_gate.rb'],
+  ['python3 scripts/ci/check_repository.py']
+].freeze
+COMPOSE_COMMANDS = [
+  ['docker compose version'],
+  ['bash scripts/ci/check_compose.sh']
+].freeze
 
 def continue_on_error?(item)
   value = item['continue-on-error']
@@ -62,13 +70,49 @@ def mandatory_step?(step)
   step.is_a?(Hash) && !step.key?('if') && !continue_on_error?(step)
 end
 
-def contains_mandatory_run_step?(steps, markers)
+def shell_command_at_top_level?(run, command)
+  return false if run.match?(/^\s*set\s+(?:\+e|\+o\s+errexit)\b/)
+
+  depth = { if: 0, loop: 0, case: 0, function: 0, group: 0 }
+  run.lines.each do |raw_line|
+    line = raw_line.sub(/\s+#.*\z/, '').strip
+    next if line.empty?
+
+    if line == command
+      return depth.values.all?(&:zero?)
+    end
+
+    depth[:if] += 1 if line.match?(/\Aif\b/)
+    depth[:if] -= 1 if line.match?(/\Afi\b/)
+    depth[:loop] += 1 if line.match?(/\A(?:for|while|until|select)\b/)
+    depth[:loop] -= 1 if line.match?(/\Adone\b/)
+    depth[:case] += 1 if line.match?(/\Acase\b/)
+    depth[:case] -= 1 if line.match?(/\Aesac\b/)
+    depth[:function] += 1 if line.match?(/\Afunction\b|\A[A-Za-z_][A-Za-z0-9_]*\s*\(\)\s*\{/)
+    depth[:function] -= 1 if line.match?(/\A\}/)
+    depth[:group] += 1 if line.match?(/\A\(/)
+    depth[:group] -= 1 if line.match?(/\A\)/)
+  end
+
+  false
+end
+
+def contains_mandatory_run_step?(steps, commands)
   steps.any? do |step|
     next false unless mandatory_step?(step)
 
-    run = step['run'].to_s
-    markers.all? { |marker| run.include?(marker) }
+    commands.all? { |command| shell_command_at_top_level?(step['run'].to_s, command) }
   end
+end
+
+def gate_script_fails_closed?(run)
+  lines = run.lines.map(&:strip).reject(&:empty?)
+  condition = RESULT_VARIABLES.values.map { |variable| %([ "$#{variable}" != success ]) }.join(' || ')
+  lines.length == 4 &&
+    lines[0] == "if #{condition}; then" &&
+    lines[1].match?(/\Aecho\s+/) &&
+    lines[2] == 'exit 1' &&
+    lines[3] == 'fi'
 end
 
 def security_errors(config)
@@ -138,19 +182,19 @@ def security_errors(config)
 
   repository_steps = jobs['repository'].is_a?(Hash) && jobs['repository']['steps'].is_a?(Array) ?
     jobs['repository']['steps'] : []
-  unless contains_mandatory_run_step?(repository_steps, ['ruby scripts/ci/assert_mandatory_quality_gate.rb'])
+  unless contains_mandatory_run_step?(repository_steps, REPOSITORY_COMMANDS[0])
     errors << 'repository: mandatory CI security guard is missing or can be skipped'
   end
-  unless contains_mandatory_run_step?(repository_steps, ['python3 scripts/ci/check_repository.py'])
+  unless contains_mandatory_run_step?(repository_steps, REPOSITORY_COMMANDS[1])
     errors << 'repository: mandatory repository safety check is missing or can be skipped'
   end
 
   compose_steps = jobs['compose'].is_a?(Hash) && jobs['compose']['steps'].is_a?(Array) ?
     jobs['compose']['steps'] : []
-  unless contains_mandatory_run_step?(compose_steps, ['docker compose version'])
+  unless contains_mandatory_run_step?(compose_steps, COMPOSE_COMMANDS[0])
     errors << 'compose: Docker Compose availability check is missing or can be skipped'
   end
-  unless contains_mandatory_run_step?(compose_steps, ['bash scripts/ci/check_compose.sh'])
+  unless contains_mandatory_run_step?(compose_steps, COMPOSE_COMMANDS[1])
     errors << 'compose: PostgreSQL/Redis integration check is missing or can be skipped'
   end
 
@@ -187,9 +231,8 @@ def security_errors(config)
       env = step['env'].is_a?(Hash) ? step['env'] : {}
       run = step['run'].to_s
       RESULT_VARIABLES.all? do |name, variable|
-        env[variable].to_s.include?("needs.#{name}.result") &&
-          run.match?(/\[\s*"\$#{Regexp.escape(variable)}"\s*!=\s*success\s*\]/)
-      end && run.match?(/\bexit\s+1\b/)
+        env[variable].to_s.include?("needs.#{name}.result")
+      end && gate_script_fails_closed?(run)
     end
     errors << 'security_gate: no fail-closed result check for every mandatory job' unless valid_gate
   end
@@ -251,6 +294,19 @@ def check_mutations!(config)
     'allow PHPStan errors' => lambda do |c|
       step = c['jobs']['php_quality']['steps'].find { |s| s.is_a?(Hash) && s['run'].to_s.include?('vendor/bin/phpstan analyse') }
       step['continue-on-error'] = true
+    end,
+    'skip PHPStan inside a shell condition' => lambda do |c|
+      step = c['jobs']['php_quality']['steps'].find { |s| s.is_a?(Hash) && s['run'].to_s.include?('vendor/bin/phpstan analyse') }
+      command = step['run'].lines.find { |line| line.strip.start_with?('vendor/bin/phpstan analyse') }.strip
+      step['run'] = "if false; then\n  #{command}\nfi"
+    end,
+    'ignore PHPStan command failure' => lambda do |c|
+      step = c['jobs']['php_quality']['steps'].find { |s| s.is_a?(Hash) && s['run'].to_s.include?('vendor/bin/phpstan analyse') }
+      step['run'] = step['run'].sub(/vendor\/bin\/phpstan analyse[^\n]*/) { |command| "#{command} || true" }
+    end,
+    'wrap security gate in a shell condition' => lambda do |c|
+      step = c['jobs']['security_gate']['steps'][0]
+      step['run'] = "if false; then\n#{step['run']}\nfi"
     end
   }
 
