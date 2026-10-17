@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "status": "claimed",
+  "status": "idle",
   "task_id": "AW-002",
-  "worker_id": "walker-A-30",
-  "run_id": "walker-A-30-20261017T065951655Z-aw002-roundtrip-uipk08i",
+  "worker_id": null,
+  "run_id": null,
   "task_branch": "aw-002/postgres18-redis8-compose-walker-b15",
   "pull_request": 8,
-  "claimed_at": "2026-10-17T06:59:51.655Z",
-  "heartbeat_at": "2026-10-17T07:02:03.933Z",
-  "last_progress_at": "2026-10-17T07:02:03.933Z",
+  "claimed_at": null,
+  "heartbeat_at": null,
+  "last_progress_at": "2026-10-17T07:04:48.678Z",
   "last_progress_sha": "a1c95363f20d648c12f87873db2d40db958b9201",
-  "last_test_status": "AW-002 exact HEAD a1c95363f20d648c12f87873db2d40db958b9201 Actions 39012074919 in_progress. Integrated PR #12 HEAD 5805aba5a442f7c56474cc7044b429823b226db8 Actions 39012103636 PR + 39012101353 push pending; none counted passed.",
-  "blocker": "Await exact-SHA execution of new PostgreSQL write/read and Redis TTL expiry tests, plus all integrated mandatory CI jobs."
+  "last_test_status": "AW-002 PR #8 HEAD a1c95363f20d648c12f87873db2d40db958b9201, CI 39012074919: Repository+Compose+PostgreSQL temp-table roundtrip+Redis SET/GET/TTL success; PHP failure (missing composer.json) and fail-closed security gate failure (expected). Integrated PR #12 HEAD 5805aba5a442f7c56474cc7044b429823b226db8: push CI 39012101353 and PR CI 39012103636 complete success: 4/4 jobs, no skipped mandatory steps, artifact walker-testberichte-5805aba5a442f7c56474cc7044b429823b226db8 verified.",
+  "blocker": "Isolated AW-002 PR remains unapproved due to intentionally failing PHP security gate; green complete integrated proof is on separate PR #12. Owner integration and admin-required branch protection still outstanding. No merge/deploy."
 }
