@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "status": "idle",
+  "status": "claimed",
   "task_id": "AW-002",
-  "worker_id": null,
-  "run_id": null,
+  "worker_id": "walker-A-30",
+  "run_id": "walker-A-30-20261017T061205104Z-compose-port-guard-9mh4te",
   "task_branch": "aw-002/postgres18-redis8-compose-walker-b15",
   "pull_request": 8,
-  "claimed_at": null,
-  "heartbeat_at": null,
+  "claimed_at": "2026-10-17T06:12:05.467Z",
+  "heartbeat_at": "2026-10-17T06:12:05.467Z",
   "last_progress_at": "2026-10-17T05:12:03.638Z",
   "last_progress_sha": "ba8f96da63e0192c1becbbde5996f92a8c6923c8",
   "last_test_status": "PR #8 HEAD ba8f96da63e0192c1becbbde5996f92a8c6923c8, Actions 39005286186 completed FAILURE as required: repository and PostgreSQL/Redis Compose success; PHP quality failure due to missing composer.json; security_gate failure. No mandatory job silently skipped. Positive separate integration PR #10 HEAD 23dede64f1c717ed14d04a49aa86acfb8d5fa479 CI 38805754434 all four jobs success.",
-  "blocker": "SECURITY REVIEW HOLD: PR #8 CI deliberately red until AW-001 PHP framework and AW-002 Compose integrated at one exact SHA with all jobs successful. Branch protection required-check settings need repository admin/owner; current connection cannot inspect or modify admin protection (403). No merge/deploy."
+  "blocker": "Owner /Goal: harden AW-002 Compose binding checks against accidental public exposure; existing isolated PHP CI must remain fail-closed, no relaxation."
 }
