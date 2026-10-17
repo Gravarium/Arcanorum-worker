@@ -70,38 +70,15 @@ def mandatory_step?(step)
   step.is_a?(Hash) && !step.key?('if') && !continue_on_error?(step)
 end
 
-def shell_command_at_top_level?(run, command)
-  return false if run.match?(/^\s*set\s+(?:\+e|\+o\s+errexit)\b/)
-
-  depth = { if: 0, loop: 0, case: 0, function: 0, group: 0 }
-  run.lines.each do |raw_line|
-    line = raw_line.sub(/\s+#.*\z/, '').strip
-    next if line.empty?
-
-    if line == command
-      return depth.values.all?(&:zero?)
-    end
-
-    depth[:if] += 1 if line.match?(/\Aif\b/)
-    depth[:if] -= 1 if line.match?(/\Afi\b/)
-    depth[:loop] += 1 if line.match?(/\A(?:for|while|until|select)\b/)
-    depth[:loop] -= 1 if line.match?(/\Adone\b/)
-    depth[:case] += 1 if line.match?(/\Acase\b/)
-    depth[:case] -= 1 if line.match?(/\Aesac\b/)
-    depth[:function] += 1 if line.match?(/\Afunction\b|\A[A-Za-z_][A-Za-z0-9_]*\s*\(\)\s*\{/)
-    depth[:function] -= 1 if line.match?(/\A\}/)
-    depth[:group] += 1 if line.match?(/\A\(/)
-    depth[:group] -= 1 if line.match?(/\A\)/)
-  end
-
-  false
+def mandatory_run_step?(step)
+  mandatory_step?(step) && step['shell'].to_s == 'bash'
 end
 
 def contains_mandatory_run_step?(steps, commands)
-  steps.any? do |step|
-    next false unless mandatory_step?(step)
-
-    commands.all? { |command| shell_command_at_top_level?(step['run'].to_s, command) }
+  commands.all? do |command|
+    steps.any? do |step|
+      mandatory_run_step?(step) && step['run'].to_s.strip == command
+    end
   end
 end
 
@@ -148,6 +125,7 @@ def security_errors(config)
 
       allowed_report_step = name == 'php_quality' &&
         step['if'].to_s.strip == 'always()' &&
+        step['shell'].to_s == 'bash' &&
         (report_assertion_step?(step) || report_upload_step?(step))
       errors << "#{name}: conditional step can skip or weaken a required check" unless allowed_report_step
     end
@@ -226,12 +204,12 @@ def security_errors(config)
     errors << 'security_gate: must require all three jobs' unless (REQUIRED_JOBS - needs).empty?
     steps = gate['steps'].is_a?(Array) ? gate['steps'] : []
     valid_gate = steps.any? do |step|
-      next false unless mandatory_step?(step)
+      next false unless mandatory_run_step?(step)
 
       env = step['env'].is_a?(Hash) ? step['env'] : {}
       run = step['run'].to_s
       RESULT_VARIABLES.all? do |name, variable|
-        env[variable].to_s.include?("needs.#{name}.result")
+        env[variable].to_s.strip == "${{ needs.#{name}.result }}"
       end && gate_script_fails_closed?(run)
     end
     errors << 'security_gate: no fail-closed result check for every mandatory job' unless valid_gate
@@ -294,6 +272,30 @@ def check_mutations!(config)
     'allow PHPStan errors' => lambda do |c|
       step = c['jobs']['php_quality']['steps'].find { |s| s.is_a?(Hash) && s['run'].to_s.include?('vendor/bin/phpstan analyse') }
       step['continue-on-error'] = true
+    end,
+    'exit before PHPStan' => lambda do |c|
+      step = c['jobs']['php_quality']['steps'].find { |s| s.is_a?(Hash) && s['run'].to_s.include?('vendor/bin/phpstan analyse') }
+      step['run'] = "exit 0\n#{step['run']}"
+    end,
+    'short-circuit PHPStan' => lambda do |c|
+      step = c['jobs']['php_quality']['steps'].find { |s| s.is_a?(Hash) && s['run'].to_s.include?('vendor/bin/phpstan analyse') }
+      step['run'] = "false &&\n#{step['run']}"
+    end,
+    'trap PHPStan failure as success' => lambda do |c|
+      step = c['jobs']['php_quality']['steps'].find { |s| s.is_a?(Hash) && s['run'].to_s.include?('vendor/bin/phpstan analyse') }
+      step['run'] = "trap 'exit 0' ERR\n#{step['run']}"
+    end,
+    'override required shell' => lambda do |c|
+      step = c['jobs']['php_quality']['steps'].find { |s| s.is_a?(Hash) && s['run'].to_s.include?('vendor/bin/phpstan analyse') }
+      step['shell'] = 'sh'
+    end,
+    'map PHP failure to gate success' => lambda do |c|
+      step = c['jobs']['security_gate']['steps'][0]
+      step['env']['PHP_RESULT'] = "${{ needs.php_quality.result == 'failure' && 'success' || needs.php_quality.result }}"
+    end,
+    'weaken report assertion shell' => lambda do |c|
+      step = c['jobs']['php_quality']['steps'].find { |s| s.is_a?(Hash) && report_assertion_step?(s) }
+      step['shell'] = 'sh'
     end,
     'skip PHPStan inside a shell condition' => lambda do |c|
       step = c['jobs']['php_quality']['steps'].find { |s| s.is_a?(Hash) && s['run'].to_s.include?('vendor/bin/phpstan analyse') }
