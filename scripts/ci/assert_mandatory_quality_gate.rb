@@ -125,8 +125,7 @@ def security_errors(config)
 
       allowed_report_step = name == 'php_quality' &&
         step['if'].to_s.strip == 'always()' &&
-        step['shell'].to_s == 'bash' &&
-        (report_assertion_step?(step) || report_upload_step?(step))
+        ((report_assertion_step?(step) && step['shell'].to_s == 'bash') || report_upload_step?(step))
       errors << "#{name}: conditional step can skip or weaken a required check" unless allowed_report_step
     end
 
