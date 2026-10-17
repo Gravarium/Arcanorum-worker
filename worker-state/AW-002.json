@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "status": "idle",
+  "status": "claimed",
   "task_id": "AW-002",
-  "worker_id": null,
-  "run_id": null,
+  "worker_id": "walker-A-30",
+  "run_id": "walker-A-30-20261017T065951655Z-aw002-roundtrip-uipk08i",
   "task_branch": "aw-002/postgres18-redis8-compose-walker-b15",
   "pull_request": 8,
-  "claimed_at": null,
-  "heartbeat_at": null,
+  "claimed_at": "2026-10-17T06:59:51.655Z",
+  "heartbeat_at": "2026-10-17T06:59:51.655Z",
   "last_progress_at": "2026-10-17T06:18:46.553Z",
   "last_progress_sha": "777ae02553fef7f81038e4a2128c8384fd73f462",
   "last_test_status": "AW-002 PR #8 HEAD 777ae02553fef7f81038e4a2128c8384fd73f462, CI 39009135679: repository+Compose success, PHP failure due to missing composer.json, security gate failure as required (no false-success). Positive integrated PR #12 HEAD 9f2f720300fe9cb5c8882ff9991b2876f1ac3ffc, CI 39009253885 push and 39009276023 PR: all 4 mandatory jobs success, no skipped mandatory steps. Security guard 4 mutation negative tests; artifact walker-testberichte-9f2f720300fe9cb5c8882ff9991b2876f1ac3ffc verified.",
-  "blocker": "Isolated AW-002 PR remains fail-closed without AW-001 PHP project; owner integration and required GitHub branch-protection checks still pending. Work plan has no new product features approved; no merge or deploy."
+  "blocker": "AW-002 owner-approved service validation improvement: add real PostgreSQL temporary-table round-trip and Redis cache write/read/expiry verification; mandatory fail-closed PHP CI unchanged."
 }
