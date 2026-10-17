@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "status": "idle",
+  "status": "claimed",
   "task_id": "AW-002",
-  "worker_id": null,
-  "run_id": null,
-  "task_branch": "aw-002/postgres18-redis8-compose-walker-b15",
-  "pull_request": 8,
-  "claimed_at": null,
-  "heartbeat_at": null,
+  "worker_id": "walker-A-00",
+  "run_id": "walker-A-00-20261017T151413Z-aw002-pmb7k7",
+  "task_branch": "aw-002/integration-loopback-guard-20261017",
+  "pull_request": 12,
+  "claimed_at": "2026-10-17T15:14:13.632Z",
+  "heartbeat_at": "2026-10-17T15:14:13.632Z",
   "last_progress_at": "2026-10-17T07:04:48.678Z",
-  "last_progress_sha": "a1c95363f20d648c12f87873db2d40db958b9201",
-  "last_test_status": "AW-002 PR #8 HEAD a1c95363f20d648c12f87873db2d40db958b9201, CI 39012074919: Repository+Compose+PostgreSQL temp-table roundtrip+Redis SET/GET/TTL success; PHP failure (missing composer.json) and fail-closed security gate failure (expected). Integrated PR #12 HEAD 5805aba5a442f7c56474cc7044b429823b226db8: push CI 39012101353 and PR CI 39012103636 complete success: 4/4 jobs, no skipped mandatory steps, artifact walker-testberichte-5805aba5a442f7c56474cc7044b429823b226db8 verified.",
-  "blocker": "Isolated AW-002 PR remains unapproved due to intentionally failing PHP security gate; green complete integrated proof is on separate PR #12. Owner integration and admin-required branch protection still outstanding. No merge/deploy."
+  "last_progress_sha": "57959302bb2e88c85de68b67f7b8320980f674cf",
+  "last_test_status": "Existing PR #12 HEAD 57959302bb2e88c85de68b67f7b8320980f674cf: CI 39028059589 4/4 success, no skipped mandatory jobs; branch is 4 commits behind security PR #11 HEAD d389a4957dc53150783851b36bf0b4207bb87e48. New run is resolving this integration gap before another exact-HEAD CI run.",
+  "blocker": "The isolated AW-002 PR #8 remains intentionally red because the PHP application foundation is outside its scope. This run is updating the separate integrated PR #12; no PR merge or deployment."
 }
