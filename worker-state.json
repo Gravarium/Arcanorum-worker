@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "status": "claimed",
+  "status": "idle",
   "task_id": "AW-001",
-  "worker_id": "walker-A-30",
-  "run_id": "walker-A-30-20261017-20261017T065816236Z-aw001-f9qc7j",
+  "worker_id": null,
+  "run_id": null,
   "task_branch": "aw-001/symfony-foundation-a00",
   "pull_request": "https://github.com/Gravarium/Arcanorum-worker/pull/5",
-  "claimed_at": "2026-10-17T06:58:16.236Z",
-  "heartbeat_at": "2026-10-17T06:58:16.236Z",
-  "last_progress_at": "2026-10-16T06:15:30Z",
+  "claimed_at": null,
+  "heartbeat_at": null,
+  "last_progress_at": "2026-10-17T06:58:45.818Z",
   "last_progress_sha": "22fd208b75e3cb279f206fe175e6770f3a7c9c88",
-  "last_test_status": "PR #5 HEAD 22fd208b75e3cb279f206fe175e6770f3a7c9c88: Actions 38860194229 completed success; repository and PHP application jobs, all mandatory steps passed; no skipped steps. PR mergeable=true.",
-  "blocker": "Stale lock from disabled walker-A-15; previous run stopped and CI complete. Update PR #5 proof to exact verified HEAD, then release lock; no code changes planned."
+  "last_test_status": "AW-001 PR #5 exact HEAD 22fd208b75e3cb279f206fe175e6770f3a7c9c88, CI 38860194229 completed success; 2 jobs Repository/PHP completed success, no skipped steps. JUnit/Coverage/Psalm artifact verified. PR description now cites correct exact SHA and CI, no code change.",
+  "blocker": "PR #5 remains open draft pending owner review and integration into an approved final commit. AW-001 all current scoped mandatory PHP checks passed; no merge or deploy."
 }
