@@ -115,4 +115,43 @@ if [[ ! "$redis_version" =~ ^8\. ]]; then
     exit 1
 fi
 
-printf 'Compose check passed: PostgreSQL 18 and Redis 8 PONG.\n'
+# A service responding to PING or a version query is not enough: perform an
+# actual write/read round-trip in a session-local PostgreSQL temporary table.
+postgres_roundtrip="$("${compose[@]}" exec -T postgres \
+    psql --no-psqlrc --username "$postgres_user" --dbname "$postgres_database" \
+    --set ON_ERROR_STOP=1 --tuples-only --no-align --quiet \
+    --command "CREATE TEMP TABLE walker_ci_probe (token text NOT NULL); INSERT INTO walker_ci_probe (token) VALUES ('aw002-postgres-roundtrip'); SELECT token FROM walker_ci_probe;")"
+if [[ "$postgres_roundtrip" != "aw002-postgres-roundtrip" ]]; then
+    printf 'PostgreSQL write/read round-trip failed: %q\n' "$postgres_roundtrip" >&2
+    exit 1
+fi
+
+# Write, read and expire a test-only cache entry. Container/volume cleanup is
+# still guaranteed by the EXIT trap, even if a verification step fails.
+redis_key="walker:aw002:probe:${project_name}"
+redis_value="aw002-redis-roundtrip"
+redis_write="$("${compose[@]}" exec -T redis redis-cli --raw SET "$redis_key" "$redis_value" EX 3)"
+if [[ "$redis_write" != "OK" ]]; then
+    printf 'Redis cache SET failed: %q\n' "$redis_write" >&2
+    exit 1
+fi
+redis_read="$("${compose[@]}" exec -T redis redis-cli --raw GET "$redis_key")"
+if [[ "$redis_read" != "$redis_value" ]]; then
+    printf 'Redis cache GET returned unexpected value: %q\n' "$redis_read" >&2
+    exit 1
+fi
+
+redis_expired=false
+for attempt in 1 2 3 4 5 6 7 8; do
+    if [[ "$("${compose[@]}" exec -T redis redis-cli --raw TTL "$redis_key")" == "-2" ]]; then
+        redis_expired=true
+        break
+    fi
+    sleep 1
+done
+if [[ "$redis_expired" != true ]]; then
+    printf 'Redis cache entry did not expire within the test window\n' >&2
+    exit 1
+fi
+
+printf 'Compose check passed: PostgreSQL 18 and Redis 8; live write/read and cache expiry verified.\n'
