@@ -25,7 +25,7 @@ docker compose exec -T redis redis-cli --raw ping
 
 PostgreSQL muss eine Version mit Majorversion `18` melden. Redis muss mit `PONG` antworten.
 
-Die vollständige, auch in CI verwendete Prüfung validiert die Compose-Datei, startet die Dienste, wartet auf Bereitschaft, prüft beide Versionen beziehungsweise Antworten und räumt anschließend Container und Volumes auf:
+Die vollständige, auch in CI verwendete Prüfung validiert die aufgelöste Compose-Konfiguration zusätzlich auf ausschließlich lokale Portbindungen (`127.0.0.1`), die vorgesehenen Images und Ports sowie fehlende privilegierte Host-Vernetzung. Vier absichtlich unsichere Portkonfigurationen werden als Negativtests zurückgewiesen. **Nach dem Containerstart kontrolliert der Test die von Docker tatsächlich veröffentlichten Adressen.** Eine öffentlich erreichbare Datenbank oder Redis-Instanz führt zum Fehler und zum automatischen Cleanup. Danach werden Bereitschaft, PostgreSQL- und Redis-Version sowie `PING`/`PONG` geprüft:
 
 ```bash
 bash scripts/ci/check_compose.sh
