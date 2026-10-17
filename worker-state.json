@@ -7,9 +7,9 @@
   "task_branch": "aw-001/symfony-foundation-a00",
   "pull_request": "https://github.com/Gravarium/Arcanorum-worker/pull/5",
   "claimed_at": "2026-10-17T16:22:35.600Z",
-  "heartbeat_at": "2026-10-17T16:22:35.600Z",
-  "last_progress_at": "2026-10-17T06:58:45.818Z",
-  "last_progress_sha": "22fd208b75e3cb279f206fe175e6770f3a7c9c88",
-  "last_test_status": "AW-001 PR #5 exact HEAD 22fd208b75e3cb279f206fe175e6770f3a7c9c88, CI 38860194229 completed success; 2 jobs Repository/PHP completed success, no skipped steps. JUnit/Coverage/Psalm artifact verified. PR description now cites correct exact SHA and CI, no code change.",
-  "blocker": "PR #5 is open as draft pending owner review/integration; this run aligns its branch to latest main and refreshes exact-HEAD checks."
+  "heartbeat_at": "2026-10-17T16:23:25.542Z",
+  "last_progress_at": "2026-10-17T16:23:25.542Z",
+  "last_progress_sha": "645eb88505ead0874b1c1740831f6be7793a24f5",
+  "last_test_status": "AW-001 Branch auf aktuellen main 5e55acae49ca2ecaf8bc71138b401fab43a8ac6a integriert. PR-HEAD 645eb88505ead0874b1c1740831f6be7793a24f5, main-Vergleich 0 behind, mergeable; exakter CI-Lauf wird erwartet.",
+  "blocker": "PR #5 bleibt Draft und wartet nach erfolgreicher CI auf Eigentümerprüfung/Integration."
 }
