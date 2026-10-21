@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "status": "claimed",
+  "status": "idle",
   "task_id": "AW-001",
-  "worker_id": "owner-goal-aw001",
-  "run_id": "owner-goal-aw001-20261021T210108730Z-bzbw5b",
+  "worker_id": null,
+  "run_id": null,
   "task_branch": "aw-001/full-foundation-20261021",
   "pull_request": "https://github.com/Gravarium/Arcanorum-worker/pull/13",
-  "claimed_at": "2026-10-21T21:01:08.730Z",
-  "heartbeat_at": "2026-10-21T21:07:17.702Z",
-  "last_progress_at": "2026-10-21T21:07:17.702Z",
+  "claimed_at": null,
+  "heartbeat_at": null,
+  "last_progress_at": "2026-10-21T21:09:27.893Z",
   "last_progress_sha": "89ef775cf4a1930ce834d2a8f2b263a50f3f1e1f",
-  "last_test_status": "Report validation hardening published at 89ef775cf4a1930ce834d2a8f2b263a50f3f1e1f. Local 32 Python regressions, genuine 11-test CI report compatibility, repository/shell/whitespace checks passed. Full exact-HEAD GitHub mandatory CI pending.",
-  "blocker": null
+  "last_test_status": "Exact PR #13 HEAD 89ef775cf4a1930ce834d2a8f2b263a50f3f1e1f: complete mandatory GitHub CI run 39676168029 succeeded; 4/4 jobs and 45/45 steps successful, 0 skipped. 32 Python report regressions, 28 gate negative mutations, 11 PHPUnit tests, PostgreSQL 18/Redis 8, Composer audit, Symfony/Doctrine/Twig, PHPStan 10 strict, Psalm 1 taint, CS-Fixer check and Rector dry-run passed. Artifact 12381601797 contains JUnit/Clover/Psalm reports for this HEAD (7 days). Local repository (51 tracked paths), shell syntax, genuine old report compatibility and whitespace checks passed. PR body contains exact proof; own claim released after all checks completed.",
+  "blocker": "Owner review and integration of PR #13 pending. AW-002 improvements in PR #12 remain a separate integration package. No additional approved ready product task in the work plan; four Walker automations remain enabled."
 }
