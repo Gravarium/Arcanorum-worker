@@ -5,11 +5,11 @@
   "worker_id": "walker-A-15",
   "run_id": "walker-A-15-20261021T084617108Z-615603",
   "task_branch": "aw-001/full-foundation-20261021",
-  "pull_request": null,
+  "pull_request": "https://github.com/Gravarium/Arcanorum-worker/pull/13",
   "claimed_at": "2026-10-21T08:46:17.108Z",
-  "heartbeat_at": "2026-10-21T08:52:07.774Z",
-  "last_progress_at": "2026-10-17T16:28:00.526Z",
-  "last_progress_sha": "75268158829a11ea7b496207bfb475b0b34af423",
-  "last_test_status": "AW-001 PR #5 exact HEAD 75268158829a11ea7b496207bfb475b0b34af423; main 5e55acae49ca2ecaf8bc71138b401fab43a8ac6a, 14 ahead/0 behind. GitHub Actions 39049361570: success on exact SHA, both jobs/all steps success, none skipped. Required JUnit/Coverage/Psalm artifact walker-testberichte-75268158829a11ea7b496207bfb475b0b34af423 verified (expires 2026-10-24).",
+  "heartbeat_at": "2026-10-21T08:53:04.460Z",
+  "last_progress_at": "2026-10-21T08:53:04.460Z",
+  "last_progress_sha": "8877511da9da3246758ffdddd25a9c34830a63eb",
+  "last_test_status": "PR #13 created against main with full Symfony foundation package; local Python report regressions (7), shell syntax, whitespace and repository checks passed. Full PHP 8.5/PostgreSQL18/Redis8 and security CI pending on exact HEAD 8877511da9da3246758ffdddd25a9c34830a63eb.",
   "blocker": null
 }
