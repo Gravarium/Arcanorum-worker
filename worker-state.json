@@ -7,9 +7,9 @@
   "task_branch": "aw-001/full-foundation-20261021",
   "pull_request": "https://github.com/Gravarium/Arcanorum-worker/pull/13",
   "claimed_at": "2026-10-21T08:46:17.108Z",
-  "heartbeat_at": "2026-10-21T08:55:43.102Z",
-  "last_progress_at": "2026-10-21T08:55:43.102Z",
-  "last_progress_sha": "cfef3f6a506c2692dcde16a292fb48a1fed6911d",
-  "last_test_status": "Initial PR #13 run 39572632965 rejected a runtime context PHPStan type error; security gate correctly failed, no successful release claimed. Fixed code and added real HTTP front-controller smoke test. Full CI pending on cfef3f6a506c2692dcde16a292fb48a1fed6911d.",
+  "heartbeat_at": "2026-10-21T08:57:59.342Z",
+  "last_progress_at": "2026-10-21T08:57:59.342Z",
+  "last_progress_sha": "dba19d71d92332082e25c3cad7615ad348d6eb55",
+  "last_test_status": "PR #13 run 39572979083 caught HTTP bootstrap 500; runtime now explicitly uses process environment without requiring an untracked dotenv file. No failed or skipped run claimed successful. Full exact-HEAD CI pending on dba19d71d92332082e25c3cad7615ad348d6eb55.",
   "blocker": null
 }
