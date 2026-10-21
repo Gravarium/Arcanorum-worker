@@ -36,6 +36,8 @@ if operation == "config":
         model["services"]["postgres"]["environment"] = {"POSTGRES_DB": "walker_test", "POSTGRES_USER": "walker_local", "POSTGRES_PASSWORD": "local-test-only-password"}
         for service in model["services"].values():
             service.update(command=None, entrypoint=None)
+        if case != "valid-unescaped":
+            model["services"]["postgres"]["healthcheck"]["test"][1] = "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"
         if case.startswith("override:"):
             key, value = json.loads(case.split(":", 1)[1]); model["services"]["redis"][key] = value
         if case == "network": model["networks"]["default"]["external"] = True
@@ -57,6 +59,13 @@ if operation == "config":
             return value
         model = unescape(json.loads(path.read_text()))
         if case == "roundtrip": model["services"]["redis"]["ports"][0]["host_ip"] = "0.0.0.0"
+        if case != "valid-unescaped":
+            def escape(value):
+                if isinstance(value, str): return value.replace("$", "$$")
+                if isinstance(value, dict): return {k: escape(v) for k, v in value.items()}
+                if isinstance(value, list): return [escape(v) for v in value]
+                return value
+            model = escape(model)
     print(json.dumps(model))
 elif operation == "up":
     if case in ("up", "up-and-cleanup"): sys.exit(17)
@@ -77,7 +86,7 @@ overrides = {"cap_add": ["SYS_ADMIN"], "pid": "host", "ipc": "host", "privileged
 invalid = ["override:" + json.dumps([k, v]) for k, v in overrides.items()] + ["network", "network-ipam", "network-ipam-driver", "network-extra", "volume", "password", "public", "malformed", "resolve", "non-object", "roundtrip"]
 invalid += ["override:" + json.dumps([key, value]) for key in ("command", "entrypoint") for value in ([], "")]
 runtime = ["up", "published", "postgres", "database", "ping", "redis", "write", "read", "expiry", "cleanup", "up-and-cleanup", "TERM", "INT", "HUP"]
-cases = ["valid", "valid-no-ipam", "relative-temp"] + invalid + runtime
+cases = ["valid", "valid-no-ipam", "valid-unescaped", "relative-temp"] + invalid + runtime
 with tempfile.TemporaryDirectory(prefix="aw002-regression-") as directory:
     root = Path(directory)
     for name, content in [("docker", mock), ("sleep", "#!/bin/sh\nexit 0\n")]:
@@ -92,7 +101,7 @@ with tempfile.TemporaryDirectory(prefix="aw002-regression-") as directory:
             environment["TMPDIR"] = "work"
         result = subprocess.run(["bash", script], cwd=root, env=environment, capture_output=True, text=True, timeout=15)
         calls = [json.loads(line) for line in log.read_text().splitlines()]
-        assert (result.returncode == 0) == (case in ("valid", "valid-no-ipam", "relative-temp")), (case, result.returncode, result.stdout, result.stderr)
+        assert (result.returncode == 0) == (case in ("valid", "valid-no-ipam", "valid-unescaped", "relative-temp")), (case, result.returncode, result.stdout, result.stderr)
         assert "private-regression-marker" not in result.stdout + result.stderr, case
         assert not list(temporary_work.iterdir()), (case, "temporary directory leaked")
         starts = [c for c in calls if c["operation"] == "up"]
@@ -109,7 +118,7 @@ with tempfile.TemporaryDirectory(prefix="aw002-regression-") as directory:
             assert all(c["file"] == str(path) and c["mode"] == 0o400 and c["directory_mode"] == 0o700 for c in snapshots), case
             assert not path.exists() and not path.parent.exists(), (case, "temporary files")
             health = snapshots[0]["model"]["services"]["postgres"]["healthcheck"]["test"][1]
-            assert "$$POSTGRES_USER" in health and "$$POSTGRES_DB" in health, case
+            assert health == "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB", (case, "container variable escaping")
         if case in ("TERM", "INT", "HUP", "up", "up-and-cleanup"):
             assert result.returncode == {"TERM": 143, "INT": 130, "HUP": 129, "up": 17, "up-and-cleanup": 17}[case], case
         if case == "cleanup": assert "Compose check passed" not in result.stdout
@@ -349,18 +358,14 @@ candidate["networks"]["existing"] = {"external": True}
 if not validate(candidate):
     raise SystemExit("::error::Compose guard accepted an additional network")
 
-def escape_interpolation(value):
-    if isinstance(value, str):
-        return value.replace("$", "$$")
-    if isinstance(value, dict):
-        return {key: escape_interpolation(item) for key, item in value.items()}
-    if isinstance(value, list):
-        return [escape_interpolation(item) for item in value]
-    return value
-
-# Compose parses interpolation again when reading JSON/YAML. Preserve container
-# healthcheck variables instead of substituting credentials from the host.
-Path(destination).write_text(json.dumps(escape_interpolation(config), sort_keys=True))
+# Compose v2 already escapes dollars in config output. Store the sole allowed
+# variable-bearing value exactly once escaped for the next Compose load. Both
+# renderer representations must retain the same container-side healthcheck.
+snapshot_config = copy.deepcopy(config)
+snapshot_config["services"]["postgres"]["healthcheck"]["test"] = [
+    "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB",
+]
+Path(destination).write_text(json.dumps(snapshot_config, sort_keys=True))
 print(f"Compose guard passed: isolated test configuration and {11 + len(runtime_overrides) + len(network_mutations) + 1} negative tests.")
 PY
 
