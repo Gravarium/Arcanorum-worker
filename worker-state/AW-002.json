@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "status": "claimed",
+  "status": "idle",
   "task_id": "AW-002",
-  "worker_id": "owner-goal-aw002",
-  "run_id": "owner-goal-aw002-20261021T145626354Z-y4md9p",
+  "worker_id": null,
+  "run_id": null,
   "task_branch": "aw-002/integration-loopback-guard-20261017",
   "pull_request": 12,
-  "claimed_at": "2026-10-21T14:56:26.355Z",
-  "heartbeat_at": "2026-10-21T20:56:51.366Z",
-  "last_progress_at": "2026-10-21T20:56:51.366Z",
+  "claimed_at": null,
+  "heartbeat_at": null,
+  "last_progress_at": "2026-10-21T20:58:45.074Z",
   "last_progress_sha": "636a70a73499687ef879840a6a544e4f99d19bc8",
-  "last_test_status": "PR #12 HEAD 636a70a73499687ef879840a6a544e4f99d19bc8: Compose's pre-escaped and raw-dollar renderer formats both tested; stored healthcheck is exactly once escaped. Local 53 lifecycle paths plus invalid argument and unavailable temp directory (55 total), 27 guard mutations, syntax/repository/whitespace checks passed. Full exact-HEAD PR CI 39674621203 in progress; final security approval pending.",
-  "blocker": null
+  "last_test_status": "PR #12 exact HEAD 636a70a73499687ef879840a6a544e4f99d19bc8: mandatory PR CI 39674621203 completed success, 4/4 required jobs and all 45 steps successful; none skipped. 55 lifecycle tests, 27 guard-negative tests, real PostgreSQL 18 and Redis 8 write/read/TTL/cleanup checks passed. Full PHP/Composer audit/PHPStan 10/Psalm 1 taint/CS-Fixer/Rector/PHPUnit chain passed. Exact-SHA JUnit/Clover/Psalm artifact 12380943324 present until 2026-10-28. Local regressions, syntax, repository and whitespace checks passed.",
+  "blocker": "PR #12 awaits project-owner review and integration. No further approved AW-002 code work; no merge or deployment."
 }
