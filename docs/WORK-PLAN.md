@@ -16,8 +16,9 @@ Jeder Auftrag braucht eine eindeutige ID, ein Ziel, Abnahmekriterien, Abhängigk
 
 ### AW-001 — Technisches PHP-/Symfony-Grundgerüst
 
-**Status:** in Bearbeitung
-**Koordination:** `worker-control/worker-state.json`, PR #5
+**Status:** PR offen
+**Koordination:** Branch `worker-control`, Datei `worker-state.json`; zusammenhängendes Gesamtpaket PR #13 auf `aw-001/full-foundation-20261021`.
+**Prüfstand:** Technische Erweiterung und Konsolidierung auf ausdrücklichen Eigentümerauftrag vom 21.10.2026. Exakter laufender HEAD und tatsächlicher CI-Status stehen im Aufgaben-Lock und in PR #13. Bis zur bestandenen vollständigen Pflicht-CI keine Gesamtfreigabe.
 **Abhängigkeiten:** keine
 
 **Ziel:** Das leere Repository in eine startbare, testbare Basis für die folgenden Eigentümeraufträge überführen.
@@ -50,7 +51,8 @@ Jeder Auftrag braucht eine eindeutige ID, ein Ziel, Abnahmekriterien, Abhängigk
 
 ### AW-002 — Lokale PostgreSQL-/Redis-Umgebung
 
-**Status:** bereit
+**Status:** PR offen
+**Prüfstand:** PR #12, HEAD `636a70a73499687ef879840a6a544e4f99d19bc8`, Pflichtlauf `39674621203`: 4/4 Jobs und 45/45 Schritte erfolgreich, keine übersprungenen Schritte. Dieser geprüfte Compose-Stand mit fixierter Konfiguration und 55 Ablaufprüfungen ist zusätzlich im Gesamtpaket PR #13 enthalten. Dort sichert der CI-Guard die Ablaufregressionen und den echten Dienstlauf getrennt ab; dessen eigener endgültiger HEAD benötigt einen eigenen vollständigen Pflichtlauf. Eigentümerintegration ausstehend.
 **Abhängigkeiten:** keine; ausdrücklich parallel zu AW-001
 **Koordination:** eigene Sperrdatei `worker-control/worker-state/AW-002.json`
 **Erlaubte Dateien:** `compose.yaml`, `scripts/ci/check_compose.sh`, `docs/LOCAL-CONTAINERS.md` und Änderungen an `.github/workflows/quality.yml` ausschließlich für die Compose-Prüfung.

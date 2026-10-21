@@ -1,0 +1,52 @@
+# Lokaler technischer Start
+
+## Voraussetzungen
+
+PHP 8.5 mit `pdo_pgsql`, `redis`, `intl`, `mbstring`, `xml` und `zip`, Composer 2, Python 3 und Ruby. Für Coverage wird PCOV benötigt. PostgreSQL 18 und Redis 8 müssen erreichbar sein. Die Container-Anleitung steht in [LOCAL-CONTAINERS.md](LOCAL-CONTAINERS.md).
+
+Die Symfony-Kernkomponenten sind im Manifest auf 7.4 LTS begrenzt. Die versionierte Sperrdatei wurde mit Composer auf PHP 8.5 erzeugt; die Repository-Prüfung lehnt andere Symfony-Kernversionen ab. Contracts und Polyfills verwenden ihre eigenen Versionsreihen.
+
+Alle folgenden Befehle verwenden ausschließlich die künstlichen lokalen Testwerte aus `compose.yaml`. Verwende eine eigene Testdatenbank; die Doctrine-Prüfung richtet ihre Migrations-Metadaten ein und führt vorhandene Migrationen aus. Echte Zugangsdaten gehören in unversionierte Umgebungsvariablen.
+
+```bash
+docker compose up -d --wait --wait-timeout 120
+export APP_SECRET='local-test-only-secret'
+export DATABASE_URL='postgresql://walker_local:local-test-only-password@127.0.0.1:5432/walker_test?serverVersion=18&charset=utf8'
+export REDIS_URL='redis://127.0.0.1:6379'
+bash scripts/check.sh
+```
+
+`scripts/check.sh` beendet sich beim ersten Fehler. Es validiert Manifest und Repository, installiert genau `composer.lock`, führt Composer Audit und PHP-Syntaxprüfung aus, baut Symfony in dev/prod, prüft YAML, Twig, Doctrine und Dienste und führt PHPStan 10 mit Strict Rules, PHP-CS-Fixer Check, Rector Dry-Run, Psalm 1 mit Taintanalyse sowie die vollständige PHPUnit-Suite aus. Leere, unvollständige oder übersprungene Tests sowie fehlende oder ungültige JUnit-, Clover- oder Psalm-Berichte werden abgelehnt. Berichte liegen unter `var/test-results/`.
+
+Die CI verwendet denselben Anwendungsprüfer `scripts/ci/check_application.sh` und dieselbe Berichtsvalidierung. Zusätzlich läuft dort die vollständige Compose-Prüfung in einem eigenen isolierten Projekt. Lokal lässt sie sich separat mit `bash scripts/ci/check_compose.sh` ausführen; sie beendet nur die von diesem Prüflauf gestarteten Testdienste.
+
+`scripts/check.sh` führt außerdem die Compose-Ablaufregressionen mit `--self-test` aus. Diese prüfen Konfigurationswechsel, Teilstarts, Dienstfehler, Signale und gescheiterte Bereinigung ohne Docker-Aufruf. In CI sind diese Regressionen und der anschließende echte PostgreSQL-/Redis-Lauf jeweils verpflichtend; der CI-Guard lehnt das Entfernen oder Überspringen beider Prüfungen ab.
+
+Die Berichtsvalidierung gleicht JUnit-Summenzähler auf jeder Suite-Ebene mit den tatsächlich aufgeführten Testfällen ab. Clover muss Quelldateien mit konsistenten Datei- und Projektmetriken enthalten; ein Coverage-Prozentgrenzwert wird nicht eingeführt. Psalm-SARIF muss den Analyzer samt Version und eine vollständige leere Ergebnisliste enthalten. Gemeldete Analyseabbrüche, ungültige Aufrufdaten, widersprüchliches JSON und fehlerhafte XML-Strukturen werden abgewiesen. Die Befehls-Exitcodes und die übrigen Pflichtjobs bleiben zusätzlich entscheidend.
+
+Vorliegende CI-Berichte können mit `python3 scripts/ci/check_reports.py --directory /pfad/zu/testberichten` geprüft werden. Der Standardpfad bleibt `var/test-results/`. Ungültige Berichte liefern Exit-Code 1 ohne Ausgabe ihres Inhalts.
+
+## Dienste unabhängig prüfen
+
+```bash
+APP_ENV=dev APP_DEBUG=0 php bin/console app:infrastructure:check
+APP_ENV=dev APP_DEBUG=0 php bin/console app:infrastructure:check --format=json
+```
+
+Exit-Code `0` bedeutet, dass beide Dienste geprüft wurden. `1` bedeutet mindestens einen fehlgeschlagenen Dienst, `2` ein ungültiges Ausgabeformat. Die JSON-Ausgabe enthält ausschließlich die booleschen Felder `database`, `cache` und `ready`. Auch im Debug-Ausgabemodus werden keine Verbindungsadressen, Passwörter oder ursprünglichen Fehlermeldungen ausgegeben.
+
+Die Diagnose prüft die PostgreSQL-Majorversion und eine Leseabfrage. Der Cache-Test verwendet einen zufälligen eigenen Schlüssel mit 30 Sekunden Ablauf und entfernt ihn im `finally`-Block. Die vollständige Testsuite prüft zusätzlich einen parametergebundenen Datenbank-Schreib-/Lesevorgang in einer zurückgerollten Transaktion und den echten Redis-Ablauf.
+
+## Web-Einstieg lokal starten
+
+```bash
+APP_ENV=prod APP_DEBUG=0 php -S 127.0.0.1:8000 -t public public/index.php
+```
+
+Der Dokumentenstamm ist ausschließlich `public/`. Der PHP-Entwicklungsserver dient nur der lokalen Prüfung. Im Grundgerüst gibt es noch keine fachlichen Routen; eine unbekannte Route liefert HTTP 404 mit einer neutralen Twig-Fehlerseite. Fehlerseiten enthalten keine internen Ausnahmeinformationen.
+
+## Lokale Dienste beenden
+
+```bash
+docker compose down --volumes --remove-orphans
+```
