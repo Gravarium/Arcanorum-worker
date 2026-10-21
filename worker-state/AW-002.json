@@ -7,9 +7,9 @@
   "task_branch": "aw-002/integration-loopback-guard-20261017",
   "pull_request": 12,
   "claimed_at": "2026-10-21T14:56:26.355Z",
-  "heartbeat_at": "2026-10-21T15:02:03.956Z",
-  "last_progress_at": "2026-10-21T08:03:18.971Z",
-  "last_progress_sha": "fb99e648023665434a4b56840960286a29b5da89",
-  "last_test_status": "Owner goal: immutable Compose snapshot and runtime allowlist implemented in AW-002 allowed files. Local real-entrypoint Docker-double regression passed 43 lifecycle paths plus invalid argument; shell syntax, repository and whitespace checks passed. Full new exact-HEAD CI not yet run.",
+  "heartbeat_at": "2026-10-21T15:03:58.365Z",
+  "last_progress_at": "2026-10-21T15:03:58.365Z",
+  "last_progress_sha": "9dd5f9a3d79a626b81c772ef3fc60a7322807130",
+  "last_test_status": "PR #12 HEAD 9dd5f9a3d79a626b81c772ef3fc60a7322807130 published. Local 47 lifecycle paths plus invalid argument and missing temp-directory tests passed; 24 guard mutations, shell/repository/whitespace checks passed. Exact-HEAD PR CI 39622309214 queued; no final security approval.",
   "blocker": null
 }
