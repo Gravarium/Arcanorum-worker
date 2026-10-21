@@ -7,9 +7,9 @@
   "task_branch": "aw-001/full-foundation-20261021",
   "pull_request": "https://github.com/Gravarium/Arcanorum-worker/pull/13",
   "claimed_at": "2026-10-21T08:46:17.108Z",
-  "heartbeat_at": "2026-10-21T08:53:04.460Z",
-  "last_progress_at": "2026-10-21T08:53:04.460Z",
-  "last_progress_sha": "8877511da9da3246758ffdddd25a9c34830a63eb",
-  "last_test_status": "PR #13 created against main with full Symfony foundation package; local Python report regressions (7), shell syntax, whitespace and repository checks passed. Full PHP 8.5/PostgreSQL18/Redis8 and security CI pending on exact HEAD 8877511da9da3246758ffdddd25a9c34830a63eb.",
+  "heartbeat_at": "2026-10-21T08:55:43.102Z",
+  "last_progress_at": "2026-10-21T08:55:43.102Z",
+  "last_progress_sha": "cfef3f6a506c2692dcde16a292fb48a1fed6911d",
+  "last_test_status": "Initial PR #13 run 39572632965 rejected a runtime context PHPStan type error; security gate correctly failed, no successful release claimed. Fixed code and added real HTTP front-controller smoke test. Full CI pending on cfef3f6a506c2692dcde16a292fb48a1fed6911d.",
   "blocker": null
 }
