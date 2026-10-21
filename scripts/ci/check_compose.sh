@@ -33,6 +33,13 @@ TEST_POSTGRES_ENVIRONMENT = {
     "POSTGRES_USER": "walker_local",
     "POSTGRES_PASSWORD": "local-test-only-password",
 }
+HEALTHCHECK_TESTS = {
+    "postgres": {
+        ("CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"),
+        ("CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"),
+    },
+    "redis": {("CMD", "redis-cli", "ping")},
+}
 
 
 def validate(config):
@@ -59,6 +66,15 @@ def validate(config):
         expected_environment = TEST_POSTGRES_ENVIRONMENT if name == "postgres" else {}
         if service.get("environment", {}) != expected_environment:
             problems.append(f"{name}: unexpected environment; only test-only values are allowed")
+        healthcheck = service.get("healthcheck")
+        if (
+            not isinstance(healthcheck, dict)
+            or healthcheck.get("disable") is True
+            or not isinstance(healthcheck.get("test"), list)
+            or tuple(healthcheck["test"]) not in HEALTHCHECK_TESTS[name]
+            or any(not healthcheck.get(field) for field in ("interval", "timeout", "retries", "start_period"))
+        ):
+            problems.append(f"{name}: required service readiness healthcheck is missing or changed")
         ports = service.get("ports", [])
         if not isinstance(ports, list) or len(ports) != 1:
             problems.append(f"{name}: exactly one loopback port binding is required")
@@ -99,6 +115,9 @@ unsafe_data = {
     "existing PostgreSQL host data": ("postgres", "volumes", [{"type": "bind", "source": "/tmp/existing-data", "target": "/var/lib/postgresql"}]),
     "production-like PostgreSQL password": ("postgres", "environment", {**TEST_POSTGRES_ENVIRONMENT, "POSTGRES_PASSWORD": "different-value"}),
     "Redis build override": ("redis", "build", {"context": "."}),
+    "disabled PostgreSQL healthcheck": ("postgres", "healthcheck", {"disable": True}),
+    "missing Redis healthcheck": ("redis", "healthcheck", {}),
+    "fake Redis healthcheck": ("redis", "healthcheck", {"test": ["CMD", "true"], "interval": 5, "timeout": 5, "retries": 20, "start_period": 5}),
 }
 for label, (service, field, value) in unsafe_data.items():
     candidate = copy.deepcopy(config)
@@ -113,7 +132,7 @@ if not validate(candidate):
     print("::error::security guard negative test failed: declared volume", file=sys.stderr)
     sys.exit(1)
 
-print("Compose guard passed: localhost-only test services and 8 negative tests.")
+print("Compose guard passed: localhost-only test services and 11 negative tests.")
 '
 
 cleanup_armed=true
