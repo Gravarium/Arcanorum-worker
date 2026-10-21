@@ -119,6 +119,9 @@ jobs:
       - name: Docker Compose verfügbar prüfen
         shell: bash
         run: docker compose version
+      - name: Compose-Konfigurationsschutz und Fehlerbereinigung testen
+        shell: bash
+        run: bash scripts/ci/check_compose.sh --self-test
       - name: PostgreSQL 18 und Redis 8 mit Compose prüfen
         shell: bash
         run: bash scripts/ci/check_compose.sh

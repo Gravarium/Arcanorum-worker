@@ -52,7 +52,7 @@ Jeder Auftrag braucht eine eindeutige ID, ein Ziel, Abnahmekriterien, Abhängigk
 ### AW-002 — Lokale PostgreSQL-/Redis-Umgebung
 
 **Status:** PR offen
-**Prüfstand:** PR #12, HEAD `fb99e648023665434a4b56840960286a29b5da89`, Pflichtlauf `39566087839`: 4/4 Jobs erfolgreich, keine übersprungenen Schritte. Dieser geprüfte Compose-Stand ist zusätzlich im Gesamtpaket PR #13 enthalten; dessen eigener endgültiger HEAD benötigt einen eigenen vollständigen Pflichtlauf. Eigentümerintegration ausstehend.
+**Prüfstand:** PR #12, HEAD `636a70a73499687ef879840a6a544e4f99d19bc8`, Pflichtlauf `39674621203`: 4/4 Jobs und 45/45 Schritte erfolgreich, keine übersprungenen Schritte. Dieser geprüfte Compose-Stand mit fixierter Konfiguration und 55 Ablaufprüfungen ist zusätzlich im Gesamtpaket PR #13 enthalten. Dort sichert der CI-Guard die Ablaufregressionen und den echten Dienstlauf getrennt ab; dessen eigener endgültiger HEAD benötigt einen eigenen vollständigen Pflichtlauf. Eigentümerintegration ausstehend.
 **Abhängigkeiten:** keine; ausdrücklich parallel zu AW-001
 **Koordination:** eigene Sperrdatei `worker-control/worker-state/AW-002.json`
 **Erlaubte Dateien:** `compose.yaml`, `scripts/ci/check_compose.sh`, `docs/LOCAL-CONTAINERS.md` und Änderungen an `.github/workflows/quality.yml` ausschließlich für die Compose-Prüfung.

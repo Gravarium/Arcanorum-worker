@@ -13,6 +13,7 @@ php -r 'if (PHP_MAJOR_VERSION !== 8 || PHP_MINOR_VERSION !== 5) { fwrite(STDERR,
 git diff --check
 python3 scripts/ci/check_repository.py
 ruby scripts/ci/assert_mandatory_quality_gate.rb
+bash scripts/ci/check_compose.sh --self-test
 python3 -m unittest discover -s scripts/ci -p 'test_*.py'
 composer validate --strict --no-interaction
 composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader

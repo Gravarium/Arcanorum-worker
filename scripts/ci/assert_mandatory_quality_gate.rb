@@ -42,7 +42,8 @@ REPOSITORY_COMMANDS = [
 ].freeze
 COMPOSE_COMMANDS = [
   ['docker compose version'],
-  ['bash scripts/ci/check_compose.sh']
+  ['bash scripts/ci/check_compose.sh'],
+  ['bash scripts/ci/check_compose.sh --self-test']
 ].freeze
 
 def continue_on_error?(item)
@@ -171,6 +172,9 @@ def security_errors(config)
   unless contains_mandatory_run_step?(compose_steps, COMPOSE_COMMANDS[1])
     errors << 'compose: PostgreSQL/Redis integration check is missing or can be skipped'
   end
+  unless contains_mandatory_run_step?(compose_steps, COMPOSE_COMMANDS[2])
+    errors << 'compose: configuration and cleanup regression check is missing or can be skipped'
+  end
 
   php = jobs['php_quality']
   if php.is_a?(Hash)
@@ -257,8 +261,26 @@ def check_mutations!(config)
       step['if'] = 'false'
     end,
     'skip Compose integration step' => lambda do |c|
-      step = c['jobs']['compose']['steps'].find { |s| s.is_a?(Hash) && s['run'].to_s.include?('check_compose.sh') }
+      step = c['jobs']['compose']['steps'].find { |s| s.is_a?(Hash) && s['run'].to_s.strip == 'bash scripts/ci/check_compose.sh' }
       step['if'] = 'false'
+    end,
+    'omit Compose regression check' => lambda do |c|
+      c['jobs']['compose']['steps'].reject! { |s| s['run'].to_s.strip == 'bash scripts/ci/check_compose.sh --self-test' }
+    end,
+    'skip Compose regression check' => lambda do |c|
+      step = c['jobs']['compose']['steps'].find { |s| s['run'].to_s.strip == 'bash scripts/ci/check_compose.sh --self-test' }
+      step['if'] = 'false'
+    end,
+    'allow Compose regression failure' => lambda do |c|
+      step = c['jobs']['compose']['steps'].find { |s| s['run'].to_s.strip == 'bash scripts/ci/check_compose.sh --self-test' }
+      step['continue-on-error'] = true
+    end,
+    'exit before Compose regression check' => lambda do |c|
+      step = c['jobs']['compose']['steps'].find { |s| s['run'].to_s.strip == 'bash scripts/ci/check_compose.sh --self-test' }
+      step['run'] = "exit 0\n#{step['run']}"
+    end,
+    'replace live Compose check with regressions only' => lambda do |c|
+      c['jobs']['compose']['steps'].reject! { |s| s['run'].to_s.strip == 'bash scripts/ci/check_compose.sh' }
     end,
     'skip Composer security step' => lambda do |c|
       step = c['jobs']['php_quality']['steps'].find { |s| s.is_a?(Hash) && s['run'].to_s.include?('composer audit') }
