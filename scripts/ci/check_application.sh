@@ -13,6 +13,7 @@ APP_ENV=test php bin/console doctrine:migrations:sync-metadata-storage --no-inte
 APP_ENV=test php bin/console doctrine:migrations:status --no-interaction
 APP_ENV=test php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
 php bin/console app:infrastructure:check --env=test --no-interaction --format=json
+python3 scripts/ci/check_http.py
 
 available_commands="$(php bin/console list --raw)"
 if grep -q '^asset-map:compile' <<< "$available_commands"; then
