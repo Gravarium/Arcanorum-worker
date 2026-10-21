@@ -3,13 +3,13 @@
   "status": "claimed",
   "task_id": "AW-001",
   "worker_id": "walker-A-15",
-  "run_id": "walker-A-15-20261021T084617108Z-615603",
+  "run_id": "walker-A-15-20261021T111452778Z-t11-9cwvp3o6",
   "task_branch": "aw-001/full-foundation-20261021",
   "pull_request": "https://github.com/Gravarium/Arcanorum-worker/pull/13",
-  "claimed_at": "2026-10-21T08:46:17.108Z",
-  "heartbeat_at": "2026-10-21T08:57:59.342Z",
+  "claimed_at": "2026-10-21T11:14:52.778Z",
+  "heartbeat_at": "2026-10-21T11:14:52.778Z",
   "last_progress_at": "2026-10-21T08:57:59.342Z",
   "last_progress_sha": "dba19d71d92332082e25c3cad7615ad348d6eb55",
-  "last_test_status": "PR #13 run 39572979083 caught HTTP bootstrap 500; runtime now explicitly uses process environment without requiring an untracked dotenv file. No failed or skipped run claimed successful. Full exact-HEAD CI pending on dba19d71d92332082e25c3cad7615ad348d6eb55.",
-  "blocker": null
+  "last_test_status": "PR #13 HEAD 27bef1f7d98351c44b66d6a339a3e1dece78bf05: CI 39573580921 completed failure; HTTP 404 Twig response marker missing; downstream PHPStan/Psalm/PHPUnit/report steps skipped. No successful gate claimed.",
+  "blocker": "HTTP 404 Twig error template not confirmed; investigation in progress."
 }
