@@ -30,7 +30,7 @@ assert args[0] == "compose" and args[args.index("--env-file") + 1] == "/dev/null
 assert "--project-directory" in args
 if operation == "config":
     if path.name == "compose.yaml":
-        model = {"name": project, "networks": {"default": {"name": project + "_default"}}, "services": {}}
+        model = {"name": project, "networks": {"default": {"name": project + "_default", "ipam": {}}}, "services": {}}
         for name, image, port in [("postgres", "postgres:18", 5432), ("redis", "redis:8-alpine", 6379)]:
             model["services"][name] = {"image": image, "networks": {"default": None}, "ports": [{"mode": "ingress", "host_ip": "127.0.0.1", "target": port, "published": str(port), "protocol": "tcp"}], "healthcheck": {"test": ["CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"] if name == "postgres" else ["CMD", "redis-cli", "ping"], "interval": "5s", "timeout": "5s", "retries": 20, "start_period": "10s" if name == "postgres" else "5s"}}
         model["services"]["postgres"]["environment"] = {"POSTGRES_DB": "walker_test", "POSTGRES_USER": "walker_local", "POSTGRES_PASSWORD": "local-test-only-password"}
@@ -39,6 +39,10 @@ if operation == "config":
         if case.startswith("override:"):
             key, value = json.loads(case.split(":", 1)[1]); model["services"]["redis"][key] = value
         if case == "network": model["networks"]["default"]["external"] = True
+        if case == "network-ipam": model["networks"]["default"]["ipam"] = {"config": [{"subnet": "10.99.0.0/24"}]}
+        if case == "network-ipam-driver": model["networks"]["default"]["ipam"] = {"driver": "default"}
+        if case == "network-extra": model["networks"]["existing"] = {"external": True}
+        if case == "valid-no-ipam": del model["networks"]["default"]["ipam"]
         if case == "volume": model["volumes"] = {"existing": {}}
         if case == "password": model["services"]["postgres"]["environment"]["POSTGRES_PASSWORD"] = "private-regression-marker"
         if case == "public": model["services"]["redis"]["ports"][0]["host_ip"] = "0.0.0.0"
@@ -70,10 +74,10 @@ elif operation == "exec":
 elif operation == "down" and case in ("cleanup", "up-and-cleanup"): sys.exit(23)
 '''
 overrides = {"cap_add": ["SYS_ADMIN"], "pid": "host", "ipc": "host", "privileged": True, "network_mode": "host", "devices": ["/dev/kvm:/dev/kvm"], "volumes": [{"type": "bind", "source": "/tmp/existing-data", "target": "/data"}], "volumes_from": ["existing"], "build": {"context": "."}, "env_file": ["private.env"], "secrets": ["existing"], "configs": ["existing"], "entrypoint": ["sh", "-c", "exit 0"], "command": ["sh", "-c", "exit 0"], "container_name": "existing", "profiles": ["hidden"], "security_opt": ["apparmor:unconfined"], "use_api_socket": True, "healthcheck": {"disable": True}, "image": "redis:7-alpine"}
-invalid = ["override:" + json.dumps([k, v]) for k, v in overrides.items()] + ["network", "volume", "password", "public", "malformed", "resolve", "non-object", "roundtrip"]
+invalid = ["override:" + json.dumps([k, v]) for k, v in overrides.items()] + ["network", "network-ipam", "network-ipam-driver", "network-extra", "volume", "password", "public", "malformed", "resolve", "non-object", "roundtrip"]
 invalid += ["override:" + json.dumps([key, value]) for key in ("command", "entrypoint") for value in ([], "")]
 runtime = ["up", "published", "postgres", "database", "ping", "redis", "write", "read", "expiry", "cleanup", "up-and-cleanup", "TERM", "INT", "HUP"]
-cases = ["valid", "relative-temp"] + invalid + runtime
+cases = ["valid", "valid-no-ipam", "relative-temp"] + invalid + runtime
 with tempfile.TemporaryDirectory(prefix="aw002-regression-") as directory:
     root = Path(directory)
     for name, content in [("docker", mock), ("sleep", "#!/bin/sh\nexit 0\n")]:
@@ -88,7 +92,7 @@ with tempfile.TemporaryDirectory(prefix="aw002-regression-") as directory:
             environment["TMPDIR"] = "work"
         result = subprocess.run(["bash", script], cwd=root, env=environment, capture_output=True, text=True, timeout=15)
         calls = [json.loads(line) for line in log.read_text().splitlines()]
-        assert (result.returncode == 0) == (case in ("valid", "relative-temp")), (case, result.returncode, result.stdout, result.stderr)
+        assert (result.returncode == 0) == (case in ("valid", "valid-no-ipam", "relative-temp")), (case, result.returncode, result.stdout, result.stderr)
         assert "private-regression-marker" not in result.stdout + result.stderr, case
         assert not list(temporary_work.iterdir()), (case, "temporary directory leaked")
         starts = [c for c in calls if c["operation"] == "up"]
@@ -202,7 +206,12 @@ def validate(config):
     problems = []
     if config.get("name") != project:
         problems.append("unexpected project name")
-    if config.get("networks") != {"default": {"name": project + "_default"}}:
+    # Compose 2.38 serializes its zero-value IPAM struct as an empty object.
+    # Accept only the omitted/empty forms; custom IPAM and extra keys fail.
+    if config.get("networks") not in (
+        {"default": {"name": project + "_default"}},
+        {"default": {"name": project + "_default", "ipam": {}}},
+    ):
         problems.append("only the isolated default network is allowed")
     if config.get("volumes"):
         problems.append("declared Compose volumes are forbidden in the test environment")
@@ -324,11 +333,21 @@ for field, value in runtime_overrides.items():
     candidate["services"]["redis"][field] = value
     if not validate(candidate):
         raise SystemExit("::error::Compose guard accepted a forbidden runtime override")
-for change in ("external", "name"):
+network_mutations = (
+    ("external", True),
+    ("name", "existing-network"),
+    ("ipam", {"driver": "default"}),
+    ("ipam", {"config": [{"subnet": "10.99.0.0/24"}]}),
+)
+for field, value in network_mutations:
     candidate = copy.deepcopy(config)
-    candidate["networks"]["default"][change] = True if change == "external" else "existing-network"
+    candidate["networks"]["default"][field] = value
     if not validate(candidate):
         raise SystemExit("::error::Compose guard accepted a foreign network")
+candidate = copy.deepcopy(config)
+candidate["networks"]["existing"] = {"external": True}
+if not validate(candidate):
+    raise SystemExit("::error::Compose guard accepted an additional network")
 
 def escape_interpolation(value):
     if isinstance(value, str):
@@ -342,7 +361,7 @@ def escape_interpolation(value):
 # Compose parses interpolation again when reading JSON/YAML. Preserve container
 # healthcheck variables instead of substituting credentials from the host.
 Path(destination).write_text(json.dumps(escape_interpolation(config), sort_keys=True))
-print(f"Compose guard passed: isolated test configuration and {11 + len(runtime_overrides) + 2} negative tests.")
+print(f"Compose guard passed: isolated test configuration and {11 + len(runtime_overrides) + len(network_mutations) + 1} negative tests.")
 PY
 
 chmod 400 "$snapshot"
