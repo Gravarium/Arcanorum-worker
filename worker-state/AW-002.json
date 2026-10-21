@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "status": "claimed",
+  "status": "idle",
   "task_id": "AW-002",
-  "worker_id": "walker-A-15",
-  "run_id": "walker-A-15-20261021T001223323Z-656d61",
+  "worker_id": null,
+  "run_id": null,
   "task_branch": "aw-002/integration-loopback-guard-20261017",
   "pull_request": 12,
-  "claimed_at": "2026-10-21T00:12:23.323Z",
-  "heartbeat_at": "2026-10-21T00:14:02.744Z",
-  "last_progress_at": "2026-10-21T00:14:02.744Z",
+  "claimed_at": null,
+  "heartbeat_at": null,
+  "last_progress_at": "2026-10-21T00:16:09.183Z",
   "last_progress_sha": "62866ac156bacf04322b3223f5b5b2df21077478",
-  "last_test_status": "Local: bash -n, git diff --check, repository guard and six Docker-mock paths passed. Docker unavailable locally; awaiting full PR #12 CI on exact HEAD 62866ac156bacf04322b3223f5b5b2df21077478.",
-  "blocker": null
+  "last_test_status": "AW-002 PR #12 exact HEAD 62866ac156bacf04322b3223f5b5b2df21077478; GitHub Actions PR run 39520063254 completed success: all 4 mandatory jobs and every step success, none skipped. Artifact walker-testberichte-62866ac156bacf04322b3223f5b5b2df21077478 present, expires 2026-10-28. Local bash syntax, whitespace, repository guard and six mock Compose paths passed; live PostgreSQL/Redis roundtrips passed in PR CI.",
+  "blocker": "PR #12 remains draft for project-owner review and integration. No merge or deployment; branch protection remains owner-controlled."
 }
