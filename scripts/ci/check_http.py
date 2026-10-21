@@ -11,15 +11,13 @@ import tempfile
 import time
 
 
-def main() -> None:
-    root = Path(__file__).resolve().parents[2]
+def check_server(root: Path, environment: dict[str, str]) -> None:
     with socket.socket() as reservation:
         reservation.bind(("127.0.0.1", 0))
         port = reservation.getsockname()[1]
-    environment = dict(os.environ, APP_ENV="prod", APP_DEBUG="0")
     with tempfile.TemporaryFile() as log:
         server = subprocess.Popen(
-            ["php", "-S", f"127.0.0.1:{port}", "-t", "public", "public/index.php"],
+            ["php", "-d", "variables_order=GPCS", "-S", f"127.0.0.1:{port}", "-t", "public", "public/index.php"],
             cwd=root, env=environment, stdout=log, stderr=log,
         )
         try:
@@ -49,7 +47,6 @@ def main() -> None:
                         raise RuntimeError(f"The neutral Twig error page was not rendered: {diagnostic}")
                     if any(marker in body for marker in ("<script>", "Stack Trace", "DATABASE_URL", "APP_SECRET")):
                         raise RuntimeError("The HTTP error response contains unsafe details")
-                    print("HTTP bootstrap passed: real front controller, production mode, safe Twig 404 response.")
                     return
                 except (ConnectionError, OSError):
                     time.sleep(0.25)
@@ -63,6 +60,16 @@ def main() -> None:
             except subprocess.TimeoutExpired:
                 server.kill()
                 server.wait(timeout=5)
+
+
+def main() -> None:
+    root = Path(__file__).resolve().parents[2]
+    check_server(root, dict(os.environ, APP_ENV="prod", APP_DEBUG="0"))
+    defaults = dict(os.environ)
+    defaults.pop("APP_ENV", None)
+    defaults.pop("APP_DEBUG", None)
+    check_server(root, defaults)
+    print("HTTP bootstrap passed: explicit production environment and safe defaults, including variables_order=GPCS; neutral Twig 404 responses.")
 
 
 if __name__ == "__main__":
