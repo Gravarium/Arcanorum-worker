@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 use App\Kernel;
 
+// Configuration is supplied by the process environment, never by a required
+// local dotenv file in this public repository.
+$_SERVER['APP_RUNTIME_OPTIONS'] = ['disable_dotenv' => true];
+
 require_once dirname(__DIR__).'/vendor/autoload_runtime.php';
 
 /** @param array{APP_ENV: string, APP_DEBUG: bool|string|int} $context */

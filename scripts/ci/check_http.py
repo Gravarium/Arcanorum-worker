@@ -32,7 +32,13 @@ def main() -> None:
                     response = connection.getresponse()
                     body = response.read(100_000).decode("utf-8")
                     if response.status != 404:
-                        raise RuntimeError(f"Expected HTTP 404, received {response.status}")
+                        log.seek(0)
+                        diagnostic = log.read().decode("utf-8", errors="replace")
+                        for key in ("APP_SECRET", "DATABASE_URL", "REDIS_URL"):
+                            value = environment.get(key)
+                            if value:
+                                diagnostic = diagnostic.replace(value, "[redacted]")
+                        raise RuntimeError(f"Expected HTTP 404, received {response.status}; server log: {diagnostic[-4000:]}")
                     if "Anfrage nicht verfügbar" not in body:
                         raise RuntimeError("The neutral Twig error page was not rendered")
                     if any(marker in body for marker in ("<script>", "Stack Trace", "DATABASE_URL", "APP_SECRET")):
