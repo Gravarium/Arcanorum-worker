@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "status": "idle",
+  "status": "claimed",
   "task_id": "AW-002",
-  "worker_id": null,
-  "run_id": null,
+  "worker_id": "owner-goal-aw002",
+  "run_id": "owner-goal-aw002-20261021T145626354Z-y4md9p",
   "task_branch": "aw-002/integration-loopback-guard-20261017",
   "pull_request": 12,
-  "claimed_at": null,
-  "heartbeat_at": null,
+  "claimed_at": "2026-10-21T14:56:26.355Z",
+  "heartbeat_at": "2026-10-21T14:56:26.355Z",
   "last_progress_at": "2026-10-21T08:03:18.971Z",
   "last_progress_sha": "fb99e648023665434a4b56840960286a29b5da89",
-  "last_test_status": "AW-002 PR #12 exact HEAD fb99e648023665434a4b56840960286a29b5da89; PR CI 39566087839 completed success: 4/4 required jobs and every step success, none skipped. Artifact walker-testberichte-fb99e648023665434a4b56840960286a29b5da89 present until 2026-10-28. Local bash syntax, whitespace, repository guard and eight Docker-mock paths passed; Compose healthchecks and live PostgreSQL/Redis roundtrips passed in PR CI.",
-  "blocker": "PR #12 remains draft for project-owner review and integration. No merge or deployment; branch protection remains owner-controlled."
+  "last_test_status": "Prior exact-HEAD CI passed (39566087839). Owner goal: harden Compose configuration snapshot, unsafe runtime overrides, and failure/signal cleanup within AW-002 allowed files. New exact-HEAD full CI required after changes.",
+  "blocker": null
 }
