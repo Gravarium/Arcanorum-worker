@@ -7,9 +7,9 @@
   "task_branch": "aw-001/full-foundation-20261021",
   "pull_request": "https://github.com/Gravarium/Arcanorum-worker/pull/13",
   "claimed_at": "2026-10-21T14:49:40.670Z",
-  "heartbeat_at": "2026-10-21T14:57:38.777Z",
-  "last_progress_at": "2026-10-21T14:57:38.777Z",
-  "last_progress_sha": "c9970bf9c1058b4c07923aa63b7754ec2e31da9c",
-  "last_test_status": "Previous run 39621104290 failed at HTTP bootstrap: production request rendered debug page. Explicit process environment/default-prod runtime and two real HTTP regression scenarios published; full CI pending for new exact HEAD.",
+  "heartbeat_at": "2026-10-21T14:59:15.489Z",
+  "last_progress_at": "2026-10-21T14:59:15.489Z",
+  "last_progress_sha": "03de3717a259c06c013e81569fbace7af3c10b1b",
+  "last_test_status": "Run 39621458515: repository, Compose, Composer/audit, Symfony/Doctrine, both real HTTP scenarios and PHPStan 10 passed. CS Fixer found two public/index.php style changes; applied exact diff. Rector/Psalm/PHPUnit still unverified; full CI restarting.",
   "blocker": null
 }
