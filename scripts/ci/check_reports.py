@@ -2,55 +2,30 @@
 """Reject missing, malformed, empty, failed, or skipped quality reports."""
 from __future__ import annotations
 
-import json
+import argparse
 from pathlib import Path
 import sys
-import xml.etree.ElementTree as ET
+
+from report_validation import read_sarif, read_xml, validate_clover, validate_junit, validate_psalm
 
 
 def validate_reports(directory: Path) -> int:
-    junit = ET.parse(directory / "junit.xml").getroot()
-    if junit.tag not in {"testsuite", "testsuites"}:
-        raise ValueError("JUnit report has no test suite")
-    testcases = list(junit.iter("testcase"))
-    if not testcases:
-        raise ValueError("JUnit report contains no executed tests")
-    for tag in ("failure", "error", "skipped"):
-        if any(True for _ in junit.iter(tag)):
-            raise ValueError(f"JUnit report contains {tag} results")
-    for suite in junit.iter("testsuite"):
-        for attribute in ("failures", "errors", "skipped"):
-            if int(suite.get(attribute, "0")) != 0:
-                raise ValueError(f"JUnit suite has nonzero {attribute}")
-
-    coverage = ET.parse(directory / "coverage.xml").getroot()
-    if coverage.tag != "coverage" or coverage.find("project") is None:
-        raise ValueError("Coverage report is not a Clover project")
-
-    sarif = json.loads((directory / "psalm.sarif").read_text(encoding="utf-8"))
-    if not isinstance(sarif, dict) or sarif.get("version") != "2.1.0":
-        raise ValueError("Psalm report is not SARIF 2.1.0")
-    runs = sarif.get("runs")
-    if not isinstance(runs, list) or not runs:
-        raise ValueError("Psalm report contains no analysis run")
-    for run in runs:
-        if not isinstance(run, dict) or not isinstance(run.get("tool"), dict):
-            raise ValueError("Psalm report contains an invalid run")
-        results = run.get("results", [])
-        if not isinstance(results, list) or results:
-            raise ValueError("Psalm report contains analysis findings")
-
-    return len(testcases)
+    count = validate_junit(read_xml(directory / "junit.xml"))
+    validate_clover(read_xml(directory / "coverage.xml"))
+    validate_psalm(read_sarif(directory / "psalm.sarif"))
+    return count
 
 
-def main() -> int:
-    directory = Path(__file__).resolve().parents[2] / "var/test-results"
+def main(arguments: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--directory", type=Path, default=Path(__file__).resolve().parents[2] / "var/test-results", help="Directory containing the mandatory JUnit, Clover and Psalm reports.")
+    directory = parser.parse_args(arguments).directory
     try:
         count = validate_reports(directory)
-    except (OSError, ValueError, ET.ParseError) as error:
+    except (OSError, ValueError) as error:
         print(f"::error::Mandatory quality reports rejected: {error}", file=sys.stderr)
         return 1
-    print(f"Quality reports accepted: {count} executed tests, no failures or skipped tests; Clover and Psalm SARIF present.")
+    print(f"Quality reports accepted: {count} executed tests with consistent totals; nonempty Clover coverage and successful Psalm analysis.")
     return 0
 
 

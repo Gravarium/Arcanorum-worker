@@ -20,6 +20,10 @@ bash scripts/check.sh
 
 Die CI verwendet denselben Anwendungsprüfer `scripts/ci/check_application.sh` und dieselbe Berichtsvalidierung. Zusätzlich läuft dort die vollständige Compose-Prüfung in einem eigenen isolierten Projekt. Lokal lässt sie sich separat mit `bash scripts/ci/check_compose.sh` ausführen; sie beendet nur die von diesem Prüflauf gestarteten Testdienste.
 
+Die Berichtsvalidierung gleicht JUnit-Summenzähler auf jeder Suite-Ebene mit den tatsächlich aufgeführten Testfällen ab. Clover muss Quelldateien mit konsistenten Datei- und Projektmetriken enthalten; ein Coverage-Prozentgrenzwert wird nicht eingeführt. Psalm-SARIF muss den Analyzer samt Version und eine vollständige leere Ergebnisliste enthalten. Gemeldete Analyseabbrüche, ungültige Aufrufdaten, widersprüchliches JSON und fehlerhafte XML-Strukturen werden abgewiesen. Die Befehls-Exitcodes und die übrigen Pflichtjobs bleiben zusätzlich entscheidend.
+
+Vorliegende CI-Berichte können mit `python3 scripts/ci/check_reports.py --directory /pfad/zu/testberichten` geprüft werden. Der Standardpfad bleibt `var/test-results/`. Ungültige Berichte liefern Exit-Code 1 ohne Ausgabe ihres Inhalts.
+
 ## Dienste unabhängig prüfen
 
 ```bash
