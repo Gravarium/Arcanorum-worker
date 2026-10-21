@@ -28,7 +28,7 @@ def main() -> None:
                     raise RuntimeError("The local PHP server stopped before the HTTP test")
                 connection = http.client.HTTPConnection("127.0.0.1", port, timeout=2)
                 try:
-                    connection.request("GET", "/foundation-unknown-route?probe=%3Cscript%3Eprobe%3C/script%3E")
+                    connection.request("GET", "/foundation-unknown-route?probe=%3Cscript%3Eprobe%3C/script%3E", headers={"Accept": "text/html"})
                     response = connection.getresponse()
                     body = response.read(100_000).decode("utf-8")
                     if response.status != 404:

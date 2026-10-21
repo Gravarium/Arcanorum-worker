@@ -183,6 +183,16 @@ if composer.is_file():
             errors.append(f"{required}: fehlt, obwohl composer.json ein PHP-Anwendungsprojekt aktiviert")
     if not any(path.name.endswith("Test.php") and "tests" in path.parts for path in paths):
         errors.append("tests: mindestens eine echte PHPUnit-Testsuite muss vorhanden sein")
+    lock_path = ROOT / "composer.lock"
+    if lock_path.is_file():
+        lock_data = json.loads(lock_path.read_text(encoding="utf-8"))
+        for package in lock_data.get("packages", []) + lock_data.get("packages-dev", []):
+            name = package.get("name", "")
+            if name.startswith("symfony/") and not (
+                name.startswith("symfony/polyfill-") or name.endswith("-contracts")
+            ):
+                if re.fullmatch(r"v?7\.4\.[0-9]+", package.get("version", "")) is None:
+                    errors.append(f"composer.lock: {name} muss zur festgelegten Symfony-7.4-LTS-Reihe gehören")
 elif app_php:
     errors.append("composer.json: PHP-Anwendungscode ist vorhanden, aber composer.json fehlt")
 

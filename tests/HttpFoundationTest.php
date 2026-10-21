@@ -11,7 +11,7 @@ final class HttpFoundationTest extends WebTestCase
     public function testUnknownRouteReturnsASafeErrorPage(): void
     {
         $client = self::createClient();
-        $client->request('GET', '/foundation-unknown-route?probe=%3Cscript%3Ealert(1)%3C/script%3E');
+        $client->request('GET', '/foundation-unknown-route?probe=%3Cscript%3Ealert(1)%3C/script%3E', server: ['HTTP_ACCEPT' => 'text/html']);
 
         self::assertResponseStatusCodeSame(404);
         $content = $client->getResponse()->getContent();
