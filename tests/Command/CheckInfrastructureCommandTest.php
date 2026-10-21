@@ -61,7 +61,7 @@ final class CheckInfrastructureCommandTest extends TestCase
     public function testCacheWriteFailureRejectsReadinessAndRemovesTheProbe(): void
     {
         $connection = $this->createMock(Connection::class);
-        $connection->expects(self::exactly(2))->method('fetchOne')->willReturnOnConsecutiveCalls('180001', 1);
+        $connection->expects(self::exactly(2))->method('fetchOne')->willReturn('180001', 1);
         $cache = $this->createMock(CacheItemPoolInterface::class);
         $cache->expects(self::once())->method('getItem')->willReturn((new ArrayAdapter())->getItem('test_item'));
         $cache->expects(self::once())->method('save')->willReturn(false);
