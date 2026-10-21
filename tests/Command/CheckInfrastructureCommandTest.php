@@ -63,7 +63,7 @@ final class CheckInfrastructureCommandTest extends TestCase
         $connection = $this->createMock(Connection::class);
         $connection->expects(self::exactly(2))->method('fetchOne')->willReturn('180001', 1);
         $cache = $this->createMock(CacheItemPoolInterface::class);
-        $cache->expects(self::once())->method('getItem')->willReturn((new ArrayAdapter())->getItem('test_item'));
+        $cache->expects(self::once())->method('getItem')->willReturn(new ArrayAdapter()->getItem('test_item'));
         $cache->expects(self::once())->method('save')->willReturn(false);
         $cache->expects(self::once())->method('deleteItem')->willReturn(true);
         $tester = new CommandTester(new CheckInfrastructureCommand(new InfrastructureProbe($connection, $cache)));
