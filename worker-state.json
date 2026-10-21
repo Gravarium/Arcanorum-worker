@@ -7,9 +7,9 @@
   "task_branch": "aw-001/full-foundation-20261021",
   "pull_request": "https://github.com/Gravarium/Arcanorum-worker/pull/13",
   "claimed_at": "2026-10-21T21:01:08.730Z",
-  "heartbeat_at": "2026-10-21T21:05:26.654Z",
+  "heartbeat_at": "2026-10-21T21:07:05.919Z",
   "last_progress_at": "2026-10-21T15:04:14.525Z",
   "last_progress_sha": "0033acaa5b29f226e1d566609b46f06dc89f64d7",
-  "last_test_status": "AW-001 report parser hardening implemented; actual saved PR #13 CI artifacts accepted (11 tests, Clover metrics, Psalm 6.20.1). Building negative/CLI regression coverage for JUnit aggregates, Clover source metrics and strict Psalm/SARIF parsing. Full new exact-HEAD CI pending publication.",
+  "last_test_status": "32 Python report regressions passed; genuine saved CI artifacts accepted (11 PHPUnit tests); repository check (51 tracked paths), shell syntax and staged/working whitespace checks passed. Publishing report validation hardening; complete new exact-HEAD CI remains pending.",
   "blocker": null
 }
