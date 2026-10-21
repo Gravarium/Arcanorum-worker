@@ -73,7 +73,7 @@ overrides = {"cap_add": ["SYS_ADMIN"], "pid": "host", "ipc": "host", "privileged
 invalid = ["override:" + json.dumps([k, v]) for k, v in overrides.items()] + ["network", "volume", "password", "public", "malformed", "resolve", "non-object", "roundtrip"]
 invalid += ["override:" + json.dumps([key, value]) for key in ("command", "entrypoint") for value in ([], "")]
 runtime = ["up", "published", "postgres", "database", "ping", "redis", "write", "read", "expiry", "cleanup", "up-and-cleanup", "TERM", "INT", "HUP"]
-cases = ["valid"] + invalid + runtime
+cases = ["valid", "relative-temp"] + invalid + runtime
 with tempfile.TemporaryDirectory(prefix="aw002-regression-") as directory:
     root = Path(directory)
     for name, content in [("docker", mock), ("sleep", "#!/bin/sh\nexit 0\n")]:
@@ -84,9 +84,11 @@ with tempfile.TemporaryDirectory(prefix="aw002-regression-") as directory:
     for index, case in enumerate(cases):
         log = root / f"calls-{index}.jsonl"
         environment = dict(os.environ, PATH=str(root) + os.pathsep + os.environ["PATH"], TMPDIR=str(temporary_work), AW002_CASE=case, AW002_LOG=str(log), COMPOSE_FILE="untrusted.yaml", COMPOSE_PROJECT_NAME="existing-project", POSTGRES_USER="private-regression-marker", POSTGRES_DB="private-regression-marker")
-        result = subprocess.run(["bash", script], env=environment, capture_output=True, text=True, timeout=15)
+        if case == "relative-temp":
+            environment["TMPDIR"] = "work"
+        result = subprocess.run(["bash", script], cwd=root, env=environment, capture_output=True, text=True, timeout=15)
         calls = [json.loads(line) for line in log.read_text().splitlines()]
-        assert (result.returncode == 0) == (case == "valid"), (case, result.returncode, result.stdout, result.stderr)
+        assert (result.returncode == 0) == (case in ("valid", "relative-temp")), (case, result.returncode, result.stdout, result.stderr)
         assert "private-regression-marker" not in result.stdout + result.stderr, case
         assert not list(temporary_work.iterdir()), (case, "temporary directory leaked")
         starts = [c for c in calls if c["operation"] == "up"]
@@ -121,6 +123,9 @@ if [[ $# -ne 0 ]]; then
 fi
 
 work_directory="$(mktemp -d "${TMPDIR:-/tmp}/arcanorum-aw002.XXXXXXXXXX")"
+if [[ "$work_directory" != /* ]]; then
+    work_directory="$(pwd -P)/$work_directory"
+fi
 readonly work_directory
 project_token="${work_directory##*.}"
 readonly project_name="arcanorum-aw002-${project_token,,}-$$"
