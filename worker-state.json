@@ -3,13 +3,13 @@
   "status": "claimed",
   "task_id": "AW-001",
   "worker_id": "walker-A-15",
-  "run_id": "walker-A-15-20261021T144940670Z-64f78a",
+  "run_id": "walker-A-15-20261021T181540247Z-0r0q108f",
   "task_branch": "aw-001/full-foundation-20261021",
   "pull_request": "https://github.com/Gravarium/Arcanorum-worker/pull/13",
-  "claimed_at": "2026-10-21T14:49:40.670Z",
-  "heartbeat_at": "2026-10-21T15:04:14.525Z",
+  "claimed_at": "2026-10-21T18:16:06.061Z",
+  "heartbeat_at": "2026-10-21T18:16:06.061Z",
   "last_progress_at": "2026-10-21T15:04:14.525Z",
   "last_progress_sha": "0033acaa5b29f226e1d566609b46f06dc89f64d7",
-  "last_test_status": "Run 39622047220 passed all static analyses including Rector and Psalm taint; 11 PHPUnit assertions/test bodies passed but 404 logger output made HTTP test risky. Test now expects the PSR-3 log level, exception type and message via injected logger. Strict output/risky gates preserved. Full new exact-HEAD CI pending.",
-  "blocker": null
+  "last_test_status": "PR #13 exact HEAD 0033acaa5b29f226e1d566609b46f06dc89f64d7: mandatory CI 39622426618 complete, 4/4 jobs success, no skipped mandatory steps. Awaiting owner review; no code changes in this run.",
+  "blocker": "Awaiting owner review of green draft PR #13; no new approved AW-001 code work."
 }
