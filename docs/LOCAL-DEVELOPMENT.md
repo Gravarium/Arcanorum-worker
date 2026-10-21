@@ -4,6 +4,8 @@
 
 PHP 8.5 mit `pdo_pgsql`, `redis`, `intl`, `mbstring`, `xml` und `zip`, Composer 2, Python 3 und Ruby. Für Coverage wird PCOV benötigt. PostgreSQL 18 und Redis 8 müssen erreichbar sein. Die Container-Anleitung steht in [LOCAL-CONTAINERS.md](LOCAL-CONTAINERS.md).
 
+Die Symfony-Kernkomponenten sind im Manifest auf 7.4 LTS begrenzt. Die versionierte Sperrdatei wurde mit Composer auf PHP 8.5 erzeugt; die Repository-Prüfung lehnt andere Symfony-Kernversionen ab. Contracts und Polyfills verwenden ihre eigenen Versionsreihen.
+
 Alle folgenden Befehle verwenden ausschließlich die künstlichen lokalen Testwerte aus `compose.yaml`. Verwende eine eigene Testdatenbank; die Doctrine-Prüfung richtet ihre Migrations-Metadaten ein und führt vorhandene Migrationen aus. Echte Zugangsdaten gehören in unversionierte Umgebungsvariablen.
 
 ```bash

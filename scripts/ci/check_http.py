@@ -40,7 +40,13 @@ def main() -> None:
                                 diagnostic = diagnostic.replace(value, "[redacted]")
                         raise RuntimeError(f"Expected HTTP 404, received {response.status}; server log: {diagnostic[-4000:]}")
                     if "Anfrage nicht verfügbar" not in body:
-                        raise RuntimeError("The neutral Twig error page was not rendered")
+                        log.seek(0)
+                        diagnostic = body[:1200] + "\n" + log.read().decode("utf-8", errors="replace")[-2500:]
+                        for key in ("APP_SECRET", "DATABASE_URL", "REDIS_URL"):
+                            value = environment.get(key)
+                            if value:
+                                diagnostic = diagnostic.replace(value, "[redacted]")
+                        raise RuntimeError(f"The neutral Twig error page was not rendered: {diagnostic}")
                     if any(marker in body for marker in ("<script>", "Stack Trace", "DATABASE_URL", "APP_SECRET")):
                         raise RuntimeError("The HTTP error response contains unsafe details")
                     print("HTTP bootstrap passed: real front controller, production mode, safe Twig 404 response.")

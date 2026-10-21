@@ -16,7 +16,7 @@ Jeder Auftrag braucht eine eindeutige ID, ein Ziel, Abnahmekriterien, Abhängigk
 
 ### AW-001 — Technisches PHP-/Symfony-Grundgerüst
 
-**Status:** in Bearbeitung
+**Status:** PR offen
 **Koordination:** Branch `worker-control`, Datei `worker-state.json`; zusammenhängendes Gesamtpaket PR #13 auf `aw-001/full-foundation-20261021`.
 **Prüfstand:** Technische Erweiterung und Konsolidierung auf ausdrücklichen Eigentümerauftrag vom 21.10.2026. Exakter laufender HEAD und tatsächlicher CI-Status stehen im Aufgaben-Lock und in PR #13. Bis zur bestandenen vollständigen Pflicht-CI keine Gesamtfreigabe.
 **Abhängigkeiten:** keine
