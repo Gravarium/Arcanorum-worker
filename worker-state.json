@@ -3,13 +3,13 @@
   "status": "claimed",
   "task_id": "AW-001",
   "worker_id": "walker-A-15",
-  "run_id": "walker-A-15-20261021T111452778Z-t11-9cwvp3o6",
+  "run_id": "walker-A-15-20261021T144940670Z-64f78a",
   "task_branch": "aw-001/full-foundation-20261021",
   "pull_request": "https://github.com/Gravarium/Arcanorum-worker/pull/13",
-  "claimed_at": "2026-10-21T11:14:52.778Z",
-  "heartbeat_at": "2026-10-21T11:15:34.889Z",
+  "claimed_at": "2026-10-21T14:49:40.670Z",
+  "heartbeat_at": "2026-10-21T14:49:40.670Z",
   "last_progress_at": "2026-10-21T08:57:59.342Z",
   "last_progress_sha": "dba19d71d92332082e25c3cad7615ad348d6eb55",
   "last_test_status": "PR #13 HEAD 27bef1f7d98351c44b66d6a339a3e1dece78bf05: CI 39573580921 failed at HTTP 404 Twig marker; 404 status returned, but HTML Accept header not set by HTTP probe. Downstream mandatory analysis/tests skipped. Investigating without reducing checks.",
-  "blocker": "HTTP 404 Twig error template not confirmed; investigation in progress."
+  "blocker": null
 }
