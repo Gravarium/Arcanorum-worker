@@ -7,9 +7,9 @@
   "task_branch": "aw-001/full-foundation-20261021",
   "pull_request": "https://github.com/Gravarium/Arcanorum-worker/pull/13",
   "claimed_at": "2026-10-21T14:49:40.670Z",
-  "heartbeat_at": "2026-10-21T14:55:45.226Z",
-  "last_progress_at": "2026-10-21T14:55:45.226Z",
-  "last_progress_sha": "7fca9a061b81cfddb7ed44d00759529c4eddb9f4",
-  "last_test_status": "Resolved Composer lock published; PR exact-HEAD mandatory CI run 39621104290 executing. No final success yet.",
+  "heartbeat_at": "2026-10-21T14:57:38.777Z",
+  "last_progress_at": "2026-10-21T14:57:38.777Z",
+  "last_progress_sha": "c9970bf9c1058b4c07923aa63b7754ec2e31da9c",
+  "last_test_status": "Previous run 39621104290 failed at HTTP bootstrap: production request rendered debug page. Explicit process environment/default-prod runtime and two real HTTP regression scenarios published; full CI pending for new exact HEAD.",
   "blocker": null
 }
