@@ -9,9 +9,12 @@ readonly postgres_database="walker_test"
 cd "$repository_root"
 
 compose=(docker compose --project-name "$project_name")
+cleanup_armed=false
 
 cleanup() {
-    "${compose[@]}" down --volumes --remove-orphans >/dev/null 2>&1 || true
+    if [[ "$cleanup_armed" == true ]]; then
+        "${compose[@]}" down --volumes --remove-orphans >/dev/null 2>&1 || true
+    fi
 }
 trap cleanup EXIT
 
@@ -25,10 +28,17 @@ import json
 import sys
 
 EXPECTED = {"postgres": ("postgres:18", 5432), "redis": ("redis:8-alpine", 6379)}
+TEST_POSTGRES_ENVIRONMENT = {
+    "POSTGRES_DB": "walker_test",
+    "POSTGRES_USER": "walker_local",
+    "POSTGRES_PASSWORD": "local-test-only-password",
+}
 
 
 def validate(config):
     problems = []
+    if config.get("volumes"):
+        problems.append("declared Compose volumes are forbidden in the test environment")
     services = config.get("services", {})
     if not isinstance(services, dict) or set(services) != set(EXPECTED):
         return ["unexpected Compose services"]
@@ -41,6 +51,14 @@ def validate(config):
             problems.append(f"{name}: unexpected image; expected {image}")
         if service.get("privileged") is True or service.get("network_mode") == "host":
             problems.append(f"{name}: privileged or host networking is forbidden")
+        # Never let a local override attach existing data or change the image
+        # source before the EXIT trap is permitted to remove project volumes.
+        for field in ("volumes", "volumes_from", "secrets", "configs", "devices", "build", "env_file"):
+            if service.get(field):
+                problems.append(f"{name}: {field} is forbidden in the test environment")
+        expected_environment = TEST_POSTGRES_ENVIRONMENT if name == "postgres" else {}
+        if service.get("environment", {}) != expected_environment:
+            problems.append(f"{name}: unexpected environment; only test-only values are allowed")
         ports = service.get("ports", [])
         if not isinstance(ports, list) or len(ports) != 1:
             problems.append(f"{name}: exactly one loopback port binding is required")
@@ -77,9 +95,28 @@ for label, (service, field, value) in mutations.items():
         print(f"::error::security guard negative test failed: {label}", file=sys.stderr)
         sys.exit(1)
 
-print("Compose port guard passed: localhost-only bindings and 4 negative tests.")
+unsafe_data = {
+    "existing PostgreSQL host data": ("postgres", "volumes", [{"type": "bind", "source": "/tmp/existing-data", "target": "/var/lib/postgresql"}]),
+    "production-like PostgreSQL password": ("postgres", "environment", {**TEST_POSTGRES_ENVIRONMENT, "POSTGRES_PASSWORD": "different-value"}),
+    "Redis build override": ("redis", "build", {"context": "."}),
+}
+for label, (service, field, value) in unsafe_data.items():
+    candidate = copy.deepcopy(config)
+    candidate["services"][service][field] = value
+    if not validate(candidate):
+        print(f"::error::security guard negative test failed: {label}", file=sys.stderr)
+        sys.exit(1)
+
+candidate = copy.deepcopy(config)
+candidate["volumes"] = {"existing-data": {}}
+if not validate(candidate):
+    print("::error::security guard negative test failed: declared volume", file=sys.stderr)
+    sys.exit(1)
+
+print("Compose guard passed: localhost-only test services and 8 negative tests.")
 '
 
+cleanup_armed=true
 "${compose[@]}" up --detach --wait --wait-timeout 120
 
 # Verify the published addresses after Docker has started the containers.
