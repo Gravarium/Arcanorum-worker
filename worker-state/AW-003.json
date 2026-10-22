@@ -16,9 +16,9 @@
   "claim_duration_hours": 7,
   "claimed_at": "2026-10-22T16:10:31Z",
   "claim_expires_at": "2026-10-22T23:10:31Z",
-  "heartbeat_at": "2026-10-22T16:20:12Z",
+  "heartbeat_at": "2026-10-22T16:28:45Z",
   "last_progress_at": null,
   "last_progress_sha": null,
-  "last_test_status": "Baseline only: required GitHub Actions workflow run #117 succeeded on exact base SHA 7bbde570920b9eccb3a5a3fd566b5cea00cfd823. No AW-003 code has been tested; run the complete required workflow on each exact task/PR HEAD.",
+  "last_test_status": "Partial local checks on an uncommitted working tree: PHPStan passed and PHP-CS-Fixer passed before the last controller adjustment. The first full PHPUnit run failed on PostgreSQL boolean binding in DoctrineAdvertisingStore; this has been corrected and rerun is pending. No AW-003 revision is green yet.",
   "blocker": null
 }
