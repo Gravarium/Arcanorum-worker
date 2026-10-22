@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "status": "idle",
+  "status": "PR offen",
   "task_id": "AW-003",
   "worker_id": null,
   "run_id": null,
@@ -19,6 +19,6 @@
   "heartbeat_at": null,
   "last_progress_at": "2026-10-22T16:37:49Z",
   "last_progress_sha": "32361ed6b4ba40081aefac890f2d09e059cc88e2",
-  "last_test_status": "Exact HEAD 32361ed6b4ba40081aefac890f2d09e059cc88e2: scripts/check.sh passed in the Walker test environment, including repository gates, Composer validation/audit, Symfony container/config checks, PHP-CS-Fixer, PHPStan, Rector, Psalm taint analysis, PHPUnit (38 tests), and report validation. scripts/ci/check_compose.sh passed with PostgreSQL 18 and Redis 8. GitHub Actions was not run because its quota was exhausted. Existing doctrine:schema:validate uses --skip-sync; new Doctrine stores were tested against PostgreSQL temporary tables.",
-  "blocker": "Draft PR awaits project-owner review and host integration. No merge or deployment."
+  "last_test_status": "Exact PR HEAD 32361ed6b4ba40081aefac890f2d09e059cc88e2: GitHub Actions run #122 (39815488160) completed successfully; 4/4 required jobs passed, including Compose PostgreSQL 18/Redis 8 and full PHP 8.5/Symfony quality checks; no required jobs or steps were skipped. Walker state also records scripts/check.sh and scripts/ci/check_compose.sh passing locally.",
+  "blocker": "Draft PR #16 awaits project-owner review and host integration. No merge or deployment."
 }
