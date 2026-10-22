@@ -1,24 +1,24 @@
 {
   "schema_version": 1,
-  "status": "claimed",
+  "status": "idle",
   "task_id": "AW-003",
-  "worker_id": "codex-aw003",
-  "run_id": "codex-aw003-20261022T161031Z-7bbde570",
+  "worker_id": null,
+  "run_id": null,
   "task_branch": "aw-003/advertising-module-20261022",
   "base_sha": "7bbde570920b9eccb3a5a3fd566b5cea00cfd823",
   "plan_ref": "planning/aw003-aw004-modules-20261022/docs/WORK-PLAN.md",
-  "pull_request": null,
+  "pull_request": 16,
   "allowed_paths": [
     "src/Module/Advertising/",
     "tests/Module/Advertising/",
     "docs/modules/ADVERTISING.md"
   ],
   "claim_duration_hours": 7,
-  "claimed_at": "2026-10-22T16:10:31Z",
-  "claim_expires_at": "2026-10-22T23:10:31Z",
-  "heartbeat_at": "2026-10-22T16:35:20Z",
-  "last_progress_at": "2026-10-22T16:35:20Z",
-  "last_progress_sha": null,
-  "last_test_status": "Local: actual Compose check passed for PostgreSQL 18 and Redis 8. Full scripts/check.sh passed on the task tree: repository gates, Composer validation/audit, Symfony checks, PHP-CS-Fixer, PHPStan, Rector, Psalm taint analysis, PHPUnit (38 tests), coverage/report validation. The pre-existing schema check uses --skip-sync; new Doctrine stores were exercised against PostgreSQL temporary tables. Exact committed HEAD verification is pending.",
-  "blocker": null
+  "claimed_at": null,
+  "claim_expires_at": null,
+  "heartbeat_at": null,
+  "last_progress_at": "2026-10-22T16:37:49Z",
+  "last_progress_sha": "32361ed6b4ba40081aefac890f2d09e059cc88e2",
+  "last_test_status": "Exact HEAD 32361ed6b4ba40081aefac890f2d09e059cc88e2: scripts/check.sh passed in the Walker test environment, including repository gates, Composer validation/audit, Symfony container/config checks, PHP-CS-Fixer, PHPStan, Rector, Psalm taint analysis, PHPUnit (38 tests), and report validation. scripts/ci/check_compose.sh passed with PostgreSQL 18 and Redis 8. GitHub Actions was not run because its quota was exhausted. Existing doctrine:schema:validate uses --skip-sync; new Doctrine stores were tested against PostgreSQL temporary tables.",
+  "blocker": "Draft PR awaits project-owner review and host integration. No merge or deployment."
 }
