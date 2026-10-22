@@ -16,9 +16,9 @@
   "claim_duration_hours": 7,
   "claimed_at": "2026-10-22T16:10:31Z",
   "claim_expires_at": "2026-10-22T23:10:31Z",
-  "heartbeat_at": "2026-10-22T16:28:45Z",
+  "heartbeat_at": "2026-10-22T16:31:34Z",
   "last_progress_at": null,
   "last_progress_sha": null,
-  "last_test_status": "Partial local checks on an uncommitted working tree: PHPStan passed and PHP-CS-Fixer passed before the last controller adjustment. The first full PHPUnit run failed on PostgreSQL boolean binding in DoctrineAdvertisingStore; this has been corrected and rerun is pending. No AW-003 revision is green yet.",
+  "last_test_status": "Local: actual Compose check passed for PostgreSQL 18 and Redis 8; repository self-checks passed. PHPStan, PHP-CS-Fixer and Rector dry-run passed on the current uncommitted working tree. The final full scripts/check.sh run is in progress; Psalm and the complete PHPUnit suite have not yet run in that final pass. Earlier failures were corrected. No final AW-003 revision is green yet.",
   "blocker": null
 }
