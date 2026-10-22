@@ -70,6 +70,26 @@ final class AdvertisingManagerTest extends TestCase
         $manager->archivePlacement('header', 'safe-test-token');
     }
 
+    public function testPlacementCanBePausedAndActivatedButArchiveIsTerminal(): void
+    {
+        [$manager] = $this->newManager();
+        $placement = $manager->createPlacement('header', 'Header', [AdFormat::HtmlBanner->value], 'safe-test-token');
+
+        $paused = $manager->pausePlacement($placement->id, 'safe-test-token');
+        self::assertTrue($paused->paused);
+        self::assertFalse($paused->archived);
+
+        $active = $manager->activatePlacement($paused->id, 'safe-test-token');
+        self::assertFalse($active->paused);
+        self::assertFalse($active->archived);
+
+        $archived = $manager->archivePlacement($active->id, 'safe-test-token');
+        self::assertTrue($archived->archived);
+
+        $this->expectException(\DomainException::class);
+        $manager->activatePlacement($archived->id, 'safe-test-token');
+    }
+
     public function testUnsafeDestinationAndUnsupportedVideoProviderAreRejected(): void
     {
         [$manager] = $this->newManager();

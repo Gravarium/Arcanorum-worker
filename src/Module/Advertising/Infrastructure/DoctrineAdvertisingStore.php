@@ -19,14 +19,14 @@ final readonly class DoctrineAdvertisingStore implements AdvertisingStore
 
     public function findPlacement(string $id): ?Placement
     {
-        $row = $this->connection->fetchAssociative('SELECT id, label, formats, archived FROM cms_advertising_placement WHERE id = :id', ['id' => $id]);
+        $row = $this->connection->fetchAssociative('SELECT id, label, formats, archived, paused FROM cms_advertising_placement WHERE id = :id', ['id' => $id]);
 
         return false === $row ? null : $this->placementFromRow($row);
     }
 
     public function listPlacements(): array
     {
-        $rows = $this->connection->fetchAllAssociative('SELECT id, label, formats, archived FROM cms_advertising_placement ORDER BY id');
+        $rows = $this->connection->fetchAllAssociative('SELECT id, label, formats, archived, paused FROM cms_advertising_placement ORDER BY id');
 
         return array_map($this->placementFromRow(...), $rows);
     }
@@ -35,9 +35,9 @@ final readonly class DoctrineAdvertisingStore implements AdvertisingStore
     {
         $formats = json_encode(array_map(static fn (AdFormat $format): string => $format->value, $placement->formats), JSON_THROW_ON_ERROR);
         $this->connection->executeStatement(
-            'INSERT INTO cms_advertising_placement (id, label, formats, archived) VALUES (:id, :label, CAST(:formats AS jsonb), :archived) '
-            .'ON CONFLICT (id) DO UPDATE SET label = EXCLUDED.label, formats = EXCLUDED.formats, archived = EXCLUDED.archived',
-            ['id' => $placement->id, 'label' => $placement->label, 'formats' => $formats, 'archived' => $placement->archived ? 'true' : 'false'],
+            'INSERT INTO cms_advertising_placement (id, label, formats, archived, paused) VALUES (:id, :label, CAST(:formats AS jsonb), :archived, :paused) '
+            .'ON CONFLICT (id) DO UPDATE SET label = EXCLUDED.label, formats = EXCLUDED.formats, archived = EXCLUDED.archived, paused = EXCLUDED.paused',
+            ['id' => $placement->id, 'label' => $placement->label, 'formats' => $formats, 'archived' => $placement->archived ? 'true' : 'false', 'paused' => $placement->paused ? 'true' : 'false'],
         );
     }
 
@@ -110,6 +110,7 @@ final readonly class DoctrineAdvertisingStore implements AdvertisingStore
             self::stringColumn($row, 'label'),
             $typedFormats,
             in_array($row['archived'] ?? false, [true, 1, '1', 't', 'true'], true),
+            in_array($row['paused'] ?? false, [true, 1, '1', 't', 'true'], true),
         );
     }
 

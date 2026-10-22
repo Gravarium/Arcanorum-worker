@@ -63,6 +63,18 @@ final readonly class AdvertisingAdminController
         return $this->mutate($request, fn (array $data, string $csrfToken): array => self::placementData($this->manager->archivePlacement($id, $csrfToken)), allowEmptyBody: true);
     }
 
+    #[Route('/placements/{id}/activate', name: 'cms_advertising_placements_activate', methods: ['POST'])]
+    public function activatePlacement(string $id, Request $request): JsonResponse
+    {
+        return $this->mutate($request, fn (array $data, string $csrfToken): array => self::placementData($this->manager->activatePlacement($id, $csrfToken)), allowEmptyBody: true);
+    }
+
+    #[Route('/placements/{id}/pause', name: 'cms_advertising_placements_pause', methods: ['POST'])]
+    public function pausePlacement(string $id, Request $request): JsonResponse
+    {
+        return $this->mutate($request, fn (array $data, string $csrfToken): array => self::placementData($this->manager->pausePlacement($id, $csrfToken)), allowEmptyBody: true);
+    }
+
     #[Route('/ads', name: 'cms_advertising_ads_list', methods: ['GET'])]
     public function listAdvertisements(Request $request): JsonResponse
     {
@@ -280,6 +292,8 @@ final readonly class AdvertisingAdminController
             'label' => $placement->label,
             'formats' => array_map(static fn (AdFormat $format): string => $format->value, $placement->formats),
             'archived' => $placement->archived,
+            'paused' => $placement->paused,
+            'status' => $placement->archived ? 'archived' : ($placement->paused ? 'paused' : 'active'),
         ];
     }
 

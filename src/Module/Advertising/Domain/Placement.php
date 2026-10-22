@@ -14,6 +14,7 @@ final readonly class Placement
         public string $label,
         public array $formats,
         public bool $archived = false,
+        public bool $paused = false,
     ) {
         if (1 !== preg_match('/\A[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?\z/D', $id)) {
             throw new \InvalidArgumentException('Placement id must be a lowercase URL-safe slug.');
@@ -38,11 +39,35 @@ final readonly class Placement
      */
     public function revise(string $label, array $formats): self
     {
-        return new self($this->id, $label, $formats, $this->archived);
+        return new self($this->id, $label, $formats, $this->archived, $this->paused);
+    }
+
+    public function activate(): self
+    {
+        if ($this->archived) {
+            throw new \DomainException('Archived placements cannot be activated.');
+        }
+        if (!$this->paused) {
+            throw new \DomainException('Only paused placements can be activated.');
+        }
+
+        return new self($this->id, $this->label, $this->formats);
+    }
+
+    public function pause(): self
+    {
+        if ($this->archived) {
+            throw new \DomainException('Archived placements cannot be paused.');
+        }
+        if ($this->paused) {
+            throw new \DomainException('Only active placements can be paused.');
+        }
+
+        return new self($this->id, $this->label, $this->formats, false, true);
     }
 
     public function archive(): self
     {
-        return new self($this->id, $this->label, $this->formats, true);
+        return new self($this->id, $this->label, $this->formats, true, false);
     }
 }

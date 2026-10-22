@@ -24,7 +24,7 @@ final readonly class AdvertisingClickService
         }
 
         $placement = $this->store->findPlacement($advertisement->placementId);
-        if (null === $placement || $placement->archived || !$placement->supports($advertisement->format)) {
+        if (null === $placement || $placement->archived || $placement->paused || !$placement->supports($advertisement->format)) {
             return null;
         }
 

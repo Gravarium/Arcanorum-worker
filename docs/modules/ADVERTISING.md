@@ -4,7 +4,8 @@ Das Modul verwaltet Anzeigen und Platzierungen, liefert drei streng begrenzte We
 
 ## Funktionen
 
-- Platzierungen und Anzeigen anlegen, bearbeiten und archivieren.
+- Platzierungen und Anzeigen anlegen, bearbeiten und archivieren; Platzierungen und Anzeigen lassen sich aktivieren oder pausieren.
+- Eine pausierte Platzierung unterdrückt ihre Auslieferungen und Klicks, ohne die Zustände ihrer Anzeigen zu ändern. Nach der Reaktivierung werden weiterhin aktive Anzeigen wieder ausgeliefert.
 - Anzeigen als Entwurf, aktiv, pausiert oder inaktiv führen. Archivierte Anzeigen sind endgültig.
 - Aktivieren nur bei vorhandener, nicht archivierter Platzierung mit passendem Anzeigenformat.
 - HTML-Banner durch eine Element- und Attribut-Allowlist bereinigen. Skripte, Stile, Formulare, SVG, eingebettete Medien, Ereignisattribute und Links im Inhalt werden entfernt. Bilder müssen lokale Pfade unter `/media/` verwenden.
@@ -29,7 +30,8 @@ CREATE TABLE cms_advertising_placement (
     id varchar(64) PRIMARY KEY,
     label varchar(120) NOT NULL,
     formats jsonb NOT NULL CHECK (jsonb_typeof(formats) = 'array'),
-    archived boolean NOT NULL DEFAULT false
+    archived boolean NOT NULL DEFAULT false,
+    paused boolean NOT NULL DEFAULT false
 );
 
 CREATE TABLE cms_advertising_ad (
@@ -71,6 +73,8 @@ The host should periodically delete expired click digests and rate-window rows o
 ## API shape
 
 Admin JSON mutations accept only fields for the selected operation. Creative fields are format-specific:
+
+Placements have the states `active`, `paused` and `archived`. The admin endpoints `POST /admin/advertising/placements/{id}/pause` and `POST /admin/advertising/placements/{id}/activate` pause or reactivate a placement. Pausing suppresses delivery and clicks without changing the states of its ads; after reactivation, active ads are delivered again. Archived placements cannot be reactivated.
 
 - `html_banner`: `creative.html`
 - `static_player`: `creative.image_path`, `creative.alt`, `creative.caption`

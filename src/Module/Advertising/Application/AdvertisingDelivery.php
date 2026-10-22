@@ -21,6 +21,9 @@ final readonly class AdvertisingDelivery
         if (null === $placement || $placement->archived) {
             throw new \DomainException('Advertising placement is unavailable.');
         }
+        if ($placement->paused) {
+            return '';
+        }
 
         $output = '';
         foreach ($this->store->listAdvertisementsByStatus($placementId, AdStatus::Active) as $advertisement) {

@@ -75,6 +75,26 @@ final readonly class AdvertisingManager
         return $archived;
     }
 
+    public function activatePlacement(string $id, string $csrfToken): Placement
+    {
+        $this->authorizeMutation($csrfToken);
+        $placement = $this->requiredPlacement($id);
+        $active = $placement->activate();
+        $this->store->savePlacement($active);
+
+        return $active;
+    }
+
+    public function pausePlacement(string $id, string $csrfToken): Placement
+    {
+        $this->authorizeMutation($csrfToken);
+        $placement = $this->requiredPlacement($id);
+        $paused = $placement->pause();
+        $this->store->savePlacement($paused);
+
+        return $paused;
+    }
+
     /**
      * @param array<string, mixed> $creative
      */

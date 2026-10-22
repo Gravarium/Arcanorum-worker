@@ -52,6 +52,9 @@ final class DoctrineStoresTest extends KernelTestCase
         self::assertSame($ad->id, $loaded->id);
         self::assertSame(['html' => '<strong>Banner</strong>'], $loaded->creative);
         self::assertCount(1, $store->listAdvertisements('header'));
+
+        $store->savePlacement($placement->pause());
+        self::assertTrue($store->findPlacement('header')?->paused);
     }
 
     public function testStatisticsAreAggregatedAndClickDigestsAreDeduplicated(): void
@@ -100,7 +103,7 @@ final class DoctrineStoresTest extends KernelTestCase
 
     private function createTemporarySchema(Connection $connection): void
     {
-        $connection->executeStatement('CREATE TEMPORARY TABLE IF NOT EXISTS cms_advertising_placement (id varchar(64) PRIMARY KEY, label varchar(120) NOT NULL, formats jsonb NOT NULL, archived boolean NOT NULL DEFAULT false)');
+        $connection->executeStatement('CREATE TEMPORARY TABLE IF NOT EXISTS cms_advertising_placement (id varchar(64) PRIMARY KEY, label varchar(120) NOT NULL, formats jsonb NOT NULL, archived boolean NOT NULL DEFAULT false, paused boolean NOT NULL DEFAULT false)');
         $connection->executeStatement('CREATE TEMPORARY TABLE IF NOT EXISTS cms_advertising_ad (id char(32) PRIMARY KEY, label varchar(120) NOT NULL, placement_id varchar(64) NOT NULL, format varchar(32) NOT NULL, creative jsonb NOT NULL, destination_url text NOT NULL, status varchar(16) NOT NULL, created_at timestamptz NOT NULL, updated_at timestamptz NOT NULL)');
         $connection->executeStatement('CREATE TEMPORARY TABLE IF NOT EXISTS cms_advertising_daily_stats (day date NOT NULL, advertisement_id char(32) NOT NULL, placement_id varchar(64) NOT NULL, impressions bigint NOT NULL DEFAULT 0, clicks bigint NOT NULL DEFAULT 0, PRIMARY KEY (day, advertisement_id))');
         $connection->executeStatement('CREATE TEMPORARY TABLE IF NOT EXISTS cms_advertising_click_dedupe (event_digest char(64) PRIMARY KEY, expires_at timestamptz NOT NULL)');

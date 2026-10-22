@@ -103,4 +103,32 @@ final class AdvertisingDeliveryTest extends TestCase
         self::assertStringNotContainsString('<script', strtolower($html));
         self::assertStringContainsString('&lt;Video&gt;', $html);
     }
+
+    public function testPausedPlacementStopsDeliveryAndClickRedirectsUntilReactivated(): void
+    {
+        $store = new InMemoryAdvertisingStore();
+        $statistics = new InMemoryStatisticsStore();
+        $manager = new AdvertisingManager($store, $statistics, new RecordingAdminGuard());
+        $manager->createPlacement('header', 'Header', [AdFormat::HtmlBanner->value], 'safe-test-token');
+        $ad = $manager->createAdvertisement(
+            'Banner', 'header', AdFormat::HtmlBanner->value,
+            ['html' => '<strong>Banner</strong>'],
+            'https://example.invalid/campaign', 'safe-test-token',
+        );
+        $manager->activateAdvertisement($ad->id, 'safe-test-token');
+        $now = new \DateTimeImmutable('2026-10-22T16:00:00+00:00');
+        $signer = new ClickTokenSigner(str_repeat('s', 64));
+        $delivery = new AdvertisingDelivery($store, $statistics, new AdvertisingRenderer($signer));
+        $clicks = new AdvertisingClickService($store, $statistics, $signer);
+        $token = $signer->issue($ad->id, $now);
+
+        self::assertSame(1, substr_count($delivery->renderPlacement('header', $now), 'cms-ad--html'));
+        $manager->pausePlacement('header', 'safe-test-token');
+        self::assertSame('', $delivery->renderPlacement('header', $now));
+        self::assertNull($clicks->destinationForClick($ad->id, $token, $now));
+
+        $manager->activatePlacement('header', 'safe-test-token');
+        self::assertSame(1, substr_count($delivery->renderPlacement('header', $now), 'cms-ad--html'));
+        self::assertSame('https://example.invalid/campaign', $clicks->destinationForClick($ad->id, $token, $now));
+    }
 }

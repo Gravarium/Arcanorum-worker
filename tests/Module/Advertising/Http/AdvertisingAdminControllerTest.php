@@ -58,4 +58,22 @@ final class AdvertisingAdminControllerTest extends TestCase
         self::assertSame(200, $response->getStatusCode());
         self::assertStringContainsString('"archived":true', (string) $response->getContent());
     }
+
+    public function testPlacementCanBePausedAndActivatedThroughAdminApi(): void
+    {
+        $store = new InMemoryAdvertisingStore();
+        $guard = new RecordingAdminGuard();
+        $manager = new AdvertisingManager($store, new InMemoryStatisticsStore(), $guard);
+        $manager->createPlacement('header', 'Header', [AdFormat::HtmlBanner->value], 'safe-test-token');
+        $controller = new AdvertisingAdminController($manager);
+        $request = Request::create('/admin/advertising/placements/header/pause', 'POST', server: ['HTTP_X_CSRF_TOKEN' => 'safe-test-token']);
+
+        $paused = $controller->pausePlacement('header', $request);
+        self::assertSame(200, $paused->getStatusCode());
+        self::assertStringContainsString('"status":"paused"', (string) $paused->getContent());
+
+        $activated = $controller->activatePlacement('header', $request);
+        self::assertSame(200, $activated->getStatusCode());
+        self::assertStringContainsString('"status":"active"', (string) $activated->getContent());
+    }
 }
