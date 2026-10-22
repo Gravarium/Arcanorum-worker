@@ -84,3 +84,47 @@ Der Projekteigentümer ergänzt neue Aufgaben im folgenden Format:
 - [ ]
 **Sicherheits- und Datenhinweise:**
 **Nicht-Ziele:**
+
+## Zusaetzliche parallelisierbare CMS-Modulpakete (Eigentuemerfreigabe 22.10.2026)
+
+Die folgenden Aufgaben sind unabhaengige, eigenstaendig zu entwickelnde CMS-Module fuer das gemeinsame Projekt. Privater Arcanorum-Code wird weder ausgecheckt noch in den oeffentlichen Walker uebertragen. Der aufgabenspezifische Claim ist vor dem ersten Schreibzugriff Pflicht. Jeder Auftrag erhaelt einen eigenen Branch und PR; der bestehende AW-001- oder AW-002-Branch wird nicht beschrieben. Der stabile AW-001-Arbeitsstand kann als Basis fuer gestapelte PRs benutzt werden; fehlende Pruefgrundlagen sind Blocker, keine Freigabe.
+
+### AW-003 — Eigenstaendiges Anzeigenmodul
+
+**Status:** bereit (Claim vor Beginn erforderlich)
+**Abhaengigkeiten:** startbare PHP-/Symfony-Testbasis aus AW-001
+**Parallel zu:** AW-001, AW-002, AW-004
+**Erlaubte Pfade:** ausschliesslich neue Dateien unter src/Module/Advertising/, tests/Module/Advertising/ und docs/modules/ADVERTISING.md. Keine geteilten Framework-, Composer-, Konfigurations- oder Workflow-Dateien veraendern.
+**Ziel:** Anzeigenstammdaten, erlaubte Werbeformen und sichere Aktivierungsablaeufe als spaeter integrierbare, eigenstaendige Komponenten.
+
+**Abnahmekriterien:**
+1. Typen fuer streng bereinigte HTML-Banner, statische Player-Anzeigen und Videoanzeigen-Metadaten.
+2. Eingabegrenzen, sichere URL-/HTML-Ausgabe und Negativtests fuer JavaScript, fremde Schemes, Script-Attribute, XSS sowie nicht erlaubte Anbieter.
+3. Aktivieren, Pausieren, Deaktivieren mit klaren Zustands- und Berechtigungsgrenzen.
+4. Auslieferungs-/Klickstatistik ohne IP-Adressen oder identifizierbare Personen, mit Drosselungs- und Duplikatregeln.
+5. Positive/negative PHPUnit-Tests, PHPStan Stufe 10, Psalm-Taintanalyse, CS-Fixer, Rector-Dry-Run und restliche unveraenderte Pflicht-CI auf dem exakten HEAD.
+6. Ein kleiner, dokumentierter Integrationsvertrag und Fehlerfaelle, ohne private Datenmodellannahmen.
+
+**Nicht-Ziele:** Keine Liveschaltung, kein Bezug zum privaten Hauptquellcode, kein direkter Werbenetzwerkzugriff, keine Veraenderung am Hauptprojekt, kein Merge.
+
+### AW-004 — Eigenstaendige Aufgabenplanung
+
+**Status:** bereit (Claim vor Beginn erforderlich)
+**Abhaengigkeiten:** startbare PHP-/Symfony-Testbasis aus AW-001
+**Parallel zu:** AW-001, AW-002, AW-003
+**Erlaubte Pfade:** ausschliesslich neue Dateien unter src/Module/Scheduling/, tests/Module/Scheduling/ und docs/modules/SCHEDULING.md. Keine geteilten Framework-, Composer-, Konfigurations- oder Workflow-Dateien veraendern.
+**Ziel:** Validierte, sichere CMS-Wartungsaufgaben mit Ausfuehrungsschutz und pruefbaren Ergebnissen.
+
+**Abnahmekriterien:**
+1. Feste Task-Allowlist, validierte Zeitintervalle/Zeitzonen, aktiv/pausiert/deaktiviert.
+2. Berechtigungsgepruefte CRUD-Vertraege ohne freie Shell-Befehle, Admin-Impersonation oder beliebige Jobskripte.
+3. Idempotente Ausfuehrung, Sperre gegen Wiederholung/Parallelstarts und fail-closed bei Ausfall.
+4. Begrenztes, nicht vertrauliches Ergebnisprotokoll, fehlerfreier Wiederanlauf.
+5. Positive und negative PHPUnit-Regressionen; PHPStan 10, Psalm, CS-Fixer, Rector und alle sonstigen Pflichtgates auf dem exakten HEAD.
+6. Dokumentierter Integrationsvertrag ohne private Anwendungsdaten.
+
+**Nicht-Ziele:** Keine Produktionscronjobs, keine Datenbanksicherungen, kein Zugriff auf Hauptrepository oder produktive Server, kein Merge.
+
+### Uebergabe und Sicherheitsgrenze
+
+AW-003/AW-004 sind voneinander getrennt und duerfen nur nach Aufgabe-Claim beginnen. Keine zwei KIs schreiben am selben Pfad oder Branch. Kumulative Worker-Git-Historie darf keine rekonstruierbare Kopie des privaten Hauptprojekts enthalten. Die Ergebnisse werden erst nach gesonderter sicherer Integration, exakter CI-Pruefung und Freigabe im privaten Hauptprojekt eingesetzt. Die oeffentliche Worker-CI ersetzt NICHT die noch blockierten privaten Arcanorum-Pflichtpruefungen.
