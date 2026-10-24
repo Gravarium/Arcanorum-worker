@@ -57,13 +57,13 @@ jobs:
             exit 1
           fi
 
-      - name: Check required private read token
+      - name: Check required private read key
         shell: bash
         env:
-          READ_TOKEN: ${{ secrets.ARCANORUM_READ_TOKEN }}
+          READ_KEY: ${{ secrets.ARCANORUM_READ_KEY }}
         run: |
-          if [[ -z "$READ_TOKEN" ]]; then
-            echo "::error::Configure the arcanorum-ci environment secret ARCANORUM_READ_TOKEN."
+          if [[ -z "$READ_KEY" ]]; then
+            echo "::error::Configure the arcanorum-ci environment secret ARCANORUM_READ_KEY."
             exit 1
           fi
 
@@ -72,7 +72,7 @@ jobs:
         with:
           repository: Gravarium/Arcanorum
           ref: ${{ inputs.source_sha }}
-          token: ${{ secrets.ARCANORUM_READ_TOKEN }}
+          ssh-key: ${{ secrets.ARCANORUM_READ_KEY }}
           persist-credentials: false
           path: private-source
 
