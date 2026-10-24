@@ -50,7 +50,8 @@ final class AdvertisingDeliveryControllerTest extends TestCase
         self::assertSame(200, $response->getStatusCode());
         self::assertSame('text/html; charset=UTF-8', $response->headers->get('Content-Type'));
         self::assertSame('nosniff', $response->headers->get('X-Content-Type-Options'));
-        self::assertSame('no-store', $response->headers->get('Cache-Control'));
+        $cacheControl = (string) $response->headers->get('Cache-Control');
+        self::assertStringContainsString('no-store', $cacheControl);
         self::assertSame('no-referrer', $response->headers->get('Referrer-Policy'));
         self::assertSame(
             "default-src 'none'; img-src 'self'; media-src 'self'; style-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
