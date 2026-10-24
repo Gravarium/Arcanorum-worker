@@ -16,9 +16,9 @@
   "claim_duration_hours": 7,
   "claimed_at": "2026-10-24T23:24:23Z",
   "claim_expires_at": "2026-10-25T06:24:23Z",
-  "heartbeat_at": "2026-10-24T23:24:58Z",
-  "last_progress_at": "2026-10-23T16:27:20Z",
-  "last_progress_sha": "a3fbbe5438dfa14be77d31882b1f459786e927dd",
-  "last_test_status": "Exact PR HEAD a3fbbe5438dfa14be77d31882b1f459786e927dd: Walker CI run 124 passed all four required jobs with no skipped steps, including Compose PostgreSQL 18/Redis 8 and the full PHP 8.5/Symfony quality checks. Local scripts/check.sh also passed on this SHA with 41 tests, Composer audit, static analysis, formatting, taint analysis, and report validation. The existing schema validation uses --skip-sync; Doctrine stores were separately tested against PostgreSQL temporary tables.",
+  "heartbeat_at": "2026-10-24T23:25:34Z",
+  "last_progress_at": "2026-10-24T23:25:34Z",
+  "last_progress_sha": "b3a584b311337acbe9f4d1df8aca7f015b3f221a",
+  "last_test_status": "Previous exact PR HEAD a3fbbe5438dfa14be77d31882b1f459786e927dd passed all four Walker CI jobs and local checks. Current HEAD b3a584b311337acbe9f4d1df8aca7f015b3f221a: git diff --check passed; local PHPUnit is blocked because PHP is unavailable in the shell; Walker CI is pending and must run on this exact HEAD before it is marked passed.",
   "blocker": null
 }
