@@ -15,7 +15,7 @@ jobs:
   validate-source:
     name: Source and test environment
     if: ${{ github.ref == 'refs/heads/main' && (github.actor == 'Gravarium' || github.actor == 'GravariumDev') }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     environment: arcanorum-ci
     env:
@@ -81,6 +81,20 @@ jobs:
         run: |
           test "$(git -C private-source rev-parse HEAD)" = "$SOURCE_SHA"
 
+      - name: Check available PostgreSQL client 18
+        shell: bash
+        run: |
+          client_version="$(pg_dump --version)"
+          if [[ "$client_version" != *" 18."* ]]; then
+            echo "::error::PostgreSQL 18 pg_dump client is required for backup tests."
+            exit 1
+          fi
+          restore_version="$(pg_restore --version)"
+          if [[ "$restore_version" != *" 18."* ]]; then
+            echo "::error::PostgreSQL 18 pg_restore client is required."
+            exit 1
+          fi
+
       - name: Set up PHP 8.5
         uses: shivammathur/setup-php@248e3ca37a3e439628c6c2b0c88808bd9632af5e
         with:
@@ -110,14 +124,18 @@ jobs:
           gate "composer validate" composer validate --strict --no-interaction
           gate "composer install" composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader
           gate "composer audit" composer audit --locked --no-interaction
+          gate "All tracked PHP syntax" bash -c 'git ls-files -z -- "*.php" | xargs -0 -r -n1 php -l'
           gate "Symfony container dev" php bin/console lint:container --env=dev
           gate "Symfony container prod" env APP_ENV=prod APP_DEBUG=0 php bin/console lint:container --env=prod
           gate "Symfony yaml" php bin/console lint:yaml config
           gate "Symfony twig" php bin/console lint:twig templates
           gate "Doctrine mapping" php bin/console doctrine:schema:validate --skip-sync
+          gate "PostgreSQL 18 and Redis 8 connectivity" bash -c 'php -r '\''new PDO("pgsql:host=127.0.0.1;port=5432;dbname=arcanorum_test", "arcanorum_ci", "ci-test-only");'\''; php -r '\''$s=stream_socket_client("tcp://127.0.0.1:6379",$e,$m,3); if (!$s) exit(1); fwrite($s,"*1\r\n$4\r\nPING\r\n"); if (fgets($s)!=="+PONG\r\n") exit(1); fclose($s);'\'''
+
           gate "PostgreSQL 18 migrations" php bin/console doctrine:migrations:migrate --env=test --no-interaction
+          gate "Production asset compilation" env APP_ENV=prod APP_DEBUG=0 php bin/console asset-map:compile
           gate "PHPStan 10" vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --no-progress --memory-limit=1G
           gate "PHP CS Fixer" vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --using-cache=no
           gate "Rector dry run" vendor/bin/rector process --config=rector.php --dry-run --no-progress-bar
           gate "Psalm taint" vendor/bin/psalm --config=psalm.xml --taint-analysis
-          gate "PHPUnit" vendor/bin/phpunit --configuration=phpunit.dist.xml --fail-on-risky --fail-on-warning
+          gate "PHPUnit complete suite and coverage" vendor/bin/phpunit --configuration=phpunit.dist.xml --fail-on-risky --fail-on-warning --coverage-text
