@@ -16,9 +16,9 @@
   "claim_duration_hours": 7,
   "claimed_at": "2026-10-24T23:24:23Z",
   "claim_expires_at": "2026-10-25T06:24:23Z",
-  "heartbeat_at": "2026-10-24T23:25:34Z",
+  "heartbeat_at": "2026-10-24T23:28:13Z",
   "last_progress_at": "2026-10-24T23:25:34Z",
   "last_progress_sha": "b3a584b311337acbe9f4d1df8aca7f015b3f221a",
-  "last_test_status": "Previous exact PR HEAD a3fbbe5438dfa14be77d31882b1f459786e927dd passed all four Walker CI jobs and local checks. Current HEAD b3a584b311337acbe9f4d1df8aca7f015b3f221a: git diff --check passed; local PHPUnit is blocked because PHP is unavailable in the shell; Walker CI is pending and must run on this exact HEAD before it is marked passed.",
+  "last_test_status": "Walker run 134 on exact HEAD b3a584b311337acbe9f4d1df8aca7f015b3f221a: repository and Compose jobs passed; the PHP/Symfony job failed only in the new HTTP response test because Symfony normalizes Cache-Control as 'no-store, private' while the test expected exactly 'no-store'. Local PHPUnit remains blocked because PHP is unavailable in the shell. The test assertion is being corrected.",
   "blocker": null
 }
