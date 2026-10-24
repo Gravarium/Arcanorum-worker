@@ -14,7 +14,7 @@ permissions:
 jobs:
   validate-source:
     name: Source and test environment
-    if: ${{ github.ref == 'refs/heads/main' && (github.actor == 'Gravarium' || github.actor == 'GravariumDev') }}
+    if: ${{ github.ref == 'refs/heads/main' && github.actor == 'Gravarium' }}
     runs-on: ubuntu-26.04
     timeout-minutes: 60
     environment: arcanorum-ci
