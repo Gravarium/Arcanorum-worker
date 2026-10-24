@@ -16,9 +16,9 @@
   "claim_duration_hours": 7,
   "claimed_at": "2026-10-24T23:24:23Z",
   "claim_expires_at": "2026-10-25T06:24:23Z",
-  "heartbeat_at": "2026-10-24T23:28:13Z",
-  "last_progress_at": "2026-10-24T23:25:34Z",
-  "last_progress_sha": "b3a584b311337acbe9f4d1df8aca7f015b3f221a",
-  "last_test_status": "Walker run 134 on exact HEAD b3a584b311337acbe9f4d1df8aca7f015b3f221a: repository and Compose jobs passed; the PHP/Symfony job failed only in the new HTTP response test because Symfony normalizes Cache-Control as 'no-store, private' while the test expected exactly 'no-store'. Local PHPUnit remains blocked because PHP is unavailable in the shell. The test assertion is being corrected.",
+  "heartbeat_at": "2026-10-24T23:28:34Z",
+  "last_progress_at": "2026-10-24T23:28:34Z",
+  "last_progress_sha": "043d86dbc28a9b6d6fa4f3cd049200082f4173bc",
+  "last_test_status": "Walker run 134 on exact HEAD b3a584b311337acbe9f4d1df8aca7f015b3f221a: repository and Compose jobs passed; PHP/Symfony failed only because the new test expected Cache-Control exactly 'no-store', while Symfony returned 'no-store, private'. The test was corrected and pushed as HEAD 043d86dbc28a9b6d6fa4f3cd049200082f4173bc. Local PHPUnit is unavailable because the shell has no PHP executable; waiting for Walker CI on the corrected exact HEAD.",
   "blocker": null
 }
