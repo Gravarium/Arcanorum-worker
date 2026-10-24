@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "status": "in Bearbeitung",
+  "status": "PR offen",
   "task_id": "AW-003",
-  "worker_id": "codex-aw003",
-  "run_id": "codex-aw003-mvn0zzka-xvl0r5ev8t",
+  "worker_id": null,
+  "run_id": null,
   "task_branch": "aw-003/advertising-module-20261022",
   "base_sha": "7bbde570920b9eccb3a5a3fd566b5cea00cfd823",
   "plan_ref": "planning/aw003-aw004-modules-20261022/docs/WORK-PLAN.md",
@@ -14,11 +14,11 @@
     "docs/modules/ADVERTISING.md"
   ],
   "claim_duration_hours": 7,
-  "claimed_at": "2026-10-24T23:24:23Z",
-  "claim_expires_at": "2026-10-25T06:24:23Z",
-  "heartbeat_at": "2026-10-24T23:28:34Z",
-  "last_progress_at": "2026-10-24T23:28:34Z",
+  "claimed_at": null,
+  "claim_expires_at": null,
+  "heartbeat_at": null,
+  "last_progress_at": "2026-10-24T23:30:40Z",
   "last_progress_sha": "043d86dbc28a9b6d6fa4f3cd049200082f4173bc",
-  "last_test_status": "Walker run 134 on exact HEAD b3a584b311337acbe9f4d1df8aca7f015b3f221a: repository and Compose jobs passed; PHP/Symfony failed only because the new test expected Cache-Control exactly 'no-store', while Symfony returned 'no-store, private'. The test was corrected and pushed as HEAD 043d86dbc28a9b6d6fa4f3cd049200082f4173bc. Local PHPUnit is unavailable because the shell has no PHP executable; waiting for Walker CI on the corrected exact HEAD.",
-  "blocker": null
+  "last_test_status": "Exact PR HEAD 043d86dbc28a9b6d6fa4f3cd049200082f4173bc: Walker CI run 136 passed all four required jobs with no skipped steps. PHPUnit reported 42 tests, 0 failures, 0 errors and 0 skipped; PHP 8.5/Symfony/PostgreSQL 18/Redis 8 checks, Composer audit, PHPStan, CS-Fixer, Rector dry-run, Psalm taint analysis and report validation passed. The local PHPUnit invocation was blocked because PHP is unavailable in the shell; Walker CI executed the test successfully. Existing schema synchronization remains skipped by --skip-sync; Doctrine adapter tests use PostgreSQL temporary tables, and host migration awaits integration.",
+  "blocker": "Draft PR awaits project-owner review and host integration. No merge or deployment."
 }
