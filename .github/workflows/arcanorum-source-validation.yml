@@ -1,0 +1,141 @@
+name: Arcanorum source validation
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: 'Exact 40-character commit SHA from Arcanorum'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  validate-source:
+    name: Source and test environment
+    if: ${{ github.ref == 'refs/heads/main' && (github.actor == 'Gravarium' || github.actor == 'GravariumDev') }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 60
+    environment: arcanorum-ci
+    env:
+      SOURCE_SHA: ${{ inputs.source_sha }}
+      APP_ENV: test
+      APP_DEBUG: '0'
+      APP_SECRET: ci-only-not-production
+      DATABASE_URL: 'postgresql://arcanorum_ci:ci-test-only@127.0.0.1:5432/arcanorum_test?serverVersion=18&charset=utf8'
+      REDIS_URL: 'redis://127.0.0.1:6379'
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: arcanorum_ci
+          POSTGRES_PASSWORD: ci-test-only
+          POSTGRES_DB: arcanorum_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U arcanorum_ci -d arcanorum_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Validate source SHA
+        shell: bash
+        run: |
+          if [[ ! "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::A full source commit SHA is required."
+            exit 1
+          fi
+
+      - name: Check required private read token
+        shell: bash
+        env:
+          READ_TOKEN: ${{ secrets.ARCANORUM_READ_TOKEN }}
+        run: |
+          if [[ -z "$READ_TOKEN" ]]; then
+            echo "::error::Configure the arcanorum-ci environment secret ARCANORUM_READ_TOKEN."
+            exit 1
+          fi
+
+      - name: Check out private source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: Gravarium/Arcanorum
+          ref: ${{ inputs.source_sha }}
+          token: ${{ secrets.ARCANORUM_READ_TOKEN }}
+          persist-credentials: false
+          path: private-source
+
+      - name: Verify checkout SHA
+        shell: bash
+        run: |
+          test "$(git -C private-source rev-parse HEAD)" = "$SOURCE_SHA"
+
+      - name: Check available PostgreSQL client 18
+        shell: bash
+        run: |
+          client_version="$(pg_dump --version)"
+          if [[ "$client_version" != *" 18."* ]]; then
+            echo "::error::PostgreSQL 18 pg_dump client is required for backup tests."
+            exit 1
+          fi
+          restore_version="$(pg_restore --version)"
+          if [[ "$restore_version" != *" 18."* ]]; then
+            echo "::error::PostgreSQL 18 pg_restore client is required."
+            exit 1
+          fi
+
+      - name: Set up PHP 8.5
+        uses: shivammathur/setup-php@248e3ca37a3e439628c6c2b0c88808bd9632af5e
+        with:
+          php-version: '8.5'
+          extensions: intl, mbstring, pdo_pgsql, redis, zip, pcov
+          coverage: pcov
+          tools: composer:v2
+
+      - name: Validate private project and tests
+        shell: bash
+        working-directory: private-source
+        run: |
+          set -euo pipefail
+          umask 077
+          logfile="$(mktemp)"
+          trap 'rm -f "$logfile"' EXIT
+          gate() {
+            local name="$1"
+            shift
+            if "$@" >"$logfile" 2>&1; then
+              printf 'PASS: %s\n' "$name"
+            else
+              printf '::error::FAIL: %s (details withheld from public logs)\n' "$name"
+              exit 1
+            fi
+          }
+          gate "composer validate" composer validate --strict --no-interaction
+          gate "composer install" composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader
+          gate "composer audit" composer audit --locked --no-interaction
+          gate "All tracked PHP syntax" bash -c 'git ls-files -z -- "*.php" | xargs -0 -r -n1 php -l'
+          gate "Symfony container dev" php bin/console lint:container --env=dev
+          gate "Symfony container prod" env APP_ENV=prod APP_DEBUG=0 php bin/console lint:container --env=prod
+          gate "Symfony yaml" php bin/console lint:yaml config
+          gate "Symfony twig" php bin/console lint:twig templates
+          gate "Doctrine mapping" php bin/console doctrine:schema:validate --skip-sync
+          gate "PostgreSQL 18 and Redis 8 connectivity" bash -c 'php -r '\''new PDO("pgsql:host=127.0.0.1;port=5432;dbname=arcanorum_test", "arcanorum_ci", "ci-test-only");'\''; php -r '\''$s=stream_socket_client("tcp://127.0.0.1:6379",$e,$m,3); if (!$s) exit(1); fwrite($s,"*1\r\n$4\r\nPING\r\n"); if (fgets($s)!=="+PONG\r\n") exit(1); fclose($s);'\'''
+
+          gate "PostgreSQL 18 migrations" php bin/console doctrine:migrations:migrate --env=test --no-interaction
+          gate "Production asset compilation" env APP_ENV=prod APP_DEBUG=0 php bin/console asset-map:compile
+          gate "PHPStan 10" vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --no-progress --memory-limit=1G
+          gate "PHP CS Fixer" vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --using-cache=no
+          gate "Rector dry run" vendor/bin/rector process --config=rector.php --dry-run --no-progress-bar
+          gate "Psalm taint" vendor/bin/psalm --config=psalm.xml --taint-analysis
+          gate "PHPUnit complete suite and coverage" vendor/bin/phpunit --configuration=phpunit.dist.xml --fail-on-risky --fail-on-warning --coverage-text
