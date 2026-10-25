@@ -120,13 +120,7 @@ final class InMemorySchedulingStore implements SchedulingStore
 
     public function hasUnexpiredExecution(string $taskId, \DateTimeImmutable $now): bool
     {
-        foreach ($this->records as $record) {
-            if ($record->taskId === $taskId && ExecutionState::Running === $record->state && null !== $record->leaseExpiresAt && $record->leaseExpiresAt > $now) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any($this->records, fn (TaskExecutionRecord $record): bool => $record->taskId === $taskId && ExecutionState::Running === $record->state && null !== $record->leaseExpiresAt && $record->leaseExpiresAt > $now);
     }
 
     public function claimExecution(

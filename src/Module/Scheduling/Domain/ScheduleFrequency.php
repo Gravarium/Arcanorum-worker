@@ -30,11 +30,11 @@ final readonly class ScheduleFrequency
     {
         $nextTimestamp = $instant->getTimestamp() + $this->intervalSeconds;
 
-        return (new \DateTimeImmutable('@'.$nextTimestamp))->setTimezone(new \DateTimeZone('UTC'));
+        return new \DateTimeImmutable('@'.$nextTimestamp)->setTimezone(new \DateTimeZone('UTC'));
     }
 
     public function localize(?\DateTimeImmutable $instant): ?\DateTimeImmutable
     {
-        return null === $instant ? null : $instant->setTimezone(new \DateTimeZone($this->timezone));
+        return $instant?->setTimezone(new \DateTimeZone($this->timezone));
     }
 }
