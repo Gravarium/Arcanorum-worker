@@ -7,7 +7,7 @@
   "task_branch": "aw-006/social-auth-module-20261025",
   "base_sha": "7bbde570920b9eccb3a5a3fd566b5cea00cfd823",
   "plan_ref": "issue #19",
-  "pull_request": null,
+  "pull_request": 20,
   "allowed_paths": [
     "src/Module/SocialAuth/",
     "tests/Module/SocialAuth/",
@@ -16,9 +16,9 @@
   "claim_duration_hours": 7,
   "claimed_at": "2026-10-25T23:26:04Z",
   "claim_expires_at": "2026-10-26T06:26:04Z",
-  "heartbeat_at": "2026-10-25T23:36:02Z",
-  "last_progress_at": "2026-10-25T23:36:02Z",
-  "last_progress_sha": "37cb414b4630b6306e5ed5dbc3d245df42328133",
-  "last_test_status": "Implementation and positive/negative PHPUnit tests committed locally. Local execution blocked: PHP and Composer are absent from the shell. Walker exact-HEAD CI is pending.",
+  "heartbeat_at": "2026-10-25T23:37:07Z",
+  "last_progress_at": "2026-10-25T23:37:07Z",
+  "last_progress_sha": "bc4249b8937700bb95acf7be5a433e806f0d774d",
+  "last_test_status": "Draft PR created for exact HEAD bc4249b8937700bb95acf7be5a433e806f0d774d. Walker quality run is queued; no tests are yet recorded as passed.",
   "blocker": null
 }
