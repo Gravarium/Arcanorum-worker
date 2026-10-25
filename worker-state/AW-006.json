@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "status": "claimed",
+  "task_id": "AW-006",
+  "worker_id": "codex-aw006",
+  "run_id": "codex-aw006-20261025T232604Z-2f04fd48",
+  "task_branch": "aw-006/social-auth-module-20261025",
+  "base_sha": "7bbde570920b9eccb3a5a3fd566b5cea00cfd823",
+  "plan_ref": "issue #19",
+  "pull_request": null,
+  "allowed_paths": [
+    "src/Module/SocialAuth/",
+    "tests/Module/SocialAuth/",
+    "docs/modules/SOCIAL_AUTH.md"
+  ],
+  "claim_duration_hours": 7,
+  "claimed_at": "2026-10-25T23:26:04Z",
+  "claim_expires_at": "2026-10-26T06:26:04Z",
+  "heartbeat_at": "2026-10-25T23:26:04Z",
+  "last_progress_at": "2026-10-25T23:26:04Z",
+  "last_progress_sha": "7bbde570920b9eccb3a5a3fd566b5cea00cfd823",
+  "last_test_status": "Claim acquired before implementation; no tests run yet.",
+  "blocker": null
+}
