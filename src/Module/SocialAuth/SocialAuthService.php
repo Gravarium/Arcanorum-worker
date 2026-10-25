@@ -276,23 +276,29 @@ final readonly class SocialAuthService
             'code_challenge' => $challenge,
             'code_challenge_method' => 'S256',
         ];
+        $requiredParameterNames = array_fill_keys(array_map('strtolower', array_keys($requiredParameters)), true);
+        $seenParameters = [];
 
         if (count($extraParameters) > 32) {
             throw new AuthenticationRejected();
         }
 
         foreach ($extraParameters as $key => $value) {
+            $normalizedKey = is_string($key) ? strtolower($key) : '';
             if (
                 !is_string($key)
                 || !is_string($value)
                 || preg_match('/\A[A-Za-z][A-Za-z0-9_]{0,63}\z/D', $key) !== 1
-                || isset($requiredParameters[$key])
+                || isset($requiredParameterNames[$normalizedKey])
+                || isset($seenParameters[$normalizedKey])
                 || $value === ''
                 || strlen($value) > 2048
                 || preg_match('/[\x00-\x1F\x7F]/', $value) === 1
             ) {
                 throw new AuthenticationRejected();
             }
+
+            $seenParameters[$normalizedKey] = true;
         }
 
         $parameters = array_merge($extraParameters, $requiredParameters);
