@@ -185,26 +185,38 @@ final class SiteSettings
         if (null === $videoPreloadMode) {
             $errors['video_preload_mode'] = 'Bitte wähle eine unterstützte Einstellung für das Vorladen.';
         }
+        $autoplayEnabledValue = array_key_exists('player_autoplay_enabled', $input)
+            ? $input['player_autoplay_enabled']
+            : $this->playerAutoplayEnabled;
         $autoplayEnabled = self::normalizeBoolean(
-            $input['player_autoplay_enabled'] ?? null,
+            $autoplayEnabledValue,
             $this->playerAutoplayEnabled,
             'player_autoplay_enabled',
             $errors,
         );
+        $autoplayMutedValue = array_key_exists('player_autoplay_muted', $input)
+            ? $input['player_autoplay_muted']
+            : $this->playerAutoplayMuted;
         $autoplayMuted = self::normalizeBoolean(
-            $input['player_autoplay_muted'] ?? null,
+            $autoplayMutedValue,
             $this->playerAutoplayMuted,
             'player_autoplay_muted',
             $errors,
         );
+        $defaultCommentsEnabledValue = array_key_exists('default_comments_enabled', $input)
+            ? $input['default_comments_enabled']
+            : $this->defaultCommentsEnabled;
         $defaultCommentsEnabled = self::normalizeBoolean(
-            $input['default_comments_enabled'] ?? null,
+            $defaultCommentsEnabledValue,
             $this->defaultCommentsEnabled,
             'default_comments_enabled',
             $errors,
         );
+        $videoSubmissionsEnabledValue = array_key_exists('public_video_submissions_enabled', $input)
+            ? $input['public_video_submissions_enabled']
+            : $this->publicVideoSubmissionsEnabled;
         $videoSubmissionsEnabled = self::normalizeBoolean(
-            $input['public_video_submissions_enabled'] ?? null,
+            $videoSubmissionsEnabledValue,
             $this->publicVideoSubmissionsEnabled,
             'public_video_submissions_enabled',
             $errors,

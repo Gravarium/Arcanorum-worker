@@ -9,8 +9,8 @@
             }
         };
 
+        let playlist = null;
         if (video.dataset.hlsUrl) {
-            let playlist;
             try {
                 playlist = new URL(video.dataset.hlsUrl, document.baseURI);
             } catch {
@@ -41,6 +41,10 @@
                 autoplay: video.hasAttribute('autoplay') ? 'muted' : false,
                 muted: video.hasAttribute('muted'),
             });
+
+            if (playlist) {
+                player.src({ src: playlist.href, type: 'application/vnd.apple.mpegurl' });
+            }
 
             player.on('loadedmetadata', () => {
                 setStatus(video.dataset.playerMessageReady);

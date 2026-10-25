@@ -216,6 +216,26 @@ jobs:
           tools: composer:v2
           ini-values: memory_limit=1G
 
+      - name: PostgreSQL-18-Clientwerkzeuge für Integrationsprüfungen
+        shell: bash
+        run: |
+          set -euo pipefail
+          key_file="$RUNNER_TEMP/pgdg.asc"
+          keyring_file="$RUNNER_TEMP/pgdg.gpg"
+          curl --fail --silent --show-error --location https://www.postgresql.org/media/keys/ACCC4CF8.asc --output "$key_file"
+          fingerprint="$(gpg --show-keys --with-colons "$key_file" | awk -F: '$1 == "fpr" { print $10; exit }')"
+          if [ "$fingerprint" != 'B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8' ]; then
+            echo '::error::Der PostgreSQL-Paketschlüssel hat nicht den erwarteten Fingerabdruck.'
+            exit 1
+          fi
+          gpg --dearmor --output "$keyring_file" "$key_file"
+          sudo install -m 0644 "$keyring_file" /usr/share/keyrings/pgdg.gpg
+          printf 'deb [signed-by=/usr/share/keyrings/pgdg.gpg] https://apt.postgresql.org/pub/repos/apt noble-pgdg main\n' | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends postgresql-client-18
+          pg_dump --version | grep --fixed-strings '(PostgreSQL) 18.'
+          pg_restore --version | grep --fixed-strings '(PostgreSQL) 18.'
+
       - name: Composer-Manifest validieren
         shell: bash
         run: composer validate --strict --no-interaction

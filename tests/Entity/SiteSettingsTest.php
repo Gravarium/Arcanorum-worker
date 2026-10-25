@@ -201,6 +201,13 @@ final class SiteSettingsTest extends TestCase
         $errors = $settings->updateContentOptions(['video_player_engine' => ['videojs']]);
         self::assertArrayHasKey('video_player_engine', $errors);
         self::assertSame(VideoPlayerEngine::VideoJs, $settings->getVideoPlayerEngine());
+
+        $errors = $settings->updateContentOptions([
+            'video_player_engine' => VideoPlayerEngine::Native->value,
+            'player_autoplay_enabled' => null,
+        ]);
+        self::assertArrayHasKey('player_autoplay_enabled', $errors);
+        self::assertSame(VideoPlayerEngine::VideoJs, $settings->getVideoPlayerEngine());
     }
 
     public function testVideoPreloadSelectionUsesOnlySupportedModesAndRejectsInvalidInputAtomically(): void
@@ -216,6 +223,13 @@ final class SiteSettingsTest extends TestCase
 
         $errors = $settings->updateContentOptions(['video_preload_mode' => ['auto']]);
         self::assertArrayHasKey('video_preload_mode', $errors);
+        self::assertSame(VideoPreloadMode::Auto, $settings->getVideoPreloadMode());
+
+        $errors = $settings->updateContentOptions([
+            'video_preload_mode' => VideoPreloadMode::Metadata->value,
+            'default_comments_enabled' => null,
+        ]);
+        self::assertArrayHasKey('default_comments_enabled', $errors);
         self::assertSame(VideoPreloadMode::Auto, $settings->getVideoPreloadMode());
     }
 
