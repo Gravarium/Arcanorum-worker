@@ -181,6 +181,10 @@ jobs:
             exit 1
           fi
 
+      - name: Lokale Umgebungsdatei für Symfony bereitstellen
+        shell: bash
+        run: cp .env.dist .env
+
       - name: Pflichtdateien und echte Testsuite prüfen
         shell: bash
         run: |
