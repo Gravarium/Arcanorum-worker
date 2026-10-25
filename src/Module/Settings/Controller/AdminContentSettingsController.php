@@ -106,7 +106,7 @@ final class AdminContentSettingsController extends AbstractController
             return $fallback->value;
         }
 
-        return VideoPlayerEngine::tryFrom($value)?->value ?? $fallback->value;
+        return (VideoPlayerEngine::tryFrom($value) ?? $fallback)->value;
     }
 
     private static function safeVideoPreloadMode(mixed $value, VideoPreloadMode $fallback): string
@@ -115,7 +115,7 @@ final class AdminContentSettingsController extends AbstractController
             return $fallback->value;
         }
 
-        return VideoPreloadMode::tryFrom($value)?->value ?? $fallback->value;
+        return (VideoPreloadMode::tryFrom($value) ?? $fallback)->value;
     }
 
     /** @param array<string, string> $form
