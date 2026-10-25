@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "status": "idle",
+  "task_id": "AW-004",
+  "worker_id": null,
+  "run_id": null,
+  "task_branch": "aw-004/scheduling-module-20261025",
+  "base_sha": "7bbde570920b9eccb3a5a3fd566b5cea00cfd823",
+  "plan_ref": "planning/aw003-aw004-modules-20261022/docs/WORK-PLAN.md",
+  "pull_request": null,
+  "allowed_paths": [
+    "src/Module/Scheduling/",
+    "tests/Module/Scheduling/",
+    "docs/modules/SCHEDULING.md"
+  ],
+  "claim_duration_hours": 7,
+  "claimed_at": null,
+  "claim_expires_at": null,
+  "heartbeat_at": null,
+  "last_progress_at": null,
+  "last_progress_sha": null,
+  "last_test_status": "AW-004 approved in the Walker plan; exact dependency base 7bbde570920b9eccb3a5a3fd566b5cea00cfd823 has a successful required CI run. No AW-004 branch or pull request was found.",
+  "blocker": null
+}
