@@ -4,19 +4,16 @@ declare(strict_types=1);
 
 namespace App\Module\SocialAuth;
 
-use DateTimeImmutable;
-use InvalidArgumentException;
-
 final readonly class AuthenticatedAccount
 {
-    public function __construct(public string $accountId, public DateTimeImmutable $lastReauthenticatedAt)
+    public function __construct(public string $accountId, public \DateTimeImmutable $lastReauthenticatedAt)
     {
         if (
-            $accountId === ''
+            '' === $accountId
             || strlen($accountId) > 255
-            || preg_match('/[\x00-\x1F\x7F]/', $accountId) === 1
+            || 1 === preg_match('/[\x00-\x1F\x7F]/', $accountId)
         ) {
-            throw new InvalidArgumentException('Der Kontokontext ist ungueltig.');
+            throw new \InvalidArgumentException('Der Kontokontext ist ungueltig.');
         }
     }
 }

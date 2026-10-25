@@ -6,7 +6,6 @@ namespace App\Tests\Module\SocialAuth\Support;
 
 use App\Module\SocialAuth\OAuthState;
 use App\Module\SocialAuth\OAuthStateStore;
-use LogicException;
 
 final class FakeOAuthStateStore implements OAuthStateStore
 {
@@ -16,7 +15,7 @@ final class FakeOAuthStateStore implements OAuthStateStore
     public function store(string $stateDigest, OAuthState $state): void
     {
         if (isset($this->records[$stateDigest])) {
-            throw new LogicException('Duplicate state digest.');
+            throw new \LogicException('Duplicate state digest.');
         }
 
         $this->records[$stateDigest] = $state;

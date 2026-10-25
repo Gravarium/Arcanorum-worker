@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace App\Module\SocialAuth;
 
-use JsonException;
-use Throwable;
-
 final readonly class ProviderIdentityParser
 {
     public function __construct(private int $maxResponseBytes)
@@ -18,13 +15,13 @@ final readonly class ProviderIdentityParser
 
     public function parse(Provider $provider, string $response): ProviderIdentity
     {
-        if ($response === '' || strlen($response) > $this->maxResponseBytes) {
+        if ('' === $response || strlen($response) > $this->maxResponseBytes) {
             throw new AuthenticationRejected();
         }
 
         try {
             $decoded = json_decode($response, true, 8, JSON_THROW_ON_ERROR);
-        } catch (JsonException) {
+        } catch (\JsonException) {
             throw new AuthenticationRejected();
         }
 
@@ -36,15 +33,15 @@ final readonly class ProviderIdentityParser
         $email = $decoded['email'] ?? null;
         $emailVerified = $decoded['email_verified'] ?? false;
 
-        if (!is_string($subject) || !is_bool($emailVerified) || ($email !== null && !is_string($email))) {
+        if (!is_string($subject) || !is_bool($emailVerified) || (null !== $email && !is_string($email))) {
             throw new AuthenticationRejected();
         }
 
         try {
-            $verifiedEmail = $email === null ? null : VerifiedEmail::fromProvider($email, $emailVerified);
+            $verifiedEmail = null === $email ? null : VerifiedEmail::fromProvider($email, $emailVerified);
 
             return new ProviderIdentity($provider, $subject, $verifiedEmail);
-        } catch (Throwable) {
+        } catch (\Throwable) {
             throw new AuthenticationRejected();
         }
     }

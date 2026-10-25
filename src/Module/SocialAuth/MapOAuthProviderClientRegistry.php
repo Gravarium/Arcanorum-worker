@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Module\SocialAuth;
 
-use InvalidArgumentException;
-
 final readonly class MapOAuthProviderClientRegistry implements OAuthProviderClientRegistry
 {
     /** @var array<string, OAuthProviderClient> */
@@ -19,8 +17,8 @@ final readonly class MapOAuthProviderClientRegistry implements OAuthProviderClie
         $expected = array_map(static fn (Provider $provider): string => $provider->value, Provider::cases());
         $validated = [];
         foreach ($clients as $providerId => $client) {
-            if (!is_string($providerId) || Provider::tryFrom($providerId) === null || !$client instanceof OAuthProviderClient) {
-                throw new InvalidArgumentException('Die Anbieterregistrierung ist ungueltig.');
+            if (!is_string($providerId) || null === Provider::tryFrom($providerId) || !$client instanceof OAuthProviderClient) {
+                throw new \InvalidArgumentException('Die Anbieterregistrierung ist ungueltig.');
             }
 
             $validated[$providerId] = $client;
@@ -31,7 +29,7 @@ final readonly class MapOAuthProviderClientRegistry implements OAuthProviderClie
         sort($configured);
 
         if ($configured !== $expected) {
-            throw new InvalidArgumentException('Die Anbieterregistrierung ist unvollstaendig.');
+            throw new \InvalidArgumentException('Die Anbieterregistrierung ist unvollstaendig.');
         }
 
         $this->clients = $validated;

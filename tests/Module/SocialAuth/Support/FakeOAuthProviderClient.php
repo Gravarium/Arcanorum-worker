@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Tests\Module\SocialAuth\Support;
 
 use App\Module\SocialAuth\OAuthProviderClient;
-use Throwable;
 
 final class FakeOAuthProviderClient implements OAuthProviderClient
 {
@@ -24,7 +23,7 @@ final class FakeOAuthProviderClient implements OAuthProviderClient
 
     public int $lastMaxResponseBytes = 0;
 
-    public ?Throwable $failure = null;
+    public ?\Throwable $failure = null;
 
     public function __construct(public string $endpoint)
     {
@@ -47,13 +46,13 @@ final class FakeOAuthProviderClient implements OAuthProviderClient
 
     public function exchangeAuthorizationCode(string $code, string $codeVerifier, string $callbackUri, int $maxResponseBytes): string
     {
-        $this->exchangeCalls++;
+        ++$this->exchangeCalls;
         $this->lastCode = $code;
         $this->lastCodeVerifier = $codeVerifier;
         $this->lastCallbackUri = $callbackUri;
         $this->lastMaxResponseBytes = $maxResponseBytes;
 
-        if ($this->failure !== null) {
+        if (null !== $this->failure) {
             throw $this->failure;
         }
 

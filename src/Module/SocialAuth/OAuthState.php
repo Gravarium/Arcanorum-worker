@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Module\SocialAuth;
 
-use DateTimeImmutable;
-
 final readonly class OAuthState
 {
     public function __construct(
@@ -15,7 +13,7 @@ final readonly class OAuthState
         public string $callbackUri,
         public ?string $accountId,
         public string $sessionBindingDigest,
-        public DateTimeImmutable $expiresAt,
+        public \DateTimeImmutable $expiresAt,
     ) {
     }
 }

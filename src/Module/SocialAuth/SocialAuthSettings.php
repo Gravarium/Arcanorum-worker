@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Module\SocialAuth;
 
-use InvalidArgumentException;
-
 final readonly class SocialAuthSettings
 {
     /**
@@ -21,8 +19,8 @@ final readonly class SocialAuthSettings
 
     /**
      * @param array<array-key, mixed> $enabledProviders
-     * @param array<mixed, mixed> $callbackUris
-     * @param array<mixed, mixed> $authorizationHosts
+     * @param array<mixed, mixed>     $callbackUris
+     * @param array<mixed, mixed>     $authorizationHosts
      */
     public function __construct(
         array $enabledProviders,
@@ -34,30 +32,30 @@ final readonly class SocialAuthSettings
         private int $reauthenticationWindowSeconds = 300,
     ) {
         if ($stateLifetimeSeconds < 60 || $stateLifetimeSeconds > 900) {
-            throw new InvalidArgumentException('Die Anmeldedauer ist ungueltig.');
+            throw new \InvalidArgumentException('Die Anmeldedauer ist ungueltig.');
         }
 
         if ($maxProfileResponseBytes < 256 || $maxProfileResponseBytes > 65_536) {
-            throw new InvalidArgumentException('Die Antwortgrenze ist ungueltig.');
+            throw new \InvalidArgumentException('Die Antwortgrenze ist ungueltig.');
         }
 
         if ($reauthenticationWindowSeconds < 30 || $reauthenticationWindowSeconds > 900) {
-            throw new InvalidArgumentException('Das Reauthentifizierungsfenster ist ungueltig.');
+            throw new \InvalidArgumentException('Das Reauthentifizierungsfenster ist ungueltig.');
         }
 
         if (!array_is_list($enabledProviders)) {
-            throw new InvalidArgumentException('Die Anbieterliste ist ungueltig.');
+            throw new \InvalidArgumentException('Die Anbieterliste ist ungueltig.');
         }
 
         $enabled = [];
         foreach ($enabledProviders as $providerId) {
             if (!is_string($providerId)) {
-                throw new InvalidArgumentException('Ein Anmeldeanbieter ist ungueltig.');
+                throw new \InvalidArgumentException('Ein Anmeldeanbieter ist ungueltig.');
             }
 
             $provider = Provider::tryFrom($providerId);
-            if ($provider === null) {
-                throw new InvalidArgumentException('Ein Anmeldeanbieter ist ungueltig.');
+            if (null === $provider) {
+                throw new \InvalidArgumentException('Ein Anmeldeanbieter ist ungueltig.');
             }
 
             $enabled[$provider->value] = true;
@@ -126,7 +124,7 @@ final readonly class SocialAuthSettings
         sort($hostKeys);
 
         if ($callbackKeys !== $expected || $hostKeys !== $expected) {
-            throw new InvalidArgumentException('Die Anbieterkonfiguration ist unvollstaendig.');
+            throw new \InvalidArgumentException('Die Anbieterkonfiguration ist unvollstaendig.');
         }
 
         /** @var array<string, string> $validatedCallbackUris */
@@ -137,7 +135,7 @@ final readonly class SocialAuthSettings
             $callbackUri = $callbackUris[$provider->value] ?? null;
             $authorizationHost = $authorizationHosts[$provider->value] ?? null;
             if (!is_string($callbackUri) || !is_string($authorizationHost)) {
-                throw new InvalidArgumentException('Die Anbieterkonfiguration ist ungueltig.');
+                throw new \InvalidArgumentException('Die Anbieterkonfiguration ist ungueltig.');
             }
 
             $this->assertHttpsCallbackUri($callbackUri);
@@ -156,7 +154,7 @@ final readonly class SocialAuthSettings
     {
         $parts = parse_url($callbackUri);
         if (!is_array($parts)) {
-            throw new InvalidArgumentException('Die Callback-Adresse ist ungueltig.');
+            throw new \InvalidArgumentException('Die Callback-Adresse ist ungueltig.');
         }
 
         $scheme = $parts['scheme'] ?? null;
@@ -164,12 +162,12 @@ final readonly class SocialAuthSettings
         $path = $parts['path'] ?? '';
         if (
             !is_string($scheme)
-            || strtolower($scheme) !== 'https'
+            || 'https' !== strtolower($scheme)
             || !is_string($host)
-            || $host === ''
-            || filter_var($host, FILTER_VALIDATE_IP) !== false
-            || preg_match('/\A(?=.{1,253}\z)(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\z/D', $host) !== 1
-            || preg_match('/[\x00-\x20\x7F]/', $path) === 1
+            || '' === $host
+            || false !== filter_var($host, FILTER_VALIDATE_IP)
+            || 1 !== preg_match('/\A(?=.{1,253}\z)(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\z/D', $host)
+            || 1 === preg_match('/[\x00-\x20\x7F]/', $path)
             || str_contains($path, chr(92))
             || isset($parts['user'])
             || isset($parts['pass'])
@@ -177,19 +175,19 @@ final readonly class SocialAuthSettings
             || isset($parts['fragment'])
             || isset($parts['port'])
         ) {
-            throw new InvalidArgumentException('Die Callback-Adresse ist ungueltig.');
+            throw new \InvalidArgumentException('Die Callback-Adresse ist ungueltig.');
         }
     }
 
     private function assertAuthorizationHost(string $host): void
     {
         if (
-            $host === ''
+            '' === $host
             || strlen($host) > 253
-            || filter_var($host, FILTER_VALIDATE_IP) !== false
-            || preg_match('/\A(?=.{1,253}\z)(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\z/D', $host) !== 1
+            || false !== filter_var($host, FILTER_VALIDATE_IP)
+            || 1 !== preg_match('/\A(?=.{1,253}\z)(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\z/D', $host)
         ) {
-            throw new InvalidArgumentException('Der Anbieterhost ist ungueltig.');
+            throw new \InvalidArgumentException('Der Anbieterhost ist ungueltig.');
         }
     }
 }

@@ -33,7 +33,7 @@ final class FakeIdentityRepository implements SocialIdentityRepository
 
     public function registerAccount(ProviderIdentity $identity): ?string
     {
-        $this->registrationCalls++;
+        ++$this->registrationCalls;
         $key = $this->key($identity->provider, $identity->subject);
         if (isset($this->owners[$key])) {
             return null;
@@ -49,7 +49,7 @@ final class FakeIdentityRepository implements SocialIdentityRepository
 
     public function linkToAccount(string $accountId, ProviderIdentity $identity): bool
     {
-        $this->linkCalls++;
+        ++$this->linkCalls;
         $key = $this->key($identity->provider, $identity->subject);
         if (isset($this->owners[$key])) {
             return false;
@@ -64,7 +64,7 @@ final class FakeIdentityRepository implements SocialIdentityRepository
     public function unlinkIfAnotherMethodRemains(string $accountId, Provider $provider): bool
     {
         foreach ($this->identitiesByAccount[$accountId] ?? [] as $key) {
-            if (!str_starts_with($key, $provider->value . ':')) {
+            if (!str_starts_with($key, $provider->value.':')) {
                 continue;
             }
 
@@ -104,6 +104,6 @@ final class FakeIdentityRepository implements SocialIdentityRepository
 
     private function key(Provider $provider, string $subject): string
     {
-        return $provider->value . ':' . $subject;
+        return $provider->value.':'.$subject;
     }
 }

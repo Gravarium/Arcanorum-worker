@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Tests\Module\SocialAuth;
 
 use App\Module\SocialAuth\AuthenticatedAccount;
-use App\Module\SocialAuth\AuthenticationResult;
 use App\Module\SocialAuth\AuthenticationRejected;
+use App\Module\SocialAuth\AuthenticationResult;
 use App\Module\SocialAuth\AuthorizationRequest;
 use App\Module\SocialAuth\Flow;
 use App\Module\SocialAuth\MapOAuthProviderClientRegistry;
@@ -18,9 +18,7 @@ use App\Tests\Module\SocialAuth\Support\FakeIdentityRepository;
 use App\Tests\Module\SocialAuth\Support\FakeOAuthProviderClient;
 use App\Tests\Module\SocialAuth\Support\FakeOAuthStateStore;
 use App\Tests\Module\SocialAuth\Support\FakeRateLimiter;
-use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
-use Throwable;
 
 final class SocialAuthServiceTest extends TestCase
 {
@@ -44,7 +42,7 @@ final class SocialAuthServiceTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->clock = new FakeClock(new DateTimeImmutable('2026-10-25T23:30:00+00:00'));
+        $this->clock = new FakeClock(new \DateTimeImmutable('2026-10-25T23:30:00+00:00'));
         $this->states = new FakeOAuthStateStore();
         $this->identities = new FakeIdentityRepository();
         $this->rateLimiter = new FakeRateLimiter();
@@ -124,7 +122,7 @@ final class SocialAuthServiceTest extends TestCase
         self::assertSame(Flow::REGISTRATION, $result->flow);
         self::assertSame(1, $this->identities()->registrationCalls);
         $registered = $this->identities()->registered['google:provider-subject-1'] ?? null;
-        if ($registered === null) {
+        if (null === $registered) {
             self::fail('The provider identity was not registered.');
         }
 
@@ -138,7 +136,7 @@ final class SocialAuthServiceTest extends TestCase
         $this->complete($request);
 
         $registered = $this->identities()->registered['google:provider-subject-1'] ?? null;
-        if ($registered === null) {
+        if (null === $registered) {
             self::fail('The provider identity was not registered.');
         }
 
@@ -168,7 +166,7 @@ final class SocialAuthServiceTest extends TestCase
         }
 
         $record = $this->states()->records[hash('sha256', $state)] ?? null;
-        if ($record === null) {
+        if (null === $record) {
             self::fail('The state digest was not stored.');
         }
 
@@ -429,7 +427,7 @@ final class SocialAuthServiceTest extends TestCase
 
     private function service(): SocialAuthService
     {
-        if ($this->service === null) {
+        if (null === $this->service) {
             self::fail('The social authentication service has not been configured.');
         }
 
@@ -438,7 +436,7 @@ final class SocialAuthServiceTest extends TestCase
 
     private function clock(): FakeClock
     {
-        if ($this->clock === null) {
+        if (null === $this->clock) {
             self::fail('The test clock has not been configured.');
         }
 
@@ -447,7 +445,7 @@ final class SocialAuthServiceTest extends TestCase
 
     private function states(): FakeOAuthStateStore
     {
-        if ($this->states === null) {
+        if (null === $this->states) {
             self::fail('The OAuth state store has not been configured.');
         }
 
@@ -456,7 +454,7 @@ final class SocialAuthServiceTest extends TestCase
 
     private function identities(): FakeIdentityRepository
     {
-        if ($this->identities === null) {
+        if (null === $this->identities) {
             self::fail('The identity repository has not been configured.');
         }
 
@@ -465,7 +463,7 @@ final class SocialAuthServiceTest extends TestCase
 
     private function rateLimiter(): FakeRateLimiter
     {
-        if ($this->rateLimiter === null) {
+        if (null === $this->rateLimiter) {
             self::fail('The rate limiter has not been configured.');
         }
 
@@ -474,7 +472,7 @@ final class SocialAuthServiceTest extends TestCase
 
     private function google(): FakeOAuthProviderClient
     {
-        if ($this->google === null) {
+        if (null === $this->google) {
             self::fail('The Google test provider has not been configured.');
         }
 
@@ -483,7 +481,7 @@ final class SocialAuthServiceTest extends TestCase
 
     private function facebook(): FakeOAuthProviderClient
     {
-        if ($this->facebook === null) {
+        if (null === $this->facebook) {
             self::fail('The Facebook test provider has not been configured.');
         }
 
@@ -492,7 +490,7 @@ final class SocialAuthServiceTest extends TestCase
 
     private function twitter(): FakeOAuthProviderClient
     {
-        if ($this->twitter === null) {
+        if (null === $this->twitter) {
             self::fail('The Twitter test provider has not been configured.');
         }
 
@@ -594,8 +592,8 @@ final class SocialAuthServiceTest extends TestCase
             self::assertNull($exception->getPrevious());
 
             return $exception;
-        } catch (Throwable $exception) {
-            self::fail('An unexpected exception escaped: ' . $exception::class);
+        } catch (\Throwable $exception) {
+            self::fail('An unexpected exception escaped: '.$exception::class);
         }
 
         self::fail('The operation unexpectedly succeeded.');

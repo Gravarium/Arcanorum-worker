@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace App\Module\SocialAuth;
 
-use DateTimeImmutable;
-use Throwable;
-
 final readonly class SocialAuthService
 {
     public function __construct(
@@ -23,30 +20,30 @@ final readonly class SocialAuthService
     {
         $provider = Provider::tryFrom($providerId);
         $flow = Flow::tryFrom($flowId);
-        if ($provider === null || $flow === null || !$this->settings->isProviderEnabled($provider)) {
+        if (null === $provider || null === $flow || !$this->settings->isProviderEnabled($provider)) {
             throw new AuthenticationRejected();
         }
 
         $sessionBindingDigest = $this->sessionBindingDigest($sessionBinding);
 
-        if ($flow === Flow::REGISTRATION && !$this->settings->isRegistrationEnabled()) {
+        if (Flow::REGISTRATION === $flow && !$this->settings->isRegistrationEnabled()) {
             throw new AuthenticationRejected();
         }
 
-        if ($flow === Flow::LINK) {
-            if ($account === null) {
+        if (Flow::LINK === $flow) {
+            if (null === $account) {
                 throw new AuthenticationRejected();
             }
 
             $this->assertRecentlyReauthenticated($account);
-        } elseif ($account !== null) {
+        } elseif (null !== $account) {
             throw new AuthenticationRejected();
         }
 
-        $this->consumeRateLimit($provider, 'begin_' . $flow->value, $account?->accountId);
+        $this->consumeRateLimit($provider, 'begin_'.$flow->value, $account?->accountId);
 
         $now = $this->clock->now();
-        $expiresAt = $now->modify('+' . $this->settings->stateLifetimeSeconds() . ' seconds');
+        $expiresAt = $now->modify('+'.$this->settings->stateLifetimeSeconds().' seconds');
 
         $state = $this->base64UrlEncode(random_bytes(32));
         $verifier = $this->base64UrlEncode(random_bytes(32));
@@ -57,7 +54,7 @@ final readonly class SocialAuthService
             $client = $this->clients->clientFor($provider);
             $endpoint = $client->authorizationEndpoint();
             $extraParameters = $client->authorizationParameters();
-        } catch (Throwable) {
+        } catch (\Throwable) {
             throw new AuthenticationRejected();
         }
 
@@ -81,7 +78,7 @@ final readonly class SocialAuthService
         );
         try {
             $this->states->store(hash('sha256', $state), $transaction);
-        } catch (Throwable) {
+        } catch (\Throwable) {
             throw new AuthenticationRejected();
         }
 
@@ -94,19 +91,18 @@ final readonly class SocialAuthService
         string $state,
         string $sessionBinding,
         ?AuthenticatedAccount $account = null,
-    ): AuthenticationResult
-    {
-        if (preg_match('/\A[A-Za-z0-9_-]{43}\z/D', $state) !== 1) {
+    ): AuthenticationResult {
+        if (1 !== preg_match('/\A[A-Za-z0-9_-]{43}\z/D', $state)) {
             throw new AuthenticationRejected();
         }
 
         try {
             $transaction = $this->states->consume(hash('sha256', $state));
-        } catch (Throwable) {
+        } catch (\Throwable) {
             throw new AuthenticationRejected();
         }
 
-        if ($transaction === null) {
+        if (null === $transaction) {
             throw new AuthenticationRejected();
         }
 
@@ -114,32 +110,32 @@ final readonly class SocialAuthService
         $provider = Provider::tryFrom($providerId);
         $now = $this->clock->now();
         if (
-            $provider === null
+            null === $provider
             || $provider !== $transaction->provider
             || !$this->settings->isProviderEnabled($provider)
             || $now >= $transaction->expiresAt
             || $transaction->callbackUri !== $this->settings->callbackUri($transaction->provider)
             || !hash_equals($transaction->sessionBindingDigest, $sessionBindingDigest)
-            || preg_match('/\A[^\x00-\x20\x7F]{1,2048}\z/D', $authorizationCode) !== 1
+            || 1 !== preg_match('/\A[^\x00-\x20\x7F]{1,2048}\z/D', $authorizationCode)
         ) {
             throw new AuthenticationRejected();
         }
 
-        if ($transaction->flow === Flow::LINK) {
-            if ($account === null || $transaction->accountId !== $account->accountId) {
+        if (Flow::LINK === $transaction->flow) {
+            if (null === $account || $transaction->accountId !== $account->accountId) {
                 throw new AuthenticationRejected();
             }
 
             $this->assertRecentlyReauthenticated($account);
-        } elseif ($account !== null) {
+        } elseif (null !== $account) {
             throw new AuthenticationRejected();
         }
 
-        if ($transaction->flow === Flow::REGISTRATION && !$this->settings->isRegistrationEnabled()) {
+        if (Flow::REGISTRATION === $transaction->flow && !$this->settings->isRegistrationEnabled()) {
             throw new AuthenticationRejected();
         }
 
-        $this->consumeRateLimit($provider, 'complete_' . $transaction->flow->value, $transaction->accountId);
+        $this->consumeRateLimit($provider, 'complete_'.$transaction->flow->value, $transaction->accountId);
 
         try {
             $client = $this->clients->clientFor($provider);
@@ -149,7 +145,7 @@ final readonly class SocialAuthService
                 $transaction->callbackUri,
                 $this->settings->maxProfileResponseBytes(),
             );
-        } catch (Throwable) {
+        } catch (\Throwable) {
             throw new AuthenticationRejected();
         }
 
@@ -165,7 +161,7 @@ final readonly class SocialAuthService
     public function unlink(string $providerId, AuthenticatedAccount $account): void
     {
         $provider = Provider::tryFrom($providerId);
-        if ($provider === null) {
+        if (null === $provider) {
             throw new AuthenticationRejected();
         }
 
@@ -178,7 +174,7 @@ final readonly class SocialAuthService
             }
         } catch (AuthenticationRejected) {
             throw new AuthenticationRejected();
-        } catch (Throwable) {
+        } catch (\Throwable) {
             throw new AuthenticationRejected();
         }
     }
@@ -187,11 +183,11 @@ final readonly class SocialAuthService
     {
         try {
             $accountId = $this->identities->accountIdFor($identity->provider, $identity->subject);
-        } catch (Throwable) {
+        } catch (\Throwable) {
             throw new AuthenticationRejected();
         }
 
-        if ($accountId === null || $accountId === '') {
+        if (null === $accountId || '' === $accountId) {
             throw new AuthenticationRejected();
         }
 
@@ -206,11 +202,11 @@ final readonly class SocialAuthService
 
         try {
             $accountId = $this->identities->registerAccount($identity);
-        } catch (Throwable) {
+        } catch (\Throwable) {
             throw new AuthenticationRejected();
         }
 
-        if ($accountId === null || $accountId === '') {
+        if (null === $accountId || '' === $accountId) {
             throw new AuthenticationRejected();
         }
 
@@ -219,7 +215,7 @@ final readonly class SocialAuthService
 
     private function link(ProviderIdentity $identity, ?string $accountId): AuthenticationResult
     {
-        if ($accountId === null || $accountId === '') {
+        if (null === $accountId || '' === $accountId) {
             throw new AuthenticationRejected();
         }
 
@@ -229,7 +225,7 @@ final readonly class SocialAuthService
             }
         } catch (AuthenticationRejected) {
             throw new AuthenticationRejected();
-        } catch (Throwable) {
+        } catch (\Throwable) {
             throw new AuthenticationRejected();
         }
 
@@ -257,10 +253,10 @@ final readonly class SocialAuthService
         $path = $parts['path'] ?? '';
         if (
             !is_string($scheme)
-            || strtolower($scheme) !== 'https'
+            || 'https' !== strtolower($scheme)
             || !is_string($host)
             || strtolower($host) !== $this->settings->authorizationHost($provider)
-            || preg_match('/[\x00-\x20\x7F]/', $path) === 1
+            || 1 === preg_match('/[\x00-\x20\x7F]/', $path)
             || isset($parts['user'])
             || isset($parts['pass'])
             || isset($parts['query'])
@@ -289,12 +285,12 @@ final readonly class SocialAuthService
             if (
                 !is_string($key)
                 || !is_string($value)
-                || preg_match('/\A[A-Za-z][A-Za-z0-9_]{0,63}\z/D', $key) !== 1
+                || 1 !== preg_match('/\A[A-Za-z][A-Za-z0-9_]{0,63}\z/D', $key)
                 || isset($requiredParameterNames[$normalizedKey])
                 || isset($seenParameters[$normalizedKey])
-                || $value === ''
+                || '' === $value
                 || strlen($value) > 2048
-                || preg_match('/[\x00-\x1F\x7F]/', $value) === 1
+                || 1 === preg_match('/[\x00-\x1F\x7F]/', $value)
             ) {
                 throw new AuthenticationRejected();
             }
@@ -303,8 +299,8 @@ final readonly class SocialAuthService
         }
 
         $parameters = array_merge($extraParameters, $requiredParameters);
-        $baseUrl = 'https://' . strtolower($host) . $path;
-        $url = $baseUrl . '?' . http_build_query($parameters, '', '&', PHP_QUERY_RFC3986);
+        $baseUrl = 'https://'.strtolower($host).$path;
+        $url = $baseUrl.'?'.http_build_query($parameters, '', '&', PHP_QUERY_RFC3986);
         if (strlen($url) > 8192) {
             throw new AuthenticationRejected();
         }
@@ -315,7 +311,7 @@ final readonly class SocialAuthService
     private function assertRecentlyReauthenticated(AuthenticatedAccount $account): void
     {
         $now = $this->clock->now();
-        $oldestAllowed = $now->modify('-' . $this->settings->reauthenticationWindowSeconds() . ' seconds');
+        $oldestAllowed = $now->modify('-'.$this->settings->reauthenticationWindowSeconds().' seconds');
         if ($account->lastReauthenticatedAt > $now || $account->lastReauthenticatedAt < $oldestAllowed) {
             throw new AuthenticationRejected();
         }
@@ -324,13 +320,13 @@ final readonly class SocialAuthService
     private function consumeRateLimit(Provider $provider, string $operation, ?string $accountId): void
     {
         try {
-            $accountKey = $accountId === null ? null : hash('sha256', $accountId);
+            $accountKey = null === $accountId ? null : hash('sha256', $accountId);
             if (!$this->rateLimiter->consume($provider, $operation, $accountKey)) {
                 throw new AuthenticationRejected();
             }
         } catch (AuthenticationRejected) {
             throw new AuthenticationRejected();
-        } catch (Throwable) {
+        } catch (\Throwable) {
             throw new AuthenticationRejected();
         }
     }
@@ -340,7 +336,7 @@ final readonly class SocialAuthService
         if (
             strlen($sessionBinding) < 32
             || strlen($sessionBinding) > 512
-            || preg_match('/[\x00-\x20\x7F]/', $sessionBinding) === 1
+            || 1 === preg_match('/[\x00-\x20\x7F]/', $sessionBinding)
         ) {
             throw new AuthenticationRejected();
         }

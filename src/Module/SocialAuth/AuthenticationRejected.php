@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace App\Module\SocialAuth;
 
-use RuntimeException;
-
-final class AuthenticationRejected extends RuntimeException
+final class AuthenticationRejected extends \RuntimeException
 {
     public function __construct()
     {
