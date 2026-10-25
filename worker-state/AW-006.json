@@ -16,9 +16,9 @@
   "claim_duration_hours": 7,
   "claimed_at": "2026-10-25T23:26:04Z",
   "claim_expires_at": "2026-10-26T06:26:04Z",
-  "heartbeat_at": "2026-10-25T23:37:07Z",
-  "last_progress_at": "2026-10-25T23:37:07Z",
-  "last_progress_sha": "bc4249b8937700bb95acf7be5a433e806f0d774d",
-  "last_test_status": "Draft PR created for exact HEAD bc4249b8937700bb95acf7be5a433e806f0d774d. Walker quality run is queued; no tests are yet recorded as passed.",
+  "heartbeat_at": "2026-10-25T23:38:37Z",
+  "last_progress_at": "2026-10-25T23:38:37Z",
+  "last_progress_sha": "d8d731d4b88cbe75e2b77d56f73d7fb4472a1bb0",
+  "last_test_status": "Exact PR HEAD d8d731d4b88cbe75e2b77d56f73d7fb4472a1bb0 has git diff --check passed. Local PHP/Composer unavailable. Walker required CI run is queued; no tests recorded as passed.",
   "blocker": null
 }
