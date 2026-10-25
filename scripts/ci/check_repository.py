@@ -8,6 +8,8 @@ import subprocess
 import sys
 import xml.etree.ElementTree as ET
 
+from symfony_version_policy import is_supported_symfony_package_version
+
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 errors: list[str] = []
 
@@ -188,11 +190,8 @@ if composer.is_file():
         lock_data = json.loads(lock_path.read_text(encoding="utf-8"))
         for package in lock_data.get("packages", []) + lock_data.get("packages-dev", []):
             name = package.get("name", "")
-            if name.startswith("symfony/") and not (
-                name.startswith("symfony/polyfill-") or name.endswith("-contracts")
-            ):
-                if re.fullmatch(r"v?7\.4\.[0-9]+", package.get("version", "")) is None:
-                    errors.append(f"composer.lock: {name} muss zur festgelegten Symfony-7.4-LTS-Reihe gehören")
+            if not is_supported_symfony_package_version(name, package.get("version", "")):
+                errors.append(f"composer.lock: {name} muss zur festgelegten Symfony-7.4-LTS-Reihe gehören")
 elif app_php:
     errors.append("composer.json: PHP-Anwendungscode ist vorhanden, aber composer.json fehlt")
 
