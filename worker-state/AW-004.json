@@ -16,9 +16,9 @@
   "claim_duration_hours": 7,
   "claimed_at": "2026-10-25T22:20:30Z",
   "claim_expires_at": "2026-10-26T05:20:30Z",
-  "heartbeat_at": "2026-10-25T22:36:54Z",
-  "last_progress_at": "2026-10-25T22:36:54Z",
-  "last_progress_sha": null,
-  "last_test_status": "Scheduling module code and bounded recovery behavior are staged; exact-head Walker CI will run after the draft pull request is created.",
+  "heartbeat_at": "2026-10-25T22:37:07Z",
+  "last_progress_at": "2026-10-25T22:37:07Z",
+  "last_progress_sha": "7447fd7c65f37109ccb31abd56b7562ef87931e5",
+  "last_test_status": "Implementation committed on the claimed task branch; local PHP checks are unavailable, and exact-head Walker CI is pending.",
   "blocker": null
 }
