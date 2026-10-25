@@ -11,6 +11,7 @@ use App\Module\Video\Service\VideoStreamSource;
 use App\Module\Video\Service\VideoStreamSourceResolver;
 use App\Repository\ContentSeriesRepository;
 use App\Repository\SeriesEpisodeRepository;
+use App\Repository\VideoSubtitleTrackRepository;
 use App\Service\ExternalVideoEmbedResolver;
 use App\Service\SeriesGenreManager;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -104,6 +105,7 @@ final class PublicSeriesController extends AbstractController
         SeriesEpisodeRepository $episodes,
         ExternalVideoEmbedResolver $embedResolver,
         VideoStreamSourceResolver $streamResolver,
+        VideoSubtitleTrackRepository $subtitleTracks,
     ): Response {
         $item = $series->findPublishedBySlug($slug);
         if (!$item instanceof ContentSeries || !ctype_digit($seasonNumber) || !ctype_digit($episodeNumber)) {
@@ -136,6 +138,7 @@ final class PublicSeriesController extends AbstractController
             'video' => $video,
             'stream_source' => $streamSource,
             'embed_url' => VideoSourceType::Embed === $video->getSourceType() ? $embedResolver->resolve($video->getSourceUrl()) : null,
+            'subtitle_tracks' => $subtitleTracks->findForVideo($video),
         ]);
         if (null !== $streamSource) {
             $response->headers->set('Cache-Control', 'private, no-store');

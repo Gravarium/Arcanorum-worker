@@ -2855,6 +2855,261 @@ final class AdminDashboardTest extends WebTestCase
         }
     }
 
+    public function testAdminCanUploadUpdateAndRemovePrivateVideoSubtitleTracks(): void
+    {
+        $client = static::createClient();
+        $client->getContainer()->set(
+            RuntimeAttestationReportProviderInterface::class,
+            new VerifiedRuntimeAttestationReportProvider(),
+        );
+
+        $token = bin2hex(random_bytes(8));
+        $email = 'subtitle-admin-'.$token.'@example.test';
+        $password = 'Subtitle-Admin-'.$token.'-K8!';
+        $video = new Video(
+            'Subtitle admin '.$token,
+            'Subtitle upload integration test.',
+            null,
+            VideoSourceType::File,
+            '',
+            PublishingStatus::Published,
+            false,
+            true,
+        );
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        $storage = $client->getContainer()->get(PrivateObjectStorageInterface::class);
+        self::assertInstanceOf(PrivateObjectStorageInterface::class, $storage);
+        $videoObjectId = bin2hex(random_bytes(32));
+        $videoBytes = "\x00\x00\x00\x18ftypmp42".str_repeat("\x00", 32);
+        $storage->write($videoObjectId, $videoBytes);
+        $video->attachUploadedMedia($videoObjectId, 'video/mp4', strlen($videoBytes));
+        $entityManager->persist($video);
+        $entityManager->flush();
+
+        $firstSubtitlePath = tempnam(sys_get_temp_dir(), 'arcanorum-subtitle-');
+        $updatedSubtitlePath = tempnam(sys_get_temp_dir(), 'arcanorum-subtitle-');
+        self::assertIsString($firstSubtitlePath);
+        self::assertIsString($updatedSubtitlePath);
+        $firstSubtitle = "WEBVTT\n\n00:00:00.000 --> 00:00:01.500\nHello world.\n";
+        $updatedSubtitle = "WEBVTT\n\n00:00:00.000 --> 00:00:02.000\nUpdated caption.\n";
+        self::assertSame(strlen($firstSubtitle), file_put_contents($firstSubtitlePath, $firstSubtitle));
+        self::assertSame(strlen($updatedSubtitle), file_put_contents($updatedSubtitlePath, $updatedSubtitle));
+
+        try {
+            $this->persistUser($client, $email, $password, ['ROLE_ADMIN']);
+            $this->submitLogin($client, $email, $password);
+            self::assertResponseRedirects('/admin');
+
+            $videoId = $video->getId();
+            $uploadUrl = '/admin/videos/'.$videoId.'/subtitles';
+            $editUrl = '/admin/videos/'.$videoId.'/edit';
+            $client->request('GET', $editUrl);
+            self::assertResponseIsSuccessful();
+            $csrfToken = $client->getCrawler()
+                ->filter('form[action="'.$uploadUrl.'"] input[name="_token"]')
+                ->attr('value');
+            self::assertIsString($csrfToken);
+
+            $client->request('POST', $uploadUrl, [
+                '_token' => 'invalid-token',
+                'language_code' => 'EN-us',
+                'label' => 'English',
+            ], [
+                'subtitle_file' => new UploadedFile($firstSubtitlePath, 'english.vtt', 'text/vtt', null, true),
+            ]);
+            self::assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
+
+            $client->request('POST', $uploadUrl, [
+                '_token' => $csrfToken,
+                'language_code' => 'en-US',
+                'label' => 'English',
+                'unexpected' => 'must be rejected',
+            ], [
+                'subtitle_file' => new UploadedFile($firstSubtitlePath, 'english.vtt', 'text/vtt', null, true),
+            ]);
+            self::assertResponseRedirects($editUrl);
+            $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+            self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+            $entityManager->clear();
+            self::assertSame(0, (int) $entityManager->getConnection()->fetchOne(
+                'SELECT COUNT(*) FROM video_subtitle_tracks WHERE video_id = :id',
+                ['id' => $videoId],
+            ));
+
+            $client->request('POST', $uploadUrl, [
+                '_token' => $csrfToken,
+                'language_code' => 'EN-us',
+                'label' => 'English',
+            ], [
+                'subtitle_file' => new UploadedFile($firstSubtitlePath, 'english.vtt', 'text/vtt', null, true),
+            ]);
+            self::assertResponseRedirects($editUrl);
+
+            $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+            self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+            $track = $entityManager->getConnection()->fetchAssociative(
+                'SELECT id, language_code, label, storage_object_id, size, sha256 FROM video_subtitle_tracks WHERE video_id = :id',
+                ['id' => $videoId],
+            );
+            self::assertIsArray($track);
+            self::assertSame('en-US', $track['language_code']);
+            self::assertSame('English', $track['label']);
+            self::assertSame(strlen($firstSubtitle), (int) $track['size']);
+            self::assertSame(hash('sha256', $firstSubtitle), $track['sha256']);
+            $trackId = (string) $track['id'];
+            $oldObjectId = (string) $track['storage_object_id'];
+
+            $client->request('GET', '/videos/'.$videoId.'/subtitles/'.$trackId);
+            self::assertResponseIsSuccessful();
+            self::assertResponseHeaderSame('Content-Type', 'text/vtt; charset=UTF-8');
+            self::assertSame($firstSubtitle, $client->getResponse()->getContent());
+            self::assertResponseHeaderSame('X-Content-Type-Options', 'nosniff');
+            $storage->write($oldObjectId, $updatedSubtitle);
+            $client->request('GET', '/videos/'.$videoId.'/subtitles/'.$trackId);
+            self::assertResponseStatusCodeSame(Response::HTTP_SERVICE_UNAVAILABLE);
+            $storage->write($oldObjectId, $firstSubtitle);
+            $storage->delete($oldObjectId);
+            $client->request('GET', '/videos/'.$videoId.'/subtitles/'.$trackId);
+            self::assertResponseStatusCodeSame(Response::HTTP_SERVICE_UNAVAILABLE);
+            $storage->write($oldObjectId, $firstSubtitle);
+
+            $client->request('GET', '/videos/'.$videoId);
+            self::assertResponseIsSuccessful();
+            self::assertStringContainsString('srclang="en-US"', (string) $client->getResponse()->getContent());
+            self::assertStringContainsString('/videos/'.$videoId.'/subtitles/'.$trackId, (string) $client->getResponse()->getContent());
+            $client->request('GET', '/videos/'.$videoId.'/subtitles/'.bin2hex(random_bytes(16)));
+            self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+
+            $client->request('GET', $editUrl);
+            $csrfToken = $client->getCrawler()
+                ->filter('form[action="'.$uploadUrl.'"] input[name="_token"]')
+                ->attr('value');
+            self::assertIsString($csrfToken);
+            $client->request('POST', $uploadUrl, [
+                '_token' => $csrfToken,
+                'language_code' => 'en-US',
+                'label' => 'English updated',
+            ], [
+                'subtitle_file' => new UploadedFile($updatedSubtitlePath, 'english-updated.vtt', 'text/vtt', null, true),
+            ]);
+            self::assertResponseRedirects($editUrl);
+
+            $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+            self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+            $updatedTrack = $entityManager->getConnection()->fetchAssociative(
+                'SELECT id, label, storage_object_id FROM video_subtitle_tracks WHERE video_id = :id',
+                ['id' => $videoId],
+            );
+            self::assertIsArray($updatedTrack);
+            self::assertSame($trackId, $updatedTrack['id']);
+            self::assertSame('English updated', $updatedTrack['label']);
+            self::assertNotSame($oldObjectId, $updatedTrack['storage_object_id']);
+
+            $client->request('GET', $editUrl);
+            $deleteUrl = '/admin/videos/'.$videoId.'/subtitles/'.$trackId.'/delete';
+            $deleteToken = $client->getCrawler()
+                ->filter('form[action="'.$deleteUrl.'"] input[name="_token"]')
+                ->attr('value');
+            self::assertIsString($deleteToken);
+            $client->request('POST', $deleteUrl, ['_token' => $deleteToken, 'action' => 'delete']);
+            self::assertResponseRedirects($editUrl);
+            $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+            self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+            $entityManager->clear();
+            self::assertSame(0, (int) $entityManager->getConnection()->fetchOne(
+                'SELECT COUNT(*) FROM video_subtitle_tracks WHERE video_id = :id',
+                ['id' => $videoId],
+            ));
+            $client->request('GET', '/videos/'.$videoId.'/subtitles/'.$trackId);
+            self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+
+            $client->request('GET', $editUrl);
+            $csrfToken = $client->getCrawler()
+                ->filter('form[action="'.$uploadUrl.'"] input[name="_token"]')
+                ->attr('value');
+            self::assertIsString($csrfToken);
+            $client->request('POST', $uploadUrl, [
+                '_token' => $csrfToken,
+                'language_code' => 'de',
+                'label' => 'Deutsch',
+            ], [
+                'subtitle_file' => new UploadedFile($updatedSubtitlePath, 'german.vtt', 'text/vtt', null, true),
+            ]);
+            self::assertResponseRedirects($editUrl);
+
+            $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+            self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+            $remainingSubtitle = $entityManager->getConnection()->fetchAssociative(
+                'SELECT id, storage_object_id FROM video_subtitle_tracks WHERE video_id = :id',
+                ['id' => $videoId],
+            );
+            self::assertIsArray($remainingSubtitle);
+            $remainingTrackId = (string) $remainingSubtitle['id'];
+            $remainingObjectId = (string) $remainingSubtitle['storage_object_id'];
+
+            $client->request('GET', '/admin/videos');
+            self::assertResponseIsSuccessful();
+            $bulkToken = $client->getCrawler()
+                ->filter('form[action="/admin/videos/bulk"] input[name="_token"]')
+                ->attr('value');
+            self::assertIsString($bulkToken);
+            $client->request('POST', '/admin/videos/bulk', [
+                '_token' => $bulkToken,
+                'ids' => [$videoId],
+                'action' => 'delete',
+                'confirm_delete' => '1',
+            ]);
+            self::assertResponseRedirects('/admin/videos');
+
+            $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+            self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+            $entityManager->clear();
+            self::assertSame(0, (int) $entityManager->getConnection()->fetchOne(
+                'SELECT COUNT(*) FROM video_subtitle_tracks WHERE video_id = :id',
+                ['id' => $videoId],
+            ));
+            self::assertSame(0, (int) $entityManager->getConnection()->fetchOne(
+                'SELECT COUNT(*) FROM videos WHERE id = :id',
+                ['id' => $videoId],
+            ));
+            $client->request('GET', '/videos/'.$videoId.'/subtitles/'.$remainingTrackId);
+            self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+            $privateObjectWasDeleted = false;
+            try {
+                $storage->read($remainingObjectId);
+                self::fail('A subtitle file remained in private storage after its video was deleted.');
+            } catch (\App\Platform\Hosting\PrivateStorageOperationFailed) {
+                $privateObjectWasDeleted = true;
+            }
+            self::assertTrue($privateObjectWasDeleted);
+        } finally {
+            $cleanupManager = $client->getContainer()->get(EntityManagerInterface::class);
+            if ($cleanupManager instanceof EntityManagerInterface) {
+                foreach ($cleanupManager->getConnection()->fetchFirstColumn(
+                    'SELECT storage_object_id FROM video_subtitle_tracks WHERE video_id = :id',
+                    ['id' => $video->getId()],
+                ) as $objectId) {
+                    if (is_string($objectId)) {
+                        $storage->delete($objectId);
+                    }
+                }
+                $cleanupManager->getConnection()->executeStatement(
+                    'DELETE FROM videos WHERE id = :id',
+                    ['id' => $video->getId()],
+                );
+            }
+            $storage->delete($videoObjectId);
+            $this->removeUser($client, $email);
+            if (is_file($firstSubtitlePath)) {
+                unlink($firstSubtitlePath);
+            }
+            if (is_file($updatedSubtitlePath)) {
+                unlink($updatedSubtitlePath);
+            }
+        }
+    }
+
     public function testAdminCanUploadPreviewAndRemoveSeriesArtwork(): void
     {
         $client = static::createClient();

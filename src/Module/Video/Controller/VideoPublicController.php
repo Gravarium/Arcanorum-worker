@@ -17,6 +17,7 @@ use App\Repository\ContentCategoryRepository;
 use App\Repository\ContentCommentRepository;
 use App\Repository\PlaylistRepository;
 use App\Repository\VideoRepository;
+use App\Repository\VideoSubtitleTrackRepository;
 use App\Service\ExternalVideoEmbedResolver;
 use App\Service\VideoViewCounter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -89,6 +90,7 @@ final class VideoPublicController extends AbstractController
         VideoStreamSourceResolver $streamResolver,
         PlaylistRepository $playlists,
         VideoViewCounter $viewCounter,
+        VideoSubtitleTrackRepository $subtitleTracks,
     ): Response {
         $video = $videos->findPublishedById($id);
         if (!$video instanceof Video) {
@@ -119,6 +121,7 @@ final class VideoPublicController extends AbstractController
             'stream_source' => $streamSource,
             'comments' => $comments->findApprovedForContent(CommentContentType::Video, $video->getId()),
             'video_report_reasons' => VideoReportReason::cases(),
+            'subtitle_tracks' => $subtitleTracks->findForVideo($video),
         ]);
         $response->headers->set('Cache-Control', 'private, no-store');
 

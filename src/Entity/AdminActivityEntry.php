@@ -120,6 +120,8 @@ final class AdminActivityEntry
             str_contains($this->routeName, 'import') => 'Inhalte importiert',
             'admin_general_settings_update' === $this->routeName => 'Website-Einstellungen geändert',
             'admin_content_settings_update' === $this->routeName => 'Video- und Inhaltseinstellungen geändert',
+            'admin_video_subtitle_upload' === $this->routeName => 'Untertitelspur gespeichert',
+            'admin_video_subtitle_delete' === $this->routeName => 'Untertitelspur gelöscht',
             'admin_staff_role_update' === $this->routeName => 'Verwaltungsrolle geändert',
             'admin_design_settings_update' === $this->routeName => 'Theme und Layout geändert',
             str_ends_with($this->routeName, '_new') => 'Inhalt angelegt',

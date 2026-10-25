@@ -16,10 +16,12 @@ use App\Repository\ContentCategoryRepository;
 use App\Repository\ContentCommentRepository;
 use App\Repository\ContentTagRepository;
 use App\Repository\VideoRepository;
+use App\Repository\VideoSubtitleTrackRepository;
 use App\Service\ContentTagManager;
 use App\Service\ExternalVideoEmbedResolver;
 use App\Service\SiteSettingsProvider;
 use App\Service\VideoMediaUploadService;
+use App\Service\VideoSubtitleUploadService;
 use App\Service\VideoSourceUrlLock;
 use App\Service\VideoThumbnailUploadService;
 use Doctrine\DBAL\Connection;
@@ -102,6 +104,8 @@ final class VideoAdminController extends AbstractController
         ContentCommentRepository $comments,
         VideoMediaUploadService $mediaUploads,
         VideoThumbnailUploadService $thumbnailUploads,
+        VideoSubtitleTrackRepository $subtitleTracks,
+        VideoSubtitleUploadService $subtitleUploads,
         EntityManagerInterface $entityManager,
     ): Response {
         $token = self::input($request->request, '_token');
@@ -189,6 +193,7 @@ final class VideoAdminController extends AbstractController
 
         $uploadedObjectIds = [];
         $thumbnailObjectIds = [];
+        $subtitleObjectIds = [];
         if ('delete' === $action) {
             foreach ($items as $item) {
                 $objectId = $item->getUploadedObjectId();
@@ -198,6 +203,9 @@ final class VideoAdminController extends AbstractController
                 $thumbnailObjectId = $item->getThumbnailObjectId();
                 if (null !== $thumbnailObjectId) {
                     $thumbnailObjectIds[] = $thumbnailObjectId;
+                }
+                foreach ($subtitleTracks->findForVideo($item) as $subtitleTrack) {
+                    $subtitleObjectIds[] = $subtitleTrack->getStorageObjectId();
                 }
             }
         }
@@ -241,8 +249,15 @@ final class VideoAdminController extends AbstractController
                 $mediaCleanupFailed = true;
             }
         }
+        foreach ($subtitleObjectIds as $objectId) {
+            try {
+                $subtitleUploads->delete($objectId);
+            } catch (PrivateStorageOperationFailed|\InvalidArgumentException) {
+                $mediaCleanupFailed = true;
+            }
+        }
         if ($mediaCleanupFailed) {
-            $this->addFlash('warning', 'Mindestens eine private Videodatei konnte nicht bereinigt werden.');
+            $this->addFlash('warning', 'Mindestens eine private Mediendatei konnte nicht bereinigt werden.');
         }
 
         $actionLabel = match ($action) {
@@ -270,8 +285,9 @@ final class VideoAdminController extends AbstractController
         EntityManagerInterface $entityManager,
         SiteSettingsProvider $siteSettings,
         VideoSourceUrlLock $sourceLock,
+        VideoSubtitleTrackRepository $subtitleTracks,
     ): Response {
-        return $this->editForm($request, null, $videos, $categories, $tagManager, $mediaUploads, $embedResolver, $streamResolver, $entityManager, $siteSettings, $sourceLock);
+        return $this->editForm($request, null, $videos, $categories, $tagManager, $mediaUploads, $embedResolver, $streamResolver, $entityManager, $siteSettings, $sourceLock, $subtitleTracks);
     }
 
     #[Route(
@@ -292,13 +308,14 @@ final class VideoAdminController extends AbstractController
         EntityManagerInterface $entityManager,
         SiteSettingsProvider $siteSettings,
         VideoSourceUrlLock $sourceLock,
+        VideoSubtitleTrackRepository $subtitleTracks,
     ): Response {
         $video = $videos->find($id);
         if (!$video instanceof Video) {
             throw $this->createNotFoundException('Video wurde nicht gefunden.');
         }
 
-        return $this->editForm($request, $video, $videos, $categories, $tagManager, $mediaUploads, $embedResolver, $streamResolver, $entityManager, $siteSettings, $sourceLock);
+        return $this->editForm($request, $video, $videos, $categories, $tagManager, $mediaUploads, $embedResolver, $streamResolver, $entityManager, $siteSettings, $sourceLock, $subtitleTracks);
     }
 
     private function editForm(
@@ -313,6 +330,7 @@ final class VideoAdminController extends AbstractController
         EntityManagerInterface $entityManager,
         SiteSettingsProvider $siteSettings,
         VideoSourceUrlLock $sourceLock,
+        VideoSubtitleTrackRepository $subtitleTracks,
     ): Response {
         $isEdit = null !== $video;
         $values = [
@@ -519,6 +537,8 @@ final class VideoAdminController extends AbstractController
             'current_media_type' => $video?->getUploadedMimeType(),
             'video_id' => $isEdit ? $video->getId() : null,
             'has_thumbnail' => $isEdit && null !== $video->getThumbnailObjectId(),
+            'subtitle_tracks' => $isEdit ? $subtitleTracks->findForVideo($video) : [],
+            'subtitle_supported' => $isEdit && in_array($video->getSourceType(), [VideoSourceType::File, VideoSourceType::Stream], true),
             'stream_configured' => $streamResolver->isConfigured(),
         ], new Response(status: $storageUnavailable ? Response::HTTP_SERVICE_UNAVAILABLE : ([] === $errors ? Response::HTTP_OK : Response::HTTP_UNPROCESSABLE_ENTITY)));
     }

@@ -141,5 +141,63 @@
                 </form>
             {% endif %}
         </section>
+
+        <section class="admin-panel" aria-labelledby="video-subtitle-heading">
+            <header class="panel-heading">
+                <div>
+                    <h2 id="video-subtitle-heading">{{ 'Untertitel und Sprachspuren'|trans }}</h2>
+                    <p class="muted">{{ 'Nur geprüfte WebVTT-Dateien bis 1 MiB werden außerhalb des öffentlichen Webpfads gespeichert. Jede Sprache erhält eine eigene auswählbare Spur.'|trans }}</p>
+                </div>
+            </header>
+
+            {% if subtitle_supported %}
+                <form class="admin-form" method="post" enctype="multipart/form-data" action="{{ path('admin_video_subtitle_upload', {id: video_id}) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('admin_video_subtitles_upload_' ~ video_id) }}">
+                    <label>
+                        <span>{{ 'Sprachcode (z. B. de oder en-US)'|trans }}</span>
+                        <input name="language_code" maxlength="35" pattern="[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*" autocomplete="off" required>
+                    </label>
+                    <label>
+                        <span>{{ 'Beschriftung im Player'|trans }}</span>
+                        <input name="label" maxlength="120" required>
+                    </label>
+                    <label>
+                        <span>{{ 'WebVTT-Datei'|trans }}</span>
+                        <input type="file" name="subtitle_file" accept=".vtt,text/vtt,text/plain" required>
+                    </label>
+                    <div class="form-actions">
+                        <button class="button" type="submit">{{ 'Untertitel speichern oder aktualisieren'|trans }}</button>
+                    </div>
+                </form>
+            {% else %}
+                <p>{{ 'Untertitelspuren können nur für Videodateien und geprüfte Streams hochgeladen werden.'|trans }}</p>
+            {% endif %}
+
+            {% if subtitle_tracks is not empty %}
+                <div class="table-scroll">
+                    <table>
+                        <thead><tr><th>{{ 'Sprache'|trans }}</th><th>{{ 'Beschriftung'|trans }}</th><th>{{ 'Dateigröße'|trans }}</th><th>{{ 'Aktionen'|trans }}</th></tr></thead>
+                        <tbody>
+                            {% for subtitle in subtitle_tracks %}
+                                <tr>
+                                    <td><code>{{ subtitle.languageCode }}</code></td>
+                                    <td>{{ subtitle.label }}</td>
+                                    <td>{{ '%size% Byte'|trans({'%size%': subtitle.size}) }}</td>
+                                    <td>
+                                        <form method="post" action="{{ path('admin_video_subtitle_delete', {id: video_id, trackId: subtitle.id}) }}">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('admin_video_subtitles_delete_' ~ subtitle.id) }}">
+                                            <input type="hidden" name="action" value="delete">
+                                            <button class="button button-secondary" type="submit">{{ 'Untertitelspur entfernen'|trans }}</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p>{{ 'Für dieses Video sind noch keine Untertitelspuren gespeichert.'|trans }}</p>
+            {% endif %}
+        </section>
     {% endif %}
 {% endblock %}

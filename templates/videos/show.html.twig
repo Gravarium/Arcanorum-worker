@@ -34,6 +34,7 @@
                 {% if video.sourceType.value == 'file' %}
                     <video controls preload="{{ site_settings().videoPreloadMode.value }}" playsinline aria-label="{{ video.title }}"{% if site_settings().videoPlayerEngine.value == 'videojs' %} class="video-js vjs-default-skin" data-video-player-engine="videojs" data-player-message-ready="{{ 'Video ist bereit.'|trans }}" data-player-message-error="{{ 'Die Video-Wiedergabe ist derzeit nicht verfügbar.'|trans }}"{% endif %}{% if site_settings().isPlayerAutoplayEnabled %} autoplay muted{% endif %}>
                         <source src="{{ path('video_media', {id: video.id}) }}" type="{{ video.uploadedMimeType }}">
+                        {% for subtitle in subtitle_tracks %}<track kind="subtitles" src="{{ path('video_subtitle_track', {videoId: video.id, trackId: subtitle.id}) }}" srclang="{{ subtitle.languageCode }}" label="{{ subtitle.label }}"{% if loop.first %} default{% endif %}>{% endfor %}
                         {{ 'Dein Browser kann dieses Video nicht abspielen.'|trans }}
                     </video>
                     {% if site_settings().videoPlayerEngine.value == 'videojs' %}<p data-video-player-status role="status">{{ 'Video-Player wird vorbereitet.'|trans }}</p>{% endif %}
@@ -43,6 +44,7 @@
                             {% if stream_source.mimeType != 'application/vnd.apple.mpegurl' %}
                                 <source src="{{ stream_source.url }}" type="{{ stream_source.mimeType }}">
                             {% endif %}
+                            {% for subtitle in subtitle_tracks %}<track kind="subtitles" src="{{ path('video_subtitle_track', {videoId: video.id, trackId: subtitle.id}) }}" srclang="{{ subtitle.languageCode }}" label="{{ subtitle.label }}"{% if loop.first %} default{% endif %}>{% endfor %}
                             {{ 'Dein Browser kann diesen Stream nicht abspielen.'|trans }}
                         </video>
                         {% if site_settings().videoPlayerEngine.value == 'videojs' %}
