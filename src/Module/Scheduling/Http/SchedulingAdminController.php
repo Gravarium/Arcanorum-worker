@@ -104,7 +104,7 @@ final readonly class SchedulingAdminController
     {
         try {
             $rawLimit = $request->query->get('limit', '100');
-            $limit = is_string($rawLimit) && 1 === preg_match('/\A[0-9]{1,3}\z/D', $rawLimit) ? (int) $rawLimit : null;
+            $limit = 1 === preg_match('/\A[0-9]{1,3}\z/D', $rawLimit) ? (int) $rawLimit : null;
             if (null === $limit) {
                 return self::error('invalid_request', 400);
             }
@@ -161,7 +161,7 @@ final readonly class SchedulingAdminController
     private static function assertKeys(array $data, array $allowed): void
     {
         foreach ($data as $key => $_value) {
-            if (!is_string($key) || !in_array($key, $allowed, true)) {
+            if (!in_array($key, $allowed, true)) {
                 throw new \InvalidArgumentException('Request contains unsupported fields.');
             }
         }
