@@ -1,0 +1,13 @@
+<aside class="cookie-consent-banner" aria-labelledby="cookie-consent-heading">
+    <div>
+        <h2 id="cookie-consent-heading">{{ 'Cookie-Einstellungen'|trans }}</h2>
+        <p>{{ message }}</p>
+        <p>{{ 'Notwendige Cookies dienen Anmeldung und Sicherheit. Derzeit werden keine Analyse- oder Werbecookies gesetzt.'|trans }}</p>
+        <a href="{{ path('cookie_consent_preferences') }}">{{ 'Einstellungen ansehen'|trans }}</a>
+    </div>
+    <form method="post" action="{{ path('cookie_consent_submit') }}" class="cookie-consent-actions">
+        <input type="hidden" name="token" value="{{ token }}">
+        <button class="button button-primary" type="submit" name="choice" value="all">{{ 'Alle zulassen'|trans }}</button>
+        <button class="button button-secondary" type="submit" name="choice" value="necessary">{{ 'Nur notwendige'|trans }}</button>
+    </form>
+</aside>

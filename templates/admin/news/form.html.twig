@@ -1,0 +1,87 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ (is_edit ? 'News bearbeiten' : 'News verfassen')|trans }}{% endblock %}
+{% block admin_breadcrumb %}<a href="{{ path('admin_news_index') }}">{{ 'News'|trans }}</a> / {{ (is_edit ? 'Bearbeiten' : 'Verfassen')|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Redaktion'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ (is_edit ? 'News bearbeiten' : 'News verfassen')|trans }}</h1>
+            <p class="muted">{{ 'Text wird als sicherer Klartext gespeichert und in der Vorschau escaped ausgegeben.'|trans }}</p>
+        </div>
+        <a class="button button-secondary" href="{{ path('admin_news_index') }}">{{ 'Zurück zur Übersicht'|trans }}</a>
+    </div>
+
+    {% if errors is not empty %}
+        <div class="flash-message is-error" role="alert">
+            <strong>{{ 'Bitte prüfe die Eingaben.'|trans }}</strong>
+            <ul>
+                {% for error in errors %}<li>{{ error|trans }}</li>{% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <section class="admin-panel" aria-labelledby="news-form-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="news-form-heading">{{ 'Beitragsdaten'|trans }}</h2>
+                <p class="muted">{{ 'Titel, Kategorie, Vorspann und Inhalt lassen sich später weiter ausbauen.'|trans }}</p>
+            </div>
+        </header>
+
+        <form class="admin-form" method="post">
+            <input type="hidden" name="_token" value="{{ csrf_token('admin_news_save') }}">
+
+            <label>
+                <span>{{ 'Titel'|trans }}</span>
+                <input name="title" value="{{ values.title }}" maxlength="180" required>
+            </label>
+
+            <div class="form-grid">
+                <label>
+                    <span>{{ 'Kategorie'|trans }}</span>
+                    <select name="category">
+                        <option value="">{{ 'Keine Kategorie'|trans }}</option>
+                        {% for category in categories %}
+                            <option value="{{ category.name }}" {{ values.category == category.name ? 'selected' : '' }}>{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>
+                    <span>{{ 'Status'|trans }}</span>
+                    <select name="status">
+                        <option value="draft" {{ values.status == 'draft' ? 'selected' : '' }}>{{ 'Entwurf'|trans }}</option>
+                        <option value="published" {{ values.status == 'published' ? 'selected' : '' }}>{{ 'Veröffentlicht'|trans }}</option>
+                    </select>
+                </label>
+            </div>
+
+            <label>
+                <span>{{ 'Schlagwörter'|trans }}</span>
+                <input name="tags" value="{{ values.tags }}" maxlength="1000" placeholder="{{ 'z. B. Kultur, Interviews, Neuigkeiten'|trans }}">
+                <small>{{ 'Bis zu zehn Schlagwörter, getrennt durch Komma oder Zeilenumbruch.'|trans }}</small>
+            </label>
+
+            <label>
+                <span>{{ 'Vorspann'|trans }}</span>
+                <textarea name="summary" rows="3" maxlength="500">{{ values.summary }}</textarea>
+            </label>
+
+            <label>
+                <span>{{ 'Inhalt'|trans }}</span>
+                <textarea name="body" rows="12" maxlength="100000" required>{{ values.body }}</textarea>
+            </label>
+
+            <div class="form-checks">
+                <label><input type="checkbox" name="featured" value="1" {{ values.featured ? 'checked' : '' }}> {{ 'Auf der Startseite hervorheben'|trans }}</label>
+                <label><input type="checkbox" name="comments_enabled" value="1" {{ values.comments_enabled ? 'checked' : '' }}> {{ 'Kommentare erlauben'|trans }}</label>
+            </div>
+
+            <div class="form-actions">
+                <button class="button" type="submit">{{ (is_edit ? 'Änderungen speichern' : 'News speichern')|trans }}</button>
+                <a class="button button-secondary" href="{{ path('admin_news_index') }}">{{ 'Abbrechen'|trans }}</a>
+            </div>
+        </form>
+    </section>
+{% endblock %}

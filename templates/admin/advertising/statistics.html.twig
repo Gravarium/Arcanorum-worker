@@ -1,0 +1,29 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Anzeigenberichte'|trans }}{% endblock %}
+{% block admin_breadcrumb %}<a href="{{ path('admin_advertising_index') }}">{{ 'Werbung'|trans }}</a> / {{ 'Berichte'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div><p class="eyebrow">{{ 'Statistik und Protokolle'|trans }}</p><h1 id="seitenueberschrift">{{ 'Anzeigenberichte'|trans }}</h1><p class="muted">{{ 'Es werden nur tägliche Summen für Auslieferungen und Klicks gespeichert. Besucherkennungen, IP-Adressen und User-Agent-Daten werden nicht erfasst.'|trans }}</p></div>
+        <a class="button button-secondary" href="{{ path('admin_advertising_index') }}">{{ 'Zur Anzeigenverwaltung'|trans }}</a>
+    </div>
+    {% if errors is not empty %}<div class="flash-message is-error" role="alert">{% for error in errors %}<p>{{ error|trans }}</p>{% endfor %}</div>{% endif %}
+    <section class="admin-panel" aria-labelledby="advertising-report-filter">
+        <header class="panel-heading"><h2 id="advertising-report-filter">{{ 'Zeitraum auswählen'|trans }}</h2></header>
+        <form class="admin-filter-form" method="get" action="{{ path('admin_advertising_statistics') }}">
+            <label><span>{{ 'Von'|trans }}</span><input type="date" name="from" value="{{ from }}" required></label>
+            <label><span>{{ 'Bis einschließlich'|trans }}</span><input type="date" name="through" value="{{ through }}" required></label>
+            <button class="button" type="submit">{{ 'Bericht anzeigen'|trans }}</button>
+        </form>
+        <p class="muted">{{ 'Der gewählte Zeitraum darf höchstens 367 Tage umfassen.'|trans }}</p>
+    </section>
+    <section class="admin-panel" aria-labelledby="advertising-report-heading">
+        <header class="panel-heading"><div><h2 id="advertising-report-heading">{{ 'Tagesübersicht'|trans }}</h2><p class="muted">{{ 'Auslieferungen insgesamt: %impressions% · Klicks insgesamt: %clicks%'|trans({'%impressions%': impressions, '%clicks%': clicks}) }}</p></div></header>
+        <div class="admin-table-wrap"><table class="admin-table">
+            <caption class="visually-hidden">{{ 'Tägliche Anzeigenstatistik'|trans }}</caption>
+            <thead><tr><th scope="col">{{ 'Tag'|trans }}</th><th scope="col">{{ 'Anzeige'|trans }}</th><th scope="col">{{ 'Werbeplatz'|trans }}</th><th scope="col">{{ 'Auslieferungen'|trans }}</th><th scope="col">{{ 'Klicks'|trans }}</th></tr></thead>
+            <tbody>{% for row in rows %}<tr><td>{{ row.day }}</td><td><code>{{ row.advertisementId }}</code></td><td><code>{{ row.placementId }}</code></td><td>{{ row.impressions }}</td><td>{{ row.clicks }}</td></tr>{% else %}<tr><td colspan="5"><p class="empty-state">{{ 'Für diesen Zeitraum liegen noch keine Anzeigenwerte vor.'|trans }}</p></td></tr>{% endfor %}</tbody>
+        </table></div>
+    </section>
+{% endblock %}

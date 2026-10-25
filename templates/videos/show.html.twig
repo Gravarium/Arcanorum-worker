@@ -1,0 +1,183 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ video.title }} · {{ site_settings().siteName }}{% endblock %}
+
+{% block stylesheets %}
+    {% if site_settings().videoPlayerEngine.value == 'videojs' and video.sourceType.value in ['file', 'stream'] %}
+        <link rel="stylesheet" href="{{ asset('vendor/video.js-8.23.4/video-js.min.css') }}">
+    {% endif %}
+{% endblock %}
+
+{% block body %}
+    <header class="public-header">
+        {{ include('partials/public_brand.html.twig') }}
+        <nav class="public-navigation" aria-label="{{ 'Hauptnavigation'|trans }}">
+            <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>{% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}{% if module_enabled('series') %}<a href="{{ path('series_index') }}">{{ 'Serien'|trans }}</a>{% endif %}
+            {% if site_settings().isPublicVideoSubmissionsEnabled %}<a href="{{ path('public_video_submission_new') }}">{{ 'Video einreichen'|trans }}</a>{% endif %}
+            {% if module_enabled('search') %}<a href="{{ path('public_search') }}">{{ 'Suche'|trans }}</a>{% endif %}{% if module_enabled('pages') %}<a href="{{ path('page_index') }}">{{ 'Seiten'|trans }}</a>{% endif %}
+            {{ include('partials/member_area_link.html.twig') }}
+        </nav>
+    </header>
+    <main class="public-main">
+        <article class="public-article">
+            <p class="eyebrow">{{ video.category ?? ('Video'|trans) }}</p>
+            <h1>{{ video.title }}</h1>
+            <time datetime="{{ video.publishedAt|date('c') }}">{{ video.publishedAt|date('d.m.Y') }}</time>
+            {% if video.thumbnailObjectId %}<img class="video-thumbnail video-thumbnail-feature" src="{{ path('video_thumbnail', {id: video.id}) }}" alt="{{ 'Vorschaubild für %title%'|trans({'%title%': video.title}) }}" decoding="async">{% endif %}
+            {% if video.tags is not empty %}
+                <p class="tag-list" aria-label="{{ 'Schlagwörter'|trans }}">
+                    {% for tag in video.tags %}<a href="{{ path('video_index', {tag: tag.name}) }}">{{ tag.name }}</a>{% endfor %}
+                </p>
+            {% endif %}
+            {{ advertising_slot('video-player-top') }}
+            <div class="video-stage">
+                {% if video.sourceType.value == 'file' %}
+                    <video controls preload="{{ site_settings().videoPreloadMode.value }}" playsinline aria-label="{{ video.title }}"{% if site_settings().videoPlayerEngine.value == 'videojs' %} class="video-js vjs-default-skin" data-video-player-engine="videojs" data-player-message-ready="{{ 'Video ist bereit.'|trans }}" data-player-message-error="{{ 'Die Video-Wiedergabe ist derzeit nicht verfügbar.'|trans }}"{% endif %}{% if site_settings().isPlayerAutoplayEnabled %} autoplay muted{% endif %}>
+                        <source src="{{ path('video_media', {id: video.id}) }}" type="{{ video.uploadedMimeType }}">
+                        {{ 'Dein Browser kann dieses Video nicht abspielen.'|trans }}
+                    </video>
+                    {% if site_settings().videoPlayerEngine.value == 'videojs' %}<p data-video-player-status role="status">{{ 'Video-Player wird vorbereitet.'|trans }}</p>{% endif %}
+                {% elseif video.sourceType.value == 'stream' %}
+                    {% if stream_source is not null %}
+                        <video data-testid="video-stream" controls preload="{{ site_settings().videoPreloadMode.value }}" playsinline referrerpolicy="no-referrer" aria-label="{{ video.title }}"{% if site_settings().videoPlayerEngine.value == 'videojs' %} class="video-js vjs-default-skin" data-video-player-engine="videojs" data-player-message-ready="{{ 'Video ist bereit.'|trans }}" data-player-message-error="{{ 'Die Video-Wiedergabe ist derzeit nicht verfügbar.'|trans }}"{% endif %}{% if site_settings().isPlayerAutoplayEnabled %} autoplay muted{% endif %}{% if stream_source.mimeType == 'application/vnd.apple.mpegurl' %} data-hls-url="{{ stream_source.url }}" data-hls-message-invalid-url="{{ 'Dieser Live-Stream ist nicht verfügbar.'|trans }}" data-hls-message-error="{{ 'Der Live-Stream ist derzeit nicht verfügbar. Bitte versuche es später erneut.'|trans }}" data-hls-message-ready="{{ 'Live-Stream bereit. Drücke Wiedergabe.'|trans }}" data-hls-message-unsupported="{{ 'Dieser Browser unterstützt die Live-Wiedergabe nicht. Nutze den Link zum Stream.'|trans }}"{% endif %}>
+                            <source src="{{ stream_source.url }}" type="{{ stream_source.mimeType }}">
+                            {{ 'Dein Browser kann diesen Stream nicht abspielen.'|trans }}
+                        </video>
+                        {% if site_settings().videoPlayerEngine.value == 'videojs' %}
+                            <p data-video-player-status role="status">{{ 'Video-Player wird vorbereitet.'|trans }}</p>
+                        {% elseif stream_source.mimeType == 'application/vnd.apple.mpegurl' %}
+                            <p data-hls-status role="status">{{ 'Live-Stream wird vorbereitet.'|trans }}</p>
+                        {% endif %}
+                        <p>{{ 'Falls dein Browser das Format nicht unterstützt, kannst du den Stream direkt öffnen.'|trans }}</p>
+                        <a data-testid="video-stream-fallback" href="{{ stream_source.url }}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">{{ 'Stream direkt öffnen'|trans }}</a>
+                    {% else %}
+                        <p>{{ 'Dieser Stream ist derzeit nicht verfügbar oder für diese Website nicht freigegeben.'|trans }}</p>
+                    {% endif %}
+                {% elseif video.sourceType.value == 'embed' %}
+                    {% if embed_url is not null %}
+                        <iframe
+                            data-testid="video-embed"
+                            src="{{ embed_url }}"
+                            title="{{ video.title }}"
+                            loading="lazy"
+                            referrerpolicy="strict-origin-when-cross-origin"
+                            sandbox="allow-scripts allow-same-origin allow-presentation"
+                            allow="fullscreen; picture-in-picture"
+                            allowfullscreen
+                        ></iframe>
+                    {% else %}
+                        <p>{{ 'Diese Einbettung ist derzeit nicht verfügbar.'|trans }}</p>
+                    {% endif %}
+                {% else %}
+                    <p>{{ 'Videoquelle: %source%'|trans({'%source%': video.sourceHost}) }}</p>
+                    <a data-testid="video-source" href="{{ video.sourceUrl }}" target="_blank" rel="noopener noreferrer">{{ 'Video beim Anbieter ansehen'|trans }}</a>
+                {% endif %}
+            </div>
+            {{ advertising_slot('video-player-bottom') }}
+            <div class="article-body">{{ video.description }}</div>
+        </article>
+        <section class="comment-section" id="video-share" aria-labelledby="video-share-heading">
+            <h2 id="video-share-heading">{{ 'Video teilen'|trans }}</h2>
+            <p>{{ 'Den öffentlichen Videolink kannst du über das Menü deines Browsers kopieren und weitergeben.'|trans }}</p>
+            <a rel="bookmark" href="{{ path('video_show', {id: video.id}) }}">{{ 'Öffentlicher Videolink'|trans }}</a>
+        </section>
+        {% if is_granted('ROLE_MEMBER') %}
+            <section class="comment-section" id="video-playlists" aria-labelledby="video-playlists-heading">
+                <h2 id="video-playlists-heading">{{ 'In Wiedergabeliste speichern'|trans }}</h2>
+                {% for message in app.flashes('playlist_success') %}<p class="flash-message is-success" role="status">{{ message|trans }}</p>{% endfor %}
+                {% for message in app.flashes('playlist_error') %}<p class="flash-message is-error" role="alert">{{ message|trans }}</p>{% endfor %}
+                {% if member_playlists is not empty %}
+                    <form class="comment-form" action="{{ path('member_playlist_add_video', {videoId: video.id}) }}" method="post">
+                        <label for="playlist-target">{{ 'Wiedergabeliste'|trans }}</label>
+                        <select id="playlist-target" name="playlist_id" required>
+                            {% for playlist in member_playlists %}<option value="{{ playlist.id }}">{{ playlist.name }}</option>{% endfor %}
+                        </select>
+                        <input type="hidden" name="_token" value="{{ csrf_token('playlist_add_' ~ video.id) }}">
+                        <button class="button" type="submit">{{ 'Video speichern'|trans }}</button>
+                    </form>
+                    <p><a href="{{ path('member_playlist_index') }}">{{ 'Wiedergabelisten verwalten'|trans }}</a></p>
+                {% else %}
+                    <p>{{ 'Erstelle zuerst eine Wiedergabeliste.'|trans }}</p>
+                    <a class="button" href="{{ path('member_playlist_index') }}">{{ 'Wiedergabeliste erstellen'|trans }}</a>
+                {% endif %}
+            </section>
+        {% endif %}
+        <section class="comment-section" id="video-report" aria-labelledby="video-report-heading">
+            <h2 id="video-report-heading">{{ 'Video melden'|trans }}</h2>
+            {% for message in app.flashes('public_video_report_success') %}
+                <p class="flash-message is-success" role="status">{{ message|trans }}</p>
+            {% endfor %}
+            {% for message in app.flashes('public_video_report_error') %}
+                <p class="flash-message is-error" role="alert">{{ message|trans }}</p>
+            {% endfor %}
+            <form class="comment-form video-report-form" action="{{ path('video_report', {id: video.id}) }}" method="post">
+                <input type="hidden" name="_token" value="{{ csrf_token('public_video_report_' ~ video.id) }}">
+                <label for="video-report-reason">{{ 'Grund'|trans }}</label>
+                <select id="video-report-reason" name="reason" required>
+                    {% for reason in video_report_reasons %}
+                        <option value="{{ reason.value }}">{{ reason.label|trans }}</option>
+                    {% endfor %}
+                </select>
+                <label for="video-report-details">{{ 'Zusätzliche Angaben (optional)'|trans }}</label>
+                <textarea id="video-report-details" name="details" maxlength="1000" rows="4"></textarea>
+                <div class="comment-honeypot" aria-hidden="true">
+                    <label for="video-report-website">{{ 'Dieses Feld leer lassen'|trans }}</label>
+                    <input id="video-report-website" name="website" type="text" tabindex="-1" autocomplete="off">
+                </div>
+                <button class="button button-secondary" type="submit">{{ 'Video melden'|trans }}</button>
+            </form>
+        </section>
+        {% if module_enabled('comments') %}<section class="comment-section" id="comments" aria-labelledby="comments-heading">
+            <h2 id="comments-heading">{{ 'Kommentare'|trans }}</h2>
+            {% for message in app.flashes('public_comment_success') %}
+                <p class="flash-message is-success" role="status">{{ message|trans }}</p>
+            {% endfor %}
+            {% for message in app.flashes('public_comment_error') %}
+                <p class="flash-message is-error" role="alert">{{ message|trans }}</p>
+            {% endfor %}
+            <div class="comment-list">
+                {% for comment in comments %}
+                    <article class="comment-card">
+                        <header><strong>{{ comment.authorName }}</strong> · <time datetime="{{ comment.createdAt|date('c') }}">{{ comment.createdAt|date('d.m.Y H:i') }}</time></header>
+                        <p class="comment-body">{{ comment.body }}</p>
+                        <form action="{{ path('public_comment_report', {id: comment.id}) }}" method="post">
+                            <input type="hidden" name="_token" value="{{ csrf_token('public_comment_report_' ~ comment.id) }}">
+                            <button class="button button-secondary" type="submit">{{ 'Kommentar melden'|trans }}</button>
+                        </form>
+                    </article>
+                {% else %}
+                    <p class="empty-state">{{ 'Noch keine freigegebenen Kommentare.'|trans }}</p>
+                {% endfor %}
+            </div>
+            {% if video.commentsEnabled %}
+                <form class="comment-form" action="{{ path('public_comment_submit', {contentType: 'video', reference: video.id}) }}" method="post">
+                    <h3>{{ 'Kommentar schreiben'|trans }}</h3>
+                    <input type="hidden" name="_token" value="{{ csrf_token('public_comment_video_' ~ video.id) }}">
+                    <label for="video-comment-name">{{ 'Name'|trans }}</label>
+                    <input id="video-comment-name" name="author_name" type="text" maxlength="80" autocomplete="name" required>
+                    <label for="video-comment-body">{{ 'Kommentar'|trans }}</label>
+                    <textarea id="video-comment-body" name="body" minlength="5" maxlength="3000" rows="5" required></textarea>
+                    <div class="comment-honeypot" aria-hidden="true">
+                        <label for="video-comment-website">{{ 'Dieses Feld leer lassen'|trans }}</label>
+                        <input id="video-comment-website" name="website" type="text" tabindex="-1" autocomplete="off">
+                    </div>
+                    <button class="button" type="submit">{{ 'Kommentar zur Prüfung senden'|trans }}</button>
+                    <p class="muted">{{ 'Kommentare erscheinen erst nach Freigabe.'|trans }}</p>
+                </form>
+            {% else %}
+                <p class="muted">{{ 'Kommentare sind für diesen Inhalt deaktiviert.'|trans }}</p>
+            {% endif %}
+        </section>{% endif %}
+        <p><a href="{{ path('video_index') }}">{{ 'Zurück zu allen Videos'|trans }}</a></p>
+    </main>
+{% endblock %}
+
+{% block javascripts %}
+    {% if site_settings().videoPlayerEngine.value == 'videojs' and video.sourceType.value in ['file', 'stream'] %}
+        <script src="{{ asset('vendor/video.js-8.23.4/video.min.js') }}" defer></script>
+        <script src="{{ asset('video/videojs-player.js') }}" defer></script>
+    {% elseif video.sourceType.value == 'stream' and stream_source is not null and stream_source.mimeType == 'application/vnd.apple.mpegurl' %}
+        <script src="{{ asset('vendor/hls.js-1.7.3/hls.min.js') }}" defer></script>
+        <script src="{{ asset('video/hls-player.js') }}" defer></script>
+    {% endif %}
+{% endblock %}

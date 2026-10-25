@@ -1,0 +1,87 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Nutzerkonten'|trans }}{% endblock %}
+{% block admin_breadcrumb %}{{ 'Nutzer'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <header class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Mitglieder'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ 'Nutzerkonten'|trans }}</h1>
+            <p class="muted">{{ 'Mitgliedskonten suchen, Profile bearbeiten und ihren Kontostatus verwalten.'|trans }}</p>
+        </div>
+    </header>
+
+    <section class="admin-panel" aria-labelledby="member-list-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="member-list-heading">{{ 'Mitgliedskonten'|trans }}</h2>
+                <p class="muted">{{ '%result_count% Treffer · Seite %page% von %page_count%'|trans({'%result_count%': total, '%page%': page, '%page_count%': page_count}) }}</p>
+            </div>
+            <div class="form-actions">
+                <a class="button" href="{{ path('admin_member_new') }}">{{ 'Mitglied anlegen'|trans }}</a>
+                <a class="button button-secondary" href="{{ path('admin_member_export', {q: search, status: status}) }}">{{ 'CSV exportieren'|trans }}</a>
+            </div>
+        </header>
+
+        <form class="admin-filter-form" method="get" action="{{ path('admin_member_index') }}">
+            <label>
+                <span>{{ 'Suchen'|trans }}</span>
+                <input type="search" name="q" value="{{ search }}" maxlength="100" placeholder="{{ 'E-Mail, Kanalname oder Anzeigename'|trans }}">
+            </label>
+            <label>
+                <span>{{ 'Kontostatus'|trans }}</span>
+                <select name="status">
+                    <option value="all" {{ status == 'all' ? 'selected' : '' }}>{{ 'Alle Konten'|trans }}</option>
+                    <option value="active" {{ status == 'active' ? 'selected' : '' }}>{{ 'Aktive Konten'|trans }}</option>
+                    <option value="suspended" {{ status == 'suspended' ? 'selected' : '' }}>{{ 'Gesperrte Konten'|trans }}</option>
+                </select>
+            </label>
+            <button class="button button-secondary" type="submit">{{ 'Suchen'|trans }}</button>
+        </form>
+
+        <div class="table-wrap">
+            <table class="admin-table">
+                <caption class="visually-hidden">{{ 'Mitgliedskonten'|trans }}</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">{{ 'Kanalname'|trans }}</th>
+                        <th scope="col">{{ 'Anzeigename'|trans }}</th>
+                        <th scope="col">{{ 'E-Mail'|trans }}</th>
+                        <th scope="col">{{ 'Status'|trans }}</th>
+                        <th scope="col">{{ 'Profil'|trans }}</th>
+                        <th scope="col">{{ 'Registriert'|trans }}</th>
+                        <th scope="col">{{ 'Aktionen'|trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for account in accounts %}
+                        <tr>
+                            <th scope="row">{{ account.handle }}</th>
+                            <td>{{ account.displayName }}</td>
+                            <td>{{ account.email }}</td>
+                            <td>{{ (account.isActive ? 'Aktiv' : 'Gesperrt')|trans }}</td>
+                            <td>{{ (account.publicProfile ? 'Öffentlich' : 'Privat')|trans }}</td>
+                            <td><time datetime="{{ account.createdAt|date('c') }}">{{ account.createdAt|date(app.request.locale starts with 'en' ? 'Y-m-d H:i' : 'd.m.Y H:i', 'UTC') }}</time></td>
+                            <td><a class="button button-secondary" href="{{ path('admin_member_edit', {id: account.id}) }}">{{ 'Konto bearbeiten'|trans }}</a></td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="7">{{ 'Keine Nutzerkonten gefunden.'|trans }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if page_count > 1 %}
+            <nav class="pagination" aria-label="{{ 'Seitennavigation'|trans }}">
+                {% if page > 1 %}
+                    <a class="button button-secondary" href="{{ path('admin_member_index', {q: search, status: status, page: page - 1}) }}">{{ 'Vorherige'|trans }}</a>
+                {% endif %}
+                <span>{{ 'Seite %page% von %page_count%'|trans({'%page%': page, '%page_count%': page_count}) }}</span>
+                {% if page < page_count %}
+                    <a class="button button-secondary" href="{{ path('admin_member_index', {q: search, status: status, page: page + 1}) }}">{{ 'Nächste'|trans }}</a>
+                {% endif %}
+            </nav>
+        {% endif %}
+    </section>
+{% endblock %}

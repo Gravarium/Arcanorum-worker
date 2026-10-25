@@ -1,0 +1,77 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}
+    {% if page == 'email_request' %}{{ 'E-Mail bestätigen'|trans }}{% elseif page == 'email_verify' %}{{ 'E-Mail-Adresse bestätigen'|trans }}{% elseif page == 'password_reset_request' %}{{ 'Passwort wiederherstellen'|trans }}{% else %}{{ 'Passwort zurücksetzen'|trans }}{% endif %} · {{ site_settings().siteName }}
+{% endblock %}
+
+{% block body %}
+    <header class="public-header">
+        {{ include('partials/public_brand.html.twig') }}
+        <nav class="public-navigation" aria-label="{{ 'Hauptnavigation'|trans }}">
+            <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
+            {% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}
+            <a href="{{ path('member_login') }}">{{ 'Mitgliedskonto'|trans }}</a>
+        </nav>
+    </header>
+    <main class="public-main">
+        <section class="public-section" aria-labelledby="member-security-heading">
+            {% if page == 'email_request' %}
+                <h1 id="member-security-heading">{{ 'Bestätigungs-E-Mail erneut anfordern'|trans }}</h1>
+                <p>{{ 'Gib die E-Mail-Adresse deines Kontos ein. Wenn ein aktives, noch nicht bestätigtes Konto besteht, senden wir einen neuen Bestätigungslink.'|trans }}</p>
+                {% if submitted %}<p class="flash-message" role="status">{{ 'Wenn ein passendes Konto besteht, erhältst du eine Nachricht. Prüfe auch deinen Spam-Ordner.'|trans }}</p>{% endif %}
+                {% if throttled %}<p class="login-error" role="alert">{{ 'Zu viele Anfragen. Bitte warte und versuche es später erneut.'|trans }}</p>{% endif %}
+                <form class="comment-form" action="{{ path('member_email_request') }}" method="post">
+                    <label for="security-email">{{ 'E-Mail-Adresse'|trans }}</label>
+                    <input id="security-email" name="email" type="email" maxlength="254" autocomplete="email" autocapitalize="none" required>
+                    <div class="comment-honeypot" aria-hidden="true"><label for="verification-website">{{ 'Website'|trans }}</label><input id="verification-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+                    <input type="hidden" name="_token" value="{{ csrf_token('member_email_request') }}">
+                    <button class="button" type="submit">{{ 'Link anfordern'|trans }}</button>
+                </form>
+            {% elseif page == 'password_reset_request' %}
+                <h1 id="member-security-heading">{{ 'Passwort wiederherstellen'|trans }}</h1>
+                <p>{{ 'Gib die E-Mail-Adresse deines Kontos ein. Wenn ein aktives, bestätigtes Konto besteht, senden wir einen einmaligen Link.'|trans }}</p>
+                {% if submitted %}<p class="flash-message" role="status">{{ 'Wenn ein passendes Konto besteht, erhältst du eine Nachricht. Prüfe auch deinen Spam-Ordner.'|trans }}</p>{% endif %}
+                {% if throttled %}<p class="login-error" role="alert">{{ 'Zu viele Anfragen. Bitte warte und versuche es später erneut.'|trans }}</p>{% endif %}
+                <form class="comment-form" action="{{ path('member_password_reset_request') }}" method="post">
+                    <label for="security-email">{{ 'E-Mail-Adresse'|trans }}</label>
+                    <input id="security-email" name="email" type="email" maxlength="254" autocomplete="email" autocapitalize="none" required>
+                    <div class="comment-honeypot" aria-hidden="true"><label for="reset-request-website">{{ 'Website'|trans }}</label><input id="reset-request-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+                    <input type="hidden" name="_token" value="{{ csrf_token('member_password_reset_request') }}">
+                    <button class="button" type="submit">{{ 'Wiederherstellungslink anfordern'|trans }}</button>
+                </form>
+            {% elseif page == 'email_verify' %}
+                <h1 id="member-security-heading">{{ 'E-Mail-Adresse bestätigen'|trans }}</h1>
+                {% if valid %}
+                    <p>{{ 'Der Link ist gültig. Bestätige die Adresse, um dein Konto freizuschalten.'|trans }}</p>
+                    {% if throttled %}<p class="login-error" role="alert">{{ 'Zu viele Versuche. Bitte warte und versuche es später erneut.'|trans }}</p>{% endif %}
+                    <form class="comment-form" action="{{ path('member_email_verify', {token: token}) }}" method="post">
+                        <input type="hidden" name="_token" value="{{ csrf_token('member_email_verify') }}">
+                        <button class="button" type="submit">{{ 'E-Mail-Adresse bestätigen'|trans }}</button>
+                    </form>
+                {% else %}
+                    <p class="login-error" role="alert">{{ 'Der Bestätigungslink ist ungültig, abgelaufen oder bereits verwendet.'|trans }}</p>
+                    <p><a href="{{ path('member_email_request') }}">{{ 'Neuen Link anfordern'|trans }}</a></p>
+                {% endif %}
+            {% else %}
+                <h1 id="member-security-heading">{{ 'Passwort zurücksetzen'|trans }}</h1>
+                {% if valid %}
+                    <p>{{ 'Wähle ein neues Passwort mit mindestens zwölf Zeichen. Der Link kann nur einmal verwendet werden.'|trans }}</p>
+                    {% if invalid_password %}<p class="login-error" role="alert">{{ 'Prüfe die Passwortlänge und bestätige beide Eingaben.'|trans }}</p>{% endif %}
+                    {% if throttled %}<p class="login-error" role="alert">{{ 'Zu viele Versuche. Bitte warte und versuche es später erneut.'|trans }}</p>{% endif %}
+                    <form class="comment-form" action="{{ path('member_password_reset', {token: token}) }}" method="post">
+                        <label for="reset-password">{{ 'Neues Passwort'|trans }}</label>
+                        <input id="reset-password" name="password" type="password" minlength="12" maxlength="4096" autocomplete="new-password" required>
+                        <label for="reset-password-confirmation">{{ 'Neues Passwort wiederholen'|trans }}</label>
+                        <input id="reset-password-confirmation" name="password_confirmation" type="password" minlength="12" maxlength="4096" autocomplete="new-password" required>
+                        <input type="hidden" name="_token" value="{{ csrf_token('member_password_reset') }}">
+                        <button class="button" type="submit">{{ 'Neues Passwort speichern'|trans }}</button>
+                    </form>
+                {% else %}
+                    <p class="login-error" role="alert">{{ 'Der Wiederherstellungslink ist ungültig, abgelaufen oder bereits verwendet.'|trans }}</p>
+                    <p><a href="{{ path('member_password_reset_request') }}">{{ 'Neuen Link anfordern'|trans }}</a></p>
+                {% endif %}
+            {% endif %}
+            <p class="login-home"><a href="{{ path('member_login') }}">{{ 'Zur Anmeldung'|trans }}</a></p>
+        </section>
+    </main>
+{% endblock %}

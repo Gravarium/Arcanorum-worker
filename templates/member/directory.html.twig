@@ -1,0 +1,50 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'Mitglieder'|trans }} · {{ site_settings().siteName }}{% endblock %}
+
+{% block body %}
+    <header class="public-header">
+        {{ include('partials/public_brand.html.twig') }}
+        <nav class="public-navigation" aria-label="{{ 'Hauptnavigation'|trans }}">
+            <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
+            {% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}
+            <a href="{{ path('public_member_index') }}" aria-current="page">{{ 'Mitglieder'|trans }}</a>
+            {% include 'partials/member_area_link.html.twig' with {show_member_directory: false} %}
+        </nav>
+    </header>
+
+    <main class="public-main">
+        <section class="public-page-heading" aria-labelledby="member-directory-heading">
+            <p class="eyebrow">{{ 'Community'|trans }}</p>
+            <h1 id="member-directory-heading">{{ 'Mitglieder'|trans }}</h1>
+            <p class="lead">{{ 'Hier erscheinen nur aktive Mitglieder, die ihren Kanal selbst öffentlich gestellt haben.'|trans }}</p>
+        </section>
+
+        <form class="content-search" method="get" action="{{ path('public_member_index') }}">
+            <label for="member-directory-search">{{ 'Öffentliche Kanäle suchen'|trans }}</label>
+            <input id="member-directory-search" type="search" name="q" value="{{ search }}" maxlength="80">
+            <button class="button" type="submit">{{ 'Suchen'|trans }}</button>
+        </form>
+
+        <p class="admin-result-count">{{ 'Öffentliche Kanäle: %channel_count%'|trans({'%channel_count%': total}) }}</p>
+        <div class="content-grid">
+            {% for member in members %}
+                <article class="content-card">
+                    <h2><a href="{{ path('public_member_profile', {handle: member.handle}) }}">{{ member.displayName }}</a></h2>
+                    <p class="card-kicker">{{ member.handle }}</p>
+                    {% if member.bio %}<p>{{ member.bio }}</p>{% endif %}
+                </article>
+            {% else %}
+                <p class="empty-state">{{ 'Keine öffentlichen Kanäle gefunden.'|trans }}</p>
+            {% endfor %}
+        </div>
+
+        {% if page_count > 1 %}
+            <nav class="pagination" aria-label="Seitenwechsel">
+                {% if page > 1 %}<a class="button button-secondary" href="{{ path('public_member_index', {q: search, page: page - 1}) }}">{{ 'Vorherige Seite'|trans }}</a>{% endif %}
+                <span>{{ 'Seite %page% von %total%'|trans({'%page%': page, '%total%': page_count}) }}</span>
+                {% if page < page_count %}<a class="button button-secondary" href="{{ path('public_member_index', {q: search, page: page + 1}) }}">{{ 'Nächste Seite'|trans }}</a>{% endif %}
+            </nav>
+        {% endif %}
+    </main>
+{% endblock %}

@@ -1,0 +1,88 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ episode.title }} · {{ series.title }} · {{ site_settings().siteName }}{% endblock %}
+
+{% block stylesheets %}
+    {% if site_settings().videoPlayerEngine.value == 'videojs' and video.sourceType.value in ['file', 'stream'] %}
+        <link rel="stylesheet" href="{{ asset('vendor/video.js-8.23.4/video-js.min.css') }}">
+    {% endif %}
+{% endblock %}
+
+{% block body %}
+    <header class="public-header">
+        {{ include('partials/public_brand.html.twig') }}
+        <nav class="public-navigation" aria-label="{{ 'Hauptnavigation'|trans }}">
+            <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
+            {% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}
+            {% if module_enabled('series') %}<a href="{{ path('series_index') }}">{{ 'Serien'|trans }}</a>{% endif %}
+            {% if module_enabled('search') %}<a href="{{ path('public_search') }}">{{ 'Suche'|trans }}</a>{% endif %}
+            {% if module_enabled('pages') %}<a href="{{ path('page_index') }}">{{ 'Seiten'|trans }}</a>{% endif %}
+            {{ include('partials/member_area_link.html.twig') }}
+        </nav>
+    </header>
+    <main class="public-main">
+        <p class="eyebrow"><a href="{{ path('series_show', {slug: series.slug}) }}">{{ series.title }}</a> · {{ 'Staffel %season% · Folge %episode%'|trans({'%season%': episode.seasonNumber, '%episode%': episode.episodeNumber}) }}</p>
+        <article class="public-article">
+            <h1>{{ episode.title }}</h1>
+            <div class="video-stage">
+                {% if video.sourceType.value == 'file' %}
+                    <video controls preload="{{ site_settings().videoPreloadMode.value }}" playsinline aria-label="{{ episode.title }}"{% if site_settings().videoPlayerEngine.value == 'videojs' %} class="video-js vjs-default-skin" data-video-player-engine="videojs" data-player-message-ready="{{ 'Video ist bereit.'|trans }}" data-player-message-error="{{ 'Die Video-Wiedergabe ist derzeit nicht verfügbar.'|trans }}"{% endif %}{% if site_settings().isPlayerAutoplayEnabled %} autoplay muted{% endif %}>
+                        <source src="{{ path('video_media', {id: video.id}) }}" type="{{ video.uploadedMimeType }}">
+                        {{ 'Dein Browser kann dieses Video nicht abspielen.'|trans }}
+                    </video>
+                    {% if site_settings().videoPlayerEngine.value == 'videojs' %}<p data-video-player-status role="status">{{ 'Video-Player wird vorbereitet.'|trans }}</p>{% endif %}
+                {% elseif video.sourceType.value == 'stream' %}
+                    {% if stream_source is not null %}
+                        <video data-testid="episode-video-stream" controls preload="{{ site_settings().videoPreloadMode.value }}" playsinline referrerpolicy="no-referrer" aria-label="{{ episode.title }}"{% if site_settings().videoPlayerEngine.value == 'videojs' %} class="video-js vjs-default-skin" data-video-player-engine="videojs" data-player-message-ready="{{ 'Video ist bereit.'|trans }}" data-player-message-error="{{ 'Die Video-Wiedergabe ist derzeit nicht verfügbar.'|trans }}"{% endif %}{% if site_settings().isPlayerAutoplayEnabled %} autoplay muted{% endif %}{% if stream_source.mimeType == 'application/vnd.apple.mpegurl' %} data-hls-url="{{ stream_source.url }}" data-hls-message-invalid-url="{{ 'Dieser Live-Stream ist nicht verfügbar.'|trans }}" data-hls-message-error="{{ 'Der Live-Stream ist derzeit nicht verfügbar. Bitte versuche es später erneut.'|trans }}" data-hls-message-ready="{{ 'Live-Stream bereit. Drücke Wiedergabe.'|trans }}" data-hls-message-unsupported="{{ 'Dieser Browser unterstützt die Live-Wiedergabe nicht. Nutze den Link zum Stream.'|trans }}"{% endif %}>
+                            <source src="{{ stream_source.url }}" type="{{ stream_source.mimeType }}">
+                            {{ 'Dein Browser kann diesen Stream nicht abspielen.'|trans }}
+                        </video>
+                        {% if site_settings().videoPlayerEngine.value == 'videojs' %}
+                            <p data-video-player-status role="status">{{ 'Video-Player wird vorbereitet.'|trans }}</p>
+                        {% elseif stream_source.mimeType == 'application/vnd.apple.mpegurl' %}
+                            <p data-hls-status role="status">{{ 'Live-Stream wird vorbereitet.'|trans }}</p>
+                        {% endif %}
+                        <p>{{ 'Falls dein Browser das Format nicht unterstützt, kannst du den Stream direkt öffnen.'|trans }}</p>
+                        <a data-testid="episode-stream-fallback" href="{{ stream_source.url }}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">{{ 'Stream direkt öffnen'|trans }}</a>
+                    {% else %}
+                        <p>{{ 'Dieser Stream ist derzeit nicht verfügbar oder für diese Website nicht freigegeben.'|trans }}</p>
+                    {% endif %}
+                {% elseif video.sourceType.value == 'embed' %}
+                    {% if embed_url is not null %}
+                        <iframe
+                            data-testid="episode-video-embed"
+                            src="{{ embed_url }}"
+                            title="{{ episode.title }}"
+                            loading="lazy"
+                            referrerpolicy="strict-origin-when-cross-origin"
+                            sandbox="allow-scripts allow-same-origin allow-presentation"
+                            allow="fullscreen; picture-in-picture"
+                            allowfullscreen
+                        ></iframe>
+                    {% else %}
+                        <p>{{ 'Diese Einbettung ist derzeit nicht verfügbar.'|trans }}</p>
+                    {% endif %}
+                {% else %}
+                    <p>{{ 'Videoquelle: %host%'|trans({'%host%': video.sourceHost}) }}</p>
+                    <a data-testid="episode-source" href="{{ video.sourceUrl }}" target="_blank" rel="noopener noreferrer">{{ 'Video beim Anbieter ansehen'|trans }}</a>
+                {% endif %}
+            </div>
+            <div class="article-body">{{ episode.description }}</div>
+            {% if module_enabled('comments') %}
+                <p><a href="{{ path('video_show', {id: video.id}) }}#comments">{{ 'Kommentare und Videodetails'|trans }}</a></p>
+            {% else %}
+                <p><a href="{{ path('video_show', {id: video.id}) }}">{{ 'Videodetails'|trans }}</a></p>
+            {% endif %}
+        </article>
+    </main>
+{% endblock %}
+
+{% block javascripts %}
+    {% if site_settings().videoPlayerEngine.value == 'videojs' and video.sourceType.value in ['file', 'stream'] %}
+        <script src="{{ asset('vendor/video.js-8.23.4/video.min.js') }}" defer></script>
+        <script src="{{ asset('video/videojs-player.js') }}" defer></script>
+    {% elseif stream_source is not null and stream_source.mimeType == 'application/vnd.apple.mpegurl' %}
+        <script src="{{ asset('vendor/hls.js-1.7.3/hls.min.js') }}" defer></script>
+        <script src="{{ asset('video/hls-player.js') }}" defer></script>
+    {% endif %}
+{% endblock %}

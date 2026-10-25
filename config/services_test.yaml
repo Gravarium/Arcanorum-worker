@@ -1,0 +1,11 @@
+services:
+    App\Module\Advertising\Application\ClickTokenSigner:
+        arguments:
+            $secret: 'arcanorum-test-only-click-signing-key-not-for-production-2026'
+
+    App\Tests\Support\VerifiedRuntimeAttestationReportProvider:
+        autowire: true
+        autoconfigure: true
+
+    App\Platform\Security\RuntimeAttestationReportProviderInterface:
+        alias: App\Tests\Support\VerifiedRuntimeAttestationReportProvider

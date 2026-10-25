@@ -1,0 +1,61 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Videoeinreichungen'|trans }}{% endblock %}
+{% block admin_breadcrumb %}{{ 'Videoeinreichungen'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Moderation'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ 'Videoeinreichungen'|trans }}</h1>
+            <p class="muted">{{ 'Neue Dateien bleiben privat, bis du sie freigibst.'|trans }}</p>
+        </div>
+        <a class="button button-secondary" href="{{ path('admin_video_index') }}">{{ 'Zum Videokatalog'|trans }}</a>
+    </div>
+
+    <section class="admin-panel" aria-labelledby="video-submission-list-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="video-submission-list-heading">{{ 'Warteschlange'|trans }}</h2>
+                <p class="muted">{{ 'Es werden höchstens 100 wartende Einreichungen angezeigt.'|trans }}</p>
+            </div>
+        </header>
+
+        <div class="table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th scope="col">{{ 'Eingegangen'|trans }}</th>
+                        <th scope="col">{{ 'Video'|trans }}</th>
+                        <th scope="col">{{ 'Beschreibung'|trans }}</th>
+                        <th scope="col">{{ 'Aktion'|trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for submission in submissions %}
+                        <tr>
+                            <td><time datetime="{{ submission.createdAt|date('c') }}">{{ submission.createdAt|date('d.m.Y H:i') }}</time></td>
+                            <td>
+                                <a href="{{ path('admin_video_edit', {id: submission.video.id}) }}">{{ submission.video.title }}</a>
+                                <p class="muted">{{ submission.video.category ?? ('Ohne Kategorie'|trans) }}</p>
+                                <video controls preload="metadata" aria-label="{{ 'Vorschau für %title%'|trans({'%title%': submission.video.title}) }}" data-testid="video-submission-preview">
+                                    <source src="{{ path('admin_video_submission_preview', {id: submission.id}) }}" type="{{ submission.video.uploadedMimeType }}">
+                                </video>
+                            </td>
+                            <td>{{ submission.video.description is empty ? '–' : submission.video.description }}</td>
+                            <td>
+                                <form class="video-submission-actions" action="{{ path('admin_video_submission_review', {id: submission.id}) }}" method="post">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('admin_video_submission_' ~ submission.id) }}">
+                                    <button class="button" type="submit" name="action" value="approve">{{ 'Video freigeben'|trans }}</button>
+                                    <button class="button button-secondary" type="submit" name="action" value="reject">{{ 'Ablehnen'|trans }}</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="4"><p class="empty-state">{{ 'Keine wartenden Videoeinreichungen.'|trans }}</p></td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+{% endblock %}

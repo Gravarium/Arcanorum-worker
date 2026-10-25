@@ -1,0 +1,59 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ (is_edit ? 'Kategorie bearbeiten' : 'Neue Kategorie')|trans }}{% endblock %}
+{% block admin_breadcrumb %}<a href="{{ path('admin_category_index') }}">{{ 'Kategorien'|trans }}</a> / {{ (is_edit ? 'Bearbeiten' : 'Neue Kategorie')|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Redaktion'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ (is_edit ? 'Kategorie bearbeiten' : 'Neue Kategorie')|trans }}</h1>
+            <p class="muted">{{ 'Eine Kategorie gehört zu News oder Videos. Verwendete Kategorien können nicht gelöscht werden.'|trans }}</p>
+        </div>
+        <a class="button button-secondary" href="{{ path('admin_category_index', values.type ? {type: values.type} : {}) }}">{{ 'Zurück zur Übersicht'|trans }}</a>
+    </div>
+
+    {% if errors is not empty %}
+        <div class="flash-message is-error" role="alert">
+            <strong>{{ 'Bitte prüfe die Eingaben.'|trans }}</strong>
+            <ul>{% for error in errors %}<li>{{ error|trans }}</li>{% endfor %}</ul>
+        </div>
+    {% endif %}
+
+    <section class="admin-panel" aria-labelledby="category-form-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="category-form-heading">{{ 'Kategoriedaten'|trans }}</h2>
+                <p class="muted">{{ 'Beim Umbenennen wird die Änderung auf zugeordnete Inhalte übertragen.'|trans }}</p>
+            </div>
+        </header>
+
+        <form class="admin-form" method="post">
+            <input type="hidden" name="_token" value="{{ csrf_token('admin_category_save') }}">
+
+            <label>
+                <span>{{ 'Name'|trans }}</span>
+                <input name="name" value="{{ values.name }}" maxlength="100" required>
+            </label>
+
+            <label>
+                <span>{{ 'Inhaltsbereich'|trans }}</span>
+                {% if is_edit %}
+                    <input value="{{ type_label }}" disabled>
+                {% else %}
+                    <select name="type" required>
+                        <option value="">{{ 'Bitte wählen'|trans }}</option>
+                        {% for category_type in category_types %}
+                            <option value="{{ category_type.value }}" {{ values.type == category_type.value ? 'selected' : '' }}>{{ category_type.label|trans }}</option>
+                        {% endfor %}
+                    </select>
+                {% endif %}
+            </label>
+
+            <div class="form-actions">
+                <button class="button" type="submit">{{ (is_edit ? 'Änderungen speichern' : 'Kategorie anlegen')|trans }}</button>
+                <a class="button button-secondary" href="{{ path('admin_category_index', values.type ? {type: values.type} : {}) }}">{{ 'Abbrechen'|trans }}</a>
+            </div>
+        </form>
+    </section>
+{% endblock %}

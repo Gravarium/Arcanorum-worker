@@ -1,0 +1,1283 @@
+'Zum Inhalt springen': 'Skip to content'
+'Verwaltung': 'Administration'
+'Übersicht': 'Dashboard'
+'Abmelden': 'Sign out'
+'Menü': 'Menu'
+'Fortress': 'Fortress'
+'Hosting und System': 'Hosting and system'
+'Sicherheit und Nachweise': 'Security and evidence'
+'Rollen und Rechte': 'Roles and permissions'
+'Module und Fähigkeiten': 'Modules and capabilities'
+'Schnittstellen': 'Integrations'
+'Datenbanksicherungen': 'Database backups'
+'Speicherstatus': 'Storage status'
+'Sicherungen werden verschlüsselt in einem ausdrücklich konfigurierten privaten Speicher außerhalb des Anwendungsordners abgelegt. Wiederherstellungen werden hier nicht ausgeführt.': 'Backups are encrypted and stored in a specifically configured private location outside the application directory. Restores are not performed here.'
+'Sicherungen sind derzeit deaktiviert: %reason%': 'Backups are currently disabled: %reason%'
+'Sicherungsdaten konnten nicht sicher gelesen werden.': 'Backup data could not be read safely.'
+'Der Sicherungsschlüssel ist nicht sicher eingerichtet.': 'The backup key is not configured securely.'
+'Die erforderlichen PostgreSQL-Sicherungswerkzeuge sind nicht verfügbar.': 'The required PostgreSQL backup tools are unavailable.'
+'Der private Sicherungsspeicher ist nicht verfügbar.': 'The private backup storage is unavailable.'
+'Jetzt sichern': 'Back up now'
+'Vorhandene Sicherungen': 'Existing backups'
+'Erstellt (UTC)': 'Created (UTC)'
+'Größe': 'Size'
+'Byte': 'byte'
+'Bytes': 'bytes'
+'Prüfen': 'Verify'
+'Herunterladen': 'Download'
+'Es liegen noch keine Sicherungen vor.': 'There are no backups yet.'
+'Datenbanksicherung erstellt (%created_at%, %size_bytes% Bytes).': 'Database backup created (%created_at%, %size_bytes% bytes).'
+'Die Sicherung wurde entschlüsselt, authentifiziert und als PostgreSQL-Archiv geprüft.': 'The backup was decrypted, authenticated, and verified as a PostgreSQL archive.'
+'Sicherung nicht verfügbar.': 'Backup unavailable.'
+'Die ausgewählte Sicherung wurde gelöscht.': 'The selected backup was deleted.'
+'Die Sicherungsaktion konnte nicht sicher ausgeführt werden.': 'The backup operation could not be completed safely.'
+'Mitarbeiterkonten': 'Staff accounts'
+'Verwaltungszugriff wird pro MFA-geschütztem Mitarbeiterkonto aus einer festen Rollenliste vergeben.': 'Administration access is assigned to each MFA-protected staff account from a fixed list of roles.'
+'%count% Konten · Seite %page% von %page_count%': '%count% accounts · page %page% of %page_count%'
+'Verwaltungsrollen': 'Administration roles'
+'MFA': 'MFA'
+'Verwaltungszugriff': 'Administration access'
+'Eingerichtet': 'Set up'
+'Kein Verwaltungszugriff': 'No administration access'
+'Moderator für Videos und Kommentare': 'Video and comment moderator'
+'Videomoderation': 'Video moderation'
+'Kommentarmoderation': 'Comment moderation'
+'eigenes Konto': 'own account'
+'Verwaltungsrolle für %identifier%': 'Administration role for %identifier%'
+'Speichern': 'Save'
+'Eigene Rolle geschützt': 'Your own role is protected'
+'Keine Mitarbeiterkonten gefunden.': 'No staff accounts found.'
+'Administratoren verwalten die gesamte Website sowie Video- und Kommentarmoderation.': 'Administrators manage the entire website, including video and comment moderation.'
+'Moderatoren bearbeiten ausschließlich Video- und Kommentarmeldungen.': 'Moderators handle only video and comment reports.'
+'Video- und Kommentarmoderatoren sehen jeweils nur ihre zuständigen Warteschlangen.': 'Video and comment moderators see only their assigned queues.'
+'Rollenänderungen invalidieren bestehende Sitzungen des betroffenen Kontos beim nächsten Zugriff.': 'Role changes invalidate the affected account’s existing sessions on its next request.'
+'Seitennavigation': 'Pagination'
+'Vorherige': 'Previous'
+'Nächste': 'Next'
+'Die Anfrage enthält unbekannte Rollenfelder.': 'The request contains unknown role fields.'
+'Bitte wählen Sie eine gültige Verwaltungsrolle.': 'Choose a valid administration role.'
+'Die gewählte Verwaltungsrolle wird nicht unterstützt.': 'The selected administration role is not supported.'
+'Die eigene Rolle kann in dieser Ansicht nicht geändert werden.': 'Your own role cannot be changed from this page.'
+'Das Zielkonto muss zuerst mit MFA eingerichtet werden, bevor Verwaltungszugriff vergeben wird.': 'The target account must be set up with MFA before administration access can be assigned.'
+'Ihr Konto muss für eine Rollenänderung mit MFA eingerichtet sein.': 'Your account must be set up with MFA to change roles.'
+'Die Sicherheitsprüfung der Anfrage ist fehlgeschlagen.': 'The request security check failed.'
+'Der letzte Administrator kann nicht herabgestuft werden.': 'The last administrator cannot be demoted.'
+'Der Verwaltungsrollenstand ist ungültig und wurde nicht verändert.': 'The administration role state is invalid and was not changed.'
+'Ihre Administratorberechtigung ist nicht mehr gültig. Melden Sie sich erneut an.': 'Your administrator permission is no longer valid. Sign in again.'
+'Die Verwaltungsrollen sind derzeit nicht verfügbar.': 'Administration roles are currently unavailable.'
+'Die Verwaltungsrolle wurde gespeichert. Die bisherige Sitzung des betroffenen Kontos wird beim nächsten Zugriff ungültig.': 'The administration role was saved. The affected account’s current session will become invalid on its next request.'
+'Die Verwaltungsrolle ist bereits so eingestellt.': 'This administration role is already set.'
+'Videos': 'Videos'
+'Videos verwalten': 'Manage videos'
+'Videomeldungen': 'Video reports'
+'Einreichungen prüfen': 'Review submissions'
+'Video hinzufügen': 'Add video'
+Streams: Streams
+Einbettungen: Embeds
+'Streams und Einbettungen': 'Streams and embeds'
+'CSV-Videoimport': 'CSV video import'
+'Videokategorien': 'Video categories'
+'Serien': 'Series'
+'Serien verwalten': 'Manage series'
+'Folgen verwalten': 'Manage episodes'
+'Genres': 'Genres'
+'News': 'News'
+'News verwalten': 'Manage news'
+'News verfassen': 'Write news'
+'Kategorien': 'Categories'
+'Schlagwörter': 'Tags'
+'Seiten': 'Pages'
+'Seiten verwalten': 'Manage pages'
+'Neue Seite': 'New page'
+'Kommentare': 'Comments'
+'Freigabe und Meldungen': 'Review and reports'
+'Wortfilter': 'Word filter'
+'Kontakt': 'Contact'
+'Kontaktpostfach': 'Contact inbox'
+'Nutzer': 'Users'
+'Nutzer verwalten': 'Manage users'
+'Nutzer hinzufügen': 'Add user'
+'Gesperrte Konten': 'Locked accounts'
+'Aktivitätsübersicht': 'Activity overview'
+'Werbung': 'Advertising'
+'Banner': 'Banners'
+'Player-Anzeigen': 'Player ads'
+'Berichte': 'Reports'
+'Statistik und Protokolle': 'Statistics and logs'
+'Inhaltsstatistik': 'Content statistics'
+'Suchanfragen': 'Search queries'
+'Sicherheitsprotokoll': 'Security log'
+'Systeminformationen': 'System information'
+'Hintergrundaufgaben': 'Background tasks'
+'Aufgaben verwalten': 'Manage tasks'
+'Einrichtung': 'Setup'
+'Einstellungen': 'Settings'
+'Allgemein und Konten': 'General and accounts'
+'Module': 'Modules'
+'Video und Wiedergabe': 'Video and playback'
+'E-Mail': 'Email'
+'Theme und Layout': 'Theme and layout'
+'Sitemaps': 'Sitemaps'
+'Sicherungen': 'Backups'
+'Moderation': 'Moderation'
+'Videoeinreichungen': 'Video submissions'
+'Geschützter Verwaltungsbereich': 'Protected admin area'
+'Verwaltungsmenü': 'Administration menu'
+'Hauptnavigation': 'Main navigation'
+'Allgemeine Einstellungen': 'General settings'
+'Website-Name, Standard-SEO, Suchmaschinenzugriff, Wartungsmodus, Cookie-Einwilligung, Mitgliederkonten, Sprache und Zeitzone.': 'Website name, default SEO, search indexing, maintenance mode, cookie consent, member accounts, language, and time zone.'
+'Website': 'Website'
+'Website-Name': 'Website name'
+'Untertitel': 'Tagline'
+'Sprache': 'Language'
+'Deutsch': 'German'
+'Englisch': 'English'
+'Deutsch und Englisch sind als vollständige Sprachpakete verfügbar.': 'German and English are available as complete language packs.'
+'Zeitzone': 'Time zone'
+'Verwenden Sie eine gültige IANA-Kennung, zum Beispiel Europe/Berlin oder UTC.': 'Enter a valid IANA time zone, for example Europe/Berlin or UTC.'
+'Einstellungen speichern': 'Save settings'
+'Suchmaschinen': 'Search engines'
+'Standard-Beschreibung': 'Default description'
+'Wird als Standard-Metabeschreibung verwendet; leere Einzelwerte bleiben leer.': 'Used as the default meta description; individual empty values remain empty.'
+'Suchmaschinen dürfen öffentliche Seiten aufnehmen': 'Allow search engines to index public pages'
+'Wartungsmodus': 'Maintenance mode'
+'Öffentliche Website in den Wartungsmodus setzen': 'Put the public website into maintenance mode'
+'Besucher erhalten eine Wartungsseite mit HTTP 503. Angemeldete Administratoren und die Admin-Anmeldung bleiben erreichbar.': 'Visitors receive a maintenance page with HTTP 503. Signed-in administrators and the admin sign-in page remain available.'
+'Wartungshinweis': 'Maintenance notice'
+'Cookie-Einwilligung': 'Cookie consent'
+'Einwilligungshinweis für optionale Cookies anzeigen': 'Show a consent notice for optional cookies'
+'Hinweistext': 'Notice text'
+'Notwendige Sicherheits- und Sitzungscookies bleiben aktiv. Derzeit werden keine Analyse- oder Werbecookies eingesetzt; die Auswahl wird für spätere optionale Kategorien gespeichert.': 'Essential security and session cookies remain active. Analytics and advertising cookies are not currently used; the choice is saved for future optional categories.'
+'Mitgliedskonten': 'Member accounts'
+'Öffentliche Registrierung neuer Mitgliedskonten erlauben': 'Allow public registration of new member accounts'
+'Beim Abschalten verschwinden Registrierungslinks und die öffentliche Registrierung wird vor CSRF- und Eingabeverarbeitung gesperrt. Bestehende Konten, Anmeldung und von Administratoren angelegte Konten bleiben nutzbar.': 'When disabled, registration links are hidden and public registration is blocked before CSRF and input processing. Existing accounts, sign-in, and accounts created by administrators remain available.'
+'Soziale Anmeldung': 'Social sign-in'
+'Anmeldung und Registrierung mit Google erlauben': 'Allow sign-in and registration with Google'
+'Google ist noch nicht einsatzbereit. Der Server benötigt eine HTTPS-Basisadresse sowie die privaten OAuth-Zugangsdaten in seiner geschützten Laufzeitkonfiguration.': 'Google sign-in is not ready. The server needs an HTTPS base URL and private OAuth credentials in its protected runtime configuration.'
+'Die Zugangsdaten werden nicht in der Datenbank gespeichert. E-Mail-Adressen werden nur übernommen, wenn Google sie als bestätigt kennzeichnet. Vorhandene Konten werden nie automatisch über eine übereinstimmende E-Mail verknüpft.': 'Credentials are not stored in the database. Email addresses are accepted only when Google marks them as verified. Existing accounts are never linked automatically based on a matching email address.'
+'Die Einstellungen konnten nicht gespeichert werden. Bitte versuchen Sie es erneut.': 'Settings could not be saved. Please try again.'
+'Die allgemeinen Website-Einstellungen wurden gespeichert.': 'General website settings have been saved.'
+'Bitte wählen Sie eine installierte Sprache aus.': 'Choose a language available in this installation.'
+'Bitte geben Sie eine gültige IANA-Zeitzone ein, zum Beispiel Europe/Berlin oder UTC.': 'Enter a valid IANA time zone, for example Europe/Berlin or UTC.'
+'Bitte geben Sie gültigen Text ein.': 'Enter valid text.'
+'Steuerzeichen sind nicht zulässig.': 'Control characters are not allowed.'
+'Bitte geben Sie höchstens 160 Zeichen ein.': 'Enter no more than 160 characters.'
+'Bitte geben Sie höchstens 320 Zeichen ein.': 'Enter no more than 320 characters.'
+'Bitte geben Sie zwischen 1 und 80 Zeichen ein.': 'Enter between 1 and 80 characters.'
+'Bitte geben Sie zwischen 1 und 320 Zeichen ein.': 'Enter between 1 and 320 characters.'
+'Bitte wählen Sie einen gültigen Ein/Aus-Wert.': 'Choose a valid on/off value.'
+'Datenschutzeinstellungen': 'Privacy settings'
+'Cookie-Einstellungen': 'Cookie settings'
+'Notwendige Cookies dienen Anmeldung und Sicherheit. Derzeit werden keine Analyse- oder Werbecookies gesetzt.': 'Essential cookies support sign-in and security. Analytics and advertising cookies are not currently used.'
+'Einstellungen ansehen': 'Review settings'
+'Alle zulassen': 'Allow all'
+'Nur notwendige': 'Essential only'
+'Einstellungen · Inhalte': 'Settings · content'
+'Player-Vorgaben für neue und öffentliche Inhalte. Gespeicherte Inhalte und Warteschlangen bleiben beim Abschalten erhalten.': 'Player defaults for new and public content. Saved content and queued submissions are retained when disabled.'
+'Player': 'Player'
+'Player für lokale Medien': 'Player for local media'
+'Native HTML5-Steuerung': 'Native HTML5 controls'
+'Video.js-Steuerung': 'Video.js controls'
+'Medien vorladen': 'Preload media'
+'Nicht vorladen': 'Do not preload'
+'Nur Metadaten vorladen': 'Preload metadata only'
+'Medien nach Browserentscheidung vorladen': 'Let the browser decide whether to preload media'
+'Die Vorladeeinstellung ist ein Hinweis an den Browser. Die Option für Medien kann mehr Daten übertragen, bevor die Wiedergabe beginnt.': 'The preload setting is a hint to the browser. Preloading media may transfer more data before playback starts.'
+'Die Auswahl gilt für lokale Dateien und geprüfte Streams. Externe Anbieter-Einbettungen verwenden weiterhin den Player des Anbieters. Video.js wird lokal bereitgestellt.': "This selection applies to local files and approved streams. External provider embeds continue to use the provider's player. Video.js is served locally."
+'Video-Player wird vorbereitet.': 'Preparing video player.'
+'Video ist bereit.': 'Video is ready.'
+'Die Video-Wiedergabe ist derzeit nicht verfügbar.': 'Video playback is currently unavailable.'
+'Tastenkürzel an': 'Shortcuts on'
+'Tastenkürzel aus': 'Shortcuts off'
+'Tastenkürzel einschalten': 'Enable shortcuts'
+'Tastenkürzel ausschalten': 'Disable shortcuts'
+'Tastenkürzel-Hilfe': 'Shortcut help'
+'Tastenkürzel sind standardmäßig ausgeschaltet. Aktiviere sie bei Bedarf; sie navigieren ausschließlich zu sichtbaren Verwaltungsseiten.': 'Keyboard shortcuts are off by default. Enable them when needed; they only navigate to visible administration pages.'
+'Player automatisch starten': 'Start player automatically'
+'Automatische Wiedergabe stummschalten': 'Mute autoplay'
+'Automatische Wiedergabe mit Ton wird abgewiesen. Geprüfte Videoeinbettungen externer Anbieter werden von dieser Player-Vorgabe nicht verändert.': 'Autoplay with sound is rejected. Verified third-party video embeds are not affected by this player setting.'
+'Player-Einstellungen speichern': 'Save player settings'
+'Kommentare und Einreichungen': 'Comments and submissions'
+'Kommentare bei neuen News und Videos standardmäßig erlauben': 'Allow comments by default on new news articles and videos'
+'Öffentliche Videoeinreichungen annehmen': 'Accept public video submissions'
+'Die Vorgabe für Kommentare betrifft nur neu angelegte Inhalte. Jede Videoeinreichung bleibt bis zur Prüfung unveröffentlicht. Beim Abschalten bleiben bereits wartende Einreichungen erhalten.': 'The comments default applies only to newly created content. Every video submission remains unpublished until reviewed. Existing queued submissions are retained when this is disabled.'
+'Inhaltseinstellungen speichern': 'Save content settings'
+'Anzeigen': 'Advertising'
+'Banner, Player-Anzeigen und Auslieferungsstatistik werden im getrennten AW-003-Arbeitspaket entwickelt und anschließend kontrolliert in Arcanorum integriert.': 'Banners, player ads, and delivery statistics are being developed in a separate work package and will later be integrated into Arcanorum after review.'
+'Einstellungen · Gestaltung': 'Settings · design'
+'Wählen Sie ein eingebautes Theme, ein öffentliches Inhaltslayout und kontrastgeprüfte Farben.': 'Choose a built-in theme, a public content layout, and contrast-checked colors.'
+'Öffentliche Gestaltung': 'Public appearance'
+'Theme': 'Theme'
+'Inhaltslayout': 'Content layout'
+'Das Layout gilt für öffentliche Kartenlisten und Mitgliederseiten. Verwaltungsseiten behalten ihr einheitliches Arbeitslayout.': 'The layout applies to public card lists and member pages. Admin pages keep their consistent workspace layout.'
+'Hauptfarbe für Links und Schaltflächen': 'Primary color for links and buttons'
+'Akzentfarbe für Fokus- und Bereichsmarkierungen': 'Accent color for focus and section highlights'
+'Farben werden als feste Hexwerte gespeichert. Eingebettetes CSS, externe Stylesheets und Uploads werden nicht angenommen. Die Hauptfarbe benötigt 4,5:1 Kontrast zu Weiß; die Akzentfarbe mindestens 3:1.': 'Colors are stored as fixed hexadecimal values. Embedded CSS, external stylesheets, and uploads are rejected. The primary color needs a 4.5:1 contrast ratio against white; the accent color needs at least 3:1.'
+'Vorschau': 'Preview'
+'Theme und Layout speichern': 'Save theme and layout'
+'Temporäre Vorschau für fünf Minuten; noch nicht gespeichert.': 'Temporary preview for five minutes; not saved.'
+'Beispielansicht mit den aktuell gespeicherten Einstellungen.': 'Sample view using the currently saved settings.'
+'Mitglieder': 'Members'
+'Arcanorum · Vorschau': 'Arcanorum · preview'
+'Aktuelle Inhalte entdecken': 'Discover recent content'
+'So sehen Theme, Farben und Kartenanordnung auf der öffentlichen Website aus.': 'This is how the theme, colors, and card layout appear on the public website.'
+'Beispielschaltfläche': 'Sample button'
+'Neueste Videos': 'Latest videos'
+'Eine hervorgehobene Inhaltskarte.': 'A featured content card.'
+'Redaktion': 'Editorial'
+'Beiträge bleiben gut lesbar.': 'Articles remain easy to read.'
+'Community': 'Community'
+'Das Layout passt sich dem Gerät an.': 'The layout adapts to the device.'
+'Vorschau-Navigation': 'Preview navigation'
+'Beispielkarten': 'Sample cards'
+'Redaktionell': 'Editorial'
+'Arcade': 'Arcade'
+'Kartenraster': 'Grid'
+'Magazin': 'Magazine'
+'Kompakt': 'Compact'
+'Versandstatus': 'Delivery status'
+'E-Mail-Einstellungen': 'Email settings'
+'Absenderadresse und geschützte Transportkonfiguration für Sicherheits- und Systemnachrichten.': 'Sender address and protected transport configuration for security and system messages.'
+'Transportkonfiguration erkannt. Die tatsächliche Zustellung wird mit einer Testnachricht geprüft.': 'Transport configuration detected. Actual delivery is checked with a test message.'
+'Der E-Mail-Versand ist noch nicht vollständig eingerichtet. Die Transportzugangsdaten müssen in der geschützten Serverkonfiguration liegen.': 'Email delivery is not fully configured. Transport credentials must be stored in the protected server configuration.'
+'Transport': 'Transport'
+'Absender': 'Sender'
+'Konfiguriert': 'Configured'
+'Nicht konfiguriert': 'Not configured'
+'Transportadresse, Benutzername, Passwort und vollständige Verbindungszeichenfolge werden weder gespeichert noch angezeigt.': 'The transport address, username, password, and complete connection string are neither stored nor displayed.'
+'Absenderadresse': 'Sender address'
+'E-Mail-Adresse': 'Email address'
+'Leer lassen, um die Absenderadresse der geschützten Serverkonfiguration zu verwenden.': 'Leave blank to use the sender address from the protected server configuration.'
+'Testnachricht': 'Test message'
+'Die Nachricht wird ausschließlich an die E-Mail-Adresse des aktuell angemeldeten Administratorkontos gesendet.': 'The message is sent only to the email address of the currently signed-in administrator account.'
+'Testnachricht an mich senden': 'Send me a test message'
+'Der Versand ist auf drei Testnachrichten pro Administrator und Stunde begrenzt. Bei Zustellfehlern werden keine Zugangsdaten oder Nachrichteninhalte protokolliert.': 'Sending is limited to three test messages per administrator per hour. Delivery errors do not log credentials or message contents.'
+'Fortress · Einstellungen': 'Fortress · settings'
+'Integrierte Bereiche können pausiert werden. Inhalte bleiben gespeichert. Nicht belegte Hostingfähigkeiten sperren die betroffenen Module.': 'Built-in sections can be paused without removing their content. Modules are blocked when required hosting capabilities are not verified.'
+'Integrierte Module': 'Built-in modules'
+'Erforderliche Hostingfähigkeiten': 'Required hosting capabilities'
+'Aktivierung ist gesperrt, bis alle erforderlichen Fähigkeiten nachgewiesen sind. Unbekannte und veraltete Nachweise gelten als nicht verfügbar.': 'Activation is blocked until all required capabilities are verified. Unknown and stale evidence is treated as unavailable.'
+'Aktiviert': 'Enabled'
+'Gesperrt': 'Blocked'
+'Kernfunktion · immer aktiv': 'Core feature · always enabled'
+'Anmeldung, Rollen, CSRF-Schutz, Wartungszugang, Audit-Protokolle, Robots und Sicherungsgrenzen können hier nicht abgeschaltet werden. Externe PHP-, Twig- und JavaScript-Pakete werden nicht im CMS-Prozess geladen.': 'Sign-in, roles, CSRF protection, maintenance access, audit logs, robots rules, and backup boundaries cannot be disabled here. External PHP, Twig, and JavaScript packages are not loaded into the CMS process.'
+'Moduleinstellungen speichern': 'Save module settings'
+'Anmeldung, Rechte und Verwaltungsoberfläche bleiben immer verfügbar.': 'Sign-in, permissions, and the admin interface always remain available.'
+'Verschlüsselte Datenbanksicherungen und deren geschützte Verwaltung.': 'Encrypted database backups and their protected management.'
+'Gemeinsame Kategorisierung für veröffentlichte Inhalte.': 'Shared categorization for published content.'
+'Besucherkommentare und deren Moderation.': 'Visitor comments and their moderation.'
+'Kontaktformular und Verwaltungs-Postfach.': 'Contact form and admin inbox.'
+'Feeds und Robots': 'Feeds and robots'
+'Robots-Regeln, RSS-Feeds und Sitemaps.': 'Robots rules, RSS feeds, and sitemaps.'
+'Mitglieder und Anmeldung': 'Members and sign-in'
+'Mitgliederkonten, Anmeldung und Sitzungsverwaltung bleiben immer verfügbar.': 'Member accounts, sign-in, and session management always remain available.'
+'Redaktionelle News und deren öffentliche Ausgabe.': 'Editorial news and their public pages.'
+'Statische Seiten': 'Static pages'
+'Veröffentlichte Inhaltsseiten und deren Verwaltung.': 'Published content pages and their management.'
+'Öffentliche Plattform': 'Public platform'
+'Startseite und zentrale Plattformrouten bleiben immer verfügbar.': 'The home page and core platform routes always remain available.'
+'Suche': 'Search'
+'Öffentliche Inhaltssuche und Suchverwaltung.': 'Public content search and search management.'
+'Serien, Staffeln, Folgen, Genres und zugehörige Inhalte.': 'Series, seasons, episodes, genres, and related content.'
+'Website- und Datenschutzkonfiguration bleiben immer verfügbar.': 'Website and privacy settings always remain available.'
+'Schlagwortverwaltung für gemeinsame Inhalte.': 'Shared tag management for content.'
+'Videokatalog': 'Video catalogue'
+'Der zentrale Videokatalog und die Wiedergabe bleiben immer verfügbar.': 'The central video catalogue and playback always remain available.'
+'PostgreSQL 18': 'PostgreSQL 18'
+'Bestanden': 'Verified'
+'Fehlgeschlagen': 'Failed'
+'Nicht verfügbar': 'Unavailable'
+'Unbekannt': 'Unknown'
+'Das Modul kann erst aktiviert werden, wenn folgende Hostingfähigkeiten aktuell nachgewiesen sind: PostgreSQL 18.': 'This module cannot be enabled until the following hosting capability has been verified: PostgreSQL 18.'
+'Die Anfrage enthält eine unbekannte Inhaltseinstellung.': 'The request contains an unknown content setting.'
+'Automatische Wiedergabe ist nur mit stummgeschaltetem Player zulässig.': 'Autoplay is allowed only with the player muted.'
+'Die Inhaltsoptionen wurden gespeichert. Bestehende Inhalte und wartende Videoeinreichungen bleiben erhalten.': 'Content options have been saved. Existing content and queued video submissions are retained.'
+'Die Anfrage enthält eine unbekannte Layout- oder Farbeinstellung.': 'The request contains an unknown layout or color setting.'
+'Bitte wählen Sie eine gültige Aktion.': 'Choose a valid action.'
+'Bitte wählen Sie ein unterstütztes Theme.': 'Choose a supported theme.'
+'Bitte wählen Sie ein unterstütztes Layout.': 'Choose a supported layout.'
+'Bitte wählen Sie eine gültige sechsstellige Hex-Farbe.': 'Choose a valid six-digit hexadecimal color.'
+'Die Farbe ist zu hell und bietet auf einer hellen Fläche nicht genügend Kontrast.': 'The color is too light and does not provide enough contrast on a light surface.'
+'Die Designoptionen konnten nicht gespeichert werden. Bitte versuchen Sie es erneut.': 'Design settings could not be saved. Please try again.'
+'Theme, Farben und Layout wurden gespeichert.': 'Theme, colors, and layout have been saved.'
+'Die Anfrage enthält eine unbekannte E-Mail-Einstellung.': 'The request contains an unknown email setting.'
+'Bitte geben Sie eine gültige Absenderadresse ein.': 'Enter a valid sender address.'
+'Bitte geben Sie eine gültige E-Mail-Adresse mit höchstens 254 Zeichen ein.': 'Enter a valid email address with no more than 254 characters.'
+'Die E-Mail-Einstellungen sind derzeit nicht verfügbar.': 'Email settings are currently unavailable.'
+'Die E-Mail-Einstellungen konnten nicht gespeichert werden.': 'Email settings could not be saved.'
+'Die E-Mail-Konfiguration ist derzeit nicht verfügbar.': 'Email configuration is currently unavailable.'
+'Die Anfrage enthält unbekannte Testmail-Eingaben.': 'The request contains unknown test email fields.'
+'Der E-Mail-Versand ist noch nicht vollständig eingerichtet. Prüfen Sie die geschützte Serverkonfiguration.': 'Email delivery is not fully configured. Check the protected server configuration.'
+'Zu viele Testnachrichten. Bitte warten Sie, bevor Sie es erneut versuchen.': 'Too many test messages. Wait before trying again.'
+'Der Versand ist derzeit nicht verfügbar. Bitte versuchen Sie es später erneut.': 'Sending is currently unavailable. Please try again later.'
+'Die Testnachricht konnte nicht zugestellt werden. Prüfen Sie die geschützte Serverkonfiguration.': 'The test message could not be delivered. Check the protected server configuration.'
+'Die E-Mail-Einstellungen wurden gespeichert.': 'Email settings have been saved.'
+'Die Testnachricht wurde an Ihre Administratoradresse gesendet.': 'The test message was sent to your administrator email address.'
+'Die Anfrage enthält eine unbekannte Moduleinstellung.': 'The request contains an unknown module setting.'
+'Die Moduleinstellungen konnten nicht gespeichert werden. Bitte versuchen Sie es erneut.': 'Module settings could not be saved. Please try again.'
+'Die Moduleinstellungen wurden gespeichert. Deaktivierte Module behalten ihre Inhalte.': 'Module settings have been saved. Disabled modules retain their content.'
+
+# Public visitor and member-navigation messages.
+News und Videos: News and videos
+Gaming-News und Videos: Gaming news and videos
+Entdecke aktuelle Videos und redaktionelle Beiträge.: Explore the latest videos and
+  editorial articles.
+Videos entdecken: Explore videos
+Alle News: All news
+Alle Videos: All videos
+Quellentyp: Source type
+Alle Quellentypen: All source types
+Beliebte Videos: Popular videos
+Vorschaubild für %title%: Thumbnail for %title%
+Video: Video
+Noch keine Videos veröffentlicht.: No videos have been published yet.
+Neueste News: Latest news
+Noch keine News veröffentlicht.: No news have been published yet.
+Mein Profil: My profile
+Passwort ändern: Change password
+Wiedergabelisten: Playlists
+Meine Einreichungen: My submissions
+Meine Aktivitäten: My activity
+Mein Kanal: My channel
+Anmelden: Sign in
+Registrieren: Register
+Alle Cookies: All cookies
+Nur notwendige Cookies: Essential cookies only
+Datenschutz: Privacy
+Notwendige Cookies unterstützen Anmeldung und Sicherheit. Derzeit werden keine Analyse- oder Werbecookies gesetzt.: Essential
+  cookies support sign-in and security. Analytics and advertising cookies are not
+  currently set.
+'Ihre gespeicherte Auswahl: %choice%.': 'Your saved choice: %choice%.'
+Alle optionalen Kategorien erlauben: Allow all optional categories
+Nur notwendige Cookies erlauben: Allow essential cookies only
+Auswahl speichern: Save selection
+Zur Website: Back to the website
+Wartung: Maintenance
+Wir führen Wartungsarbeiten durch: We are performing maintenance
+Inhalt nicht gefunden: Content not found
+Dieser Inhalt ist nicht verfügbar oder wurde noch nicht veröffentlicht.: This content
+  is unavailable or has not been published yet.
+Zur Startseite: Back to the home page
+News-Beitrag: News article
+Seite: Page
+Serie oder Folge: Series or episode
+Kommentar: Comment
+Admin: Administration
+
+# Member account, recovery, and invitation messages.
+'Mitgliedskonto': 'Member account'
+'Mitgliedskonto erstellen': 'Create a member account'
+'Mitglied anmelden': 'Member sign-in'
+'Konto erstellen': 'Create account'
+'Dein Kanal bleibt zunächst privat.': 'Your channel will remain private initially.'
+'Kanalname': 'Channel name'
+'3 bis 32 Zeichen: Buchstaben, Zahlen, Unterstriche oder Bindestriche.': '3 to 32 characters: letters, numbers, underscores, or hyphens.'
+'Anzeigename': 'Display name'
+'Passwort': 'Password'
+'Mindestens 12 Zeichen.': 'At least 12 characters.'
+'Mit Google anmelden oder registrieren': 'Sign in or register with Google'
+'Ich habe bereits ein Konto': 'I already have an account'
+'Mitgliedsbereich': 'Member area'
+'Die Anmeldung ist fehlgeschlagen. Prüfe deine Angaben und versuche es erneut.': 'Sign-in failed. Check your details and try again.'
+'Passwort vergessen?': 'Forgot your password?'
+'Bestätigungs-E-Mail erneut anfordern': 'Request another confirmation email'
+'Neues Mitgliedskonto erstellen': 'Create a new member account'
+'Zur Plattform': 'Back to the platform'
+'Mitgliedsmenü': 'Member menu'
+'Google-Anmeldung': 'Google sign-in'
+'Dein Google-Konto ist verknüpft.': 'Your Google account is linked.'
+'Lege zuerst ein lokales Passwort über die': 'First set a local password through the'
+'Passwort-Wiederherstellung': 'password recovery'
+'fest, bevor du Google entfernst.': 'before removing Google.'
+'Google-Verknüpfung entfernen': 'Remove Google link'
+'Verknüpfe ein bestätigtes Google-Konto, um es für die Anmeldung zu verwenden.': 'Link a verified Google account to use it for sign-in.'
+'Google-Konto verknüpfen': 'Link Google account'
+'Dein Kanalname ist fest mit deiner Profiladresse verbunden.': 'Your channel name is permanently linked to your profile address.'
+'Beschreibung': 'Description'
+'Sichtbarkeit des Kanals': 'Channel visibility'
+'Privat': 'Private'
+'Öffentlich': 'Public'
+'Private Kanäle sind für andere Besucher nicht erreichbar. Deine E-Mail-Adresse wird nicht öffentlich angezeigt.': 'Private channels are not available to other visitors. Your email address is never shown publicly.'
+'Profil speichern': 'Save profile'
+'Zur Bestätigung brauchst du dein aktuelles Passwort. Nach dem Ändern meldest du dich erneut an.': 'To confirm, enter your current password. You will need to sign in again after changing it.'
+'Aktuelles Passwort': 'Current password'
+'Neues Passwort': 'New password'
+'Neues Passwort wiederholen': 'Repeat new password'
+'Passwort speichern': 'Save password'
+'Zurück zum Profil': 'Back to profile'
+'Kanal · %handle%': 'Channel · %handle%'
+'Dieses Mitglied hat noch keine Kanalbeschreibung hinzugefügt.': 'This member has not added a channel description yet.'
+'Öffentliche Wiedergabelisten': 'Public playlists'
+'E-Mail bestätigen': 'Confirm email'
+'E-Mail-Adresse bestätigen': 'Confirm email address'
+'Passwort wiederherstellen': 'Recover password'
+'Passwort zurücksetzen': 'Reset password'
+'Gib die E-Mail-Adresse deines Kontos ein. Wenn ein aktives, noch nicht bestätigtes Konto besteht, senden wir einen neuen Bestätigungslink.': 'Enter your account email address. If an active, unverified account exists, we will send a new confirmation link.'
+'Wenn ein passendes Konto besteht, erhältst du eine Nachricht. Prüfe auch deinen Spam-Ordner.': 'If a matching account exists, you will receive a message. Check your spam folder too.'
+'Zu viele Anfragen. Bitte warte und versuche es später erneut.': 'Too many requests. Wait and try again later.'
+'Link anfordern': 'Request link'
+'Gib die E-Mail-Adresse deines Kontos ein. Wenn ein aktives, bestätigtes Konto besteht, senden wir einen einmaligen Link.': 'Enter your account email address. If an active, verified account exists, we will send a one-time link.'
+'Wiederherstellungslink anfordern': 'Request password recovery link'
+'Der Link ist gültig. Bestätige die Adresse, um dein Konto freizuschalten.': 'This link is valid. Confirm your address to activate your account.'
+'Zu viele Versuche. Bitte warte und versuche es später erneut.': 'Too many attempts. Wait and try again later.'
+'Der Bestätigungslink ist ungültig, abgelaufen oder bereits verwendet.': 'The confirmation link is invalid, expired, or has already been used.'
+'Neuen Link anfordern': 'Request a new link'
+'Wähle ein neues Passwort mit mindestens zwölf Zeichen. Der Link kann nur einmal verwendet werden.': 'Choose a new password with at least 12 characters. This link can only be used once.'
+'Prüfe die Passwortlänge und bestätige beide Eingaben.': 'Check the password length and confirm that both entries match.'
+'Neues Passwort speichern': 'Save new password'
+'Der Wiederherstellungslink ist ungültig, abgelaufen oder bereits verwendet.': 'The recovery link is invalid, expired, or has already been used.'
+'Zur Anmeldung': 'Back to sign-in'
+'Einladung': 'Invitation'
+'Konto einrichten': 'Set up account'
+'Gib den einmaligen Einrichtungscode ein und lege ein Passwort mit mindestens 12 Zeichen fest.': 'Enter your one-time setup code and choose a password with at least 12 characters.'
+'Einrichtungscode': 'Setup code'
+'Passwort wiederholen': 'Repeat password'
+'Passwort festlegen': 'Set password'
+'Die Eingabe ist zu groß.': 'The input is too large.'
+'Bitte gib eine gültige E-Mail-Adresse ein.': 'Enter a valid email address.'
+'Der Kanalname muss 3 bis 32 Zeichen lang sein und darf Buchstaben, Zahlen, Unterstriche und Bindestriche enthalten.': 'The channel name must be 3 to 32 characters and may contain letters, numbers, underscores, and hyphens.'
+'Der Anzeigename muss 1 bis 80 Zeichen lang sein.': 'The display name must be between 1 and 80 characters.'
+'Das Passwort muss mindestens 12 Zeichen enthalten.': 'The password must contain at least 12 characters.'
+'Bitte warte kurz, bevor du ein weiteres Konto erstellst.': 'Wait a moment before creating another account.'
+'Die Registrierung ist derzeit nicht verfügbar.': 'Registration is currently unavailable.'
+'Dein Konto wurde erstellt. Prüfe dein Postfach und bestätige deine E-Mail-Adresse.': 'Your account has been created. Check your inbox and confirm your email address.'
+'Die Google-Verknüpfung ist derzeit nicht verfügbar.': 'Google linking is currently unavailable.'
+'Ein Google-Konto ist bereits mit deinem Profil verknüpft.': 'A Google account is already linked to your profile.'
+'Dieses Google-Konto ist bereits mit deinem Profil verknüpft.': 'This Google account is already linked to your profile.'
+'Dieses Google-Konto kann nicht mit diesem Profil verknüpft werden.': 'This Google account cannot be linked to this profile.'
+'Dein Profil besitzt bereits eine Google-Verknüpfung.': 'Your profile already has a Google link.'
+'Die Google-Verknüpfung konnte nicht gespeichert werden.': 'The Google link could not be saved.'
+'Dein Google-Konto wurde verknüpft.': 'Your Google account has been linked.'
+'Für dein Profil besteht keine Google-Verknüpfung.': 'Your profile has no Google link.'
+'Lege zuerst ein lokales Passwort fest, bevor du deine letzte externe Anmeldung entfernst.': 'Set a local password before removing your last external sign-in method.'
+'Die Google-Verknüpfung wurde entfernt.': 'The Google link has been removed.'
+'Deine E-Mail-Adresse wurde bestätigt. Du kannst dich jetzt anmelden.': 'Your email address has been confirmed. You can now sign in.'
+'Dein Passwort wurde geändert. Melde dich mit dem neuen Passwort an.': 'Your password has been changed. Sign in with your new password.'
+'Dein Passwort wurde festgelegt. Du kannst dich jetzt anmelden.': 'Your password has been set. You can now sign in.'
+'Dein Passwort wurde geändert. Melde dich erneut an.': 'Your password has been changed. Sign in again.'
+'Dein Profil wurde gespeichert.': 'Your profile has been saved.'
+'Das Passwort muss gültiges UTF-8 enthalten und mindestens 12 Zeichen lang sein.': 'The password must contain valid UTF-8 and be at least 12 characters long.'
+'Die Passwörter stimmen nicht überein.': 'The passwords do not match.'
+'Der Einrichtungscode ist ungültig oder abgelaufen.': 'The setup code is invalid or has expired.'
+'Das neue Passwort muss gültiges UTF-8 enthalten und mindestens 12 Zeichen lang sein.': 'The new password must contain valid UTF-8 and be at least 12 characters long.'
+'Die neuen Passwörter stimmen nicht überein.': 'The new passwords do not match.'
+'Zu viele Versuche. Bitte warte kurz und versuche es erneut.': 'Too many attempts. Wait a moment and try again.'
+'Das aktuelle Passwort ist falsch.': 'The current password is incorrect.'
+'Die Eingabe ist ungültig oder zu groß.': 'The input is invalid or too large.'
+'Anzeigename oder Beschreibung enthält ungültige Angaben.': 'The display name or description contains invalid values.'
+'Die Google-Anmeldung ist abgelaufen oder ungültig. Bitte versuche es erneut.': 'Google sign-in has expired or is invalid. Please try again.'
+'Die Google-Anmeldung konnte nicht abgeschlossen werden. Bitte versuche es erneut.': 'Google sign-in could not be completed. Please try again.'
+'Die Google-Anmeldung konnte nicht bestätigt werden. Bitte verwende eine andere Anmeldemethode.': 'Google sign-in could not be verified. Please use another sign-in method.'
+'Melde dich erneut an und starte die Google-Verknüpfung noch einmal.': 'Sign in again and restart Google linking.'
+'Die Anmeldung konnte nicht abgeschlossen werden. Bitte versuche es erneut.': 'Sign-in could not be completed. Please try again.'
+'Für diese E-Mail-Adresse besteht bereits ein Konto. Melde dich mit deinem Passwort an und verknüpfe Google danach im Profil.': 'An account already exists for this email address. Sign in with your password, then link Google from your profile.'
+'Neue Mitgliedskonten sind derzeit nicht verfügbar. Bestehende Google-Konten können sich weiterhin anmelden.': 'New member accounts are currently unavailable. Existing Google accounts can still sign in.'
+'Das Mitgliedskonto konnte nicht erstellt werden. Prüfe deine Angaben und versuche es erneut.': 'The member account could not be created. Check your details and try again.'
+'Das Konto wurde erstellt, die Anmeldung konnte aber nicht abgeschlossen werden. Melde dich bitte mit Google erneut an.': 'Your account was created, but sign-in could not be completed. Please sign in with Google again.'
+
+# Member security-email copy.
+'E-Mail-Adresse für %site_name% bestätigen': 'Confirm your email address for %site_name%'
+'Öffne diesen Link, um deine E-Mail-Adresse zu bestätigen:': 'Open this link to confirm your email address:'
+'Der Link läuft nach einer Stunde ab und kann nur einmal verwendet werden.': 'This link expires after one hour and can only be used once.'
+'Passwort für %site_name% zurücksetzen': 'Reset your password for %site_name%'
+'Öffne diesen Link, um ein neues Passwort zu setzen:': 'Open this link to set a new password:'
+'Der Link läuft nach 30 Minuten ab und kann nur einmal verwendet werden. Falls du diese Anfrage nicht gestellt hast, kannst du diese Nachricht ignorieren.': 'This link expires after 30 minutes and can only be used once. If you did not make this request, you can ignore this message.'
+'Neu veröffentlichte News und Artikel.': 'Recently published news and articles.'
+'Neu veröffentlichte Videos.': 'Recently published videos.'
+
+# Member activity, directory, and playlist messages.
+'Hier siehst du deine seit der Kontoverknüpfung eingereichten Kommentare und Videos. Diese Ansicht ist nur für dich sichtbar.': 'Here you can see comments and videos submitted since your account was linked. This view is private.'
+'Letzte Videoeinreichungen': 'Recent video submissions'
+'Prüfstatus:': 'Review status:'
+'Du hast noch keine Videos eingereicht.': 'You have not submitted any videos yet.'
+'Alle Videoeinreichungen ansehen': 'View all video submissions'
+'Meine Wiedergabelisten': 'My playlists'
+'Du hast noch keine Wiedergabelisten erstellt.': 'You have not created any playlists yet.'
+'Meine Wiedergabelisten ansehen': 'View my playlists'
+'Meine Kommentare': 'My comments'
+'Auf dieser Seite sind noch keine Kommentare vorhanden.': 'There are no comments on this page yet.'
+'Kommentarseiten': 'Comment pages'
+'Vorherige Seite': 'Previous page'
+'Seite %page%': 'Page %page%'
+'Nächste Seite': 'Next page'
+'Hier erscheinen nur aktive Mitglieder, die ihren Kanal selbst öffentlich gestellt haben.': 'Only active members who have made their channel public appear here.'
+'Öffentliche Kanäle suchen': 'Search public channels'
+'Suchen': 'Search'
+'Öffentliche Kanäle: %channel_count%': 'Public channels: %channel_count%'
+'Keine öffentlichen Kanäle gefunden.': 'No public channels were found.'
+'Seitenwechsel': 'Pagination'
+'Seite %page% von %total%': 'Page %page% of %total%'
+'Neue Wiedergabeliste': 'New playlist'
+'Name': 'Name'
+'Beschreibung (optional)': 'Description (optional)'
+'Sichtbarkeit': 'Visibility'
+'Öffentliche Listen erscheinen nur, wenn auch dein Kanal öffentlich ist. Nicht veröffentlichte Videos bleiben aus öffentlichen Listen ausgeblendet.': 'Public playlists appear only while your channel is public. Unpublished videos remain hidden from public playlists.'
+'Wiedergabeliste erstellen': 'Create playlist'
+'Vorhandene Listen': 'Existing playlists'
+'Öffentliche Liste ansehen': 'View public playlist'
+'Die Liste bleibt verborgen, bis dein Kanal öffentlich ist.': 'This playlist stays hidden until your channel is public.'
+'Änderungen speichern': 'Save changes'
+'(nicht veröffentlicht)': '(unpublished)'
+'Entfernen': 'Remove'
+'Noch keine Videos gespeichert.': 'No videos saved yet.'
+'Wiedergabeliste löschen': 'Delete playlist'
+'Meine Videoeinreichungen': 'My video submissions'
+'Hier siehst du den Prüfstatus deiner Einreichungen. Sie bleiben privat, bis eine Veröffentlichung freigegeben wurde.': 'Here you can track your submissions. They remain private until publication is approved.'
+'Diese Wiedergabeliste enthält noch keine veröffentlichten Videos.': 'This playlist does not contain any published videos yet.'
+'Kanal von %name%': '%name%’s channel'
+'aktualisiert': 'updated'
+'Wartet auf Prüfung': 'Pending review'
+'Wartet auf Freigabe': 'Pending approval'
+'Freigegeben': 'Approved'
+'Gemeldet': 'Reported'
+'Abgelehnt': 'Rejected'
+'Die Wiedergabeliste wurde erstellt.': 'The playlist has been created.'
+'Name oder Beschreibung enthält ungültige Angaben.': 'The name or description contains invalid values.'
+'Bitte wähle eine deiner Wiedergabelisten.': 'Choose one of your playlists.'
+'Das Video wurde gespeichert.': 'The video was saved to the playlist.'
+'Das Video ist bereits in dieser Wiedergabeliste.': 'This video is already in this playlist.'
+'Das Video konnte nicht zur Wiedergabeliste hinzugefügt werden.': 'The video could not be added to the playlist.'
+'Die Wiedergabeliste wurde aktualisiert.': 'The playlist has been updated.'
+'Das Video wurde aus der Wiedergabeliste entfernt.': 'The video has been removed from the playlist.'
+'Die Wiedergabeliste wurde gelöscht.': 'The playlist has been deleted.'
+
+# Video, news, reports, and comments messages.
+'Veröffentlichte Videos nach datensparsam gezählten Aufrufen.': 'Published videos ranked using privacy-friendly view counts.'
+'Neu veröffentlichte Videos aus allen Kategorien.': 'Recently published videos from every category.'
+'Neue Videos ansehen': 'View new videos'
+'Beliebte Videos ansehen': 'View popular videos'
+'RSS-Feed abonnieren': 'Subscribe to the RSS feed'
+'Video einreichen': 'Submit a video'
+'Videos suchen': 'Search videos'
+'Kategorie': 'Category'
+'Alle Kategorien': 'All categories'
+'Schlagwort': 'Tag'
+'Filtern': 'Filter'
+'Aufrufe': 'views'
+'Keine Videos mit diesen Filtern gefunden.': 'No videos matched these filters.'
+'Video-Seiten': 'Video pages'
+'News und Artikel': 'News and articles'
+'Aktuelle Beiträge aus der Redaktion.': 'Recent stories from the editorial team.'
+'News suchen': 'Search news'
+'Keine Beiträge mit diesen Filtern gefunden.': 'No stories matched these filters.'
+'News-Seiten': 'News pages'
+'Kommentar melden': 'Report comment'
+'Noch keine freigegebenen Kommentare.': 'There are no approved comments yet.'
+'Kommentar schreiben': 'Write a comment'
+'Dieses Feld leer lassen': 'Leave this field empty'
+'Kommentar zur Prüfung senden': 'Submit comment for review'
+'Kommentare erscheinen erst nach Freigabe.': 'Comments appear after approval.'
+'Kommentare sind für diesen Inhalt deaktiviert.': 'Comments are disabled for this content.'
+'Zurück zu allen News': 'Back to all news'
+'Videoquelle: %source%': 'Video source: %source%'
+'Dein Browser kann dieses Video nicht abspielen.': 'Your browser cannot play this video.'
+'Dein Browser kann diesen Stream nicht abspielen.': 'Your browser cannot play this stream.'
+'Live-Stream wird vorbereitet.': 'Preparing live stream.'
+'Dieser Live-Stream ist nicht verfügbar.': 'This live stream is unavailable.'
+'Der Live-Stream ist derzeit nicht verfügbar. Bitte versuche es später erneut.': 'This live stream is currently unavailable. Please try again later.'
+'Live-Stream bereit. Drücke Wiedergabe.': 'Live stream ready. Press play.'
+'Dieser Browser unterstützt die Live-Wiedergabe nicht. Nutze den Link zum Stream.': 'This browser does not support live playback. Use the link to the stream.'
+'Falls dein Browser das Format nicht unterstützt, kannst du den Stream direkt öffnen.': 'If your browser does not support this format, open the stream directly.'
+'Stream direkt öffnen': 'Open stream directly'
+'Dieser Stream ist derzeit nicht verfügbar oder für diese Website nicht freigegeben.': 'This stream is currently unavailable or is not approved for this website.'
+'Diese Einbettung ist derzeit nicht verfügbar.': 'This embed is currently unavailable.'
+'Video beim Anbieter ansehen': 'Watch video at provider'
+'Video teilen': 'Share video'
+'Den öffentlichen Videolink kannst du über das Menü deines Browsers kopieren und weitergeben.': 'You can copy and share the public video link from your browser menu.'
+'Öffentlicher Videolink': 'Public video link'
+'In Wiedergabeliste speichern': 'Save to playlist'
+'Wiedergabeliste': 'Playlist'
+'Video speichern': 'Save video'
+'Wiedergabelisten verwalten': 'Manage playlists'
+'Erstelle zuerst eine Wiedergabeliste.': 'Create a playlist first.'
+'Video melden': 'Report video'
+'Grund': 'Reason'
+'Zusätzliche Angaben (optional)': 'Additional details (optional)'
+'Zurück zu allen Videos': 'Back to all videos'
+'Video oder Quelle funktioniert nicht': 'Video or source is not working'
+'Unangemessener Inhalt': 'Inappropriate content'
+'Urheberrecht oder Rechte': 'Copyright or rights issue'
+'Irreführende Angaben': 'Misleading information'
+'Sonstiger Grund': 'Other reason'
+'Bitte warte kurz, bevor du ein weiteres Video meldest.': 'Wait a moment before reporting another video.'
+'Bitte wähle einen gültigen Grund und gib höchstens 1000 Zeichen Zusatzinformation ein.': 'Choose a valid reason and provide no more than 1,000 characters of additional details.'
+'Danke. Die Videomeldung wurde zur Prüfung eingereicht.': 'Thank you. The video report has been submitted for review.'
+'Bitte warte kurz, bevor du einen weiteren Kommentar sendest.': 'Wait a moment before submitting another comment.'
+'Der Name muss gültiges UTF-8 ohne unzulässige Steuerzeichen enthalten.': 'The name must contain valid UTF-8 and no disallowed control characters.'
+'Der Name muss zwischen 1 und 80 Zeichen lang sein.': 'The name must be between 1 and 80 characters.'
+'Der Kommentar muss gültiges UTF-8 ohne unzulässige Steuerzeichen enthalten.': 'The comment must contain valid UTF-8 and no disallowed control characters.'
+'Der Kommentar muss zwischen 5 und 3000 Zeichen lang sein.': 'The comment must be between 5 and 3,000 characters.'
+'Dein Kommentar wurde zur Prüfung eingereicht.': 'Your comment has been submitted for review.'
+'Bitte warte kurz, bevor du einen weiteren Kommentar meldest.': 'Wait a moment before reporting another comment.'
+'Danke. Der Kommentar wurde zur Prüfung gemeldet.': 'Thank you. The comment has been reported for review.'
+'Sitemap': 'Sitemap'
+
+# Public contact, search, information, series, and submission messages.
+'Wir helfen gern': 'We are happy to help'
+'Deine Nachricht wird zur Bearbeitung in der Verwaltung gespeichert. Bitte sende hier keine sensiblen Daten.': 'Your message will be stored in the administration area for processing. Do not send sensitive information here.'
+'Betreff': 'Subject'
+'Nachricht': 'Message'
+'Nachricht senden': 'Send message'
+'Durchsuche die aktuell freigegebenen Inhaltsbereiche.': 'Search the content areas currently available to the public.'
+'Suchbegriff': 'Search term'
+'Keine Serien gefunden.': 'No series were found.'
+'Keine News gefunden.': 'No news articles were found.'
+'Keine Videos gefunden.': 'No videos were found.'
+'Gib einen Suchbegriff ein, um veröffentlichte Inhalte zu finden.': 'Enter a search term to find published content.'
+'Informationen': 'Information'
+'Informationen und Hinweise zur Website.': 'Information and guidance about this website.'
+'Noch keine Seiten veröffentlicht.': 'No pages have been published yet.'
+'Zurück zu allen Seiten': 'Back to all pages'
+'Redaktionelle Reihen und ihre Folgen.': 'Editorial series and their episodes.'
+'Genre': 'Genre'
+'Alle Genres': 'All genres'
+'Coverbild: %title%': 'Cover image: %title%'
+'Noch keine Serien veröffentlicht.': 'No series have been published yet.'
+'Serienseiten': 'Series pages'
+'Seriengenres': 'Series genres'
+'Folgen': 'Episodes'
+'Staffel %season% · Folge %episode%': 'Season %season% · Episode %episode%'
+'Für diese Serie sind noch keine veröffentlichten Folgen vorhanden.': 'This series does not have any published episodes yet.'
+'Folgen-Seiten': 'Episode pages'
+'Videoquelle: %host%': 'Video source: %host%'
+'Kommentare und Videodetails': 'Comments and video details'
+'Videodetails': 'Video details'
+'Eingereichte Videos bleiben privat, bis ein Administrator sie geprüft und freigegeben hat.': 'Submitted videos remain private until an administrator has reviewed and approved them.'
+'Titel': 'Title'
+'Keine Kategorie': 'No category'
+'Videodatei (MP4, WebM oder Ogg, höchstens 32 MiB)': 'Video file (MP4, WebM, or Ogg, up to 32 MiB)'
+'Zur Prüfung einreichen': 'Submit for review'
+'Dateien werden privat gespeichert. Das Video erscheint erst nach einer redaktionellen Freigabe.': 'Files are stored privately. The video will appear only after editorial approval.'
+
+# Administration dashboard, activity, category, and sign-in messages.
+"CMS-Verwaltung": "CMS administration"
+"Inhalte, Freigaben und Systemstatus auf einen Blick.": "Content, approvals, and system status at a glance."
+"Inhalts- und Moderationszahlen": "Content and moderation metrics"
+"veröffentlicht": "published"
+"Entwürfe": "Drafts"
+"wartend": "pending"
+"gemeldet": "reported"
+"aktiv": "active"
+"inaktiv": "inactive"
+"wartend auf Prüfung": "awaiting review"
+"Warteschlange öffnen": "Open queue"
+"offen": "open"
+"Meldungen prüfen": "Review reports"
+"offene Nachrichten": "open messages"
+"Postfach öffnen": "Open inbox"
+"Tageseinträge der letzten 30 Tage": "Daily entries for the past 30 days"
+"Schnellaktionen": "Quick actions"
+"%count% Videoeinreichungen prüfen": "Review %count% video submissions"
+"%count% Videomeldungen bearbeiten": "Review %count% video reports"
+"%pending% Kommentare freigeben, %reported% Meldungen bearbeiten": "Approve %pending% comments, review %reported% reports"
+"%count% Kontaktanfragen beantworten": "Reply to %count% contact requests"
+"Offene Vorgänge": "Open items"
+"Systemhinweise": "System notices"
+"Für die angezeigten Systemprüfungen liegen derzeit keine offenen Hinweise vor.": "There are no open notices for the displayed system checks."
+"Hosting und System ansehen": "View hosting and system status"
+"Festgestellte Systemfähigkeiten": "Verified system capabilities"
+"Nur tatsächlich geprüfte Fähigkeiten gelten als bestanden. Nicht belegte Servergrenzen bleiben unbekannt.": "Only capabilities that were actually checked count as passed. Unverified server limits remain unknown."
+"Prüfnachweise für die Hosting- und Laufzeitfähigkeiten": "Evidence for hosting and runtime capability checks"
+"Prüfung": "Check"
+"Status": "Status"
+"Nachweis": "Evidence"
+"Webserver-Integrität": "Web server integrity"
+"Der Status beschreibt die tatsächlich eingerichtete unabhängige Prüfung.": "The status reflects the independent check that is actually configured."
+"Nicht eingerichtet": "Not configured"
+"Die B/C-Kontrollmatrix enthält Anforderungen, aber keinen Laufzeitnachweis. Ein unabhängiger Attestor, aktive B→C-Erkennung und unabhängige Alarmierung sind derzeit nicht eingerichtet.": "The B/C control matrix defines requirements but has no runtime evidence. An independent attestor, active B-to-C detection, and independent alerting are not currently configured."
+"Erfolgreiche Änderungen im Verwaltungsbereich. Inhalte aus Formularen, Netzwerkadressen und Geheimnisse werden nicht gespeichert.": "Successful changes in the administration area. Form contents, network addresses, and secrets are not stored."
+"Suche nach Administrator oder Verwaltungsbereich": "Search by administrator or administration area"
+"Aktivitätsverlauf leeren": "Clear activity history"
+"Der Aktivitätsverlauf ist leer.": "The activity history is empty."
+"%count% Einträge": "%count% entries"
+"Zeit": "Time"
+"Administrator": "Administrator"
+"Bereich": "Area"
+"Aktion": "Action"
+"Methode": "Method"
+"Entfernter Administrator": "Removed administrator"
+"Kategorien verwalten": "Manage categories"
+"Kategorien für redaktionelle Beiträge und Videos pflegen.": "Manage categories for editorial stories and videos."
+"Neue Kategorie": "New category"
+"Treffer in dieser Ansicht: %result_count%": "%result_count% results in this view"
+"Inhaltsbereich": "Content area"
+"Alle Bereiche": "All areas"
+"Inhaltskategorien": "Content categories"
+"Verwendung": "Usage"
+"Aktionen": "Actions"
+"Bearbeiten": "Edit"
+"Löschen": "Delete"
+"In Verwendung": "In use"
+"Noch keine Kategorien vorhanden.": "No categories exist yet."
+"Kategorie bearbeiten": "Edit category"
+"Eine Kategorie gehört zu News oder Videos. Verwendete Kategorien können nicht gelöscht werden.": "A category belongs to news or videos. Categories in use cannot be deleted."
+"Der Kategoriename ist erforderlich und darf höchstens 100 Zeichen lang sein.": "A category name is required and must be no more than 100 characters."
+"Bitte wähle News oder Video als Inhaltsbereich.": "Choose news or video as the content area."
+"Diese Kategorie gibt es in diesem Inhaltsbereich bereits.": "This category already exists in this content area."
+"Kategorie wurde angelegt.": "The category was created."
+"Kategorie wurde gespeichert.": "The category was saved."
+"Kategorie wurde nicht gefunden.": "The category could not be found."
+"Die Kategorie wird noch verwendet und kann nicht gelöscht werden.": "This category is still in use and cannot be deleted."
+"Kategorie wurde gelöscht.": "The category was deleted."
+"Zurück zur Übersicht": "Back to overview"
+"Bitte prüfe die Eingaben.": "Check the entered values."
+"Kategoriedaten": "Category details"
+"Beim Umbenennen wird die Änderung auf zugeordnete Inhalte übertragen.": "Renaming a category also updates its associated content."
+"Bitte wählen": "Choose an option"
+"Kategorie anlegen": "Create category"
+"Abbrechen": "Cancel"
+"Private Plattform": "Private platform"
+"Verwaltungszugang": "Administration sign-in"
+"Melde dich mit einem Administratorkonto an, um die Verwaltung zu öffnen.": "Sign in with an administrator account to open the administration area."
+"Authenticator- oder Wiederherstellungscode": "Authenticator or recovery code"
+"Zugriff verweigert": "Access denied"
+"HTTP 403": "HTTP 403"
+"Kein Zugriff": "Access denied"
+"Für diesen Bereich ist ein berechtigtes Administratorkonto erforderlich.": "An authorized administrator account is required for this area."
+"Zur Plattformübersicht": "Back to platform overview"
+
+# Administration contact inbox and comment moderation messages.
+"Nachrichten werden nur hier angezeigt. Erledigte Nachrichten können gelöscht werden.": "Messages are only shown here. Completed messages can be deleted."
+"Name, E-Mail, Betreff oder Text": "Name, email, subject, or message"
+"Alle Status": "All statuses"
+"Kontaktnachrichten": "Contact messages"
+"Als erledigt markieren": "Mark as completed"
+"Keine Kontaktnachrichten gefunden.": "No contact messages found."
+"Kommentarprüfung": "Comment moderation"
+"Kommentare prüfen": "Review comments"
+"Neue Kommentare bleiben verborgen, bis sie freigegeben werden. Gemeldete Beiträge stehen zur erneuten Prüfung bereit.": "New comments stay hidden until approved. Reported comments are ready for another review."
+"Kommentare suchen": "Search comments"
+"Eingereichte Kommentare": "Submitted comments"
+"Die Liste zeigt höchstens 100 Treffer. Kommentartext wird als reiner Text ausgegeben.": "The list shows at most 100 results. Comment text is displayed as plain text."
+"Kommentare zur Moderation": "Comments for moderation"
+"Inhalt": "Content"
+"Eingegangen": "Received"
+"Wortfilter: %term%": "Word filter: %term%"
+"Meldungen: %report_count%": "Reports: %report_count%"
+"Ablehnen": "Reject"
+"Meldungen zurücksetzen": "Clear reports"
+"Keine Kommentare für diese Auswahl gefunden.": "No comments matched this selection."
+"Kommentar wurde freigegeben.": "Comment approved."
+"Kommentar wurde abgelehnt.": "Comment rejected."
+"Meldungen wurden zurückgesetzt.": "Reports cleared."
+"Kommentar wurde gelöscht.": "Comment deleted."
+"Die gewählte Aktion ist ungültig.": "The selected action is invalid."
+"Kommentar wurde nicht gefunden.": "Comment was not found."
+"Kommentar-Wortfilter": "Comment word filter"
+"Treffer bleiben verborgen und warten auf eine manuelle Freigabe. Der Filter lehnt Kommentare nicht automatisch ab.": "Matches stay hidden until manually approved. The filter does not automatically reject comments."
+"Zur Kommentarprüfung": "Back to comment moderation"
+"Bitte prüfe die Eingabe.": "Check the submitted value."
+"%count% von %max% Einträgen": "%count% of %max% entries"
+"Wort oder Wortgruppe": "Word or phrase"
+"Groß- und Kleinschreibung wird ignoriert. Einzelne Wörter werden nur als ganzes Wort erkannt.": "Matching ignores letter case. Individual words match only as complete words."
+"Die Liste ist voll. Entferne einen Eintrag, bevor du einen weiteren hinzufügst.": "The list is full. Remove an entry before adding another one."
+"Aktive Filter": "Active filters"
+"Wortgruppen werden mit normalisierten Leerzeichen und ohne Beachtung der Großschreibung verglichen.": "Phrases are compared using normalized spaces and case-insensitive matching."
+"Aktive Kommentarfilter": "Active comment filters"
+"Hinzugefügt": "Added"
+"Wortfilter entfernen": "Remove word filter"
+"Noch keine Filterwörter eingetragen.": "No filter terms have been added yet."
+"Filterwort wurde hinzugefügt.": "Filter term added."
+"Filterwort wurde entfernt.": "Filter term removed."
+"Filterwort wurde nicht gefunden.": "Filter term was not found."
+"Das Filterwort darf nicht leer sein.": "The filter term must not be empty."
+"Ein Filterwort oder eine Wortgruppe darf höchstens 100 Zeichen lang sein.": "A filter term or phrase must be no more than 100 characters long."
+"Der Text muss gültiges UTF-8 enthalten.": "The text must contain valid UTF-8."
+"Der Text enthält unzulässige Steuerzeichen.": "The text contains disallowed control characters."
+"Die Liste ist auf 500 Filterwörter oder Wortgruppen begrenzt.": "The list is limited to 500 filter terms or phrases."
+"Dieses Filterwort oder diese Wortgruppe ist bereits vorhanden.": "This filter term or phrase already exists."
+
+# Administration video catalogue, reports, and submissions.
+"Videoquellen erfassen, Metadaten pflegen und den Veröffentlichungsstatus setzen.": "Manage video sources and metadata and set publication status."
+"Anbieter-Import": "Provider import"
+"CSV-Import": "CSV import"
+"%total% Treffer · Seite %page% von %page_count%": "%total% results · page %page% of %page_count%"
+"Alle Schlagwörter": "All tags"
+"Titel oder Kategorie": "Title or category"
+"Sortierung": "Sort by"
+"Änderungsdatum": "Last modified"
+"Reihenfolge": "Order"
+"Absteigend": "Descending"
+"Aufsteigend": "Ascending"
+"Auswahlaktion": "Bulk action"
+"Veröffentlichen": "Publish"
+"Als Entwurf speichern": "Save as draft"
+"Hervorheben": "Feature"
+"Hervorhebung entfernen": "Remove featured status"
+"In Kategorie verschieben": "Move to category"
+"Ausgewählte löschen": "Delete selected"
+"Zielkategorie (nur beim Verschieben)": "Target category (when moving only)"
+"Ohne Kategorie": "Uncategorized"
+"Löschen bestätigen": "Confirm deletion"
+"Ich bestätige das Löschen": "I confirm the deletion"
+"Auf Auswahl anwenden": "Apply to selection"
+"Wähle bis zu 50 Einträge aus. Löschen entfernt auch ihre Kommentare.": "Select up to 50 entries. Deleting an entry also deletes its comments."
+"Auswahl": "Selection"
+"Quelle": "Source"
+"Zuletzt geändert": "Last modified"
+"Video auswählen: %title%": "Select video: %title%"
+"Noch keine Videos. Füge die erste Videoquelle hinzu.": "There are no videos yet. Add the first video source."
+"Verwaltungsseiten": "Administration pages"
+"Seite %page% von %page_count%": "Page %page% of %page_count%"
+"Eingehende Meldungen prüfen und Videos bei Bedarf aus der öffentlichen Ausgabe nehmen.": "Review incoming reports and remove videos from public pages when needed."
+"Zum Videokatalog": "Back to the video catalogue"
+"Meldungen": "Reports"
+"Es werden höchstens 100 passende Meldungen angezeigt.": "At most 100 matching reports are shown."
+"Zusatzangaben": "Additional details"
+"Status und Aktion": "Status and action"
+"Video ausblenden": "Hide video"
+"Bearbeitet am %date%": "Reviewed on %date%"
+"Keine Videomeldungen für diesen Filter.": "No video reports match this filter."
+"Neue Dateien bleiben privat, bis du sie freigibst.": "New files stay private until you approve them."
+"Warteschlange": "Queue"
+"Es werden höchstens 100 wartende Einreichungen angezeigt.": "At most 100 pending submissions are shown."
+"Vorschau für %title%": "Preview for %title%"
+"Video freigeben": "Approve video"
+"Keine wartenden Videoeinreichungen.": "There are no pending video submissions."
+"Video-URL": "Video URL"
+"Stream": "Stream"
+"Einbettung": "Embed"
+"Datei-Upload": "File upload"
+"Entwurf": "Draft"
+"Veröffentlicht": "Published"
+"Offen": "Open"
+"Erledigt": "Completed"
+"Video ausgeblendet": "Video hidden"
+
+# Administration video forms and safe import messages.
+"Video bearbeiten": "Edit video"
+"Hinzufügen": "Add"
+"Geprüfte HTTPS-Quelle oder private Videodatei mit Metadaten speichern.": "Save video metadata with a verified HTTPS source or a private video file."
+"Videodaten": "Video details"
+"Dateien werden außerhalb des öffentlichen Webpfads gespeichert; nur MP4, WebM und Ogg bis 32 MiB sind zugelassen.": "Files are stored outside the public web path. Only MP4, WebM, and Ogg files up to 32 MiB are accepted."
+"Quellart": "Source type"
+"Einbettungs-URL": "Embed URL"
+"Private Videodatei": "Private video file"
+"Quell-URL": "Source URL"
+"Für Einbettungen sind nur geprüfte YouTube- und Vimeo-Video-URLs zugelassen; fremder HTML-Code wird nicht ausgeführt.": "Embeds accept verified YouTube and Vimeo video URLs only. Third-party HTML is never executed."
+"Unterstützt werden direkte MP4-, M4V-, WebM- und Ogg-Dateien sowie HLS-Live-Playlists (M3U8) auf freigegebenen HTTPS-Hosts. HLS-Segmente und Schlüssel müssen ebenfalls von freigegebenen Hosts kommen; der Server ruft die Stream-Adresse nicht ab.": "Direct MP4, M4V, WebM, and Ogg files are supported, along with HLS live playlists (M3U8) on approved HTTPS hosts. HLS segments and keys must also come from approved hosts; the server does not fetch the stream URL."
+"Die vollständige Adresse einschließlich Abfrageparametern wird öffentlich ausgegeben. Bitte keine Zugangsdaten oder geheimen Tokens verwenden.": "The complete address, including query parameters, is shown publicly. Do not include credentials or secret tokens."
+"Streamhosts sind derzeit nicht freigegeben; bitte die Hostingverwaltung um Einrichtung bitten.": "Stream hosts are not approved yet. Ask an administrator to configure them in hosting settings."
+"Videodatei": "Video file"
+"Bei Quellart „Private Videodatei“ erforderlich; beim Bearbeiten optional, wenn die vorhandene Datei bleiben soll.": "Required for the private video file source type. When editing, leave this empty to keep the existing file."
+"Aktuelle private Datei: %media_type%.": "Current private file: %media_type%."
+"z. B. Kultur, Interviews, Neuigkeiten": "e.g. culture, interviews, news"
+"Bis zu zehn Schlagwörter, getrennt durch Komma oder Zeilenumbruch.": "Enter up to ten tags, separated by commas or line breaks."
+"Auf der Startseite hervorheben": "Feature on the home page"
+"Kommentare erlauben": "Allow comments"
+"Vorschaubild": "Thumbnail"
+"JPEG, PNG oder WebP bis 4 MiB. SVG-Dateien sind nicht zugelassen; die Bilddatei bleibt außerhalb des öffentlichen Webpfads.": "JPEG, PNG, or WebP up to 4 MiB. SVG files are not accepted; the image is stored outside the public web path."
+"Aktuelles Vorschaubild für %title%": "Current thumbnail for %title%"
+"Bilddatei": "Image file"
+"Vorschaubild hochladen": "Upload thumbnail"
+"Vorschaubild entfernen": "Remove thumbnail"
+"Video-CSV-Import": "Video CSV import"
+"Video-Metadaten importieren": "Import video metadata"
+"Die CSV wird nur im temporären Uploadbereich gelesen und nach dem Request verworfen. Externe URLs werden nicht abgerufen.": "The CSV is read only from temporary upload storage and discarded after the request. External URLs are not fetched."
+"Zurück zu Videos": "Back to videos"
+"Der Import wurde nicht gespeichert.": "The import was not saved."
+"CSV-Datei": "CSV file"
+"Maximal 2 MiB und 500 Zeilen. Alle importierten Videos werden als Entwürfe angelegt.": "Maximum 2 MiB and 500 rows. All imported videos are saved as drafts."
+"Erforderliche Kopfzeile:": "Required header row:"
+"Spaltenreihenfolge: Titel, Beschreibung, Quellart (url, stream, embed), HTTPS-Quell-URL, vorhandene Video-Kategorie oder leer, Schlagwörter mit Komma getrennt. Textfelder mit Kommas müssen CSV-gerecht in Anführungszeichen stehen.": "Column order: title, description, source type (url, stream, embed), HTTPS source URL, existing video category or empty, tags separated by commas. Text fields containing commas must be quoted according to CSV format."
+"CSV prüfen und Entwürfe importieren": "Validate CSV and import drafts"
+"Videoanbieter-Import": "Video provider import"
+"Die Anfrage enthält ungültige oder unbekannte Importfelder.": "The request contains invalid or unknown provider import fields."
+"Anbieter-Suche und Kanalimport": "Provider search and channel import"
+"Ein Abruf liefert höchstens 25 einbettbare Videos. Jeder Treffer wird als Entwurf gespeichert und muss vor der Veröffentlichung geprüft werden.": "Each request returns at most 25 embeddable videos. Every result is saved as a draft and must be reviewed before publication."
+"Der YouTube-Import ist deaktiviert. Auf dem Server muss der API-Schlüssel gesetzt sein. Der Schlüssel wird nicht im Formular oder Browser gespeichert.": "YouTube import is disabled. The API key must be configured on the server. It is not stored in the form or browser."
+"Der Vimeo-Import ist deaktiviert. Auf dem Server muss der Zugriffstoken gesetzt sein. Der Zugriffstoken wird nicht im Formular oder Browser gespeichert.": "Vimeo import is disabled. The access token must be configured on the server. It is not stored in the form or browser."
+"Videos bei einem Anbieter finden": "Find videos from a provider"
+"Arcanorum fragt ausschließlich die festen API-Adressen des ausgewählten Anbieters ab. Der Import lädt keine Video-, Bild- oder Kanal-URLs aus den Suchergebnissen.": "Arcanorum only requests fixed API endpoints for the selected provider. The import does not fetch video, image, or channel URLs from search results."
+"Videoanbieter": "Video provider"
+"nicht eingerichtet": "not configured"
+"Importart": "Import type"
+"Nach Suchbegriff": "By search term"
+"Nach Kanal-ID": "By channel ID"
+"YouTube-Kanal-ID": "YouTube channel ID"
+"Vimeo-Nutzer-ID": "Vimeo user ID"
+"Nur die YouTube-Kanal-ID im Format UC… wird akzeptiert.": "Only YouTube channel IDs in the UC… format are accepted."
+"Nur eine numerische Vimeo-Nutzer-ID wird akzeptiert; importiert werden die öffentlich einbettbaren Videos dieses Nutzerkanals.": "Only numeric Vimeo user IDs are accepted. Publicly embeddable videos from that user's channel are imported."
+"Videokategorie (optional)": "Video category (optional)"
+"Suchanfragen und Kanal-IDs werden nur an die feste API des ausgewählten Anbieters gesendet. Bestehende Videos und wiederholte Treffer werden übersprungen.": "Search terms and channel IDs are sent only to the selected provider's fixed API. Existing videos and duplicate results are skipped."
+"Treffer als Entwürfe importieren": "Import results as drafts"
+"Beiträge suchen, Entwürfe prüfen und Veröffentlichungen vorbereiten.": "Search posts, review drafts, and prepare publications."
+"Beiträge": "Posts"
+"%result_count% Treffer · Seite %page% von %page_count%": "%result_count% results · page %page% of %page_count%"
+"Alle Beiträge": "All posts"
+"%title% auswählen": "Select %title%"
+"Noch keine Beiträge. Verfasse den ersten News-Beitrag.": "There are no posts yet. Write the first news article."
+"News bearbeiten": "Edit news"
+"Verfassen": "Write"
+"Text wird als sicherer Klartext gespeichert und in der Vorschau escaped ausgegeben.": "Text is stored as plain text and escaped in the preview."
+"Beitragsdaten": "Post details"
+"Titel, Kategorie, Vorspann und Inhalt lassen sich später weiter ausbauen.": "The title, category, summary, and body can be edited here."
+"Vorspann": "Summary"
+"News speichern": "Save news"
+"News-Beitrag wurde gespeichert.": "The news article was saved."
+"Bitte wähle gültige Einträge aus.": "Choose valid items."
+"Die Auswahl enthält eine ungültige Kennung.": "The selection contains an invalid identifier."
+"Pro Sammelaktion können höchstens 50 Einträge bearbeitet werden.": "A bulk action can update at most 50 items."
+"Wähle mindestens einen Eintrag aus.": "Select at least one item."
+"Bitte wähle eine gültige Sammelaktion aus.": "Choose a valid bulk action."
+"Bestätige das Löschen der ausgewählten Inhalte.": "Confirm deletion of the selected content."
+"Mindestens ein ausgewählter Eintrag wurde nicht gefunden.": "At least one selected item could not be found."
+"%count% Einträge wurden %action%.": "%count% items were %action%."
+"als Entwurf gespeichert": "saved as drafts"
+"hervorgehoben": "featured"
+"nicht mehr hervorgehoben": "no longer featured"
+"gelöscht": "deleted"
+"Der Titel ist erforderlich und darf höchstens 180 Zeichen lang sein.": "A title is required and must be no more than 180 characters."
+"Die Kategorie darf höchstens 100 Zeichen lang sein.": "A category must be no more than 100 characters."
+"Bitte wähle eine vorhandene News-Kategorie.": "Choose an existing news category."
+"Der Vorspann darf höchstens 500 Zeichen lang sein.": "A summary must be no more than 500 characters."
+"Der Inhalt ist erforderlich und darf höchstens 100.000 Zeichen lang sein.": "A body is required and must be no more than 100,000 characters."
+"Bitte wähle einen gültigen Veröffentlichungsstatus.": "Choose a valid publication status."
+"Für diesen Titel gibt es bereits einen Beitrag.": "A post with this title already exists."
+"Schlagwörter verwalten": "Manage tags"
+"Gemeinsame News- und Video-Schlagwörter pflegen und ihre Verwendung prüfen.": "Manage shared news and video tags and review where they are used."
+"Neues Schlagwort": "New tag"
+"Schlagwortliste": "Tag list"
+"%tag_count% Schlagwörter": "%tag_count% tags"
+"Verwaltete Schlagwörter": "Managed tags"
+"Noch keine Schlagwörter angelegt. Sie werden auch beim Speichern eines Inhalts erstellt.": "No tags have been created yet. Tags are also created when you save content."
+"Schlagwort bearbeiten": "Edit tag"
+"Eine Umbenennung gilt sofort für alle zugeordneten News- und Videoinhalte.": "Renaming a tag immediately updates all associated news and videos."
+"Schlagwortdaten": "Tag details"
+"Namen sind unabhängig von Groß- und Kleinschreibung eindeutig.": "Tag names must be unique regardless of capitalization."
+"Schlagwort anlegen": "Create tag"
+"Der Schlagwortname ist erforderlich und darf höchstens 100 Zeichen lang sein.": "A tag name is required and must be no more than 100 characters."
+"Dieses Schlagwort ist bereits vorhanden.": "This tag already exists."
+"Schlagwort wurde angelegt.": "The tag was created."
+"Schlagwort wurde gespeichert.": "The tag was saved."
+"Schlagwort wurde nicht gefunden.": "The tag could not be found."
+"Das Schlagwort wird noch verwendet und kann nicht gelöscht werden.": "This tag is still in use and cannot be deleted."
+"Schlagwort wurde gelöscht.": "The tag was deleted."
+"Die Schlagwortliste darf höchstens 1.000 Zeichen lang sein.": "The tag list must be no more than 1,000 characters."
+"Die Schlagwortliste muss gültiges UTF-8 enthalten.": "The tag list must contain valid UTF-8 text."
+"Ein Schlagwort darf höchstens 100 Zeichen lang sein.": "A tag must be no more than 100 characters."
+"Pro Inhalt sind höchstens 10 Schlagwörter erlaubt.": "Each item can have at most 10 tags."
+"Serien anlegen und veröffentlichte Folgen verwalten.": "Create series and manage published episodes."
+"Serienliste": "Series list"
+"%count% Treffer in dieser Ansicht": "%count% results in this view"
+"Titel oder Beschreibung": "Title or description"
+"Serie": "Series"
+"Enthält Folgen": "Contains episodes"
+"Noch keine Serien vorhanden.": "There are no series yet."
+"Folgen verweisen auf vorhandene Videos und besitzen einen eigenen Sichtbarkeitsstatus.": "Episodes link to existing videos and have their own visibility status."
+"Seriendaten": "Series details"
+"Kommagetrennt oder je Genre eine Zeile; höchstens 12 Einträge mit jeweils 40 Zeichen. Neue Namen werden im Genrekatalog angelegt.": "Separate entries with commas or put each genre on a new line. Up to 12 entries of 40 characters each are allowed. New names are added to the genre catalogue."
+"Serienbild": "Series artwork"
+"Aktuelles Serienbild für %title%": "Current series artwork for %title%"
+"Serienbild hochladen": "Upload series artwork"
+"Serienbild entfernen": "Remove series artwork"
+"Lege Genres unabhängig von Serien an, oder verwalte bestehende Zuordnungen für alle Serien.": "Create genres independently of series or manage existing assignments across all series."
+"Neues Genre": "New genre"
+"Genre anlegen": "Create genre"
+"Noch keine Seriengenres vorhanden.": "There are no series genres yet."
+"Genres im Katalog: %count%": "Genres in the catalogue: %count%"
+"Neuer Name für %name%": "New name for %name%"
+"Entfernen bestätigen": "Confirm removal"
+"Genreseiten": "Genre pages"
+"Videos zu Staffeln und Folgen zuordnen. Öffentlich erscheinen nur veröffentlichte Folgen zu veröffentlichten Serien und Videos.": "Assign videos to seasons and episodes. Only published episodes of published series and videos appear publicly."
+"Folgenliste": "Episode list"
+"Serie oder Videotitel": "Series or video title"
+"Staffel / Folge": "Season / episode"
+"Video: %status%": "Video: %status%"
+"Zuordnung entfernen": "Remove assignment"
+"Noch keine Folgen zugeordnet.": "No episodes have been assigned yet."
+"Eine Folge verweist auf ein Video und kann eigene Metadaten sowie einen Sichtbarkeitsstatus erhalten.": "An episode links to a video and can have its own metadata and visibility status."
+"Folgendaten": "Episode details"
+"Bis zu 1.000 Videos werden zur Auswahl geladen.": "Up to 1,000 videos are loaded for selection."
+"Staffel": "Season"
+"Folgentitel (optional)": "Episode title (optional)"
+"Leer lassen, um den Videotitel zu verwenden.": "Leave blank to use the video title."
+"Folgenbeschreibung (optional)": "Episode description (optional)"
+"Leer lassen, um die Videobeschreibung zu verwenden.": "Leave blank to use the video description."
+"Sichtbarkeit der Folge": "Episode visibility"
+"Serie wurde nicht gefunden.": "The series could not be found."
+"Der Serientitel ist erforderlich und darf höchstens 180 Zeichen lang sein.": "A series title is required and must be no more than 180 characters."
+"Der URL-Name darf nur Kleinbuchstaben, Zahlen und Bindestriche enthalten.": "The URL slug may contain only lowercase letters, numbers, and hyphens."
+"Die Serienbeschreibung darf höchstens 50.000 Zeichen lang sein.": "The series description must be no more than 50,000 characters."
+"Für diesen URL-Namen gibt es bereits eine Serie.": "A series already uses this URL slug."
+"Ein Genre oder der URL-Name wurde inzwischen bereits vergeben. Bitte lade das Formular neu.": "A genre or URL slug has just been claimed. Please reload the form."
+"Serie wurde gespeichert.": "The series was saved."
+"Die Serie enthält noch Folgen und kann nicht gelöscht werden.": "This series still contains episodes and cannot be deleted."
+"Die Serie wurde gelöscht, aber die private Bilddatei konnte nicht bereinigt werden.": "The series was deleted, but its private artwork file could not be cleaned up."
+"Serie wurde gelöscht.": "The series was deleted."
+"Folge wurde nicht gefunden.": "The episode could not be found."
+"Bitte wähle eine vorhandene Serie.": "Select an existing series."
+"Bitte wähle ein vorhandenes Video.": "Select an existing video."
+"Die Staffelnummer muss zwischen 1 und 999 liegen.": "The season number must be between 1 and 999."
+"Die Folgenummer muss zwischen 1 und 999 liegen.": "The episode number must be between 1 and 999."
+"Der Folgen-Titel darf höchstens 180 Zeichen lang sein.": "The episode title must be no more than 180 characters."
+"Die Folgen-Beschreibung darf höchstens 20.000 Zeichen lang sein.": "The episode description must be no more than 20,000 characters."
+"Folgen-Metadaten dürfen keine unzulässigen Steuerzeichen enthalten.": "Episode metadata must not contain prohibited control characters."
+"Diese Staffel- und Folgenummer ist bereits belegt.": "This season and episode number are already in use."
+"Dieses Video ist bereits einer Folge zugeordnet.": "This video is already assigned to an episode."
+"Folge wurde gespeichert.": "The episode was saved."
+"Folgenzuordnung wurde entfernt.": "The episode assignment was removed."
+"Das Genre ist bereits vorhanden.": "This genre already exists."
+"Das Genre wurde nicht gefunden.": "The genre could not be found."
+"Das neue Genre ist bereits vorhanden.": "The new genre name already exists."
+"Bitte genau einen gültigen Genrenamen angeben.": "Provide exactly one valid genre name."
+"Das Genre wurde inzwischen bereits angelegt.": "This genre has just been created."
+"Das neue Genre wurde inzwischen bereits vergeben.": "The new genre name has just been claimed."
+"Seriengenre wurde angelegt.": "The series genre was created."
+"Genre umbenannt; %count% Serien verwenden es.": "The genre was renamed and is used by %count% series."
+"Bestätige das Entfernen des Genres aus allen Serien.": "Confirm removing this genre from all series."
+"Genre aus %count% Serien entfernt.": "The genre was removed from %count% series."
+"Beim Entfernen darf keine Datei mitgesendet werden.": "Do not attach a file when removing artwork."
+"Für diese Serie ist kein Bild gespeichert.": "This series has no saved artwork."
+"Das Serienbild wurde entfernt, die private Datei konnte aber nicht bereinigt werden.": "The series artwork was removed, but its private file could not be cleaned up."
+"Bitte wähle eine gültige Serienbildaktion aus.": "Choose a valid series artwork action."
+"Bitte wähle eine gültige Bilddatei aus.": "Choose a valid image file."
+"Der sichere private Dateispeicher ist derzeit nicht verfügbar; der Upload wurde gesperrt.": "Secure private file storage is currently unavailable, so the upload was blocked."
+"Ein neuer privater Upload konnte nach dem Speicherfehler nicht bereinigt werden.": "A new private upload could not be cleaned up after the storage error."
+"Das frühere private Serienbild konnte nicht bereinigt werden.": "The previous private series artwork could not be cleaned up."
+"Serienbild wurde gespeichert.": "The series artwork was saved."
+"Die Genre-Liste muss gültiges UTF-8 enthalten.": "The genre list must contain valid UTF-8 text."
+"Die Genre-Liste darf höchstens 600 Zeichen lang sein.": "The genre list must be no more than 600 characters."
+"Die Genre-Liste enthält unzulässige Steuerzeichen.": "The genre list contains prohibited control characters."
+"Ein Genre darf höchstens 40 Zeichen lang sein.": "A genre name must be no more than 40 characters."
+"Pro Serie sind höchstens 12 Genres erlaubt.": "A series can have at most 12 genres."
+"Alle Serien": "All series"
+"Neue Serie": "New series"
+"URL-Name": "URL slug"
+"Folge": "Episode"
+"Folge zuordnen": "Assign episode"
+"Serienfolgen": "Series episodes"
+"Umbenennen": "Rename"
+"Serie bearbeiten": "Edit series"
+"Serie anlegen": "Create series"
+"Folge bearbeiten": "Edit episode"
+"Zuordnen": "Assign"
+"Serienbild wurde entfernt.": "The series artwork was removed."
+"Das Serienbild konnte nicht sicher gelesen werden.": "The series artwork could not be read safely."
+"Serienbilder müssen zwischen 1 Byte und 4 MiB groß sein.": "Series artwork must be between 1 byte and 4 MiB."
+"Das Serienbild ist leer, zu groß oder wurde während der Prüfung verändert.": "The series artwork is empty, too large, or changed while it was being checked."
+"Erlaubt sind ausschließlich JPEG-, PNG- und WebP-Bilder.": "Only JPEG, PNG, and WebP images are allowed."
+"Das Bildformat oder die Bildabmessungen sind ungültig.": "The image format or dimensions are invalid."
+"Die Kennung des privaten Serienbilds ist ungültig.": "The private series artwork identifier is invalid."
+
+# Administration hosting, PHP runtime, and activity labels.
+"Ausgewählte Laufzeitwerte und aktuelle Systemhinweise. Geheimnisse, Umgebungsvariablen und Konfigurationspfade werden nicht angezeigt.": "Selected runtime values and current system notices. Secrets, environment variables, and configuration paths are not displayed."
+"Die Prüfung der Fähigkeiten ersetzt keine unabhängige Sicherheitsattestierung.": "Capability checks do not replace independent security attestation."
+"Hosting-Fähigkeiten": "Hosting capabilities"
+"Fähigkeit": "Capability"
+"PHP-Konfiguration": "PHP configuration"
+"PHP-Version": "PHP version"
+"Laufzeit": "Runtime"
+"Begrenzte PHP-Laufzeitwerte": "Selected PHP runtime limits"
+"Grenze": "Limit"
+"Wert": "Value"
+"PHP-Einstellungen": "PHP settings"
+"Ausgewählte PHP-Sicherheits- und Laufzeiteinstellungen": "Selected PHP security and runtime settings"
+"Einstellung": "Setting"
+"PHP-Erweiterungen": "PHP extensions"
+"Verfügbarkeit erforderlicher und optionaler PHP-Erweiterungen": "Availability of required and optional PHP extensions"
+"Erweiterung": "Extension"
+"Verfügbar": "Available"
+"Deaktiviert": "Disabled"
+"Separater Fehlerkanal": "Separate error channel"
+"Maximale Uploadgröße": "Maximum upload size"
+"Maximale POST-Größe": "Maximum POST size"
+"Speichergrenze": "Memory limit"
+"Zeitlimit pro Anfrage": "Maximum execution time"
+"Zeitlimit für Eingaben": "Maximum input time"
+"Maximale Eingabefelder": "Maximum input variables"
+"Maximale Dateiübertragungen": "Maximum file uploads"
+"Socket-Zeitlimit": "Socket timeout"
+"Fehlerausgabe": "Error display"
+"Fehlerprotokollierung": "Error logging"
+"PHP-Version im HTTP-Header": "PHP version in HTTP header"
+"URL-Includes": "URL includes"
+"URL-Dateizugriff": "URL file access"
+"OPcache": "OPcache"
+"Assertionsmodus": "Assertions mode"
+"Ctype": "Ctype"
+"Iconv": "Iconv"
+"Internationalisierung": "Internationalization"
+"Multibyte-Zeichen": "Multibyte strings"
+"PostgreSQL PDO": "PostgreSQL PDO"
+"Dateitypprüfung": "File type detection"
+"PHP-Laufzeit": "PHP runtime"
+"PHP-Erweiterung ctype": "PHP extension ctype"
+"PHP-Erweiterung iconv": "PHP extension iconv"
+"PHP-Erweiterung intl": "PHP extension intl"
+"PHP-Erweiterung json": "PHP extension json"
+"PHP-Erweiterung mbstring": "PHP extension mbstring"
+"PDO": "PDO"
+"PDO PostgreSQL": "PDO PostgreSQL"
+"PHP-Erweiterung sodium": "PHP extension sodium"
+"PHP-Erweiterung zip": "PHP extension zip"
+"Redis 8": "Redis 8"
+"Privater Dateispeicher": "Private file storage"
+"Getrennte Datenbankrollen": "Separate database roles"
+"Private Redis-Anbindung": "Private Redis endpoint"
+"Hintergrundprozess": "Background worker"
+"Prozessisolation": "Process isolation"
+"Ausgehende Netzwerkregeln": "Outbound network policy"
+"Geheimnisspeicher": "Secret store"
+"Geprüfte Sicherungswiederherstellung": "Verified backup restore"
+"%capability%: %status%.": "%capability%: %status%."
+"Für diese Fähigkeit liegt noch kein prüfbarer Nachweis vor.": "No verifiable evidence is available for this capability yet."
+"Mehrere Prüfer meldeten dieselbe Fähigkeit; der Nachweis ist mehrdeutig.": "Multiple probes reported the same capability, so the evidence is ambiguous."
+"Die PostgreSQL-Verbindung oder Versionsprüfung ist nicht verfügbar.": "The PostgreSQL connection or version check is unavailable."
+"Die PostgreSQL-Serverversion konnte nicht zuverlässig gelesen werden.": "The PostgreSQL server version could not be read reliably."
+"Die aktive PostgreSQL-Verbindung meldet die geforderte Hauptversion 18.": "The active PostgreSQL connection reports the required major version 18."
+"Die aktive PostgreSQL-Verbindung erfüllt die Projektvorgabe PostgreSQL 18 nicht.": "The active PostgreSQL connection does not meet the PostgreSQL 18 project requirement."
+"Der Redis-Dienst oder seine Versionsabfrage ist nicht verfügbar.": "The Redis service or its version query is unavailable."
+"Der Redis-Dienst erfüllt die Projektvorgabe Redis 8 nicht.": "The Redis service does not meet the Redis 8 project requirement."
+"Der Redis-Endpunkt verwendet keine private oder lokale IP-Adresse.": "The Redis endpoint does not use a private or local IP address."
+"Für diese Redis-DSN ist kein DNS-unabhängiger Nachweis einer privaten Zieladresse verfügbar.": "No DNS-independent evidence of a private destination address is available for this Redis DSN."
+"Die erfolgreiche Redis-Abfrage nutzte eine private IP-Adresse oder den lokalen Loopback-Endpunkt.": "The successful Redis query used a private IP address or the local loopback endpoint."
+"Die konfigurierte private Redis-Zieladresse konnte nicht erfolgreich abgefragt werden.": "The configured private Redis destination could not be queried successfully."
+"Der öffentliche Webpfad konnte nicht geprüft werden.": "The public web path could not be checked."
+"Der Speicherpfad liegt innerhalb des öffentlichen Webpfads oder ist nicht absolut.": "The storage path is inside the public web path or is not absolute."
+"Ein vorhandener Pfadbestandteil führt in den öffentlichen Webpfad.": "An existing path component resolves into the public web path."
+"Der Speicherpfad liegt innerhalb des öffentlichen Webpfads.": "The storage path is inside the public web path."
+"Der private Speicher darf kein symbolischer Link sein.": "Private storage must not be a symbolic link."
+"Der private Speicher kann nicht sicher angelegt werden.": "Private storage could not be created safely."
+"Der private Speicherpfad konnte nicht aufgelöst werden.": "The private storage path could not be resolved."
+"Die Dateirechte des privaten Speichers konnten nicht geprüft werden.": "Private storage permissions could not be checked."
+"Der private Speicher oder sein Elternverzeichnis ist für andere Nutzer zu weit freigegeben.": "Private storage or its parent directory grants excessive access to other users."
+"Der private Speicher ist nicht beschreibbar.": "Private storage is not writable."
+"Der Schreibtest im privaten Speicher war nicht erfolgreich.": "The private storage write test did not succeed."
+"Der private Speicher liegt außerhalb des Webpfads, ist auf den Dienstnutzer begrenzt und wurde erfolgreich geprüft.": "Private storage is outside the web path, restricted to the service user, and passed its checks."
+"PHP-URL-Includes sind aktiviert und sollten deaktiviert werden.": "PHP URL includes are enabled and should be disabled."
+"PHP-Fehlerausgabe ist in der Produktionsumgebung aktiviert.": "PHP error display is enabled in the production environment."
+"Aktivität": "Activity"
+"Datenbanksicherung erstellt": "Database backup created"
+"Datenbanksicherung geprüft": "Database backup verified"
+"Datenbanksicherung heruntergeladen": "Database backup downloaded"
+"Datenbanksicherung gelöscht": "Database backup deleted"
+"Mitgliedskonto angelegt": "Member account created"
+"Aktivitätsverlauf geleert": "Activity history cleared"
+"Passwort-Reset ausgestellt": "Password reset issued"
+"Einrichtungscode ausgestellt": "Setup code issued"
+"Kontostatus geändert": "Account status changed"
+"Eintrag gelöscht": "Entry deleted"
+"Eintrag moderiert": "Entry moderated"
+"Einreichung freigegeben": "Submission approved"
+"Inhalte importiert": "Content imported"
+"Website-Einstellungen geändert": "Website settings changed"
+"Video- und Inhaltseinstellungen geändert": "Video and content settings changed"
+"Verwaltungsrolle geändert": "Administration role changed"
+"Theme und Layout geändert": "Theme and layout changed"
+"Inhalt angelegt": "Content created"
+"Inhalt bearbeitet": "Content edited"
+"Verwaltungseintrag geändert": "Administration entry changed"
+
+# Static page administration.
+'Inhalte wie Kontakt- und Informationsseiten bearbeiten und veröffentlichen.': 'Edit and publish contact and information pages.'
+'Titel oder Adresse': 'Title or address'
+'Alle Seiten': 'All pages'
+'Adresse': 'Address'
+'Noch keine Seiten vorhanden.': 'There are no pages yet.'
+'Der Seiteninhalt wird als Klartext gespeichert und sicher ausgegeben.': 'Page content is stored as plain text and safely rendered.'
+'Seitendaten': 'Page details'
+'Die Adresse wird aus dem Titel gebildet und bleibt im Entwurf verborgen.': 'The address is generated from the title and remains hidden while the page is a draft.'
+'Seite bearbeiten': 'Edit page'
+'Seite speichern': 'Save page'
+'Seite wurde gespeichert.': 'The page was saved.'
+'Die Kurzbeschreibung darf höchstens 500 Zeichen lang sein.': 'The summary must be no longer than 500 characters.'
+'Der Seiteninhalt ist erforderlich und darf höchstens 100.000 Zeichen lang sein.': 'Page content is required and must be no longer than 100,000 characters.'
+'Für diesen Titel gibt es bereits eine Seite.': 'A page with this title already exists.'
+'Kurzbeschreibung': 'Summary'
+
+# Member account administration.
+'Nutzerkonten': 'Member accounts'
+'Mitgliederprofil bearbeiten': 'Edit member profile'
+'Profil bearbeiten': 'Edit profile'
+'Mitgliedskonten suchen, Profile bearbeiten und ihren Kontostatus verwalten.': 'Search member accounts, edit profiles, and manage account status.'
+'Mitglied anlegen': 'Create member'
+'CSV exportieren': 'Export CSV'
+'E-Mail, Kanalname oder Anzeigename': 'Email, channel name, or display name'
+'Kontostatus': 'Account status'
+'Alle Konten': 'All accounts'
+'Aktive Konten': 'Active accounts'
+'Profil': 'Profile'
+'Registriert': 'Registered'
+'Aktiv': 'Active'
+'Konto bearbeiten': 'Edit account'
+'Keine Nutzerkonten gefunden.': 'No member accounts found.'
+'Das Konto bleibt gesperrt, bis das Mitglied mit seinem einmaligen Einrichtungscode ein Passwort festlegt.': 'The account stays suspended until the member sets a password using the one-time setup code.'
+'Kontodaten': 'Account details'
+'Einmaliger Passwort-Reset-Code': 'One-time password reset code'
+'Einmaliger Einrichtungscode': 'One-time setup code'
+'Einmaliger Passwort-Reset-Code — nur jetzt sichtbar': 'One-time password reset code — visible only now'
+'Das Konto bleibt gesperrt, bis das Mitglied hier ein neues Passwort festlegt. Der Code läuft nach 48 Stunden ab. Es wird keine E-Mail versendet.': 'The account stays suspended until the member sets a new password here. The code expires after 48 hours. No email is sent.'
+'Einrichtungscode — nur jetzt sichtbar': 'Setup code — visible only now'
+'Teile diesen Code ausschließlich über einen sicheren, vertrauenswürdigen Kanal. Er läuft nach 48 Stunden ab; automatischer E-Mail-Versand ist nicht eingerichtet.': 'Share this code only through a secure, trusted channel. It expires after 48 hours; automatic email delivery is not configured.'
+'Das Mitglied öffnet': 'The member opens'
+'die Kontoeinrichtung': 'account setup'
+'und gibt den Code dort ein.': 'and enters the code there.'
+'Kontoeinrichtung': 'Account setup'
+'Aktive Konten benötigen keinen Einrichtungscode.': 'Active accounts do not need a setup code.'
+'Der aktuelle Code läuft am': 'The current code expires at'
+'ab. Ein neuer Code macht den bisherigen ungültig.': '; a new code invalidates the previous code.'
+'Das Konto ist inaktiv und hat noch keinen Einrichtungscode.': 'This account is inactive and does not have a setup code yet.'
+'Neuen Einrichtungscode ausstellen': 'Issue a new setup code'
+'Einrichtungscode ausstellen': 'Issue setup code'
+'Aktiv. Eine Sperre beendet auch bestehende Anmeldesitzungen.': 'Active. Suspending the account also ends existing sign-in sessions.'
+'Gesperrt. Das Mitglied kann sich erst nach der Aktivierung wieder anmelden.': 'Blocked. The member cannot sign in again until the account is reactivated.'
+'Konto sperren': 'Suspend account'
+'Konto aktivieren': 'Activate account'
+'Der Reset sperrt das Konto und beendet bestehende Sitzungen sofort. Der einmalige Code wird ohne E-Mail-Versand angezeigt und muss über einen vertrauenswürdigen Kanal weitergegeben werden.': 'The reset suspends the account and immediately ends existing sessions. The one-time code is shown without email delivery and must be shared through a trusted channel.'
+'Passwort-Reset-Code ausstellen': 'Issue password reset code'
+'Der Reset ist nur für aktive Konten verfügbar. Aktiviere dieses Konto erst, wenn kein Einrichtungscode mehr offen ist.': 'Password resets are available only for active accounts. Activate this account only when no setup code is pending.'
+'Anmeldung und Kanal': 'Sign-in and channel'
+'Die E-Mail-Adresse ist die Anmeldekennung. Kanalnamen müssen eindeutig sein.': 'The email address is the sign-in identifier. Channel names must be unique.'
+'Bitte prüfe E-Mail-Adresse und Kanalname.': 'Check the email address and channel name.'
+'Anmeldung und Kanal speichern': 'Save sign-in and channel'
+'Profildaten': 'Profile details'
+'Öffentliche Profildaten und Profilsichtbarkeit.': 'Public profile details and profile visibility.'
+'Profilbeschreibung': 'Profile description'
+'Öffentliches Profil': 'Public profile'
+'Die Eingabe muss gültiges UTF-8 enthalten.': 'The input must contain valid UTF-8.'
+'Diese E-Mail-Adresse oder dieser Kanalname ist bereits vergeben.': 'This email address or channel name is already in use.'
+'Mitgliedskonto angelegt. Der Einrichtungscode wird auf der nächsten Seite einmalig angezeigt.': 'Member account created. The setup code will be shown once on the next page.'
+'Der Anzeigename oder die Profilbeschreibung ist zu lang.': 'The display name or profile description is too long.'
+'Die Profilsichtbarkeit ist ungültig.': 'The profile visibility value is invalid.'
+'Mitgliederprofil gespeichert.': 'Member profile saved.'
+'Nur für inaktive Konten kann ein Einrichtungscode ausgestellt werden.': 'A setup code can be issued only for inactive accounts.'
+'Ein neuer Einrichtungscode wurde ausgestellt; der vorherige Code ist ungültig.': 'A new setup code was issued; the previous code is no longer valid.'
+'Ein Passwort-Reset kann nur für aktive Konten gestartet werden.': 'A password reset can be started only for active accounts.'
+'Das Mitgliedskonto wurde bis zur Passwortneufestlegung gesperrt. Der Reset-Code wird nur einmal angezeigt.': 'The member account is suspended until a new password is set. The reset code is shown only once.'
+'Die E-Mail-Adresse oder der Kanalname ist zu lang.': 'The email address or channel name is too long.'
+'E-Mail-Adresse und Kanalname gespeichert. Eine Bestätigungsnachricht wurde an die neue E-Mail-Adresse gesendet.': 'Email address and channel name saved. A verification message was sent to the new email address.'
+'E-Mail-Adresse und Kanalname gespeichert. Das Mitglied kann die Bestätigungsnachricht über die Anmeldeseite erneut anfordern.': 'Email address and channel name saved. The member can request the verification message again from the sign-in page.'
+'E-Mail-Adresse und Kanalname gespeichert.': 'Email address and channel name saved.'
+'E-Mail-Adresse oder Kanalname ist bereits vergeben.': 'The email address or channel name is already in use.'
+'Ungültiger Kontostatus.': 'Invalid account status.'
+'Mitgliedskonto aktiviert.': 'Member account activated.'
+'Mitgliedskonto gesperrt.': 'Member account suspended.'
+'Das Mitgliedskonto enthält ungültige Angaben.': 'The member account contains invalid values.'
+'Das Profil enthält ungültige Angaben.': 'The profile contains invalid values.'
+'E-Mail-Adresse oder Kanalname enthält ungültige Angaben.': 'The email address or channel name contains invalid values.'
+'Der Einrichtungscode ist ungültig.': 'The setup code is invalid.'
+'Profilsichtbarkeit': 'Profile visibility'
+'Suchstatistik': 'Search statistics'
+'Suchbegriffe werden je Tag zusammengefasst und nach 30 Tagen entfernt. Nutzerkonten und Netzwerkadressen werden nicht gespeichert.': 'Search terms are grouped by day and removed after 30 days. User accounts and network addresses are not stored.'
+'Suchbegriff filtern': 'Filter search terms'
+'Suchstatistik leeren': 'Clear search statistics'
+'Keine Suchbegriffe gefunden.': 'No search terms were found.'
+'Tag (UTC)': 'Day (UTC)'
+'Zuletzt (UTC)': 'Last activity (UTC)'
+'Statistikzeitraum': 'Statistics period'
+'Neu erstellte Videos, News, Kommentare und Mitgliedskonten nach UTC-Tag. Es werden keine personenbezogenen Einzelereignisse ausgegeben.': 'New videos, news posts, comments, and member accounts by UTC day. No personally identifiable individual events are displayed.'
+'7 Tage': '7 days'
+'30 Tage': '30 days'
+'90 Tage': '90 days'
+'Im Zeitraum: %videos% Videos, %news% News, %comments% Kommentare und %members% Mitgliedskonten.': 'During this period: %videos% videos, %news% news posts, %comments% comments, and %members% member accounts.'
+'Ihre Auswahl': 'Your selection'
+'Entdecken': 'Explore'
+'Suchergebnisseiten': 'Search result pages'
+'Information': 'Information'
+'Suchbegriffe': 'Search terms'
+'System prüfen': 'Check system'
+'Filterwort hinzufügen': 'Add filter term'
+'Wortfilter hinzufügen': 'Add filter word'
+'Freigeben': 'Approve'
+'Webseite': 'Website'

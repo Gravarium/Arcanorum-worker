@@ -9,7 +9,6 @@
     cacheDirectory="var/cache/psalm">
     <projectFiles>
         <directory name="src"/>
-        <directory name="public"/>
         <directory name="tests"/>
         <ignoreFiles>
             <directory name="vendor"/>

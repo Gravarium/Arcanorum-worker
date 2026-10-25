@@ -1,0 +1,167 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Videos verwalten'|trans }}{% endblock %}
+{% block admin_breadcrumb %}{{ 'Videos'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Videokatalog'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ 'Videos'|trans }}</h1>
+            <p class="muted">{{ 'Videoquellen erfassen, Metadaten pflegen und den Veröffentlichungsstatus setzen.'|trans }}</p>
+        </div>
+        <a class="button button-secondary" href="{{ path('admin_video_provider_import') }}">{{ 'Anbieter-Import'|trans }}</a>
+        <a class="button button-secondary" href="{{ path('admin_video_import') }}">{{ 'CSV-Import'|trans }}</a>
+        <a class="button" href="{{ path('admin_video_new') }}">{{ 'Video hinzufügen'|trans }}</a>
+    </div>
+
+    <section class="admin-panel" aria-labelledby="video-list-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="video-list-heading">{{ 'Videokatalog'|trans }}</h2>
+                <p class="muted">{{ '%total% Treffer · Seite %page% von %page_count%'|trans({'%total%': total, '%page%': page, '%page_count%': page_count}) }}</p>
+            </div>
+        </header>
+
+        <form class="admin-filter-form" method="get" action="{{ path('admin_video_index') }}">
+            <label>
+                <span>{{ 'Suchen'|trans }}</span>
+                <input type="search" name="q" value="{{ search }}" maxlength="180" placeholder="{{ 'Titel oder Kategorie'|trans }}">
+            </label>
+            <label>
+                <span>{{ 'Status'|trans }}</span>
+                <select name="status">
+                    <option value="">{{ 'Alle Videos'|trans }}</option>
+                    <option value="draft" {{ status == 'draft' ? 'selected' : '' }}>{{ 'Entwürfe'|trans }}</option>
+                    <option value="published" {{ status == 'published' ? 'selected' : '' }}>{{ 'Veröffentlicht'|trans }}</option>
+                </select>
+            </label>
+            <label>
+                <span>{{ 'Quellentyp'|trans }}</span>
+                <select name="source_type">
+                    <option value="">{{ 'Alle Quellentypen'|trans }}</option>
+                    {% for source_option in source_types %}
+                        <option value="{{ source_option.value }}"{% if source_type == source_option.value %} selected{% endif %}>{{ source_option.label|trans }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                <span>{{ 'Kategorie'|trans }}</span>
+                <select name="category">
+                    <option value="">{{ 'Alle Kategorien'|trans }}</option>
+                    {% for option in categories %}
+                        <option value="{{ option.name }}"{% if category == option.name %} selected{% endif %}>{{ option.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                <span>{{ 'Schlagwort'|trans }}</span>
+                <select name="tag">
+                    <option value="">{{ 'Alle Schlagwörter'|trans }}</option>
+                    {% for option in tags %}
+                        <option value="{{ option.name }}"{% if tag == option.name %} selected{% endif %}>{{ option.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                <span>{{ 'Sortierung'|trans }}</span>
+                <select name="sort">
+                    <option value="created" {{ sort == 'created' ? 'selected' : '' }}>{{ 'Änderungsdatum'|trans }}</option>
+                    <option value="title" {{ sort == 'title' ? 'selected' : '' }}>{{ 'Titel'|trans }}</option>
+                    <option value="status" {{ sort == 'status' ? 'selected' : '' }}>{{ 'Status'|trans }}</option>
+                    <option value="views" {{ sort == 'views' ? 'selected' : '' }}>{{ 'Aufrufe'|trans }}</option>
+                </select>
+            </label>
+            <label>
+                <span>{{ 'Reihenfolge'|trans }}</span>
+                <select name="direction">
+                    <option value="desc" {{ direction == 'desc' ? 'selected' : '' }}>{{ 'Absteigend'|trans }}</option>
+                    <option value="asc" {{ direction == 'asc' ? 'selected' : '' }}>{{ 'Aufsteigend'|trans }}</option>
+                </select>
+            </label>
+            <button class="button button-secondary" type="submit">{{ 'Filtern'|trans }}</button>
+        </form>
+
+        <form class="admin-bulk-form" method="post" action="{{ path('admin_video_bulk') }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('admin_video_bulk') }}">
+            <div class="admin-filter-form">
+                <label>
+                    <span>{{ 'Auswahlaktion'|trans }}</span>
+                    <select name="action" required>
+                        <option value="">{{ 'Bitte wählen'|trans }}</option>
+                        <option value="publish">{{ 'Veröffentlichen'|trans }}</option>
+                        <option value="draft">{{ 'Als Entwurf speichern'|trans }}</option>
+                        <option value="feature">{{ 'Hervorheben'|trans }}</option>
+                        <option value="unfeature">{{ 'Hervorhebung entfernen'|trans }}</option>
+                        <option value="move">{{ 'In Kategorie verschieben'|trans }}</option>
+                        <option value="delete">{{ 'Ausgewählte löschen'|trans }}</option>
+                    </select>
+                </label>
+                <label>
+                    <span>{{ 'Zielkategorie (nur beim Verschieben)'|trans }}</span>
+                    <select name="category_id">
+                        <option value="">{{ 'Ohne Kategorie'|trans }}</option>
+                        {% for option in categories %}
+                            <option value="{{ option.id }}">{{ option.name }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label class="form-check-label">
+                    <span>{{ 'Löschen bestätigen'|trans }}</span>
+                    <span><input type="checkbox" name="confirm_delete" value="1"> {{ 'Ich bestätige das Löschen'|trans }}</span>
+                </label>
+                <button class="button button-secondary" type="submit">{{ 'Auf Auswahl anwenden'|trans }}</button>
+            </div>
+            <p class="muted">{{ 'Wähle bis zu 50 Einträge aus. Löschen entfernt auch ihre Kommentare.'|trans }}</p>
+
+        <div class="table-wrap">
+            <table class="admin-table">
+                <caption class="visually-hidden">{{ 'Videokatalog'|trans }}</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">{{ 'Auswahl'|trans }}</th>
+                        <th scope="col">{{ 'Titel'|trans }}</th>
+                        <th scope="col">{{ 'Quelle'|trans }}</th>
+                        <th scope="col">{{ 'Kategorie'|trans }}</th>
+                        <th scope="col">{{ 'Schlagwörter'|trans }}</th>
+                        <th scope="col">{{ 'Status'|trans }}</th>
+                        <th scope="col">{{ 'Aufrufe'|trans }}</th>
+                        <th scope="col">{{ 'Zuletzt geändert'|trans }}</th>
+                        <th scope="col"><span class="visually-hidden">{{ 'Aktion'|trans }}</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for video in videos %}
+                        <tr>
+                            <td><input type="checkbox" name="ids[]" value="{{ video.id }}" aria-label="{{ 'Video auswählen: %title%'|trans({'%title%': video.title}) }}"></td>
+                            <th scope="row">{{ video.title }}</th>
+                            <td>{{ video.sourceType.label|trans }} · {{ video.sourceHost }}</td>
+                            <td>{{ video.category ?? '—' }}</td>
+                            <td>{% for content_tag in video.tags %}{{ content_tag.name }}{% if not loop.last %}, {% endif %}{% else %}—{% endfor %}</td>
+                            <td><span class="status-pill {{ video.status.cssClass }}">{{ video.status.label|trans }}</span></td>
+                            <td>{{ video.viewCount }}</td>
+                            <td>{{ video.updatedAt|date('d.m.Y H:i') }}</td>
+                            <td><a class="button button-secondary" href="{{ path('admin_video_edit', {id: video.id}) }}">{{ 'Bearbeiten'|trans }}</a></td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="9">{{ 'Noch keine Videos. Füge die erste Videoquelle hinzu.'|trans }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if page_count > 1 %}
+            <nav class="pagination" aria-label="{{ 'Verwaltungsseiten'|trans }}">
+                {% if page > 1 %}
+                    <a href="{{ path('admin_video_index', {q: search, status: status, source_type: source_type, category: category, tag: tag, sort: sort, direction: direction, page: page - 1}) }}">{{ 'Vorherige Seite'|trans }}</a>
+                {% endif %}
+                <span>{{ 'Seite %page% von %page_count%'|trans({'%page%': page, '%page_count%': page_count}) }}</span>
+                {% if page < page_count %}
+                    <a href="{{ path('admin_video_index', {q: search, status: status, source_type: source_type, category: category, tag: tag, sort: sort, direction: direction, page: page + 1}) }}">{{ 'Nächste Seite'|trans }}</a>
+                {% endif %}
+            </nav>
+        {% endif %}
+        </form>
+    </section>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Hosting und System'|trans }}{% endblock %}
+{% block admin_breadcrumb %}{{ 'Hosting und System'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Verwaltung'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ 'Hosting und System'|trans }}</h1>
+            <p class="muted">{{ 'Ausgewählte Laufzeitwerte und aktuelle Systemhinweise. Geheimnisse, Umgebungsvariablen und Konfigurationspfade werden nicht angezeigt.'|trans }}</p>
+        </div>
+    </div>
+
+    <section class="admin-panel" aria-labelledby="system-notices-heading">
+        <header class="panel-heading"><h2 id="system-notices-heading">{{ 'Systemhinweise'|trans }}</h2></header>
+        {% if notices is empty %}
+            <p>{{ 'Für die angezeigten Systemprüfungen liegen derzeit keine offenen Hinweise vor.'|trans }}</p>
+        {% else %}
+            <ul>
+                {% for notice in notices %}<li>{{ notice|trans }}</li>{% endfor %}
+            </ul>
+        {% endif %}
+        <p>{{ 'Die Prüfung der Fähigkeiten ersetzt keine unabhängige Sicherheitsattestierung.'|trans }}</p>
+    </section>
+
+    <section class="admin-panel" aria-labelledby="system-capabilities-heading">
+        <header class="panel-heading"><h2 id="system-capabilities-heading">{{ 'Hosting-Fähigkeiten'|trans }}</h2></header>
+        <div class="table-wrap"><table class="admin-table">
+            <thead><tr><th scope="col">{{ 'Fähigkeit'|trans }}</th><th scope="col">{{ 'Status'|trans }}</th></tr></thead>
+            <tbody>
+                {% for check in checks %}
+                    <tr><th scope="row">{{ check.label }}</th><td><span class="status-pill {{ check.status_class }}">{{ check.status }}</span></td></tr>
+                {% endfor %}
+            </tbody>
+        </table></div>
+    </section>
+
+    <section class="admin-panel" aria-labelledby="system-php-heading">
+        <header class="panel-heading"><h2 id="system-php-heading">{{ 'PHP-Konfiguration'|trans }}</h2></header>
+        <p>{{ 'PHP-Version'|trans }} {{ php_version }} · {{ 'Laufzeit'|trans }} {{ php_sapi }}</p>
+        <div class="table-wrap"><table class="admin-table">
+            <caption class="visually-hidden">{{ 'Begrenzte PHP-Laufzeitwerte'|trans }}</caption>
+            <thead><tr><th scope="col">{{ 'Grenze'|trans }}</th><th scope="col">{{ 'Wert'|trans }}</th></tr></thead>
+            <tbody>
+                {% for label, value in php_limits %}<tr><th scope="row">{{ label|trans }}</th><td>{{ value|trans }}</td></tr>{% endfor %}
+            </tbody>
+        </table></div>
+        <h3>{{ 'PHP-Einstellungen'|trans }}</h3>
+        <div class="table-wrap"><table class="admin-table">
+            <caption class="visually-hidden">{{ 'Ausgewählte PHP-Sicherheits- und Laufzeiteinstellungen'|trans }}</caption>
+            <thead><tr><th scope="col">{{ 'Einstellung'|trans }}</th><th scope="col">{{ 'Status'|trans }}</th></tr></thead>
+            <tbody>
+                {% for label, value in php_settings %}<tr><th scope="row">{{ label|trans }}</th><td>{{ value|trans }}</td></tr>{% endfor %}
+            </tbody>
+        </table></div>
+        <h3>{{ 'PHP-Erweiterungen'|trans }}</h3>
+        <div class="table-wrap"><table class="admin-table">
+            <caption class="visually-hidden">{{ 'Verfügbarkeit erforderlicher und optionaler PHP-Erweiterungen'|trans }}</caption>
+            <thead><tr><th scope="col">{{ 'Erweiterung'|trans }}</th><th scope="col">{{ 'Status'|trans }}</th></tr></thead>
+            <tbody>
+                {% for label, enabled in php_extensions %}<tr><th scope="row">{{ label|trans }}</th><td>{{ (enabled ? 'Verfügbar' : 'Nicht verfügbar')|trans }}</td></tr>{% endfor %}
+            </tbody>
+        </table></div>
+    </section>
+{% endblock %}

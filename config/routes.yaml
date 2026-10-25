@@ -1,2 +1,3 @@
-# AW-001 richtet ausschließlich die technische Basis ein.
-# Fachliche Routen sind nicht Bestandteil dieser Aufgabe.
+controllers:
+    resource: '../src/Module/'
+    type: attribute

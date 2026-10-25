@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="{{ app.request.locale }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex,nofollow">
+    <title>{{ 'Wartung'|trans }} · {{ site_name }}</title>
+    <link rel="stylesheet" href="{{ asset('styles/app.css') }}">
+</head>
+<body>
+<main class="landing" role="status">
+    <p class="eyebrow">{{ site_name }}</p>
+    <h1>{{ 'Wir führen Wartungsarbeiten durch'|trans }}</h1>
+    <p class="lead">{{ maintenance_message }}</p>
+</main>
+</body>
+</html>

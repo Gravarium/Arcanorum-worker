@@ -1,0 +1,145 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ is_edit ? ('Video bearbeiten'|trans) : ('Video hinzufügen'|trans) }}{% endblock %}
+{% block admin_breadcrumb %}<a href="{{ path('admin_video_index') }}">{{ 'Videos'|trans }}</a> / {{ is_edit ? ('Bearbeiten'|trans) : ('Hinzufügen'|trans) }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Videokatalog'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ is_edit ? ('Video bearbeiten'|trans) : ('Video hinzufügen'|trans) }}</h1>
+            <p class="muted">{{ 'Geprüfte HTTPS-Quelle oder private Videodatei mit Metadaten speichern.'|trans }}</p>
+        </div>
+        <a class="button button-secondary" href="{{ path('admin_video_index') }}">{{ 'Zurück zur Übersicht'|trans }}</a>
+    </div>
+
+    {% if errors is not empty %}
+        <div class="flash-message is-error" role="alert">
+            <strong>{{ 'Bitte prüfe die Eingaben.'|trans }}</strong>
+            <ul>
+                {% for error in errors %}<li>{{ error|trans }}</li>{% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <section class="admin-panel" aria-labelledby="video-form-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="video-form-heading">{{ 'Videodaten'|trans }}</h2>
+                <p class="muted">{{ 'Dateien werden außerhalb des öffentlichen Webpfads gespeichert; nur MP4, WebM und Ogg bis 32 MiB sind zugelassen.'|trans }}</p>
+            </div>
+        </header>
+
+        <form class="admin-form" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="_token" value="{{ csrf_token('admin_video_save') }}">
+
+            <label>
+                <span>{{ 'Titel'|trans }}</span>
+                <input name="title" value="{{ values.title }}" maxlength="180" required>
+            </label>
+
+            <div class="form-grid">
+                <label>
+                    <span>{{ 'Quellart'|trans }}</span>
+                    <select name="source_type">
+                        <option value="url" {{ values.source_type == 'url' ? 'selected' : '' }}>{{ 'Video-URL'|trans }}</option>
+                        <option value="stream" {{ values.source_type == 'stream' ? 'selected' : '' }}>{{ 'Stream'|trans }}</option>
+                        <option value="embed" {{ values.source_type == 'embed' ? 'selected' : '' }}>{{ 'Einbettungs-URL'|trans }}</option>
+                        <option value="file" {{ values.source_type == 'file' ? 'selected' : '' }}>{{ 'Private Videodatei'|trans }}</option>
+                    </select>
+                </label>
+                <label>
+                    <span>{{ 'Quell-URL'|trans }}</span>
+                    <input type="url" name="source_url" value="{{ values.source_url }}" maxlength="2048" placeholder="https://www.youtube.com/watch?v=…">
+                    <small>{{ 'Für Einbettungen sind nur geprüfte YouTube- und Vimeo-Video-URLs zugelassen; fremder HTML-Code wird nicht ausgeführt.'|trans }}</small>
+                    <small>{{ 'Unterstützt werden direkte MP4-, M4V-, WebM- und Ogg-Dateien sowie HLS-Live-Playlists (M3U8) auf freigegebenen HTTPS-Hosts. HLS-Segmente und Schlüssel müssen ebenfalls von freigegebenen Hosts kommen; der Server ruft die Stream-Adresse nicht ab.'|trans }}</small>
+                    <small>{{ 'Die vollständige Adresse einschließlich Abfrageparametern wird öffentlich ausgegeben. Bitte keine Zugangsdaten oder geheimen Tokens verwenden.'|trans }}</small>
+                    {% if not stream_configured %}<small>{{ 'Streamhosts sind derzeit nicht freigegeben; bitte die Hostingverwaltung um Einrichtung bitten.'|trans }}</small>{% endif %}
+                </label>
+                <label>
+                    <span>{{ 'Videodatei'|trans }}</span>
+                    <input type="file" name="video_file" accept="video/mp4,video/webm,video/ogg">
+                    <small>{{ 'Bei Quellart „Private Videodatei“ erforderlich; beim Bearbeiten optional, wenn die vorhandene Datei bleiben soll.'|trans }}</small>
+                    {% if current_media_type %}<small>{{ 'Aktuelle private Datei: %media_type%.'|trans({'%media_type%': current_media_type}) }}</small>{% endif %}
+                </label>
+            </div>
+
+            <div class="form-grid">
+                <label>
+                    <span>{{ 'Kategorie'|trans }}</span>
+                    <select name="category">
+                        <option value="">{{ 'Keine Kategorie'|trans }}</option>
+                        {% for category in categories %}
+                            <option value="{{ category.name }}" {{ values.category == category.name ? 'selected' : '' }}>{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>
+                    <span>{{ 'Status'|trans }}</span>
+                    <select name="status">
+                        <option value="draft" {{ values.status == 'draft' ? 'selected' : '' }}>{{ 'Entwurf'|trans }}</option>
+                        <option value="published" {{ values.status == 'published' ? 'selected' : '' }}>{{ 'Veröffentlicht'|trans }}</option>
+                    </select>
+                </label>
+            </div>
+
+            <label>
+                <span>{{ 'Schlagwörter'|trans }}</span>
+                <input name="tags" value="{{ values.tags }}" maxlength="1000" placeholder="{{ 'z. B. Kultur, Interviews, Neuigkeiten'|trans }}">
+                <small>{{ 'Bis zu zehn Schlagwörter, getrennt durch Komma oder Zeilenumbruch.'|trans }}</small>
+            </label>
+
+            <label>
+                <span>{{ 'Beschreibung'|trans }}</span>
+                <textarea name="description" rows="8" maxlength="100000">{{ values.description }}</textarea>
+            </label>
+
+            <div class="form-checks">
+                <label><input type="checkbox" name="featured" value="1" {{ values.featured ? 'checked' : '' }}> {{ 'Auf der Startseite hervorheben'|trans }}</label>
+                <label><input type="checkbox" name="comments_enabled" value="1" {{ values.comments_enabled ? 'checked' : '' }}> {{ 'Kommentare erlauben'|trans }}</label>
+            </div>
+
+            <div class="form-actions">
+                <button class="button" type="submit">{{ is_edit ? ('Änderungen speichern'|trans) : ('Video speichern'|trans) }}</button>
+                <a class="button button-secondary" href="{{ path('admin_video_index') }}">{{ 'Abbrechen'|trans }}</a>
+            </div>
+        </form>
+    </section>
+
+    {% if is_edit %}
+        <section class="admin-panel" aria-labelledby="video-thumbnail-heading">
+            <header class="panel-heading">
+                <div>
+                    <h2 id="video-thumbnail-heading">{{ 'Vorschaubild'|trans }}</h2>
+                    <p class="muted">{{ 'JPEG, PNG oder WebP bis 4 MiB. SVG-Dateien sind nicht zugelassen; die Bilddatei bleibt außerhalb des öffentlichen Webpfads.'|trans }}</p>
+                </div>
+            </header>
+
+            {% if has_thumbnail %}
+                <img class="video-thumbnail video-thumbnail-admin" src="{{ path('admin_video_thumbnail_preview', {id: video_id}) }}" alt="{{ 'Aktuelles Vorschaubild für %title%'|trans({'%title%': values.title}) }}">
+            {% endif %}
+
+            <form class="admin-form" method="post" enctype="multipart/form-data" action="{{ path('admin_video_thumbnail_manage', {id: video_id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('admin_video_thumbnail_' ~ video_id) }}">
+                <input type="hidden" name="action" value="upload">
+                <label>
+                    <span>{{ 'Bilddatei'|trans }}</span>
+                    <input type="file" name="thumbnail_file" accept="image/jpeg,image/png,image/webp" required>
+                </label>
+                <div class="form-actions">
+                    <button class="button" type="submit">{{ 'Vorschaubild hochladen'|trans }}</button>
+                </div>
+            </form>
+
+            {% if has_thumbnail %}
+                <form method="post" action="{{ path('admin_video_thumbnail_manage', {id: video_id}) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('admin_video_thumbnail_' ~ video_id) }}">
+                    <input type="hidden" name="action" value="remove">
+                    <div class="form-actions">
+                        <button class="button button-secondary" type="submit">{{ 'Vorschaubild entfernen'|trans }}</button>
+                    </div>
+                </form>
+            {% endif %}
+        </section>
+    {% endif %}
+{% endblock %}

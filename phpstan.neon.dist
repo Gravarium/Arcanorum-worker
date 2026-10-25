@@ -6,7 +6,6 @@ parameters:
     phpVersion: 80500
     paths:
         - src
-        - public
         - tests
     tmpDir: var/cache/phpstan
     reportUnmatchedIgnoredErrors: true

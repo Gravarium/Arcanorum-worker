@@ -1,0 +1,61 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ (popular ? 'Beliebte Videos' : 'Videos')|trans }} · {{ site_settings().siteName }}{% endblock %}
+
+{% block body %}
+    <header class="public-header">
+        {{ include('partials/public_brand.html.twig') }}
+        <nav class="public-navigation" aria-label="{{ 'Hauptnavigation'|trans }}">
+            <a href="{{ path('video_index') }}" aria-current="page">{{ 'Videos'|trans }}</a>
+            {% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}{% if module_enabled('series') %}<a href="{{ path('series_index') }}">{{ 'Serien'|trans }}</a>{% endif %}
+            {% if module_enabled('search') %}<a href="{{ path('public_search') }}">{{ 'Suche'|trans }}</a>{% endif %}
+            {% if module_enabled('pages') %}<a href="{{ path('page_index') }}">{{ 'Seiten'|trans }}</a>{% endif %}
+            <a href="{{ path('content_sitemap') }}"{{ 'Sitemap'|trans }}</a>
+            {{ include('partials/member_area_link.html.twig') }}
+        </nav>
+    </header>
+    <main class="public-main">
+        <section class="public-page-heading">
+            <p class="eyebrow">{{ 'Videokatalog'|trans }}</p><h1>{{ (popular ? 'Beliebte Videos' : 'Videos entdecken')|trans }}</h1>
+            <p class="lead">{{ (popular ? 'Veröffentlichte Videos nach datensparsam gezählten Aufrufen.' : 'Neu veröffentlichte Videos aus allen Kategorien.')|trans }}</p>
+            <p><a href="{{ path(popular ? 'video_index' : 'video_popular') }}">{{ (popular ? 'Neue Videos ansehen' : 'Beliebte Videos ansehen')|trans }}</a></p>
+            <p><a href="{{ path('video_feed') }}">{{ 'RSS-Feed abonnieren'|trans }}</a></p>
+            {% if site_settings().isPublicVideoSubmissionsEnabled %}<p><a class="button button-secondary" href="{{ path('public_video_submission_new') }}">{{ 'Video einreichen'|trans }}</a></p>{% endif %}
+        </section>
+        {% if not popular %}<form class="content-search" method="get" action="{{ path('video_index') }}">
+            <label for="video-search">{{ 'Videos suchen'|trans }}</label>
+            <input id="video-search" type="search" name="q" value="{{ search }}" maxlength="100">
+            <label for="video-category">{{ 'Kategorie'|trans }}</label>
+            <select id="video-category" name="category">
+                <option value="">{{ 'Alle Kategorien'|trans }}</option>
+                {% for option in categories %}
+                    <option value="{{ option.name }}"{% if category == option.name %} selected{% endif %}>{{ option.name }}</option>
+                {% endfor %}
+            </select>
+            <label for="video-tag">{{ 'Schlagwort'|trans }}</label>
+            <input id="video-tag" type="search" name="tag" value="{{ tag }}" maxlength="100" placeholder="{{ 'Schlagwort'|trans }}">
+            <button class="button button-secondary" type="submit">{{ 'Filtern'|trans }}</button>
+        </form>{% endif %}
+        <div class="content-grid">
+            {% for video in videos %}
+                <article class="content-card">
+                    {% if video.thumbnailObjectId %}<img class="video-thumbnail" src="{{ path('video_thumbnail', {id: video.id}) }}" alt="{{ 'Vorschaubild für %title%'|trans({'%title%': video.title}) }}" loading="lazy" decoding="async">{% endif %}
+                    <p class="card-kicker">{{ video.category ?? ('Video'|trans) }}</p>
+                    <h2><a href="{{ path('video_show', {id: video.id}) }}">{{ video.title }}</a></h2>
+                    {% if popular %}<p>{{ video.viewCount }} {{ 'Aufrufe'|trans }}</p>{% endif %}
+                    <p>{{ video.description|slice(0, 240) }}</p>
+                    <time datetime="{{ video.publishedAt|date('c') }}">{{ video.publishedAt|date('d.m.Y') }}</time>
+                </article>
+            {% else %}
+                <p class="empty-state">{{ (search or category or tag ? 'Keine Videos mit diesen Filtern gefunden.' : 'Noch keine Videos veröffentlicht.')|trans }}</p>
+            {% endfor %}
+        </div>
+        {% if page > 1 or has_next %}
+            <nav class="pagination" aria-label="{{ 'Video-Seiten'|trans }}">
+                {% if page > 1 %}<a href="{{ path(popular ? 'video_popular' : 'video_index', popular ? {page: page - 1} : {q: search, category: category, tag: tag, page: page - 1}) }}">{{ 'Vorherige Seite'|trans }}</a>{% endif %}
+                <span>{{ 'Seite %page%'|trans({'%page%': page}) }}</span>
+                {% if has_next %}<a href="{{ path(popular ? 'video_popular' : 'video_index', popular ? {page: page + 1} : {q: search, category: category, tag: tag, page: page + 1}) }}">{{ 'Nächste Seite'|trans }}</a>{% endif %}
+            </nav>
+        {% endif %}
+    </main>
+{% endblock %}

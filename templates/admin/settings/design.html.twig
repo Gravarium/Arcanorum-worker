@@ -1,0 +1,80 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Theme und Layout'|trans }}{% endblock %}
+{% block admin_breadcrumb %}{{ 'Theme und Layout'|trans }}{% endblock %}
+
+{% block stylesheets %}
+    {% if preview_token is not null %}<link rel="stylesheet" href="{{ path('admin_design_settings_preview_css', {token: preview_token}) }}">{% endif %}
+{% endblock %}
+
+{% block admin_content %}
+    <header class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Einstellungen · Gestaltung'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ 'Theme und Layout'|trans }}</h1>
+            <p class="muted">{{ 'Wählen Sie ein eingebautes Theme, ein öffentliches Inhaltslayout und kontrastgeprüfte Farben.'|trans }}</p>
+        </div>
+    </header>
+
+    {% if errors.form is defined %}<p class="field-error" role="alert">{{ errors.form|trans }}</p>{% endif %}
+    {% for field, message in errors %}{% if field != 'form' %}<p class="field-error" role="alert">{{ message|trans }}</p>{% endif %}{% endfor %}
+
+    <section class="admin-panel" aria-labelledby="design-settings-heading">
+        <header class="panel-heading"><h2 id="design-settings-heading">{{ 'Öffentliche Gestaltung'|trans }}</h2></header>
+        <form method="post" action="{{ path('admin_design_settings_update') }}" class="admin-form">
+            <input type="hidden" name="_token" value="{{ csrf_token('admin_design_settings') }}">
+            <label for="public-theme">{{ 'Theme'|trans }}</label>
+            <select id="public-theme" name="theme">
+                {% for option in theme_options %}
+                    <option value="{{ option.value }}"{% if option.value == form.theme %} selected{% endif %}>{{ option.label|trans }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="public-layout">{{ 'Inhaltslayout'|trans }}</label>
+            <select id="public-layout" name="layout">
+                {% for option in layout_options %}
+                    <option value="{{ option.value }}"{% if option.value == form.layout %} selected{% endif %}>{{ option.label|trans }}</option>
+                {% endfor %}
+            </select>
+            <p class="muted">{{ 'Das Layout gilt für öffentliche Kartenlisten und Mitgliederseiten. Verwaltungsseiten behalten ihr einheitliches Arbeitslayout.'|trans }}</p>
+
+            <label for="primary-color">{{ 'Hauptfarbe für Links und Schaltflächen'|trans }}</label>
+            <input id="primary-color" name="primary_color" type="color" value="{{ form.primary_color }}" required>
+
+            <label for="accent-color">{{ 'Akzentfarbe für Fokus- und Bereichsmarkierungen'|trans }}</label>
+            <input id="accent-color" name="accent_color" type="color" value="{{ form.accent_color }}" required>
+            <p class="muted">{{ 'Farben werden als feste Hexwerte gespeichert. Eingebettetes CSS, externe Stylesheets und Uploads werden nicht angenommen. Die Hauptfarbe benötigt 4,5:1 Kontrast zu Weiß; die Akzentfarbe mindestens 3:1.'|trans }}</p>
+
+            <div class="form-actions">
+                <button class="button button-secondary" name="action" value="preview" type="submit">{{ 'Vorschau'|trans }}</button>
+                <button class="button button-primary" name="action" value="save" type="submit">{{ 'Theme und Layout speichern'|trans }}</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="admin-panel" aria-labelledby="design-preview-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="design-preview-heading">{{ 'Vorschau'|trans }}</h2>
+                <p class="muted">{% if preview_token is not null %}{{ 'Temporäre Vorschau für fünf Minuten; noch nicht gespeichert.'|trans }}{% else %}{{ 'Beispielansicht mit den aktuell gespeicherten Einstellungen.'|trans }}{% endif %}</p>
+            </div>
+        </header>
+        <div class="theme-preview" data-preview-theme="{{ preview_settings.publicTheme.value }}" data-preview-layout="{{ preview_settings.publicLayout.value }}">
+            <header class="theme-preview-header">
+                <strong>{{ settings.siteName }}</strong>
+                <nav aria-label="{{ 'Vorschau-Navigation'|trans }}"><span>{{ 'Videos'|trans }}</span><span>{{ 'News'|trans }}</span><span>{{ 'Mitglieder'|trans }}</span></nav>
+            </header>
+            <div class="theme-preview-content">
+                <p class="eyebrow">{{ 'Arcanorum · Vorschau'|trans }}</p>
+                <h3>{{ 'Aktuelle Inhalte entdecken'|trans }}</h3>
+                <p>{{ 'So sehen Theme, Farben und Kartenanordnung auf der öffentlichen Website aus.'|trans }}</p>
+                <a class="theme-preview-button" href="#design-preview-heading">{{ 'Beispielschaltfläche'|trans }}</a>
+                <div class="theme-preview-grid" aria-label="{{ 'Beispielkarten'|trans }}">
+                    <article class="theme-preview-card"><strong>{{ 'Neueste Videos'|trans }}</strong><p>{{ 'Eine hervorgehobene Inhaltskarte.'|trans }}</p></article>
+                    <article class="theme-preview-card"><strong>{{ 'Redaktion'|trans }}</strong><p>{{ 'Beiträge bleiben gut lesbar.'|trans }}</p></article>
+                    <article class="theme-preview-card"><strong>{{ 'Community'|trans }}</strong><p>{{ 'Das Layout passt sich dem Gerät an.'|trans }}</p></article>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}

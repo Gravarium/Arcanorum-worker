@@ -1,0 +1,53 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ series.title }} · {{ site_settings().siteName }}{% endblock %}
+
+{% block body %}
+    <header class="public-header">
+        {{ include('partials/public_brand.html.twig') }}
+        <nav class="public-navigation" aria-label="{{ 'Hauptnavigation'|trans }}">
+            <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
+            {% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}
+            {% if module_enabled('series') %}<a href="{{ path('series_index') }}">{{ 'Serien'|trans }}</a>{% endif %}
+            {% if module_enabled('search') %}<a href="{{ path('public_search') }}">{{ 'Suche'|trans }}</a>{% endif %}
+            {% if module_enabled('pages') %}<a href="{{ path('page_index') }}">{{ 'Seiten'|trans }}</a>{% endif %}
+            {{ include('partials/member_area_link.html.twig') }}
+        </nav>
+    </header>
+    <main class="public-main">
+        <article class="public-article">
+            <p class="eyebrow">{% if module_enabled('series') %}<a href="{{ path('series_index') }}">{{ 'Serien'|trans }}</a>{% endif %}</p>
+            {% if series.artworkObjectId is not null %}
+                <img class="video-thumbnail video-thumbnail-feature" src="{{ path('series_artwork', {slug: series.slug}) }}" alt="{{ 'Coverbild: %title%'|trans({'%title%': series.title}) }}">
+            {% endif %}
+            <h1>{{ series.title }}</h1>
+            <div class="article-body">{{ series.description }}</div>
+            {% if series.genres is not empty %}
+                <ul class="series-genres" aria-label="{{ 'Seriengenres'|trans }}">
+                    {% for genre in series.genres %}<li>{{ genre }}</li>{% endfor %}
+                </ul>
+            {% endif %}
+        </article>
+        <section aria-labelledby="episode-list-heading">
+            <h2 id="episode-list-heading">{{ 'Folgen'|trans }}</h2>
+            <div class="content-grid">
+                {% for episode in episodes %}
+                    <article class="content-card">
+                        <p class="card-kicker">{{ 'Staffel %season% · Folge %episode%'|trans({'%season%': episode.seasonNumber, '%episode%': episode.episodeNumber}) }}</p>
+                        <h3><a href="{{ path('series_episode_show', {slug: series.slug, seasonNumber: episode.seasonNumber, episodeNumber: episode.episodeNumber}) }}">{{ episode.title }}</a></h3>
+                        <p>{{ episode.description|slice(0, 240) }}</p>
+                    </article>
+                {% else %}
+                    <p class="empty-state">{{ 'Für diese Serie sind noch keine veröffentlichten Folgen vorhanden.'|trans }}</p>
+                {% endfor %}
+            </div>
+            {% if page > 1 or has_next %}
+                <nav class="pagination" aria-label="{{ 'Folgen-Seiten'|trans }}">
+                    {% if page > 1 %}<a href="{{ path('series_show', {slug: series.slug, page: page - 1}) }}">{{ 'Vorherige Seite'|trans }}</a>{% endif %}
+                    <span>{{ 'Seite %page%'|trans({'%page%': page}) }}</span>
+                    {% if has_next %}<a href="{{ path('series_show', {slug: series.slug, page: page + 1}) }}">{{ 'Nächste Seite'|trans }}</a>{% endif %}
+                </nav>
+            {% endif %}
+        </section>
+    </main>
+{% endblock %}

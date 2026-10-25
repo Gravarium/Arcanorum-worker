@@ -1,0 +1,71 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ article.title }} · {{ site_settings().siteName }}{% endblock %}
+
+{% block body %}
+    <header class="public-header">
+        {{ include('partials/public_brand.html.twig') }}
+        <nav class="public-navigation" aria-label="{{ 'Hauptnavigation'|trans }}">
+            <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>{% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}{% if module_enabled('series') %}<a href="{{ path('series_index') }}">{{ 'Serien'|trans }}</a>{% endif %}
+            {% if module_enabled('search') %}<a href="{{ path('public_search') }}">{{ 'Suche'|trans }}</a>{% endif %}{% if module_enabled('pages') %}<a href="{{ path('page_index') }}">{{ 'Seiten'|trans }}</a>{% endif %}
+            {{ include('partials/member_area_link.html.twig') }}
+        </nav>
+    </header>
+    <main class="public-main">
+        <article class="public-article">
+            <p class="eyebrow">{{ article.category ?? ('News'|trans) }}</p>
+            <h1>{{ article.title }}</h1>
+            {% if article.summary %}<p class="lead">{{ article.summary }}</p>{% endif %}
+            <time datetime="{{ article.publishedAt|date('c') }}">{{ article.publishedAt|date('d.m.Y') }}</time>
+            {% if article.tags is not empty %}
+                <p class="tag-list" aria-label="{{ 'Schlagwörter'|trans }}">
+                    {% for tag in article.tags %}<a href="{{ path('news_index', {tag: tag.name}) }}">{{ tag.name }}</a>{% endfor %}
+                </p>
+            {% endif %}
+            {{ advertising_slot('news-top') }}
+            <div class="article-body">{{ article.body }}</div>
+        </article>
+        {% if module_enabled('comments') %}<section class="comment-section" id="comments" aria-labelledby="comments-heading">
+            <h2 id="comments-heading">{{ 'Kommentare'|trans }}</h2>
+            {% for message in app.flashes('public_comment_success') %}
+                <p class="flash-message is-success" role="status">{{ message|trans }}</p>
+            {% endfor %}
+            {% for message in app.flashes('public_comment_error') %}
+                <p class="flash-message is-error" role="alert">{{ message|trans }}</p>
+            {% endfor %}
+            <div class="comment-list">
+                {% for comment in comments %}
+                    <article class="comment-card">
+                        <header><strong>{{ comment.authorName }}</strong> · <time datetime="{{ comment.createdAt|date('c') }}">{{ comment.createdAt|date('d.m.Y H:i') }}</time></header>
+                        <p class="comment-body">{{ comment.body }}</p>
+                        <form action="{{ path('public_comment_report', {id: comment.id}) }}" method="post">
+                            <input type="hidden" name="_token" value="{{ csrf_token('public_comment_report_' ~ comment.id) }}">
+                            <button class="button button-secondary" type="submit">{{ 'Kommentar melden'|trans }}</button>
+                        </form>
+                    </article>
+                {% else %}
+                    <p class="empty-state">{{ 'Noch keine freigegebenen Kommentare.'|trans }}</p>
+                {% endfor %}
+            </div>
+            {% if article.commentsEnabled %}
+                <form class="comment-form" action="{{ path('public_comment_submit', {contentType: 'news', reference: article.slug}) }}" method="post">
+                    <h3>{{ 'Kommentar schreiben'|trans }}</h3>
+                    <input type="hidden" name="_token" value="{{ csrf_token('public_comment_news_' ~ article.id) }}">
+                    <label for="news-comment-name">{{ 'Name'|trans }}</label>
+                    <input id="news-comment-name" name="author_name" type="text" maxlength="80" autocomplete="name" required>
+                    <label for="news-comment-body">{{ 'Kommentar'|trans }}</label>
+                    <textarea id="news-comment-body" name="body" minlength="5" maxlength="3000" rows="5" required></textarea>
+                    <div class="comment-honeypot" aria-hidden="true">
+                        <label for="news-comment-website">{{ 'Dieses Feld leer lassen'|trans }}</label>
+                        <input id="news-comment-website" name="website" type="text" tabindex="-1" autocomplete="off">
+                    </div>
+                    <button class="button" type="submit">{{ 'Kommentar zur Prüfung senden'|trans }}</button>
+                    <p class="muted">{{ 'Kommentare erscheinen erst nach Freigabe.'|trans }}</p>
+                </form>
+            {% else %}
+                <p class="muted">{{ 'Kommentare sind für diesen Inhalt deaktiviert.'|trans }}</p>
+            {% endif %}
+        </section>{% endif %}
+        <p>{% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'Zurück zu allen News'|trans }}</a>{% endif %}</p>
+    </main>
+{% endblock %}

@@ -1,0 +1,5 @@
+{% set site_identity = site_settings() %}
+<a class="public-brand" href="{{ path('platform_home') }}">
+    <span class="public-brand-name">{{ site_identity.siteName }}</span>
+    {% if site_identity.tagline is not empty %}<small class="public-brand-tagline">{{ site_identity.tagline }}</small>{% endif %}
+</a>

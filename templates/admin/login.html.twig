@@ -1,0 +1,39 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'Anmelden'|trans }} · {{ site_settings().siteName }}{% endblock %}
+
+{% block body %}
+    <main class="login-page">
+        <section class="login-card" aria-labelledby="login-heading">
+            <a class="brand login-brand" href="{{ path('platform_home') }}">
+                <span class="brand-name">{{ site_settings().siteName }}</span>
+                <span class="brand-caption">{{ 'Private Plattform'|trans }}</span>
+                {% if site_settings().tagline is not empty %}<span class="brand-tagline">{{ site_settings().tagline }}</span>{% endif %}
+            </a>
+
+            <p class="eyebrow">{{ 'Verwaltungszugang'|trans }}</p>
+            <h1 id="login-heading">{{ 'Anmelden'|trans }}</h1>
+            <p class="login-intro">{{ 'Melde dich mit einem Administratorkonto an, um die Verwaltung zu öffnen.'|trans }}</p>
+
+            {% if login_error %}
+                <p class="login-error" role="alert">{{ 'Die Anmeldung ist fehlgeschlagen. Prüfe deine Angaben und versuche es erneut.'|trans }}</p>
+            {% endif %}
+
+            <form class="login-form" action="{{ path('admin_login') }}" method="post">
+                <label for="username">{{ 'E-Mail-Adresse'|trans }}</label>
+                <input id="username" name="_username" type="email" value="{{ last_username }}" autocomplete="username" autocapitalize="none" required autofocus>
+
+                <label for="password">{{ 'Passwort'|trans }}</label>
+                <input id="password" name="_password" type="password" autocomplete="current-password" required>
+
+                <label for="mfa-code">{{ 'Authenticator- oder Wiederherstellungscode'|trans }}</label>
+                <input id="mfa-code" name="_mfa_code" type="text" autocomplete="one-time-code" autocapitalize="characters" maxlength="64" required>
+
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+                <button class="button login-submit" type="submit">{{ 'Anmelden'|trans }}</button>
+            </form>
+
+            <a class="login-home" href="{{ path('platform_home') }}">{{ 'Zur Plattform'|trans }}</a>
+        </section>
+    </main>
+{% endblock %}

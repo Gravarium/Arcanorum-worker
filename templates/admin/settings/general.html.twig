@@ -1,0 +1,144 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Allgemeine Einstellungen'|trans }}{% endblock %}
+{% block admin_breadcrumb %}{{ 'Allgemeine Einstellungen'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Einstellungen'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ 'Allgemeine Einstellungen'|trans }}</h1>
+            <p class="muted">{{ 'Website-Name, Standard-SEO, Suchmaschinenzugriff, Wartungsmodus, Cookie-Einwilligung, Mitgliederkonten, Sprache und Zeitzone.'|trans }}</p>
+        </div>
+    </div>
+
+    <section class="admin-panel" aria-labelledby="general-settings-heading">
+        <header class="panel-heading"><h2 id="general-settings-heading">{{ 'Website'|trans }}</h2></header>
+        {% if errors.form is defined %}<p class="field-error" role="alert">{{ errors.form|trans }}</p>{% endif %}
+        <form id="general-settings-form" method="post" action="{{ path('admin_general_settings_update') }}" class="admin-form">
+            <input type="hidden" name="token" value="{{ csrf_token('admin_site_settings') }}">
+
+            <div class="form-field">
+                <label for="site_name">{{ 'Website-Name'|trans }}</label>
+                <input id="site_name" name="site_name" type="text" maxlength="80" required value="{{ form.site_name }}" autocomplete="organization">
+                {% if errors.site_name is defined %}<p class="field-error" role="alert">{{ errors.site_name|trans }}</p>{% endif %}
+            </div>
+
+            <div class="form-field">
+                <label for="tagline">{{ 'Untertitel'|trans }}</label>
+                <input id="tagline" name="tagline" type="text" maxlength="160" value="{{ form.tagline }}">
+                {% if errors.tagline is defined %}<p class="field-error" role="alert">{{ errors.tagline|trans }}</p>{% endif %}
+            </div>
+
+            <div class="form-field">
+                <label for="locale">{{ 'Sprache'|trans }}</label>
+                <select id="locale" name="locale" required>
+                    {% for locale_code, locale_label in supported_locales %}
+                        <option value="{{ locale_code }}"{% if form.locale == locale_code %} selected{% endif %}>{{ locale_label|trans }}</option>
+                    {% endfor %}
+                </select>
+                <p class="muted">{{ 'Deutsch und Englisch sind als vollständige Sprachpakete verfügbar.'|trans }}</p>
+                {% if errors.locale is defined %}<p class="field-error" role="alert">{{ errors.locale|trans }}</p>{% endif %}
+            </div>
+
+            <div class="form-field">
+                <label for="timezone">{{ 'Zeitzone'|trans }}</label>
+                <input id="timezone" name="timezone" type="text" maxlength="64" list="timezone-suggestions" required value="{{ form.timezone }}" autocomplete="off" aria-describedby="timezone-help">
+                <datalist id="timezone-suggestions">
+                    {% for timezone in timezone_suggestions %}<option value="{{ timezone }}">{% endfor %}
+                </datalist>
+                <p class="muted" id="timezone-help">{{ 'Verwenden Sie eine gültige IANA-Kennung, zum Beispiel Europe/Berlin oder UTC.'|trans }}</p>
+                {% if errors.timezone is defined %}<p class="field-error" role="alert">{{ errors.timezone|trans }}</p>{% endif %}
+            </div>
+
+            <div class="form-actions">
+                <button class="button button-primary" type="submit">{{ 'Einstellungen speichern'|trans }}</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="admin-panel" aria-labelledby="seo-settings-heading">
+        <header class="panel-heading"><h2 id="seo-settings-heading">{{ 'Suchmaschinen'|trans }}</h2></header>
+        <div class="admin-form">
+            <div class="form-field">
+                <label for="seo_description">{{ 'Standard-Beschreibung'|trans }}</label>
+                <textarea id="seo_description" name="seo_description" maxlength="320" form="general-settings-form">{{ form.seo_description }}</textarea>
+                {% if errors.seo_description is defined %}<p class="field-error" role="alert">{{ errors.seo_description|trans }}</p>{% endif %}
+                <p class="muted">{{ 'Wird als Standard-Metabeschreibung verwendet; leere Einzelwerte bleiben leer.'|trans }}</p>
+            </div>
+            <div class="form-field">
+                <input type="hidden" name="search_indexing_enabled" value="0" form="general-settings-form">
+                <label for="search_indexing_enabled"><input id="search_indexing_enabled" name="search_indexing_enabled" type="checkbox" value="1" form="general-settings-form"{% if form.search_indexing_enabled == '1' %} checked{% endif %}> {{ 'Suchmaschinen dürfen öffentliche Seiten aufnehmen'|trans }}</label>
+                {% if errors.search_indexing_enabled is defined %}<p class="field-error" role="alert">{{ errors.search_indexing_enabled|trans }}</p>{% endif %}
+            </div>
+        </div>
+    </section>
+
+    <section class="admin-panel" aria-labelledby="maintenance-settings-heading">
+        <header class="panel-heading"><h2 id="maintenance-settings-heading">{{ 'Wartungsmodus'|trans }}</h2></header>
+        <div class="admin-form">
+            <div class="form-field">
+                <input type="hidden" name="maintenance_mode_enabled" value="0" form="general-settings-form">
+                <label for="maintenance_mode_enabled"><input id="maintenance_mode_enabled" name="maintenance_mode_enabled" type="checkbox" value="1" form="general-settings-form"{% if form.maintenance_mode_enabled == '1' %} checked{% endif %}> {{ 'Öffentliche Website in den Wartungsmodus setzen'|trans }}</label>
+                <p class="muted">{{ 'Besucher erhalten eine Wartungsseite mit HTTP 503. Angemeldete Administratoren und die Admin-Anmeldung bleiben erreichbar.'|trans }}</p>
+                {% if errors.maintenance_mode_enabled is defined %}<p class="field-error" role="alert">{{ errors.maintenance_mode_enabled|trans }}</p>{% endif %}
+            </div>
+            <div class="form-field">
+                <label for="maintenance_message">{{ 'Wartungshinweis'|trans }}</label>
+                <textarea id="maintenance_message" name="maintenance_message" maxlength="320" required form="general-settings-form">{{ form.maintenance_message }}</textarea>
+                {% if errors.maintenance_message is defined %}<p class="field-error" role="alert">{{ errors.maintenance_message|trans }}</p>{% endif %}
+            </div>
+        </div>
+    </section>
+
+    <section class="admin-panel" aria-labelledby="cookie-consent-settings-heading">
+        <header class="panel-heading"><h2 id="cookie-consent-settings-heading">{{ 'Cookie-Einwilligung'|trans }}</h2></header>
+        <div class="admin-form">
+            <div class="form-field">
+                <input type="hidden" name="cookie_consent_enabled" value="0" form="general-settings-form">
+                <label for="cookie_consent_enabled"><input id="cookie_consent_enabled" name="cookie_consent_enabled" type="checkbox" value="1" form="general-settings-form"{% if form.cookie_consent_enabled == '1' %} checked{% endif %}> {{ 'Einwilligungshinweis für optionale Cookies anzeigen'|trans }}</label>
+                {% if errors.cookie_consent_enabled is defined %}<p class="field-error" role="alert">{{ errors.cookie_consent_enabled|trans }}</p>{% endif %}
+            </div>
+            <div class="form-field">
+                <label for="cookie_consent_message">{{ 'Hinweistext'|trans }}</label>
+                <textarea id="cookie_consent_message" name="cookie_consent_message" maxlength="320" required form="general-settings-form">{{ form.cookie_consent_message }}</textarea>
+                {% if errors.cookie_consent_message is defined %}<p class="field-error" role="alert">{{ errors.cookie_consent_message|trans }}</p>{% endif %}
+                <p class="muted">{{ 'Notwendige Sicherheits- und Sitzungscookies bleiben aktiv. Derzeit werden keine Analyse- oder Werbecookies eingesetzt; die Auswahl wird für spätere optionale Kategorien gespeichert.'|trans }}</p>
+            </div>
+        </div>
+        <div class="form-actions">
+            <button class="button button-primary" type="submit" form="general-settings-form">{{ 'Einstellungen speichern'|trans }}</button>
+        </div>
+    </section>
+
+    <section class="admin-panel" aria-labelledby="member-registration-settings-heading">
+        <header class="panel-heading"><h2 id="member-registration-settings-heading">{{ 'Mitgliedskonten'|trans }}</h2></header>
+        <div class="admin-form">
+            <div class="form-field">
+                <input type="hidden" name="member_registration_enabled" value="0" form="general-settings-form">
+                <label for="member_registration_enabled"><input id="member_registration_enabled" name="member_registration_enabled" type="checkbox" value="1" form="general-settings-form"{% if form.member_registration_enabled == '1' %} checked{% endif %}> {{ 'Öffentliche Registrierung neuer Mitgliedskonten erlauben'|trans }}</label>
+                {% if errors.member_registration_enabled is defined %}<p class="field-error" role="alert">{{ errors.member_registration_enabled|trans }}</p>{% endif %}
+                <p class="muted">{{ 'Beim Abschalten verschwinden Registrierungslinks und die öffentliche Registrierung wird vor CSRF- und Eingabeverarbeitung gesperrt. Bestehende Konten, Anmeldung und von Administratoren angelegte Konten bleiben nutzbar.'|trans }}</p>
+            </div>
+        </div>
+        <div class="form-actions">
+            <button class="button button-primary" type="submit" form="general-settings-form">{{ 'Einstellungen speichern'|trans }}</button>
+        </div>
+    </section>
+
+    <section class="admin-panel" aria-labelledby="social-login-settings-heading">
+        <header class="panel-heading"><h2 id="social-login-settings-heading">{{ 'Soziale Anmeldung'|trans }}</h2></header>
+        <div class="admin-form">
+            <div class="form-field">
+                <input type="hidden" name="social_google_enabled" value="0" form="general-settings-form">
+                <label for="social_google_enabled"><input id="social_google_enabled" name="social_google_enabled" type="checkbox" value="1" form="general-settings-form"{% if form.social_google_enabled == '1' %} checked{% endif %}> {{ 'Anmeldung und Registrierung mit Google erlauben'|trans }}</label>
+                {% if errors.social_google_enabled is defined %}<p class="field-error" role="alert">{{ errors.social_google_enabled|trans }}</p>{% endif %}
+                {% if not google_social_login_configured() %}<p class="field-error" role="status">{{ 'Google ist noch nicht einsatzbereit. Der Server benötigt eine HTTPS-Basisadresse sowie die privaten OAuth-Zugangsdaten in seiner geschützten Laufzeitkonfiguration.'|trans }}</p>{% endif %}
+                <p class="muted">{{ 'Die Zugangsdaten werden nicht in der Datenbank gespeichert. E-Mail-Adressen werden nur übernommen, wenn Google sie als bestätigt kennzeichnet. Vorhandene Konten werden nie automatisch über eine übereinstimmende E-Mail verknüpft.'|trans }}</p>
+            </div>
+        </div>
+        <div class="form-actions">
+            <button class="button button-primary" type="submit" form="general-settings-form">{{ 'Einstellungen speichern'|trans }}</button>
+        </div>
+    </section>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ is_edit ? 'Seite bearbeiten'|trans : 'Neue Seite'|trans }}{% endblock %}
+{% block admin_breadcrumb %}<a href="{{ path('admin_page_index') }}">{{ 'Seiten'|trans }}</a> / {{ is_edit ? 'Bearbeiten'|trans : 'Neue Seite'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Website'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ is_edit ? 'Seite bearbeiten'|trans : 'Neue Seite'|trans }}</h1>
+            <p class="muted">{{ 'Der Seiteninhalt wird als Klartext gespeichert und sicher ausgegeben.'|trans }}</p>
+        </div>
+        <a class="button button-secondary" href="{{ path('admin_page_index') }}">{{ 'Zurück zur Übersicht'|trans }}</a>
+    </div>
+
+    {% if errors is not empty %}
+        <div class="flash-message is-error" role="alert">
+            <strong>{{ 'Bitte prüfe die Eingaben.'|trans }}</strong>
+            <ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul>
+        </div>
+    {% endif %}
+
+    <section class="admin-panel" aria-labelledby="page-form-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="page-form-heading">{{ 'Seitendaten'|trans }}</h2>
+                <p class="muted">{{ 'Die Adresse wird aus dem Titel gebildet und bleibt im Entwurf verborgen.'|trans }}</p>
+            </div>
+        </header>
+
+        <form class="admin-form" method="post">
+            <input type="hidden" name="_token" value="{{ csrf_token('admin_page_save') }}">
+
+            <label>
+                <span>{{ 'Titel'|trans }}</span>
+                <input name="title" value="{{ values.title }}" maxlength="180" required>
+            </label>
+
+            <div class="form-grid">
+                <label>
+                    <span>{{ 'Kurzbeschreibung'|trans }}</span>
+                    <input name="summary" value="{{ values.summary }}" maxlength="500">
+                </label>
+                <label>
+                    <span>{{ 'Status'|trans }}</span>
+                    <select name="status">
+                        <option value="draft" {{ values.status == 'draft' ? 'selected' : '' }}>{{ 'Entwurf'|trans }}</option>
+                        <option value="published" {{ values.status == 'published' ? 'selected' : '' }}>{{ 'Veröffentlicht'|trans }}</option>
+                    </select>
+                </label>
+            </div>
+
+            <label>
+                <span>{{ 'Inhalt'|trans }}</span>
+                <textarea name="body" rows="16" maxlength="100000" required>{{ values.body }}</textarea>
+            </label>
+
+            <div class="form-actions">
+                <button class="button" type="submit">{{ is_edit ? 'Änderungen speichern'|trans : 'Seite speichern'|trans }}</button>
+                <a class="button button-secondary" href="{{ path('admin_page_index') }}">{{ 'Abbrechen'|trans }}</a>
+            </div>
+        </form>
+    </section>
+{% endblock %}

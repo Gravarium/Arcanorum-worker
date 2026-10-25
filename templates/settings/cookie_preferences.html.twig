@@ -1,0 +1,23 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'Cookie-Einstellungen'|trans }} · {{ settings.siteName }}{% endblock %}
+
+{% block body %}
+    <main class="landing" aria-labelledby="cookie-preferences-heading">
+        <p class="eyebrow">{{ 'Datenschutz'|trans }}</p>
+        <h1 id="cookie-preferences-heading">{{ 'Cookie-Einstellungen'|trans }}</h1>
+        <p class="lead">{{ settings.cookieConsentMessage }}</p>
+        <p>{{ 'Notwendige Cookies unterstützen Anmeldung und Sicherheit. Derzeit werden keine Analyse- oder Werbecookies gesetzt.'|trans }}</p>
+        {% if choice is not null %}<p role="status">{{ 'Ihre gespeicherte Auswahl: %choice%.'|trans({'%choice%': choice == 'all' ? ('Alle Cookies'|trans) : ('Nur notwendige Cookies'|trans)}) }}</p>{% endif %}
+        <form method="post" action="{{ path('cookie_consent_submit') }}" class="admin-form">
+            <input type="hidden" name="token" value="{{ token }}">
+            <fieldset>
+                <legend>{{ 'Ihre Auswahl'|trans }}</legend>
+                <label><input type="radio" name="choice" value="all"{% if choice == 'all' %} checked{% endif %}> {{ 'Alle optionalen Kategorien erlauben'|trans }}</label>
+                <label><input type="radio" name="choice" value="necessary"{% if choice != 'all' %} checked{% endif %}> {{ 'Nur notwendige Cookies erlauben'|trans }}</label>
+            </fieldset>
+            <button class="button button-primary" type="submit">{{ 'Auswahl speichern'|trans }}</button>
+        </form>
+        <p><a href="{{ path('platform_home') }}">{{ 'Zur Website'|trans }}</a></p>
+    </main>
+{% endblock %}

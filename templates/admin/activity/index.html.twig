@@ -1,0 +1,70 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Aktivitätsübersicht'|trans }}{% endblock %}
+{% block admin_breadcrumb %}{{ 'Aktivität'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="admin-page-heading">
+        <div>
+            <h1 id="seitenueberschrift">{{ 'Aktivitätsübersicht'|trans }}</h1>
+            <p>{{ 'Erfolgreiche Änderungen im Verwaltungsbereich. Inhalte aus Formularen, Netzwerkadressen und Geheimnisse werden nicht gespeichert.'|trans }}</p>
+        </div>
+    </div>
+
+    <div class="admin-toolbar">
+        <form class="admin-filter-form" method="get" action="{{ path('admin_activity_index') }}">
+            <label for="activity-search">{{ 'Suche nach Administrator oder Verwaltungsbereich'|trans }}</label>
+            <input id="activity-search" type="search" name="q" value="{{ search }}" maxlength="120">
+            <button class="button" type="submit">{{ 'Suchen'|trans }}</button>
+        </form>
+
+        {% if total > 0 %}
+            <form class="activity-clear-form" method="post" action="{{ path('admin_activity_clear') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('admin_activity_clear') }}">
+                <button class="button button-secondary" type="submit">{{ 'Aktivitätsverlauf leeren'|trans }}</button>
+            </form>
+        {% endif %}
+    </div>
+
+    {% if entries is empty %}
+        <p class="empty-state">{{ 'Der Aktivitätsverlauf ist leer.'|trans }}</p>
+    {% else %}
+        <p class="admin-result-count">{{ '%count% Einträge'|trans({'%count%': total}) }}</p>
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th scope="col">{{ 'Zeit'|trans }}</th>
+                        <th scope="col">{{ 'Administrator'|trans }}</th>
+                        <th scope="col">{{ 'Bereich'|trans }}</th>
+                        <th scope="col">{{ 'Aktion'|trans }}</th>
+                        <th scope="col">{{ 'Methode'|trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in entries %}
+                        <tr>
+                            <td>{{ entry.createdAt|date('d.m.Y H:i') }}</td>
+                            <td>{{ entry.actor ? entry.actor.userIdentifier : ('Entfernter Administrator'|trans) }}</td>
+                            <td>{{ entry.areaLabel|trans }}</td>
+                            <td>{{ entry.actionLabel|trans }}</td>
+                            <td><code>{{ entry.method }}</code></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if page_count > 1 %}
+            <nav class="admin-pagination" aria-label="{{ 'Seitenwechsel'|trans }}">
+                {% if page > 1 %}
+                    <a class="button button-secondary" href="{{ path('admin_activity_index', {q: search, page: page - 1}) }}">{{ 'Vorherige Seite'|trans }}</a>
+                {% endif %}
+                <span>{{ 'Seite %page% von %total%'|trans({'%page%': page, '%total%': page_count}) }}</span>
+                {% if page < page_count %}
+                    <a class="button button-secondary" href="{{ path('admin_activity_index', {q: search, page: page + 1}) }}">{{ 'Nächste Seite'|trans }}</a>
+                {% endif %}
+            </nav>
+        {% endif %}
+    {% endif %}
+{% endblock %}

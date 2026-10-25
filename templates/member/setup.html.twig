@@ -1,0 +1,30 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'Konto einrichten'|trans }} · {{ site_settings().siteName }}{% endblock %}
+
+{% block body %}
+    <main class="login-page">
+        <section class="login-card" aria-labelledby="member-setup-heading">
+            <a class="brand login-brand" href="{{ path('platform_home') }}">
+                <span class="brand-name">{{ site_settings().siteName }}</span>
+                <span class="brand-caption">{{ 'Mitgliedskonto'|trans }}</span>
+            </a>
+            <p class="eyebrow">{{ 'Einladung'|trans }}</p>
+            <h1 id="member-setup-heading">{{ 'Konto einrichten'|trans }}</h1>
+            <p class="login-intro">{{ 'Gib den einmaligen Einrichtungscode ein und lege ein Passwort mit mindestens 12 Zeichen fest.'|trans }}</p>
+            {% for error in errors %}<p class="login-error" role="alert">{{ error|trans }}</p>{% endfor %}
+            <form class="login-form" action="{{ path('member_setup') }}" method="post">
+                <label for="member-invitation-code">{{ 'Einrichtungscode'|trans }}</label>
+                <input id="member-invitation-code" name="invitation_code" type="text" minlength="43" maxlength="43" pattern="[A-Za-z0-9_-]{43}" autocomplete="off" autocapitalize="none" spellcheck="false" required>
+                <label for="member-setup-password">{{ 'Passwort'|trans }}</label>
+                <input id="member-setup-password" name="password" type="password" minlength="12" maxlength="4096" autocomplete="new-password" required>
+                <label for="member-setup-password-confirmation">{{ 'Passwort wiederholen'|trans }}</label>
+                <input id="member-setup-password-confirmation" name="password_confirmation" type="password" minlength="12" maxlength="4096" autocomplete="new-password" required>
+                <input type="hidden" name="_token" value="{{ csrf_token('member_setup') }}">
+                <button class="button login-submit" type="submit">{{ 'Passwort festlegen'|trans }}</button>
+            </form>
+            <p class="login-home"><a href="{{ path('member_login') }}">{{ 'Zur Anmeldung'|trans }}</a></p>
+            <p class="login-home"><a href="{{ path('platform_home') }}">{{ 'Zur Plattform'|trans }}</a></p>
+        </section>
+    </main>
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Videoanbieter-Import'|trans }}{% endblock %}
+{% block admin_breadcrumb %}<a href="{{ path('admin_video_index') }}">{{ 'Videos'|trans }}</a> / {{ 'Anbieter-Import'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Videokatalog'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ 'Anbieter-Suche und Kanalimport'|trans }}</h1>
+            <p class="muted">{{ 'Ein Abruf liefert höchstens 25 einbettbare Videos. Jeder Treffer wird als Entwurf gespeichert und muss vor der Veröffentlichung geprüft werden.'|trans }}</p>
+        </div>
+        <a class="button button-secondary" href="{{ path('admin_video_index') }}">{{ 'Zurück zu Videos'|trans }}</a>
+    </div>
+
+    {% if errors is not empty %}
+        <div class="flash-message is-error" role="alert">
+            <strong>{{ 'Der Import wurde nicht gespeichert.'|trans }}</strong>
+            <ul>{% for error in errors %}<li>{{ error|trans }}</li>{% endfor %}</ul>
+        </div>
+    {% endif %}
+
+    {% if not configured %}
+        <div class="flash-message is-error" role="status">
+            {% if values.provider == 'youtube' %}
+                {{ 'Der YouTube-Import ist deaktiviert. Auf dem Server muss der API-Schlüssel gesetzt sein. Der Schlüssel wird nicht im Formular oder Browser gespeichert.'|trans }}
+            {% else %}
+                {{ 'Der Vimeo-Import ist deaktiviert. Auf dem Server muss der Zugriffstoken gesetzt sein. Der Zugriffstoken wird nicht im Formular oder Browser gespeichert.'|trans }}
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <section class="admin-panel" aria-labelledby="video-provider-import-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="video-provider-import-heading">{{ 'Videos bei einem Anbieter finden'|trans }}</h2>
+                <p class="muted">{{ 'Arcanorum fragt ausschließlich die festen API-Adressen des ausgewählten Anbieters ab. Der Import lädt keine Video-, Bild- oder Kanal-URLs aus den Suchergebnissen.'|trans }}</p>
+            </div>
+        </header>
+        <form class="admin-form" method="post" action="{{ path('admin_video_provider_import') }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('admin_video_provider_import') }}">
+            <label>
+                <span>{{ 'Videoanbieter'|trans }}</span>
+                <select name="provider" required>
+                    {% for key, provider in providers %}
+                        <option value="{{ key }}" {{ values.provider == key ? 'selected' : '' }}>{{ provider.label }}{% if not provider.configured %} ({{ 'nicht eingerichtet'|trans }}){% endif %}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                <span>{{ 'Importart'|trans }}</span>
+                <select name="mode" required>
+                    <option value="search" {{ values.mode == 'search' ? 'selected' : '' }}>{{ 'Nach Suchbegriff'|trans }}</option>
+                    <option value="channel" {{ values.mode == 'channel' ? 'selected' : '' }}>{{ 'Nach Kanal-ID'|trans }}</option>
+                </select>
+            </label>
+            <label>
+                    <span>{{ 'Suchbegriff'|trans }}</span>
+                <input type="search" name="query" value="{{ values.query }}" maxlength="100" autocomplete="off">
+            </label>
+            <label>
+                <span>{{ values.provider == 'youtube' ? ('YouTube-Kanal-ID'|trans) : ('Vimeo-Nutzer-ID'|trans) }}</span>
+                <input type="text" name="channel_id" value="{{ values.channel_id }}" maxlength="{{ values.provider == 'youtube' ? 24 : 12 }}"{% if values.provider == 'youtube' %} pattern="UC[A-Za-z0-9_-]{22}"{% else %} pattern="[1-9][0-9]{0,11}"{% endif %} autocomplete="off">
+                {% if values.provider == 'youtube' %}
+                    <small>{{ 'Nur die YouTube-Kanal-ID im Format UC… wird akzeptiert.'|trans }}</small>
+                {% else %}
+                    <small>{{ 'Nur eine numerische Vimeo-Nutzer-ID wird akzeptiert; importiert werden die öffentlich einbettbaren Videos dieses Nutzerkanals.'|trans }}</small>
+                {% endif %}
+            </label>
+            <label>
+                <span>{{ 'Videokategorie (optional)'|trans }}</span>
+                <select name="category">
+                    <option value="">{{ 'Keine Kategorie'|trans }}</option>
+                    {% for option in categories %}
+                        <option value="{{ option.name }}"{% if values.category == option.name %} selected{% endif %}>{{ option.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <p>{{ 'Suchanfragen und Kanal-IDs werden nur an die feste API des ausgewählten Anbieters gesendet. Bestehende Videos und wiederholte Treffer werden übersprungen.'|trans }}</p>
+            <div class="form-actions">
+                <button class="button" type="submit">{{ 'Treffer als Entwürfe importieren'|trans }}</button>
+                <a class="button button-secondary" href="{{ path('admin_video_index') }}">{{ 'Abbrechen'|trans }}</a>
+            </div>
+        </form>
+    </section>
+{% endblock %}

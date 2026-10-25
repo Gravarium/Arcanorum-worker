@@ -1,0 +1,56 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ (is_edit ? 'Folge bearbeiten' : 'Folge zuordnen')|trans }}{% endblock %}
+{% block admin_breadcrumb %}<a href="{{ path('admin_episode_index') }}">{{ 'Folgen'|trans }}</a> / {{ (is_edit ? 'Bearbeiten' : 'Zuordnen')|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div><p class="eyebrow">{{ 'Videokatalog'|trans }}</p><h1 id="seitenueberschrift">{{ (is_edit ? 'Folge bearbeiten' : 'Folge zuordnen')|trans }}</h1><p class="muted">{{ 'Eine Folge verweist auf ein Video und kann eigene Metadaten sowie einen Sichtbarkeitsstatus erhalten.'|trans }}</p></div>
+        <a class="button button-secondary" href="{{ path('admin_episode_index') }}">{{ 'Zurück zur Übersicht'|trans }}</a>
+    </div>
+    {% if errors is not empty %}
+        <div class="flash-message is-error" role="alert"><strong>{{ 'Bitte prüfe die Eingaben.'|trans }}</strong><ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul></div>
+    {% endif %}
+    <section class="admin-panel" aria-labelledby="episode-form-heading">
+        <header class="panel-heading"><div><h2 id="episode-form-heading">{{ 'Folgendaten'|trans }}</h2></div></header>
+        <form class="admin-form" method="post">
+            <input type="hidden" name="_token" value="{{ csrf_token('admin_episode_save') }}">
+            <label>
+                <span>{{ 'Serie'|trans }}</span>
+                <select name="series_id" required>
+                    <option value="">{{ 'Bitte wählen'|trans }}</option>
+                    {% for option in series_options %}
+                        <option value="{{ option.id }}"{% if values.series_id == option.id %} selected{% endif %}>{{ option.title }} · {{ option.status.label|trans }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                <span>{{ 'Video'|trans }}</span>
+                <select name="video_id" required>
+                    <option value="">{{ 'Bitte wählen'|trans }}</option>
+                    {% for option in video_options %}
+                        <option value="{{ option.id }}"{% if values.video_id == option.id %} selected{% endif %}>{{ option.title }} · {{ option.status.label|trans }}</option>
+                    {% endfor %}
+                </select>
+                <small>{{ 'Bis zu 1.000 Videos werden zur Auswahl geladen.'|trans }}</small>
+            </label>
+            <div class="form-grid">
+                <label><span>{{ 'Staffel'|trans }}</span><input type="number" name="season_number" value="{{ values.season_number }}" min="1" max="999" required></label>
+                <label><span>{{ 'Folge'|trans }}</span><input type="number" name="episode_number" value="{{ values.episode_number }}" min="1" max="999" required></label>
+            </div>
+            <label><span>{{ 'Folgentitel (optional)'|trans }}</span><input name="title_override" value="{{ values.title_override }}" maxlength="180"><small>{{ 'Leer lassen, um den Videotitel zu verwenden.'|trans }}</small></label>
+            <label><span>{{ 'Folgenbeschreibung (optional)'|trans }}</span><textarea name="description_override" rows="6" maxlength="20000">{{ values.description_override }}</textarea><small>{{ 'Leer lassen, um die Videobeschreibung zu verwenden.'|trans }}</small></label>
+            <label>
+                <span>{{ 'Sichtbarkeit der Folge'|trans }}</span>
+                <select name="status">
+                    <option value="draft" {{ values.status == 'draft' ? 'selected' : '' }}>{{ 'Entwurf'|trans }}</option>
+                    <option value="published" {{ values.status == 'published' ? 'selected' : '' }}>{{ 'Veröffentlicht'|trans }}</option>
+                </select>
+            </label>
+            <div class="form-actions">
+                <button class="button" type="submit">{{ (is_edit ? 'Änderungen speichern' : 'Folge zuordnen')|trans }}</button>
+                <a class="button button-secondary" href="{{ path('admin_episode_index') }}">{{ 'Abbrechen'|trans }}</a>
+            </div>
+        </form>
+    </section>
+{% endblock %}

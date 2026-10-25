@@ -1,0 +1,70 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Seiten verwalten'|trans }}{% endblock %}
+{% block admin_breadcrumb %}{{ 'Seiten'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Website'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ 'Statische Seiten'|trans }}</h1>
+            <p class="muted">{{ 'Inhalte wie Kontakt- und Informationsseiten bearbeiten und veröffentlichen.'|trans }}</p>
+        </div>
+        <a class="button" href="{{ path('admin_page_new') }}">{{ 'Neue Seite'|trans }}</a>
+    </div>
+
+    <section class="admin-panel" aria-labelledby="page-list-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="page-list-heading">{{ 'Seiten'|trans }}</h2>
+                <p class="muted">{{ 'Treffer in dieser Ansicht: %result_count%'|trans({'%result_count%': pages|length}) }}</p>
+            </div>
+        </header>
+
+        <form class="admin-filter-form" method="get" action="{{ path('admin_page_index') }}">
+            <label>
+                <span>{{ 'Suchen'|trans }}</span>
+                <input type="search" name="q" value="{{ search }}" maxlength="180" placeholder="{{ 'Titel oder Adresse'|trans }}">
+            </label>
+            <label>
+                <span>{{ 'Status'|trans }}</span>
+                <select name="status">
+                    <option value="">{{ 'Alle Seiten'|trans }}</option>
+                    <option value="draft" {{ status == 'draft' ? 'selected' : '' }}>{{ 'Entwürfe'|trans }}</option>
+                    <option value="published" {{ status == 'published' ? 'selected' : '' }}>{{ 'Veröffentlicht'|trans }}</option>
+                </select>
+            </label>
+            <button class="button button-secondary" type="submit">{{ 'Filtern'|trans }}</button>
+        </form>
+
+        <div class="table-wrap">
+            <table class="admin-table">
+                <caption class="visually-hidden">{{ 'Statische Seiten'|trans }}</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">{{ 'Titel'|trans }}</th>
+                        <th scope="col">{{ 'Adresse'|trans }}</th>
+                        <th scope="col">{{ 'Status'|trans }}</th>
+                        <th scope="col">{{ 'Zuletzt geändert'|trans }}</th>
+                        <th scope="col"><span class="visually-hidden">{{ 'Aktion'|trans }}</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for page in pages %}
+                        <tr>
+                            <th scope="row">{{ page.title }}</th>
+                            <td><code>/pages/{{ page.slug }}</code></td>
+                            <td><span class="status-pill {{ page.status.cssClass }}">{{ page.status.label|trans }}</span></td>
+                            <td>{{ page.updatedAt|date('d.m.Y H:i') }}</td>
+                            <td><a class="button button-secondary" href="{{ path('admin_page_edit', {id: page.id}) }}">{{ 'Bearbeiten'|trans }}</a></td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="5">{{ 'Noch keine Seiten vorhanden.'|trans }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+{% endblock %}

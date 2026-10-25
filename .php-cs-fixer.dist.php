@@ -7,7 +7,6 @@ use PhpCsFixer\Finder;
 
 $paths = array_values(array_filter([
     __DIR__ . '/src',
-    __DIR__ . '/public',
     __DIR__ . '/tests',
 ], 'is_dir'));
 

@@ -1,0 +1,34 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'Seiten'|trans }} · {{ site_settings().siteName }}{% endblock %}
+
+{% block body %}
+    <header class="public-header">
+        {{ include('partials/public_brand.html.twig') }}
+        <nav class="public-navigation" aria-label="{{ 'Hauptnavigation'|trans }}">
+            <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
+            {% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}
+            {% if module_enabled('pages') %}<a href="{{ path('page_index') }}" aria-current="page">{{ 'Seiten'|trans }}</a>{% endif %}
+            <a href="{{ path('content_sitemap') }}">{{ 'Sitemap'|trans }}</a>
+            {{ include('partials/member_area_link.html.twig') }}
+        </nav>
+    </header>
+    <main class="public-main">
+        <section class="public-page-heading">
+            <p class="eyebrow">{{ 'Informationen'|trans }}</p>
+            <h1>{{ 'Seiten'|trans }}</h1>
+            <p class="lead">{{ 'Informationen und Hinweise zur Website.'|trans }}</p>
+        </section>
+        <div class="content-grid">
+            {% for page in pages %}
+                <article class="content-card">
+                    <p class="card-kicker">{{ 'Information'|trans }}</p>
+                    <h2><a href="{{ path('page_show', {slug: page.slug}) }}">{{ page.title }}</a></h2>
+                    {% if page.summary %}<p>{{ page.summary }}</p>{% endif %}
+                </article>
+            {% else %}
+                <p class="empty-state">{{ 'Noch keine Seiten veröffentlicht.'|trans }}</p>
+            {% endfor %}
+        </div>
+    </main>
+{% endblock %}

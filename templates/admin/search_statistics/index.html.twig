@@ -1,0 +1,66 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Suchstatistik'|trans }}{% endblock %}
+{% block admin_breadcrumb %}{{ 'Suchstatistik'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="admin-page-heading">
+        <div>
+            <h1 id="seitenueberschrift">{{ 'Suchstatistik'|trans }}</h1>
+            <p>{{ 'Suchbegriffe werden je Tag zusammengefasst und nach 30 Tagen entfernt. Nutzerkonten und Netzwerkadressen werden nicht gespeichert.'|trans }}</p>
+        </div>
+    </div>
+
+    <div class="admin-toolbar">
+        <form class="admin-filter-form" method="get" action="{{ path('admin_search_statistics_index') }}">
+            <label for="search-statistics-filter">{{ 'Suchbegriff filtern'|trans }}</label>
+            <input id="search-statistics-filter" type="search" name="q" value="{{ search }}" maxlength="100">
+            <button class="button" type="submit">{{ 'Suchen'|trans }}</button>
+        </form>
+        {% if total > 0 %}
+            <form method="post" action="{{ path('admin_search_statistics_clear') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('admin_search_statistics_clear') }}">
+                <button class="button button-secondary" type="submit">{{ 'Suchstatistik leeren'|trans }}</button>
+            </form>
+        {% endif %}
+    </div>
+
+    {% if entries is empty %}
+        <p class="empty-state">{{ 'Keine Suchbegriffe gefunden.'|trans }}</p>
+    {% else %}
+        <p class="admin-result-count">{{ '%count% Einträge'|trans({'%count%': total}) }}</p>
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th scope="col">{{ 'Tag (UTC)'|trans }}</th>
+                        <th scope="col">{{ 'Suchbegriff'|trans }}</th>
+                        <th scope="col">{{ 'Suchen'|trans }}</th>
+                        <th scope="col">{{ 'Zuletzt (UTC)'|trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in entries %}
+                        <tr>
+                            <td>{{ entry.day }}</td>
+                            <td>{{ entry.term }}</td>
+                            <td>{{ entry.search_count }}</td>
+                            <td>{{ entry.last_at }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if page_count > 1 %}
+            <nav class="admin-pagination" aria-label="{{ 'Seitenwechsel'|trans }}">
+                {% if page > 1 %}
+                    <a class="button button-secondary" href="{{ path('admin_search_statistics_index', {q: search, page: page - 1}) }}">{{ 'Vorherige Seite'|trans }}</a>
+                {% endif %}
+                <span>{{ 'Seite %page% von %total%'|trans({'%page%': page, '%total%': page_count}) }}</span>
+                {% if page < page_count %}
+                    <a class="button button-secondary" href="{{ path('admin_search_statistics_index', {q: search, page: page + 1}) }}">{{ 'Nächste Seite'|trans }}</a>
+                {% endif %}
+            </nav>
+        {% endif %}
+    {% endif %}
+{% endblock %}

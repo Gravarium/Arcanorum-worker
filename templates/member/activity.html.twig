@@ -1,0 +1,79 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'Meine Aktivitäten'|trans }} · {{ site_settings().siteName }}{% endblock %}
+
+{% block body %}
+    <header class="public-header">
+        {{ include('partials/public_brand.html.twig') }}
+        <nav class="public-navigation" aria-label="{{ 'Mitgliedsmenü'|trans }}">
+            <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
+            {% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}
+            <a href="{{ path('member_profile') }}">{{ 'Mein Profil'|trans }}</a>
+            <a href="{{ path('member_playlist_index') }}">{{ 'Wiedergabelisten'|trans }}</a>
+            <a href="{{ path('member_submission_history') }}">{{ 'Meine Einreichungen'|trans }}</a>
+            <a href="{{ path('member_activity_index') }}" aria-current="page">{{ 'Meine Aktivitäten'|trans }}</a>
+            {% if member.publicProfile %}<a href="{{ path('public_member_profile', {handle: member.handle}) }}">{{ 'Mein Kanal'|trans }}</a>{% endif %}
+            <form action="{{ path('member_logout') }}" method="post">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('member_logout') }}">
+                <button class="logout-button" type="submit">{{ 'Abmelden'|trans }}</button>
+            </form>
+        </nav>
+    </header>
+    <main class="public-main">
+        <section class="public-section" aria-labelledby="member-activity-heading">
+            <p class="eyebrow">{{ 'Mitgliedskonto'|trans }}</p>
+            <h1 id="member-activity-heading">{{ 'Meine Aktivitäten'|trans }}</h1>
+            <p class="lead">{{ 'Hier siehst du deine seit der Kontoverknüpfung eingereichten Kommentare und Videos. Diese Ansicht ist nur für dich sichtbar.'|trans }}</p>
+
+            {% if page == 1 %}
+                <h2>{{ 'Letzte Videoeinreichungen'|trans }}</h2>
+                <div class="content-grid">
+                    {% for submission in submissions %}
+                        <article class="content-card">
+                            <h3>{{ submission.video.title }}</h3>
+                            <p>{{ 'Prüfstatus:'|trans }} {{ submission.status.label|trans }}</p>
+                        </article>
+                    {% else %}
+                        <p class="empty-state">{{ 'Du hast noch keine Videos eingereicht.'|trans }}</p>
+                    {% endfor %}
+                </div>
+                <p><a href="{{ path('member_submission_history') }}">{{ 'Alle Videoeinreichungen ansehen'|trans }}</a></p>
+
+                <h2>{{ 'Meine Wiedergabelisten'|trans }}</h2>
+                <div class="content-grid">
+                    {% for playlist in playlists %}
+                        <article class="content-card">
+                            <p class="card-kicker">{{ (playlist.public ? 'Öffentlich' : 'Privat')|trans }} · {{ 'aktualisiert'|trans }} {{ playlist.updatedAt|date('d.m.Y H:i') }}</p>
+                            <h3>{{ playlist.name }}</h3>
+                            {% if playlist.description %}<p>{{ playlist.description }}</p>{% endif %}
+                        </article>
+                    {% else %}
+                        <p class="empty-state">{{ 'Du hast noch keine Wiedergabelisten erstellt.'|trans }}</p>
+                    {% endfor %}
+                </div>
+                <p><a href="{{ path('member_playlist_index') }}">{{ 'Meine Wiedergabelisten ansehen'|trans }}</a></p>
+            {% endif %}
+
+            <h2>{{ 'Meine Kommentare'|trans }}</h2>
+            <div class="content-grid">
+                {% for comment in comments %}
+                    <article class="content-card">
+                        <p class="card-kicker"><time datetime="{{ comment.createdAt|date('c') }}">{{ comment.createdAt|date('d.m.Y H:i') }}</time></p>
+                        <h3>{{ comment.contentTitle }}</h3>
+                        <p>{{ 'Prüfstatus:'|trans }} {{ comment.status.label|trans }}</p>
+                        <p>{{ comment.body }}</p>
+                    </article>
+                {% else %}
+                    <p class="empty-state">{{ 'Auf dieser Seite sind noch keine Kommentare vorhanden.'|trans }}</p>
+                {% endfor %}
+            </div>
+            {% if page > 1 or has_next %}
+                <nav class="pagination" aria-label="{{ 'Kommentarseiten'|trans }}">
+                    {% if page > 1 %}<a href="{{ path('member_activity_index', {page: page - 1}) }}">{{ 'Vorherige Seite'|trans }}</a>{% endif %}
+                    <span>{{ 'Seite %page%'|trans({'%page%': page}) }}</span>
+                    {% if has_next %}<a href="{{ path('member_activity_index', {page: page + 1}) }}">{{ 'Nächste Seite'|trans }}</a>{% endif %}
+                </nav>
+            {% endif %}
+        </section>
+    </main>
+{% endblock %}

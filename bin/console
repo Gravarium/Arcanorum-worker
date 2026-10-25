@@ -6,14 +6,11 @@ declare(strict_types=1);
 use App\Kernel;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 
-require dirname(__DIR__) . '/vendor/autoload.php';
+require_once dirname(__DIR__) . '/vendor/autoload_runtime.php';
 
-$environment = getenv('APP_ENV');
-$debugValue = getenv('APP_DEBUG');
+/** @param array<string, mixed> $context */
+return static function (array $context): Application {
+    $kernel = new Kernel((string) $context['APP_ENV'], (bool) $context['APP_DEBUG']);
 
-$kernel = new Kernel(
-    $environment !== false && $environment !== '' ? $environment : 'dev',
-    $debugValue === false || $debugValue !== '0',
-);
-
-exit((new Application($kernel))->run());
+    return new Application($kernel);
+};

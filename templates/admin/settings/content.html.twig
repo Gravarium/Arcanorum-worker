@@ -1,0 +1,72 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Video und Wiedergabe'|trans }}{% endblock %}
+{% block admin_breadcrumb %}{{ 'Video und Wiedergabe'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Einstellungen · Inhalte'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ 'Video und Wiedergabe'|trans }}</h1>
+            <p class="muted">{{ 'Player-Vorgaben für neue und öffentliche Inhalte. Gespeicherte Inhalte und Warteschlangen bleiben beim Abschalten erhalten.'|trans }}</p>
+        </div>
+    </div>
+
+    {% if errors.form is defined %}<p class="field-error" role="alert">{{ errors.form|trans }}</p>{% endif %}
+    {% for field, message in errors %}{% if field != 'form' %}<p class="field-error" role="alert">{{ message|trans }}</p>{% endif %}{% endfor %}
+
+    <section class="admin-panel" aria-labelledby="player-options-heading">
+        <header class="panel-heading"><h2 id="player-options-heading">{{ 'Player'|trans }}</h2></header>
+        <form method="post" action="{{ path('admin_content_settings_update') }}" class="admin-form">
+            <input type="hidden" name="token" value="{{ csrf_token('admin_content_settings') }}">
+            <label>
+                <span>{{ 'Player für lokale Medien'|trans }}</span>
+                <select name="video_player_engine" required>
+                    <option value="native"{% if form.video_player_engine == 'native' %} selected{% endif %}>{{ 'Native HTML5-Steuerung'|trans }}</option>
+                    <option value="videojs"{% if form.video_player_engine == 'videojs' %} selected{% endif %}>{{ 'Video.js-Steuerung'|trans }}</option>
+                </select>
+            </label>
+            <label>
+                <span>{{ 'Medien vorladen'|trans }}</span>
+                <select name="video_preload_mode" required>
+                    <option value="none"{% if form.video_preload_mode == 'none' %} selected{% endif %}>{{ 'Nicht vorladen'|trans }}</option>
+                    <option value="metadata"{% if form.video_preload_mode == 'metadata' %} selected{% endif %}>{{ 'Nur Metadaten vorladen'|trans }}</option>
+                    <option value="auto"{% if form.video_preload_mode == 'auto' %} selected{% endif %}>{{ 'Medien nach Browserentscheidung vorladen'|trans }}</option>
+                </select>
+            </label>
+            <input type="hidden" name="player_autoplay_enabled" value="0">
+            <label><input type="checkbox" name="player_autoplay_enabled" value="1"{% if form.player_autoplay_enabled == '1' %} checked{% endif %}> {{ 'Player automatisch starten'|trans }}</label>
+            <input type="hidden" name="player_autoplay_muted" value="0">
+            <label><input type="checkbox" name="player_autoplay_muted" value="1"{% if form.player_autoplay_muted == '1' %} checked{% endif %}> {{ 'Automatische Wiedergabe stummschalten'|trans }}</label>
+            <input type="hidden" name="default_comments_enabled" value="{{ form.default_comments_enabled }}">
+            <input type="hidden" name="public_video_submissions_enabled" value="{{ form.public_video_submissions_enabled }}">
+            <p class="muted">{{ 'Die Auswahl gilt für lokale Dateien und geprüfte Streams. Externe Anbieter-Einbettungen verwenden weiterhin den Player des Anbieters. Video.js wird lokal bereitgestellt.'|trans }}</p>
+            <p class="muted">{{ 'Die Vorladeeinstellung ist ein Hinweis an den Browser. Die Option für Medien kann mehr Daten übertragen, bevor die Wiedergabe beginnt.'|trans }}</p>
+            <p class="muted">{{ 'Automatische Wiedergabe mit Ton wird abgewiesen. Geprüfte Videoeinbettungen externer Anbieter werden von dieser Player-Vorgabe nicht verändert.'|trans }}</p>
+            <div class="form-actions"><button class="button button-primary" type="submit">{{ 'Player-Einstellungen speichern'|trans }}</button></div>
+        </form>
+    </section>
+
+    <section class="admin-panel" aria-labelledby="content-options-heading">
+        <header class="panel-heading"><h2 id="content-options-heading">{{ 'Kommentare und Einreichungen'|trans }}</h2></header>
+        <form method="post" action="{{ path('admin_content_settings_update') }}" class="admin-form">
+            <input type="hidden" name="token" value="{{ csrf_token('admin_content_settings') }}">
+            <input type="hidden" name="video_player_engine" value="{{ form.video_player_engine }}">
+            <input type="hidden" name="video_preload_mode" value="{{ form.video_preload_mode }}">
+            <input type="hidden" name="player_autoplay_enabled" value="{{ form.player_autoplay_enabled }}">
+            <input type="hidden" name="player_autoplay_muted" value="{{ form.player_autoplay_muted }}">
+            <input type="hidden" name="default_comments_enabled" value="0">
+            <label><input type="checkbox" name="default_comments_enabled" value="1"{% if form.default_comments_enabled == '1' %} checked{% endif %}> {{ 'Kommentare bei neuen News und Videos standardmäßig erlauben'|trans }}</label>
+            <input type="hidden" name="public_video_submissions_enabled" value="0">
+            <label><input type="checkbox" name="public_video_submissions_enabled" value="1"{% if form.public_video_submissions_enabled == '1' %} checked{% endif %}> {{ 'Öffentliche Videoeinreichungen annehmen'|trans }}</label>
+            <p class="muted">{{ 'Die Vorgabe für Kommentare betrifft nur neu angelegte Inhalte. Jede Videoeinreichung bleibt bis zur Prüfung unveröffentlicht. Beim Abschalten bleiben bereits wartende Einreichungen erhalten.'|trans }}</p>
+            <div class="form-actions"><button class="button button-primary" type="submit">{{ 'Inhaltseinstellungen speichern'|trans }}</button></div>
+        </form>
+    </section>
+
+    <section class="admin-panel" aria-labelledby="advertising-options-heading">
+        <header class="panel-heading"><h2 id="advertising-options-heading">{{ 'Anzeigen'|trans }}</h2></header>
+        <p>{{ 'Verwalte Banner, Player-Anzeigen und datensparsame Auslieferungsberichte im Anzeigenbereich.'|trans }}</p>
+        <a class="button button-secondary" href="{{ path('admin_advertising_index') }}">{{ 'Anzeigenverwaltung öffnen'|trans }}</a>
+    </section>
+{% endblock %}

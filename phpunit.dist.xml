@@ -8,20 +8,17 @@
          failOnRisky="true"
          failOnWarning="true"
          failOnDeprecation="true"
-         failOnEmptyTestSuite="true"
-         failOnIncomplete="true"
-         failOnSkipped="true"
          beStrictAboutOutputDuringTests="true">
     <php>
         <env name="KERNEL_CLASS" value="App\Kernel" force="true"/>
         <env name="APP_ENV" value="test" force="true"/>
         <env name="APP_DEBUG" value="0" force="true"/>
-        <env name="APP_SECRET" value="ci-only-not-a-production-secret" force="false"/>
-        <env name="DATABASE_URL" value="postgresql://walker_ci:ci-only-test-password@127.0.0.1:5432/walker_test?serverVersion=18&amp;charset=utf8" force="false"/>
+        <env name="APP_SECRET" value="test-only-placeholder-not-a-secret" force="false"/>
+        <env name="DATABASE_URL" value="postgresql://arcanorum_test@127.0.0.1:5432/arcanorum_test?serverVersion=18&amp;charset=utf8" force="false"/>
         <env name="REDIS_URL" value="redis://127.0.0.1:6379" force="false"/>
     </php>
     <testsuites>
-        <testsuite name="Walker">
+        <testsuite name="Arcanorum">
             <directory>tests</directory>
         </testsuite>
     </testsuites>

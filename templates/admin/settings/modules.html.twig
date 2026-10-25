@@ -1,0 +1,63 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Module und Fähigkeiten'|trans }}{% endblock %}
+{% block admin_breadcrumb %}{{ 'Module und Fähigkeiten'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Fortress · Einstellungen'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ 'Module und Fähigkeiten'|trans }}</h1>
+            <p class="muted">{{ 'Integrierte Bereiche können pausiert werden. Inhalte bleiben gespeichert. Nicht belegte Hostingfähigkeiten sperren die betroffenen Module.'|trans }}</p>
+        </div>
+    </div>
+
+    <section class="admin-panel" aria-labelledby="module-settings-heading">
+        <header class="panel-heading"><h2 id="module-settings-heading">{{ 'Integrierte Module'|trans }}</h2></header>
+        {% if errors.form is defined %}<p class="field-error" role="alert">{{ errors.form|trans }}</p>{% endif %}
+        <form id="module-settings-form" method="post" action="{{ path('admin_module_settings_update') }}" class="admin-form">
+            <input type="hidden" name="token" value="{{ csrf_token('admin_feature_modules') }}">
+
+            <div class="module-settings-list">
+                {% for module in modules %}
+                    <article class="module-settings-card" aria-labelledby="module-{{ module.id }}-name">
+                        <div>
+                            <h3 id="module-{{ module.id }}-name">{{ module.name|trans }}</h3>
+                            <p class="muted">{{ module.description|trans }}</p>
+                            {% if module.required_capabilities is not empty %}
+                                <ul class="module-capabilities" aria-label="{{ 'Erforderliche Hostingfähigkeiten'|trans }}">
+                                    {% for capability in module.required_capabilities %}
+                                        <li><span class="status-badge {{ capability.status_class }}">{{ capability.status|trans }}</span> {{ capability.label|trans }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                            {% if module.configurable and not module.capability_ready %}
+                                <p class="field-error">{{ 'Aktivierung ist gesperrt, bis alle erforderlichen Fähigkeiten nachgewiesen sind. Unbekannte und veraltete Nachweise gelten als nicht verfügbar.'|trans }}</p>
+                            {% endif %}
+                            {% if errors['module_' ~ module.id ~ '_enabled'] is defined %}
+                                <p class="field-error" role="alert">{{ errors['module_' ~ module.id ~ '_enabled']|trans }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="module-settings-control">
+                            {% if module.configurable %}
+                                <input type="hidden" name="module_{{ module.id }}_enabled" value="0">
+                                <label for="module-{{ module.id }}-enabled">
+                                    <input id="module-{{ module.id }}-enabled" name="module_{{ module.id }}_enabled" type="checkbox" value="1"{% if form[module.id] == '1' %} checked{% endif %}{% if not module.can_enable %} disabled{% endif %}>
+                                    {{ 'Aktiviert'|trans }}
+                                </label>
+                                {% if module.configured_enabled and not module.enabled %}<span class="status-badge is-failed">{{ 'Gesperrt'|trans }}</span>{% endif %}
+                            {% else %}
+                                <span class="status-badge is-verified">{{ 'Kernfunktion · immer aktiv'|trans }}</span>
+                            {% endif %}
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+
+            <p class="muted">{{ 'Anmeldung, Rollen, CSRF-Schutz, Wartungszugang, Audit-Protokolle, Robots und Sicherungsgrenzen können hier nicht abgeschaltet werden. Externe PHP-, Twig- und JavaScript-Pakete werden nicht im CMS-Prozess geladen.'|trans }}</p>
+            <div class="form-actions">
+                <button class="button button-primary" type="submit">{{ 'Moduleinstellungen speichern'|trans }}</button>
+            </div>
+        </form>
+    </section>
+{% endblock %}

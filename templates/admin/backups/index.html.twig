@@ -1,0 +1,65 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Datenbanksicherungen'|trans }}{% endblock %}
+{% block admin_breadcrumb %}{{ 'Datenbanksicherungen'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="admin-page-heading">
+        <div>
+            <h1 id="seitenueberschrift">{{ 'Datenbanksicherungen'|trans }}</h1>
+            <p>{{ 'Sicherungen werden verschlüsselt in einem ausdrücklich konfigurierten privaten Speicher außerhalb des Anwendungsordners abgelegt. Wiederherstellungen werden hier nicht ausgeführt.'|trans }}</p>
+        </div>
+    </div>
+
+    <section class="admin-panel">
+        <header class="panel-heading">
+            <div>
+                <h2>{{ 'Speicherstatus'|trans }}</h2>
+            </div>
+        </header>
+
+        {% if not availability.available %}
+            <p class="field-error" role="status">{{ 'Sicherungen sind derzeit deaktiviert: %reason%'|trans({'%reason%': availability.reason|trans}) }}</p>
+        {% else %}
+            <form action="{{ path('admin_database_backup_create') }}" method="post" class="form-actions">
+                <input type="hidden" name="_token" value="{{ csrf_token('admin_database_backup_create') }}">
+                <button class="button button-primary" type="submit">{{ 'Jetzt sichern'|trans }}</button>
+            </form>
+        {% endif %}
+    </section>
+
+    <section class="admin-panel">
+        <header class="panel-heading"><h2>{{ 'Vorhandene Sicherungen'|trans }}</h2></header>
+        {% if entries is not empty %}
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead><tr><th>{{ 'Erstellt (UTC)'|trans }}</th><th>{{ 'Größe'|trans }}</th><th>{{ 'Aktionen'|trans }}</th></tr></thead>
+                    <tbody>
+                    {% for entry in entries %}
+                        <tr>
+                            <td><time datetime="{{ entry.created_at }}">{{ entry.created_at|replace({'T': ' ', 'Z': ' UTC'}) }}</time></td>
+                            <td>{{ entry.size_bytes|number_format(0, app.request.locale == 'en' ? '.' : ',', app.request.locale == 'en' ? ',' : '.') }} {{ (entry.size_bytes == 1 ? 'Byte' : 'Bytes')|trans }}</td>
+                            <td class="admin-table-actions">
+                                <form action="{{ path('admin_database_backup_verify', {id: entry.id}) }}" method="post">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('admin_database_backup_verify_' ~ entry.id) }}">
+                                    <button class="button button-secondary" type="submit">{{ 'Prüfen'|trans }}</button>
+                                </form>
+                                <form action="{{ path('admin_database_backup_download', {id: entry.id}) }}" method="post">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('admin_database_backup_download_' ~ entry.id) }}">
+                                    <button class="button button-secondary" type="submit">{{ 'Herunterladen'|trans }}</button>
+                                </form>
+                                <form action="{{ path('admin_database_backup_delete', {id: entry.id}) }}" method="post">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('admin_database_backup_delete_' ~ entry.id) }}">
+                                    <button class="button button-danger" type="submit">{{ 'Löschen'|trans }}</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% elseif availability.available %}
+            <p class="muted">{{ 'Es liegen noch keine Sicherungen vor.'|trans }}</p>
+        {% endif %}
+    </section>
+{% endblock %}

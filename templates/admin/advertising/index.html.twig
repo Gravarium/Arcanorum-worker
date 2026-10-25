@@ -1,0 +1,114 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Werbung verwalten'|trans }}{% endblock %}
+{% block admin_breadcrumb %}{{ 'Werbung'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Inhalte und Reichweite'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ 'Werbung verwalten'|trans }}</h1>
+            <p class="muted">{{ 'Verwalte HTML-Banner, Player-Anzeigen und lokale Videoanzeigen. Klickwerte sind aggregiert und speichern keine Besucherkennungen.'|trans }}</p>
+        </div>
+        <div class="form-actions">
+            <a class="button button-secondary" href="{{ path('admin_advertising_statistics') }}">{{ 'Berichte'|trans }}</a>
+            <a class="button" href="{{ path('admin_advertising_ad_new') }}">{{ 'Anzeige anlegen'|trans }}</a>
+        </div>
+    </div>
+
+    <section class="admin-panel" aria-labelledby="advertising-slots-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="advertising-slots-heading">{{ 'Werbeplätze'|trans }}</h2>
+                <p class="muted">{{ 'Ein Werbeplatz legt die sichtbare Position und die dort zulässigen Anzeigenformate fest.'|trans }}</p>
+            </div>
+            <a class="button button-secondary" href="{{ path('admin_advertising_placement_new') }}">{{ 'Werbeplatz anlegen'|trans }}</a>
+        </header>
+
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <caption class="visually-hidden">{{ 'Werbeplätze'|trans }}</caption>
+                <thead><tr><th scope="col">{{ 'Position'|trans }}</th><th scope="col">{{ 'Erlaubte Formate'|trans }}</th><th scope="col">{{ 'Status'|trans }}</th><th scope="col">{{ 'Aktionen'|trans }}</th></tr></thead>
+                <tbody>
+                {% for placement in placements %}
+                    <tr>
+                        <th scope="row"><strong>{{ placement.label }}</strong><br><code>{{ placement.id }}</code><br><small>{% if standard_slots[placement.id] is defined %}{{ standard_slots[placement.id]|trans }}{% else %}{{ 'Eigener Werbeplatz'|trans }}{% endif %}</small></th>
+                        <td>{% for format in placement.formats %}{{ format.value }}{% if not loop.last %}, {% endif %}{% endfor %}</td>
+                        <td>{% if placement.archived %}{{ 'Archiviert'|trans }}{% elseif placement.paused %}{{ 'Pausiert'|trans }}{% else %}{{ 'Aktiv'|trans }}{% endif %}</td>
+                        <td class="admin-table-actions">
+                            {% if not placement.archived %}
+                                <a class="button button-secondary" href="{{ path('admin_advertising_placement_edit', {id: placement.id}) }}">{{ 'Bearbeiten'|trans }}</a>
+                                {% if placement.paused %}
+                                    <form method="post" action="{{ path('admin_advertising_placement_activate', {id: placement.id}) }}"><input type="hidden" name="_token" value="{{ csrf_token('admin_advertising_mutation') }}"><button class="button button-secondary" type="submit">{{ 'Aktivieren'|trans }}</button></form>
+                                {% else %}
+                                    <form method="post" action="{{ path('admin_advertising_placement_pause', {id: placement.id}) }}"><input type="hidden" name="_token" value="{{ csrf_token('admin_advertising_mutation') }}"><button class="button button-secondary" type="submit">{{ 'Pausieren'|trans }}</button></form>
+                                {% endif %}
+                                <details>
+                                    <summary>{{ 'Archivieren'|trans }}</summary>
+                                    <form method="post" action="{{ path('admin_advertising_placement_archive', {id: placement.id}) }}">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('admin_advertising_mutation') }}">
+                                        <label><input type="checkbox" name="confirm_archive" value="1" required> {{ 'Dauerhaft archivieren'|trans }}</label>
+                                        <button class="button button-secondary" type="submit">{{ 'Bestätigen'|trans }}</button>
+                                    </form>
+                                </details>
+                            {% else %}<span class="muted">{{ 'Nur noch für Berichte sichtbar'|trans }}</span>{% endif %}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="4"><p class="empty-state">{{ 'Es gibt noch keine Werbeplätze. Lege zuerst eine Position an.'|trans }}</p></td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <p class="muted">{{ 'Standardpositionen: Startseite oben, News oben sowie ober- und unterhalb des Videoplayers. Aktive Anzeigen werden dort automatisch ausgegeben.'|trans }}</p>
+    </section>
+
+    <section class="admin-panel" aria-labelledby="advertising-ads-heading">
+        <header class="panel-heading">
+            <div><h2 id="advertising-ads-heading">{{ 'Anzeigen'|trans }}</h2><p class="muted">{{ 'Entwürfe lassen sich bearbeiten. Eine aktive Anzeige muss zuerst pausiert werden.'|trans }}</p></div>
+            <a class="button button-secondary" href="{{ path('admin_advertising_ad_new') }}">{{ 'Anzeige anlegen'|trans }}</a>
+        </header>
+        <form class="admin-filter-form" method="get" action="{{ path('admin_advertising_index') }}">
+            <label><span>{{ 'Format filtern'|trans }}</span><select name="format"><option value="">{{ 'Alle Formate'|trans }}</option><option value="player"{% if format_filter == 'player' %} selected{% endif %}>{{ 'Player-Anzeigen'|trans }}</option>{% for format in formats %}<option value="{{ format.value }}"{% if format_filter == format.value %} selected{% endif %}>{{ format.value }}</option>{% endfor %}</select></label>
+            <button class="button button-secondary" type="submit">{{ 'Filtern'|trans }}</button>
+        </form>
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <caption class="visually-hidden">{{ 'Anzeigen'|trans }}</caption>
+                <thead><tr><th scope="col">{{ 'Anzeige'|trans }}</th><th scope="col">{{ 'Werbeplatz'|trans }}</th><th scope="col">{{ 'Format'|trans }}</th><th scope="col">{{ 'Status'|trans }}</th><th scope="col">{{ 'Aktionen'|trans }}</th></tr></thead>
+                <tbody>
+                {% for advertisement in advertisements %}
+                    <tr>
+                        <th scope="row">{{ advertisement.label }}</th>
+                        <td><code>{{ advertisement.placementId }}</code></td>
+                        <td>{{ advertisement.format.value }}</td>
+                        <td>{{ advertisement.status.value|trans }}</td>
+                        <td class="admin-table-actions">
+                            {% if advertisement.status.value in ['draft', 'paused', 'inactive'] %}<a class="button button-secondary" href="{{ path('admin_advertising_ad_edit', {id: advertisement.id}) }}">{{ 'Bearbeiten'|trans }}</a>{% endif %}
+                            {% if advertisement.status.value in ['draft', 'paused', 'inactive'] %}
+                                <form method="post" action="{{ path('admin_advertising_ad_activate', {id: advertisement.id}) }}"><input type="hidden" name="_token" value="{{ csrf_token('admin_advertising_mutation') }}"><button class="button button-secondary" type="submit">{{ 'Aktivieren'|trans }}</button></form>
+                            {% elseif advertisement.status.value == 'active' %}
+                                <form method="post" action="{{ path('admin_advertising_ad_pause', {id: advertisement.id}) }}"><input type="hidden" name="_token" value="{{ csrf_token('admin_advertising_mutation') }}"><button class="button button-secondary" type="submit">{{ 'Pausieren'|trans }}</button></form>
+                            {% endif %}
+                            {% if advertisement.status.value in ['active', 'paused', 'draft'] %}<form method="post" action="{{ path('admin_advertising_ad_deactivate', {id: advertisement.id}) }}"><input type="hidden" name="_token" value="{{ csrf_token('admin_advertising_mutation') }}"><button class="button button-secondary" type="submit">{{ 'Deaktivieren'|trans }}</button></form>{% endif %}
+                            {% if advertisement.status.value != 'archived' %}
+                                <details>
+                                    <summary>{{ 'Archivieren'|trans }}</summary>
+                                    <form method="post" action="{{ path('admin_advertising_ad_archive', {id: advertisement.id}) }}">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('admin_advertising_mutation') }}">
+                                        <label><input type="checkbox" name="confirm_archive" value="1" required> {{ 'Dauerhaft archivieren'|trans }}</label>
+                                        <button class="button button-secondary" type="submit">{{ 'Bestätigen'|trans }}</button>
+                                    </form>
+                                </details>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="5"><p class="empty-state">{{ 'Noch keine Anzeigen für diesen Filter vorhanden.'|trans }}</p></td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'Video einreichen'|trans }} · {{ site_settings().siteName }}{% endblock %}
+
+{% block body %}
+    <header class="public-header">
+        {{ include('partials/public_brand.html.twig') }}
+        <nav class="public-navigation" aria-label="{{ 'Hauptnavigation'|trans }}">
+            <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
+            {% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}
+            {% if module_enabled('series') %}<a href="{{ path('series_index') }}">{{ 'Serien'|trans }}</a>{% endif %}
+            {% if module_enabled('search') %}<a href="{{ path('public_search') }}">{{ 'Suche'|trans }}</a>{% endif %}
+            {% if module_enabled('pages') %}<a href="{{ path('page_index') }}">{{ 'Seiten'|trans }}</a>{% endif %}
+            {{ include('partials/member_area_link.html.twig') }}
+        </nav>
+    </header>
+    <main class="public-main">
+        <section class="public-page-heading">
+            <p class="eyebrow">{{ 'Community'|trans }}</p>
+            <h1>{{ 'Video einreichen'|trans }}</h1>
+            <p class="lead">{{ 'Eingereichte Videos bleiben privat, bis ein Administrator sie geprüft und freigegeben hat.'|trans }}</p>
+        </section>
+
+        {% for message in app.flashes('public_video_submission_success') %}
+            <p class="flash-message is-success" role="status">{{ message|trans }}</p>
+        {% endfor %}
+        {% for message in app.flashes('public_video_submission_error') %}
+            <p class="flash-message is-error" role="alert">{{ message|trans }}</p>
+        {% endfor %}
+
+        <form class="comment-form video-submission-form" action="{{ path('public_video_submission_new') }}" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="_token" value="{{ csrf_token('public_video_submission') }}">
+            <label for="video-submission-title">{{ 'Titel'|trans }}</label>
+            <input id="video-submission-title" name="title" value="{{ values.title }}" maxlength="180" required>
+            <label for="video-submission-description">{{ 'Beschreibung'|trans }}</label>
+            <textarea id="video-submission-description" name="description" maxlength="20000" rows="7">{{ values.description }}</textarea>
+            <label for="video-submission-category">{{ 'Kategorie'|trans }}</label>
+            <select id="video-submission-category" name="category">
+                <option value="">{{ 'Keine Kategorie'|trans }}</option>
+                {% for category in categories %}
+                    <option value="{{ category.name }}"{% if values.category == category.name %} selected{% endif %}>{{ category.name }}</option>
+                {% endfor %}
+            </select>
+            <label for="video-submission-file">{{ 'Videodatei (MP4, WebM oder Ogg, höchstens 32 MiB)'|trans }}</label>
+            <input id="video-submission-file" name="video_file" type="file" accept="video/mp4,video/webm,video/ogg" required>
+            <div class="comment-honeypot" aria-hidden="true">
+                <label for="video-submission-website">{{ 'Dieses Feld leer lassen'|trans }}</label>
+                <input id="video-submission-website" name="website" type="text" tabindex="-1" autocomplete="off">
+            </div>
+            <button class="button" type="submit">{{ 'Zur Prüfung einreichen'|trans }}</button>
+            <p class="muted">{{ 'Dateien werden privat gespeichert. Das Video erscheint erst nach einer redaktionellen Freigabe.'|trans }}</p>
+        </form>
+    </main>
+{% endblock %}

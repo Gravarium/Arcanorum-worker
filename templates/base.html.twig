@@ -1,0 +1,21 @@
+<!doctype html>
+{% set site_configuration = site_settings() %}
+<html lang="{{ app.request.locale }}" data-public-theme="{{ site_configuration.publicTheme.value }}" data-public-layout="{{ site_configuration.publicLayout.value }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>{% block title %}{{ site_configuration.siteName }}{% endblock %}</title>
+    {% if site_configuration.seoDescription is not empty %}<meta name="description" content="{{ site_configuration.seoDescription }}">{% endif %}
+    {% if not site_configuration.searchIndexingEnabled %}<meta name="robots" content="noindex,nofollow">{% endif %}
+    <link rel="stylesheet" href="{{ asset('styles/app.css') }}">
+    <link rel="stylesheet" href="{{ path('site_theme_css') }}">
+    {% block stylesheets %}{% endblock %}
+</head>
+<body>
+{% block body %}{% endblock %}
+{% block javascripts %}{% endblock %}
+{% if cookie_consent_needs_choice() %}{{ include('partials/cookie_consent_banner.html.twig', {token: cookie_consent_csrf_token(), message: site_configuration.cookieConsentMessage}) }}{% endif %}
+<nav class="site-preferences" aria-label="{{ 'Datenschutzeinstellungen'|trans }}"><a href="{{ path('cookie_consent_preferences') }}">{{ 'Cookie-Einstellungen'|trans }}</a></nav>
+</body>
+</html>

@@ -1,0 +1,157 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Übersicht'|trans }}{% endblock %}
+{% block admin_breadcrumb %}{{ 'Übersicht'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">{{ site_settings().siteName }} · CMS</p>
+            <h1 id="seitenueberschrift">{{ 'CMS-Verwaltung'|trans }}</h1>
+            <p class="muted">{{ 'Inhalte, Freigaben und Systemstatus auf einen Blick.'|trans }}</p>
+        </div>
+    </div>
+
+    <section aria-labelledby="dashboard-metrics-heading">
+        <h2 class="visually-hidden" id="dashboard-metrics-heading">{{ 'Inhalts- und Moderationszahlen'|trans }}</h2>
+        <div class="dashboard-metrics">
+            {% if module_enabled('news') %}<a class="dashboard-metric-card" href="{{ path('admin_news_index') }}" data-dashboard-metric="news">
+                <span class="dashboard-metric-label">{{ 'News'|trans }}</span>
+                <strong class="dashboard-metric-total" data-count="total">{{ content_metrics.news.total }}</strong>
+                <span class="dashboard-metric-detail">
+                    <span><strong data-count="published">{{ content_metrics.news.published }}</strong> {{ 'veröffentlicht'|trans }}</span>
+                    <span><strong data-count="draft">{{ content_metrics.news.draft }}</strong> {{ 'Entwürfe'|trans }}</span>
+                </span>
+            </a>{% endif %}
+            <a class="dashboard-metric-card" href="{{ path('admin_video_index') }}" data-dashboard-metric="videos">
+                <span class="dashboard-metric-label">{{ 'Videos'|trans }}</span>
+                <strong class="dashboard-metric-total" data-count="total">{{ content_metrics.videos.total }}</strong>
+                <span class="dashboard-metric-detail">
+                    <span><strong data-count="published">{{ content_metrics.videos.published }}</strong> {{ 'veröffentlicht'|trans }}</span>
+                    <span><strong data-count="draft">{{ content_metrics.videos.draft }}</strong> {{ 'Entwürfe'|trans }}</span>
+                </span>
+            </a>
+            {% if module_enabled('series') %}<a class="dashboard-metric-card" href="{{ path('admin_series_index') }}" data-dashboard-metric="series">
+                <span class="dashboard-metric-label">{{ 'Serien'|trans }}</span>
+                <strong class="dashboard-metric-total" data-count="total">{{ content_metrics.series.total }}</strong>
+                <span class="dashboard-metric-detail">
+                    <span><strong data-count="published">{{ content_metrics.series.published }}</strong> {{ 'veröffentlicht'|trans }}</span>
+                    <span><strong data-count="draft">{{ content_metrics.series.draft }}</strong> {{ 'Entwürfe'|trans }}</span>
+                </span>
+            </a>{% endif %}
+            {% if module_enabled('comments') %}<a class="dashboard-metric-card" href="{{ path('admin_comment_index') }}" data-dashboard-metric="comments">
+                <span class="dashboard-metric-label">{{ 'Moderation'|trans }}</span>
+                <strong class="dashboard-metric-total" data-count="pending">{{ content_metrics.comments.pending }}</strong>
+                <span class="dashboard-metric-detail">
+                    <span>{{ 'wartend'|trans }}</span>
+                    <span><strong data-count="reported">{{ content_metrics.comments.reported }}</strong> {{ 'gemeldet'|trans }}</span>
+                </span>
+            </a>{% endif %}
+            <a class="dashboard-metric-card" href="{{ path('admin_member_index') }}" data-dashboard-metric="members">
+                <span class="dashboard-metric-label">{{ 'Mitglieder'|trans }}</span>
+                <strong class="dashboard-metric-total" data-count="total">{{ content_metrics.members.total }}</strong>
+                <span class="dashboard-metric-detail">
+                    <span><strong data-count="active">{{ content_metrics.members.active }}</strong> {{ 'aktiv'|trans }}</span>
+                    <span><strong data-count="inactive">{{ content_metrics.members.inactive }}</strong> {{ 'inaktiv'|trans }}</span>
+                </span>
+            </a>
+            <a class="dashboard-metric-card" href="{{ path('admin_video_submission_index') }}" data-dashboard-metric="submissions">
+                <span class="dashboard-metric-label">{{ 'Videoeinreichungen'|trans }}</span>
+                <strong class="dashboard-metric-total" data-count="pending">{{ content_metrics.submissions.pending }}</strong>
+                <span class="dashboard-metric-detail">
+                    <span>{{ 'wartend auf Prüfung'|trans }}</span>
+                    <span>{{ 'Warteschlange öffnen'|trans }}</span>
+                </span>
+            </a>
+            <a class="dashboard-metric-card" href="{{ path('admin_video_report_index') }}" data-dashboard-metric="video_reports">
+                <span class="dashboard-metric-label">{{ 'Videomeldungen'|trans }}</span>
+                <strong class="dashboard-metric-total" data-count="pending">{{ content_metrics.video_reports.pending }}</strong>
+                <span class="dashboard-metric-detail">
+                    <span>{{ 'offen'|trans }}</span>
+                    <span>{{ 'Meldungen prüfen'|trans }}</span>
+                </span>
+            </a>
+            {% if module_enabled('contact') %}<a class="dashboard-metric-card" href="{{ path('admin_contact_message_index') }}" data-dashboard-metric="contact_messages">
+                <span class="dashboard-metric-label">{{ 'Kontaktpostfach'|trans }}</span>
+                <strong class="dashboard-metric-total" data-count="pending">{{ content_metrics.contact_messages.pending }}</strong>
+                <span class="dashboard-metric-detail">
+                    <span>{{ 'offene Nachrichten'|trans }}</span>
+                    <span>{{ 'Postfach öffnen'|trans }}</span>
+                </span>
+            </a>{% endif %}
+            {% if module_enabled('search') %}<a class="dashboard-metric-card" href="{{ path('admin_search_statistics_index') }}" data-dashboard-metric="search_terms">
+                <span class="dashboard-metric-label">{{ 'Suchbegriffe'|trans }}</span>
+                <strong class="dashboard-metric-total" data-count="total">{{ content_metrics.search_terms.total }}</strong>
+                <span class="dashboard-metric-detail"><span>{{ 'Tageseinträge der letzten 30 Tage'|trans }}</span></span>
+            </a>{% endif %}
+        </div>
+    </section>
+
+    <div class="form-actions" aria-label="{{ 'Schnellaktionen'|trans }}">
+        {% if module_enabled('news') %}<a class="button" href="{{ path('admin_news_new') }}">{{ 'News verfassen'|trans }}</a>{% endif %}
+        <a class="button button-secondary" href="{{ path('admin_video_new') }}">{{ 'Video hinzufügen'|trans }}</a>
+        <a class="button button-secondary" href="{{ path('admin_system_index') }}">{{ 'System prüfen'|trans }}</a>
+    </div>
+
+    <section class="admin-panel" aria-labelledby="dashboard-open-heading">
+        <header class="panel-heading"><h2 id="dashboard-open-heading">{{ 'Offene Vorgänge'|trans }}</h2></header>
+        <ul>
+            <li><a href="{{ path('admin_video_submission_index') }}">{{ '%count% Videoeinreichungen prüfen'|trans({'%count%': content_metrics.submissions.pending}) }}</a></li>
+            <li><a href="{{ path('admin_video_report_index') }}">{{ '%count% Videomeldungen bearbeiten'|trans({'%count%': content_metrics.video_reports.pending}) }}</a></li>
+            {% if module_enabled('comments') %}<li><a href="{{ path('admin_comment_index') }}">{{ '%pending% Kommentare freigeben, %reported% Meldungen bearbeiten'|trans({'%pending%': content_metrics.comments.pending, '%reported%': content_metrics.comments.reported}) }}</a></li>{% endif %}
+            {% if module_enabled('contact') %}<li><a href="{{ path('admin_contact_message_index') }}">{{ '%count% Kontaktanfragen beantworten'|trans({'%count%': content_metrics.contact_messages.pending}) }}</a></li>{% endif %}
+        </ul>
+    </section>
+
+    <section class="admin-panel" aria-labelledby="dashboard-notices-heading">
+        <header class="panel-heading"><h2 id="dashboard-notices-heading">{{ 'Systemhinweise'|trans }}</h2></header>
+        {% if system_notices is empty %}
+            <p>{{ 'Für die angezeigten Systemprüfungen liegen derzeit keine offenen Hinweise vor.'|trans }}</p>
+        {% else %}
+            <ul>{% for notice in system_notices %}<li>{{ notice|trans }}</li>{% endfor %}</ul>
+        {% endif %}
+        <a href="{{ path('admin_system_index') }}">{{ 'Hosting und System ansehen'|trans }}</a>
+    </section>
+
+    <section class="admin-panel" aria-labelledby="host-capability-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="host-capability-heading">{{ 'Festgestellte Systemfähigkeiten'|trans }}</h2>
+                <p>{{ 'Nur tatsächlich geprüfte Fähigkeiten gelten als bestanden. Nicht belegte Servergrenzen bleiben unbekannt.'|trans }}</p>
+            </div>
+        </header>
+
+        <div class="table-wrap">
+            <table class="admin-table">
+                <caption class="visually-hidden">{{ 'Prüfnachweise für die Hosting- und Laufzeitfähigkeiten'|trans }}</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">{{ 'Prüfung'|trans }}</th>
+                        <th scope="col">{{ 'Status'|trans }}</th>
+                        <th scope="col">{{ 'Nachweis'|trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for check in capability_checks %}
+                        <tr>
+                            <th scope="row">{{ check.label }}</th>
+                            <td><span class="status-pill {{ check.status_class }}">{{ check.status }}</span></td>
+                            <td>{{ check.details }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="admin-panel" aria-labelledby="webserver-integrity-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="webserver-integrity-heading">{{ 'Webserver-Integrität'|trans }}</h2>
+                <p>{{ 'Der Status beschreibt die tatsächlich eingerichtete unabhängige Prüfung.'|trans }}</p>
+            </div>
+            <span class="status-pill is-unknown">{{ 'Nicht eingerichtet'|trans }}</span>
+        </header>
+        <p>{{ 'Die B/C-Kontrollmatrix enthält Anforderungen, aber keinen Laufzeitnachweis. Ein unabhängiger Attestor, aktive B→C-Erkennung und unabhängige Alarmierung sind derzeit nicht eingerichtet.'|trans }}</p>
+    </section>
+{% endblock %}

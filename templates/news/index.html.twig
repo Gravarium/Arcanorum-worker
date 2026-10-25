@@ -1,0 +1,58 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'News'|trans }} · {{ site_settings().siteName }}{% endblock %}
+
+{% block body %}
+    <header class="public-header">
+        {{ include('partials/public_brand.html.twig') }}
+        <nav class="public-navigation" aria-label="{{ 'Hauptnavigation'|trans }}">
+            <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
+            {% if module_enabled('news') %}<a href="{{ path('news_index') }}" aria-current="page">{{ 'News'|trans }}</a>{% endif %}
+            {% if module_enabled('series') %}<a href="{{ path('series_index') }}">{{ 'Serien'|trans }}</a>{% endif %}
+            {% if module_enabled('search') %}<a href="{{ path('public_search') }}">{{ 'Suche'|trans }}</a>{% endif %}
+            {% if module_enabled('pages') %}<a href="{{ path('page_index') }}">{{ 'Seiten'|trans }}</a>{% endif %}
+            <a href="{{ path('content_sitemap') }}"{{ 'Sitemap'|trans }}</a>
+            {{ include('partials/member_area_link.html.twig') }}
+        </nav>
+    </header>
+    <main class="public-main">
+        <section class="public-page-heading">
+            <p class="eyebrow">{{ 'Redaktion'|trans }}</p><h1>{{ 'News und Artikel'|trans }}</h1>
+            <p class="lead">{{ 'Aktuelle Beiträge aus der Redaktion.'|trans }}</p>
+            <p><a href="{{ path('news_feed') }}">{{ 'RSS-Feed abonnieren'|trans }}</a></p>
+        </section>
+        <form class="content-search" method="get" action="{{ path('news_index') }}">
+            <label for="news-search">{{ 'News suchen'|trans }}</label>
+            <input id="news-search" type="search" name="q" value="{{ search }}" maxlength="100">
+            <label for="news-category">{{ 'Kategorie'|trans }}</label>
+            <select id="news-category" name="category">
+                <option value="">{{ 'Alle Kategorien'|trans }}</option>
+                {% for option in categories %}
+                    <option value="{{ option.name }}"{% if category == option.name %} selected{% endif %}>{{ option.name }}</option>
+                {% endfor %}
+            </select>
+            <label for="news-tag">{{ 'Schlagwort'|trans }}</label>
+            <input id="news-tag" type="search" name="tag" value="{{ tag }}" maxlength="100" placeholder="{{ 'Schlagwort'|trans }}">
+            <button class="button button-secondary" type="submit">{{ 'Filtern'|trans }}</button>
+        </form>
+        <div class="content-grid">
+            {% for article in articles %}
+                <article class="content-card">
+                    <p class="card-kicker">{{ article.category ?? ('News'|trans) }}</p>
+                    <h2><a href="{{ path('news_show', {slug: article.slug}) }}">{{ article.title }}</a></h2>
+                    <p>{% if article.summary %}{{ article.summary }}{% else %}{{ article.body|slice(0, 240) }}{% endif %}</p>
+                    <time datetime="{{ article.publishedAt|date('c') }}">{{ article.publishedAt|date('d.m.Y') }}</time>
+                </article>
+            {% else %}
+                <p class="empty-state">{{ (search or category or tag ? 'Keine Beiträge mit diesen Filtern gefunden.' : 'Noch keine News veröffentlicht.')|trans }}</p>
+            {% endfor %}
+        </div>
+        {% if page > 1 or has_next %}
+            <nav class="pagination" aria-label="{{ 'News-Seiten'|trans }}">
+                {% if page > 1 %}<a href="{{ path('news_index', {q: search, category: category, tag: tag, page: page - 1}) }}">{{ 'Vorherige Seite'|trans }}</a>{% endif %}
+                <span>{{ 'Seite %page%'|trans({'%page%': page}) }}</span>
+                {% if has_next %}<a href="{{ path('news_index', {q: search, category: category, tag: tag, page: page + 1}) }}">{{ 'Nächste Seite'|trans }}</a>{% endif %}
+            </nav>
+        {% endif %}
+    </main>
+{% endblock %}
