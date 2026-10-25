@@ -3111,6 +3111,7 @@ final class AdminDashboardTest extends WebTestCase
 
     /**
      * @param array<string, mixed>|false $row
+     *
      * @return array<string, mixed>
      */
     private static function subtitleRow(array|false $row): array

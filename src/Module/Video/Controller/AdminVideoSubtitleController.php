@@ -193,6 +193,7 @@ final class AdminVideoSubtitleController extends AbstractController
 
     /**
      * @template TInput of string|int|float|bool|null
+     *
      * @param InputBag<TInput> $bag
      */
     private static function input(InputBag $bag, string $key): string
@@ -204,7 +205,7 @@ final class AdminVideoSubtitleController extends AbstractController
 
     /**
      * @param array<string, mixed> $input
-     * @param list<string> $allowed
+     * @param list<string>         $allowed
      */
     private static function hasOnlyKeys(array $input, array $allowed): bool
     {
