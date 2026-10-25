@@ -16,9 +16,9 @@
   "claim_duration_hours": 7,
   "claimed_at": "2026-10-25T23:26:04Z",
   "claim_expires_at": "2026-10-26T06:26:04Z",
-  "heartbeat_at": "2026-10-25T23:43:44Z",
-  "last_progress_at": "2026-10-25T23:43:44Z",
-  "last_progress_sha": "d8d731d4b88cbe75e2b77d56f73d7fb4472a1bb0",
-  "last_test_status": "Exact PR HEAD d8d731d4b88cbe75e2b77d56f73d7fb4472a1bb0: repository/secret and PostgreSQL/Redis Compose gates passed. PHPStan Stufe 10 failed; later PHP checks were skipped by the required CI guard. Findings are being corrected. Local PHP/Composer are unavailable.",
+  "heartbeat_at": "2026-10-25T23:45:23Z",
+  "last_progress_at": "2026-10-25T23:45:23Z",
+  "last_progress_sha": "13e6d621acb98622de94ae90ef734e11f1d7b1c2",
+  "last_test_status": "Exact PR HEAD 13e6d621acb98622de94ae90ef734e11f1d7b1c2: correction commit pushed after PHPStan failure. New Walker workflow run is {\"workflow_runs\":[{\"id\":40246178159,\"name\":\"Pflichtprüfungen\",\"status\":\"queued\",\"conclusion\":null,\"run_number\":176,\"jobs_url\":\"https://api.github.com/repos/Gravarium/Arcanorum-worker/actions/runs/40246178159/jobs\",\"logs_url\":\"https://api.github.com/repos/Gravarium/Arcanorum-worker/actions/runs/40246178159/logs\",\"workflow_id\":382691433}]}. Earlier repository/secret and Compose gates passed; PHPStan correction and all gated follow-up checks are pending.",
   "blocker": null
 }
