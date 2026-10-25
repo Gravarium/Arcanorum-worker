@@ -52,7 +52,10 @@ final class DoctrineSchedulingStoreTest extends KernelTestCase
         self::assertSame(ExecutionState::Succeeded, $record->state);
         self::assertSame(ExecutionResultCode::Completed, $record->resultCode);
         self::assertCount(1, $store->listExecutions($task->id, 10));
-        self::assertSame($frequency->nextAfter($due)->getTimestamp(), $store->findTask($task->id)?->nextRunAt?->getTimestamp());
+        $updatedTask = $store->findTask($task->id);
+        self::assertNotNull($updatedTask);
+        self::assertNotNull($updatedTask->nextRunAt);
+        self::assertSame($frequency->nextAfter($due)->getTimestamp(), $updatedTask->nextRunAt->getTimestamp());
     }
 
     public function testExpiredLeaseCanBeReclaimedButOldWorkerCannotCompleteIt(): void
@@ -139,7 +142,8 @@ final class DoctrineSchedulingStoreTest extends KernelTestCase
         }
 
         self::assertCount(100, $store->listExecutions($task->id, 100));
-        self::assertSame(100, (int) $this->connection()->fetchOne('SELECT COUNT(*) FROM cms_scheduled_task_run WHERE schedule_id = :id', ['id' => $task->id]));
+        $storedCount = $this->connection()->fetchOne('SELECT COUNT(*) FROM cms_scheduled_task_run WHERE schedule_id = :id', ['id' => $task->id]);
+        self::assertContains($storedCount, [100, '100']);
         self::assertSame($frequency->nextAfter($firstDue)->getTimestamp(), $store->listExecutions($task->id, 100)[99]->scheduledFor->getTimestamp());
     }
 

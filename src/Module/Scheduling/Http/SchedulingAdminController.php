@@ -119,7 +119,7 @@ final readonly class SchedulingAdminController
         }
     }
 
-    /** @param callable(array<string, mixed>, string): array<string, mixed> $operation */
+    /** @param callable(array<int|string, mixed>, string): array<string, mixed> $operation */
     private function mutate(Request $request, callable $operation, int $successStatus = 200, bool $allowEmptyBody = false): JsonResponse
     {
         try {
@@ -138,7 +138,7 @@ final readonly class SchedulingAdminController
         }
     }
 
-    /** @return array<string, mixed> */
+    /** @return array<int|string, mixed> */
     private static function jsonObject(Request $request): array
     {
         $content = $request->getContent();
@@ -146,15 +146,18 @@ final readonly class SchedulingAdminController
             throw new \InvalidArgumentException('Request body exceeds the module limit.');
         }
 
-        $data = json_decode($content, true, 24, JSON_THROW_ON_ERROR);
-        if (!is_array($data) || array_is_list($data)) {
+        $data = json_decode($content, false, 24, JSON_THROW_ON_ERROR);
+        if (!$data instanceof \stdClass) {
             throw new \InvalidArgumentException('Request body must be a JSON object.');
         }
 
-        return $data;
+        return get_object_vars($data);
     }
 
-    /** @param array<string, mixed> $data @param list<string> $allowed */
+    /**
+     * @param array<int|string, mixed> $data
+     * @param list<string>            $allowed
+     */
     private static function assertKeys(array $data, array $allowed): void
     {
         foreach ($data as $key => $_value) {
@@ -169,7 +172,7 @@ final readonly class SchedulingAdminController
         }
     }
 
-    /** @param array<string, mixed> $data */
+    /** @param array<int|string, mixed> $data */
     private static function stringField(array $data, string $key): string
     {
         $value = $data[$key] ?? null;

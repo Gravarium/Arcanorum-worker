@@ -53,7 +53,9 @@ final class SchedulingManagerTest extends TestCase
             $manager->updateTask($active->id, 'Changed', TaskType::CacheCleanup->value, 7200, 'UTC', 'safe-test-token');
             self::fail('Active tasks must not be edited.');
         } catch (\DomainException) {
-            self::assertSame(TaskStatus::Active, $store->findTask($active->id)?->status);
+            $unchanged = $store->findTask($active->id);
+            self::assertNotNull($unchanged);
+            self::assertSame(TaskStatus::Active, $unchanged->status);
         }
 
         $paused = $manager->pauseTask($active->id, 'safe-test-token');
@@ -73,12 +75,13 @@ final class SchedulingManagerTest extends TestCase
     public function testTaskTypeAndTimezoneMustBeAllowlistedAndValidated(): void
     {
         [$manager] = $this->newManager();
-        try {
-            $manager->createTask('Unsafe', 'shell_command', 3600, 'UTC', 'safe-test-token');
-            self::fail('Unknown task types must be rejected.');
-        } catch (\InvalidArgumentException) {
-            self::assertTrue(true);
-        }
+        $this->expectException(\InvalidArgumentException::class);
+        $manager->createTask('Unsafe', 'shell_command', 3600, 'UTC', 'safe-test-token');
+    }
+
+    public function testInvalidTimezoneIsRejected(): void
+    {
+        [$manager] = $this->newManager();
 
         $this->expectException(\InvalidArgumentException::class);
         $manager->createTask('Bad timezone', TaskType::CacheCleanup->value, 3600, 'EST', 'safe-test-token');

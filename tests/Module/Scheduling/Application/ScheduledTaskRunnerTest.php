@@ -31,8 +31,11 @@ final class ScheduledTaskRunnerTest extends TestCase
         self::assertSame(1, $runner->runDue($due));
         self::assertSame(0, $runner->runDue($due));
         self::assertCount(1, $handler->idempotencyKeys);
-        self::assertSame(TaskStatus::Active, $store->findTask($task->id)?->status);
-        self::assertSame($task->frequency->nextAfter($due)->getTimestamp(), $store->findTask($task->id)?->nextRunAt?->getTimestamp());
+        $updatedTask = $store->findTask($task->id);
+        self::assertNotNull($updatedTask);
+        self::assertSame(TaskStatus::Active, $updatedTask->status);
+        self::assertNotNull($updatedTask->nextRunAt);
+        self::assertSame($task->frequency->nextAfter($due)->getTimestamp(), $updatedTask->nextRunAt->getTimestamp());
 
         $records = $store->listExecutions($task->id, 10);
         self::assertCount(1, $records);
@@ -73,7 +76,10 @@ final class ScheduledTaskRunnerTest extends TestCase
         $record = $store->listExecutions($task->id, 10)[0];
         self::assertSame(ExecutionState::Failed, $record->state);
         self::assertSame(ExecutionResultCode::HandlerFailed, $record->resultCode);
-        self::assertSame($task->frequency->nextAfter($due)->getTimestamp(), $store->findTask($task->id)?->nextRunAt?->getTimestamp());
+        $updatedTask = $store->findTask($task->id);
+        self::assertNotNull($updatedTask);
+        self::assertNotNull($updatedTask->nextRunAt);
+        self::assertSame($task->frequency->nextAfter($due)->getTimestamp(), $updatedTask->nextRunAt->getTimestamp());
         self::assertObjectNotHasProperty('message', $record);
     }
 
@@ -83,8 +89,7 @@ final class ScheduledTaskRunnerTest extends TestCase
         $task = $this->activeTask($store);
         $due = $task->nextRunAt;
         self::assertNotNull($due);
-        $oldClaim = $store->claimExecution($task->id, $due, $due, $due->modify('+120 seconds'), $task->frequency->nextAfter($due), 10);
-        self::assertNotNull($oldClaim);
+        self::assertNotNull($store->claimExecution($task->id, $due, $due, $due->modify('+120 seconds'), $task->frequency->nextAfter($due), 10));
         $handler = new RecordingTaskHandler(TaskType::CacheCleanup);
         $runner = new ScheduledTaskRunner($store, new TaskHandlerRegistry([$handler]));
 
@@ -98,7 +103,8 @@ final class ScheduledTaskRunnerTest extends TestCase
         $task = $this->activeTask($store);
         $due = $task->nextRunAt;
         self::assertNotNull($due);
-        self::assertNotNull($store->claimExecution($task->id, $due, $due, $due->modify('+120 seconds'), $task->frequency->nextAfter($due), 10));
+        $oldClaim = $store->claimExecution($task->id, $due, $due, $due->modify('+120 seconds'), $task->frequency->nextAfter($due), 10);
+        self::assertNotNull($oldClaim);
 
         $pausedAt = $due->modify('+30 seconds');
         $paused = $task->pause($pausedAt);
@@ -154,7 +160,10 @@ final class ScheduledTaskRunnerTest extends TestCase
             10,
         ));
         self::assertSame(ExecutionState::Abandoned, $retryStore->listExecutions($retryTask->id, 10)[0]->state);
-        self::assertGreaterThan($attemptNow->getTimestamp(), $retryStore->findTask($retryTask->id)?->nextRunAt?->getTimestamp());
+        $afterLimitTask = $retryStore->findTask($retryTask->id);
+        self::assertNotNull($afterLimitTask);
+        self::assertNotNull($afterLimitTask->nextRunAt);
+        self::assertGreaterThan($attemptNow->getTimestamp(), $afterLimitTask->nextRunAt->getTimestamp());
     }
 
     private function activeTask(InMemorySchedulingStore $store, string $id = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'): ScheduledTask
