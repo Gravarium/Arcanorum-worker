@@ -16,9 +16,9 @@
   "claim_duration_hours": 7,
   "claimed_at": "2026-10-25T22:20:30Z",
   "claim_expires_at": "2026-10-26T05:20:30Z",
-  "heartbeat_at": "2026-10-25T22:38:29Z",
-  "last_progress_at": "2026-10-25T22:38:29Z",
+  "heartbeat_at": "2026-10-25T22:41:02Z",
+  "last_progress_at": "2026-10-25T22:41:02Z",
   "last_progress_sha": "7447fd7c65f37109ccb31abd56b7562ef87931e5",
-  "last_test_status": "Walker exact-head run: repository and PostgreSQL/Redis Compose jobs passed; PHP quality job is still installing Composer dependencies.",
+  "last_test_status": "Walker exact-head run passed the repository and Compose jobs; PHPStan found controller type and test-analysis issues. Fixes are staged; a new exact-head run is pending.",
   "blocker": null
 }
