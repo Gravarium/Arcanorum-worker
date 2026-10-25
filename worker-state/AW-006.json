@@ -16,9 +16,9 @@
   "claim_duration_hours": 7,
   "claimed_at": "2026-10-25T23:26:04Z",
   "claim_expires_at": "2026-10-26T06:26:04Z",
-  "heartbeat_at": "2026-10-25T23:38:56Z",
-  "last_progress_at": "2026-10-25T23:38:56Z",
+  "heartbeat_at": "2026-10-25T23:43:44Z",
+  "last_progress_at": "2026-10-25T23:43:44Z",
   "last_progress_sha": "d8d731d4b88cbe75e2b77d56f73d7fb4472a1bb0",
-  "last_test_status": "Exact PR HEAD d8d731d4b88cbe75e2b77d56f73d7fb4472a1bb0: repository/secret gate passed. Compose checks are in progress and the PHP application job is queued. Local PHP/Composer unavailable; full Walker gates not yet complete.",
+  "last_test_status": "Exact PR HEAD d8d731d4b88cbe75e2b77d56f73d7fb4472a1bb0: repository/secret and PostgreSQL/Redis Compose gates passed. PHPStan Stufe 10 failed; later PHP checks were skipped by the required CI guard. Findings are being corrected. Local PHP/Composer are unavailable.",
   "blocker": null
 }
