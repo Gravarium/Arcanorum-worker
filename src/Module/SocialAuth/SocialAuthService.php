@@ -47,9 +47,6 @@ final readonly class SocialAuthService
 
         $now = $this->clock->now();
         $expiresAt = $now->modify('+' . $this->settings->stateLifetimeSeconds() . ' seconds');
-        if ($expiresAt === false) {
-            throw new AuthenticationRejected();
-        }
 
         $state = $this->base64UrlEncode(random_bytes(32));
         $verifier = $this->base64UrlEncode(random_bytes(32));
@@ -251,21 +248,25 @@ final readonly class SocialAuthService
         string $challenge,
     ): string {
         $parts = parse_url($endpoint);
+        if (!is_array($parts)) {
+            throw new AuthenticationRejected();
+        }
+
+        $scheme = $parts['scheme'] ?? null;
+        $host = $parts['host'] ?? null;
+        $path = $parts['path'] ?? '';
         if (
-            !is_array($parts)
-            || strtolower((string) ($parts['scheme'] ?? '')) !== 'https'
-            || strtolower((string) ($parts['host'] ?? '')) !== $this->settings->authorizationHost($provider)
+            !is_string($scheme)
+            || strtolower($scheme) !== 'https'
+            || !is_string($host)
+            || strtolower($host) !== $this->settings->authorizationHost($provider)
+            || preg_match('/[\x00-\x20\x7F]/', $path) === 1
             || isset($parts['user'])
             || isset($parts['pass'])
             || isset($parts['query'])
             || isset($parts['fragment'])
             || isset($parts['port'])
         ) {
-            throw new AuthenticationRejected();
-        }
-
-        $path = $parts['path'] ?? '';
-        if (!is_string($path) || preg_match('/[\x00-\x20\x7F]/', $path) === 1) {
             throw new AuthenticationRejected();
         }
 
@@ -302,7 +303,7 @@ final readonly class SocialAuthService
         }
 
         $parameters = array_merge($extraParameters, $requiredParameters);
-        $baseUrl = 'https://' . strtolower((string) $parts['host']) . $path;
+        $baseUrl = 'https://' . strtolower($host) . $path;
         $url = $baseUrl . '?' . http_build_query($parameters, '', '&', PHP_QUERY_RFC3986);
         if (strlen($url) > 8192) {
             throw new AuthenticationRejected();
@@ -315,7 +316,7 @@ final readonly class SocialAuthService
     {
         $now = $this->clock->now();
         $oldestAllowed = $now->modify('-' . $this->settings->reauthenticationWindowSeconds() . ' seconds');
-        if ($oldestAllowed === false || $account->lastReauthenticatedAt > $now || $account->lastReauthenticatedAt < $oldestAllowed) {
+        if ($account->lastReauthenticatedAt > $now || $account->lastReauthenticatedAt < $oldestAllowed) {
             throw new AuthenticationRejected();
         }
     }

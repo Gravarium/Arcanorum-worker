@@ -92,6 +92,16 @@ final class FakeIdentityRepository implements SocialIdentityRepository
         $this->identitiesByAccount[$accountId][] = $key;
     }
 
+    public function registrationCallCount(): int
+    {
+        return $this->registrationCalls;
+    }
+
+    public function linkCallCount(): int
+    {
+        return $this->linkCalls;
+    }
+
     private function key(Provider $provider, string $subject): string
     {
         return $provider->value . ':' . $subject;

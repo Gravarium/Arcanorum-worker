@@ -20,11 +20,6 @@ final class FakeClock implements Clock
 
     public function advance(string $interval): void
     {
-        $next = $this->currentTime->modify($interval);
-        if ($next === false) {
-            throw new \InvalidArgumentException('Invalid test clock interval.');
-        }
-
-        $this->currentTime = $next;
+        $this->currentTime = $this->currentTime->modify($interval);
     }
 }

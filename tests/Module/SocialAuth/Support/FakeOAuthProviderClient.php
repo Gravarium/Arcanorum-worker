@@ -9,7 +9,7 @@ use Throwable;
 
 final class FakeOAuthProviderClient implements OAuthProviderClient
 {
-    /** @var array<string, string> */
+    /** @var array<mixed, mixed> */
     public array $parameters = ['client_id' => 'test-client', 'scope' => 'openid email'];
 
     public string $normalizedProfile = '{"subject":"provider-subject-1","email":"verified@example.test","email_verified":true}';
@@ -38,6 +38,11 @@ final class FakeOAuthProviderClient implements OAuthProviderClient
     public function authorizationParameters(): array
     {
         return $this->parameters;
+    }
+
+    public function exchangeCallCount(): int
+    {
+        return $this->exchangeCalls;
     }
 
     public function exchangeAuthorizationCode(string $code, string $codeVerifier, string $callbackUri, int $maxResponseBytes): string

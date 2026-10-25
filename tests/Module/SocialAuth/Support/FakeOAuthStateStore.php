@@ -29,4 +29,9 @@ final class FakeOAuthStateStore implements OAuthStateStore
 
         return $state;
     }
+
+    public function recordCount(): int
+    {
+        return count($this->records);
+    }
 }

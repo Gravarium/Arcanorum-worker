@@ -42,8 +42,12 @@ final class SocialAuthServiceTest extends TestCase
 
     private SocialAuthService $service;
 
-    protected function setUp(): void
+    /**
+     * @param array<array-key, array<mixed>> $data
+     */
+    public function __construct(?string $name = null, array $data = [], string $dataName = '')
     {
+        parent::__construct($name, $data, $dataName);
         $this->clock = new FakeClock(new DateTimeImmutable('2026-10-25T23:30:00+00:00'));
         $this->states = new FakeOAuthStateStore();
         $this->identities = new FakeIdentityRepository();
@@ -51,7 +55,7 @@ final class SocialAuthServiceTest extends TestCase
         $this->google = new FakeOAuthProviderClient('https://accounts.google.com/o/oauth2/v2/auth');
         $this->facebook = new FakeOAuthProviderClient('https://www.facebook.com/v19.0/dialog/oauth');
         $this->twitter = new FakeOAuthProviderClient('https://twitter.com/i/oauth2/authorize');
-        $this->configureService($this->settings());
+        $this->service = $this->createService($this->settings());
     }
 
     public function testEachProviderGetsSeparateEnabledStatusAndAStateBoundPkceRedirect(): void
@@ -82,7 +86,7 @@ final class SocialAuthServiceTest extends TestCase
         }
 
         $this->assertRejected(fn () => $this->service->begin('facebook', Flow::LOGIN->value, self::SESSION_BINDING));
-        self::assertSame(0, $this->facebook->exchangeCalls);
+        self::assertSame(0, $this->facebook->exchangeCallCount());
     }
 
     public function testUnknownProviderAndFlowFailClosed(): void
@@ -90,7 +94,7 @@ final class SocialAuthServiceTest extends TestCase
         $this->assertRejected(fn () => $this->service->begin('unknown', Flow::LOGIN->value, self::SESSION_BINDING));
         $this->assertRejected(fn () => $this->service->begin('google', 'admin', self::SESSION_BINDING));
 
-        self::assertSame([], $this->states->records);
+        self::assertSame(0, $this->states->recordCount());
     }
 
     public function testRegistrationCanBeDisabledBeforeAnyProviderProcessing(): void
@@ -99,8 +103,8 @@ final class SocialAuthServiceTest extends TestCase
 
         $this->assertRejected(fn () => $this->service->begin('google', Flow::REGISTRATION->value, self::SESSION_BINDING));
 
-        self::assertSame([], $this->states->records);
-        self::assertSame(0, $this->google->exchangeCalls);
+        self::assertSame(0, $this->states->recordCount());
+        self::assertSame(0, $this->google->exchangeCallCount());
     }
 
     public function testLoginDoesNotCreateAnAccountWhenRegistrationIsEnabled(): void
@@ -109,7 +113,7 @@ final class SocialAuthServiceTest extends TestCase
 
         $this->assertRejected(fn () => $this->complete($request));
 
-        self::assertSame(0, $this->identities->registrationCalls);
+        self::assertSame(0, $this->identities->registrationCallCount());
         self::assertSame(1, $this->google->exchangeCalls);
     }
 
@@ -191,8 +195,8 @@ final class SocialAuthServiceTest extends TestCase
         $state = $this->state($request->authorizationUrl);
 
         $this->assertRejected(fn () => $this->service->complete('google', 'authorization-code', $state, 'different-session-binding-32-characters'));
-        self::assertSame(0, $this->google->exchangeCalls);
-        self::assertSame([], $this->states->records);
+        self::assertSame(0, $this->google->exchangeCallCount());
+        self::assertSame(0, $this->states->recordCount());
         $this->assertRejected(fn () => $this->service->complete('google', 'authorization-code', $state, self::SESSION_BINDING));
     }
 
@@ -203,8 +207,8 @@ final class SocialAuthServiceTest extends TestCase
 
         $this->assertRejected(fn () => $this->complete($request, $account, 'different-session-binding-32-characters'));
 
-        self::assertSame(0, $this->google->exchangeCalls);
-        self::assertSame(0, $this->identities->linkCalls);
+        self::assertSame(0, $this->google->exchangeCallCount());
+        self::assertSame(0, $this->identities->linkCallCount());
     }
 
     public function testCallbackRejectsMissingMalformedExpiredAndMismatchedState(): void
@@ -216,13 +220,13 @@ final class SocialAuthServiceTest extends TestCase
         $expiredState = $this->state($expiredRequest->authorizationUrl);
         $this->clock->advance('+300 seconds');
         $this->assertRejected(fn () => $this->service->complete('google', 'authorization-code', $expiredState, self::SESSION_BINDING));
-        self::assertSame(0, $this->google->exchangeCalls);
+        self::assertSame(0, $this->google->exchangeCallCount());
 
         $this->clock->advance('-300 seconds');
         $mismatchedRequest = $this->service->begin('google', Flow::LOGIN->value, self::SESSION_BINDING);
         $mismatchedState = $this->state($mismatchedRequest->authorizationUrl);
         $this->assertRejected(fn () => $this->service->complete('facebook', 'authorization-code', $mismatchedState, self::SESSION_BINDING));
-        self::assertSame(0, $this->google->exchangeCalls);
+        self::assertSame(0, $this->google->exchangeCallCount());
     }
 
     public function testDisabledProviderIsRecheckedBeforeExchangingTheCode(): void
@@ -232,7 +236,7 @@ final class SocialAuthServiceTest extends TestCase
 
         $this->assertRejected(fn () => $this->complete($request));
 
-        self::assertSame(0, $this->google->exchangeCalls);
+        self::assertSame(0, $this->google->exchangeCallCount());
     }
 
     public function testRegistrationDisabledAfterStartIsRejectedBeforeProviderExchange(): void
@@ -242,20 +246,29 @@ final class SocialAuthServiceTest extends TestCase
 
         $this->assertRejected(fn () => $this->complete($request));
 
-        self::assertSame(0, $this->google->exchangeCalls);
-        self::assertSame(0, $this->identities->registrationCalls);
+        self::assertSame(0, $this->google->exchangeCallCount());
+        self::assertSame(0, $this->identities->registrationCallCount());
     }
 
     public function testUntrustedAuthorizationEndpointAndReservedParametersAreRejected(): void
     {
         $this->google->endpoint = 'https://attacker.example/authorize';
         $this->assertRejected(fn () => $this->service->begin('google', Flow::LOGIN->value, self::SESSION_BINDING));
-        self::assertSame([], $this->states->records);
+        self::assertSame(0, $this->states->recordCount());
 
         $this->google->endpoint = 'https://accounts.google.com/o/oauth2/v2/auth';
         $this->google->parameters = ['state' => 'attacker-controlled'];
         $this->assertRejected(fn () => $this->service->begin('google', Flow::LOGIN->value, self::SESSION_BINDING));
-        self::assertSame([], $this->states->records);
+        self::assertSame(0, $this->states->recordCount());
+    }
+
+    public function testMalformedAuthorizationParametersAreRejectedBeforeStateStorage(): void
+    {
+        $this->google->parameters = ['scope' => ['openid', 'email']];
+
+        $this->assertRejected(fn () => $this->service->begin('google', Flow::LOGIN->value, self::SESSION_BINDING));
+
+        self::assertSame(0, $this->states->recordCount());
     }
 
     public function testInvalidCallbackConfigurationIsRejected(): void
@@ -280,15 +293,15 @@ final class SocialAuthServiceTest extends TestCase
     public function testLinkingRequiresRecentAuthenticationAndUsesTheStoredAccount(): void
     {
         $account = $this->authenticatedAccount('account-1');
-        $this->assertRejected(fn () => $this->service->begin('google', Flow::LINK->value));
+        $this->assertRejected(fn () => $this->service->begin('google', Flow::LINK->value, self::SESSION_BINDING));
         $this->assertRejected(fn () => $this->service->begin('google', Flow::LINK->value, self::SESSION_BINDING, $this->authenticatedAccount('account-1', '-10 minutes')));
 
         $request = $this->service->begin('google', Flow::LINK->value, self::SESSION_BINDING, $account);
         $state = $this->state($request->authorizationUrl);
 
         $this->assertRejected(fn () => $this->service->complete('google', 'authorization-code', $state, self::SESSION_BINDING, $this->authenticatedAccount('account-2')));
-        self::assertSame(0, $this->google->exchangeCalls);
-        self::assertSame(0, $this->identities->linkCalls);
+        self::assertSame(0, $this->google->exchangeCallCount());
+        self::assertSame(0, $this->identities->linkCallCount());
     }
 
     public function testLinkingNeverReassignsAnIdentityAlreadyOwnedByAnotherAccount(): void
@@ -354,13 +367,13 @@ final class SocialAuthServiceTest extends TestCase
     {
         $this->rateLimiter->allowed = false;
         $this->assertRejected(fn () => $this->service->begin('google', Flow::LOGIN->value, self::SESSION_BINDING));
-        self::assertSame([], $this->states->records);
+        self::assertSame(0, $this->states->recordCount());
         $this->rateLimiter->allowed = true;
 
         $request = $this->service->begin('google', Flow::LOGIN->value, self::SESSION_BINDING);
         $this->rateLimiter->allowed = false;
         $this->assertRejected(fn () => $this->complete($request));
-        self::assertSame(0, $this->google->exchangeCalls);
+        self::assertSame(0, $this->google->exchangeCallCount());
         self::assertSame(3, count($this->rateLimiter->calls));
     }
 
@@ -380,7 +393,7 @@ final class SocialAuthServiceTest extends TestCase
 
         $this->assertRejected(fn () => $this->service->begin('google', Flow::LOGIN->value, self::SESSION_BINDING));
 
-        self::assertSame([], $this->states->records);
+        self::assertSame(0, $this->states->recordCount());
     }
 
     /**
@@ -410,7 +423,12 @@ final class SocialAuthServiceTest extends TestCase
 
     private function configureService(SocialAuthSettings $settings): void
     {
-        $this->service = new SocialAuthService(
+        $this->service = $this->createService($settings);
+    }
+
+    private function createService(SocialAuthSettings $settings): SocialAuthService
+    {
+        return new SocialAuthService(
             $settings,
             new MapOAuthProviderClientRegistry([
                 'google' => $this->google,
@@ -448,7 +466,7 @@ final class SocialAuthServiceTest extends TestCase
         return $state;
     }
 
-    /** @return array<string, mixed> */
+    /** @return array<int|string, array<mixed>|string> */
     private function query(string $url): array
     {
         $parts = parse_url($url);
@@ -457,9 +475,6 @@ final class SocialAuthServiceTest extends TestCase
         }
 
         $queryString = $parts['query'] ?? '';
-        if (!is_string($queryString)) {
-            self::fail('The authorization URL query is invalid.');
-        }
 
         parse_str($queryString, $query);
 
@@ -468,12 +483,7 @@ final class SocialAuthServiceTest extends TestCase
 
     private function authenticatedAccount(string $accountId, string $reauthenticationAge = '-60 seconds'): AuthenticatedAccount
     {
-        $lastReauthenticatedAt = $this->clock->now()->modify($reauthenticationAge);
-        if ($lastReauthenticatedAt === false) {
-            self::fail('The test reauthentication time could not be created.');
-        }
-
-        return new AuthenticatedAccount($accountId, $lastReauthenticatedAt);
+        return new AuthenticatedAccount($accountId, $this->clock->now()->modify($reauthenticationAge));
     }
 
     private function base64UrlEncode(string $value): string

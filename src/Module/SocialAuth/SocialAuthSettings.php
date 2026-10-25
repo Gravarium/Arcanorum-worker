@@ -20,9 +20,9 @@ final readonly class SocialAuthSettings
     private array $authorizationHosts;
 
     /**
-     * @param list<string> $enabledProviders
-     * @param array<string, string> $callbackUris
-     * @param array<string, string> $authorizationHosts
+     * @param array<array-key, mixed> $enabledProviders
+     * @param array<mixed, mixed> $callbackUris
+     * @param array<mixed, mixed> $authorizationHosts
      */
     public function __construct(
         array $enabledProviders,
@@ -64,7 +64,9 @@ final readonly class SocialAuthSettings
         }
 
         $this->enabledProviders = $enabled;
-        $this->assertProviderSettings($callbackUris, $authorizationHosts);
+        $providerSettings = $this->validatedProviderSettings($callbackUris, $authorizationHosts);
+        $this->callbackUris = $providerSettings['callbackUris'];
+        $this->authorizationHosts = $providerSettings['authorizationHosts'];
     }
 
     public function isProviderEnabled(Provider $provider): bool
@@ -109,10 +111,12 @@ final readonly class SocialAuthSettings
     }
 
     /**
-     * @param array<string, string> $callbackUris
-     * @param array<string, string> $authorizationHosts
+     * @param array<mixed, mixed> $callbackUris
+     * @param array<mixed, mixed> $authorizationHosts
+     *
+     * @return array{callbackUris: array<string, string>, authorizationHosts: array<string, string>}
      */
-    private function assertProviderSettings(array $callbackUris, array $authorizationHosts): void
+    private function validatedProviderSettings(array $callbackUris, array $authorizationHosts): array
     {
         $expected = array_map(static fn (Provider $provider): string => $provider->value, Provider::cases());
         $callbackKeys = array_keys($callbackUris);
@@ -125,27 +129,43 @@ final readonly class SocialAuthSettings
             throw new InvalidArgumentException('Die Anbieterkonfiguration ist unvollstaendig.');
         }
 
+        /** @var array<string, string> $validatedCallbackUris */
+        $validatedCallbackUris = [];
+        /** @var array<string, string> $validatedAuthorizationHosts */
+        $validatedAuthorizationHosts = [];
         foreach (Provider::cases() as $provider) {
-            if (!is_string($callbackUris[$provider->value] ?? null) || !is_string($authorizationHosts[$provider->value] ?? null)) {
+            $callbackUri = $callbackUris[$provider->value] ?? null;
+            $authorizationHost = $authorizationHosts[$provider->value] ?? null;
+            if (!is_string($callbackUri) || !is_string($authorizationHost)) {
                 throw new InvalidArgumentException('Die Anbieterkonfiguration ist ungueltig.');
             }
 
-            $this->assertHttpsCallbackUri($callbackUris[$provider->value]);
-            $this->assertAuthorizationHost($authorizationHosts[$provider->value]);
+            $this->assertHttpsCallbackUri($callbackUri);
+            $this->assertAuthorizationHost($authorizationHost);
+            $validatedCallbackUris[$provider->value] = $callbackUri;
+            $validatedAuthorizationHosts[$provider->value] = strtolower($authorizationHost);
         }
 
-        $this->callbackUris = $callbackUris;
-        $this->authorizationHosts = array_map('strtolower', $authorizationHosts);
+        return [
+            'callbackUris' => $validatedCallbackUris,
+            'authorizationHosts' => $validatedAuthorizationHosts,
+        ];
     }
 
     private function assertHttpsCallbackUri(string $callbackUri): void
     {
         $parts = parse_url($callbackUri);
-        $host = is_array($parts) ? (string) ($parts['host'] ?? '') : '';
-        $path = is_array($parts) ? (string) ($parts['path'] ?? '') : '';
+        if (!is_array($parts)) {
+            throw new InvalidArgumentException('Die Callback-Adresse ist ungueltig.');
+        }
+
+        $scheme = $parts['scheme'] ?? null;
+        $host = $parts['host'] ?? null;
+        $path = $parts['path'] ?? '';
         if (
-            !is_array($parts)
-            || strtolower((string) ($parts['scheme'] ?? '')) !== 'https'
+            !is_string($scheme)
+            || strtolower($scheme) !== 'https'
+            || !is_string($host)
             || $host === ''
             || filter_var($host, FILTER_VALIDATE_IP) !== false
             || preg_match('/\A(?=.{1,253}\z)(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\z/D', $host) !== 1

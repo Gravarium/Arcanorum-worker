@@ -8,7 +8,7 @@ interface OAuthProviderClient
 {
     public function authorizationEndpoint(): string;
 
-    /** @return array<string, string> */
+    /** @return array<mixed, mixed> */
     public function authorizationParameters(): array;
 
     /**
