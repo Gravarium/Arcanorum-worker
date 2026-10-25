@@ -1288,7 +1288,6 @@ Admin: Administration
 'WebVTT-Datei': 'WebVTT file'
 'Untertitel speichern oder aktualisieren': 'Save or update subtitles'
 'Untertitelspuren können nur für Videodateien und geprüfte Streams hochgeladen werden.': 'Subtitle tracks can only be uploaded for video files and approved streams.'
-'Sprache': 'Language'
 'Beschriftung': 'Label'
 'Dateigröße': 'File size'
 '%size% Byte': '%size% bytes'
