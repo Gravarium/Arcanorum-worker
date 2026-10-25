@@ -18,10 +18,6 @@ final class VideoSubtitleTrack
     #[ORM\Column(length: 32)]
     private string $id;
 
-    #[ORM\ManyToOne(targetEntity: Video::class)]
-    #[ORM\JoinColumn(name: 'video_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
-    private Video $video;
-
     #[ORM\Column(name: 'language_code', length: 35)]
     private string $languageCode;
 
@@ -44,7 +40,9 @@ final class VideoSubtitleTrack
     private \DateTimeImmutable $updatedAt;
 
     public function __construct(
-        Video $video,
+        #[ORM\ManyToOne(targetEntity: Video::class)]
+        #[ORM\JoinColumn(name: 'video_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
+        private Video $video,
         string $languageCode,
         string $label,
         string $storageObjectId,
@@ -53,7 +51,6 @@ final class VideoSubtitleTrack
     ) {
         $this->id = bin2hex(random_bytes(16));
         self::assertValidData($languageCode, $label, $storageObjectId, $size, $sha256);
-        $this->video = $video;
         $this->languageCode = self::normalizeLanguageCode($languageCode);
         $this->label = trim($label);
         $this->storageObjectId = $storageObjectId;
