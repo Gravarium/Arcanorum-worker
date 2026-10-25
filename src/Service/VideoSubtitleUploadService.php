@@ -86,7 +86,7 @@ final readonly class VideoSubtitleUploadService
 
         $lines = explode("\n", $contents);
         if (count($lines) > 20000
-            || 1 !== preg_match('/\AWEBVTT(?:[ \t][^\r\n]{0,120})?\z/D', $lines[0] ?? '')
+            || 1 !== preg_match('/\AWEBVTT(?:[ \t][^\r\n]{0,120})?\z/D', $lines[0])
         ) {
             throw new \InvalidArgumentException('Die Datei besitzt keinen gültigen WebVTT-Kopf.');
         }
@@ -175,11 +175,14 @@ final readonly class VideoSubtitleUploadService
 
     private static function validateTiming(string $line): void
     {
-        preg_match(
+        if (1 !== preg_match(
             '/\A(?:(\d{2,}):)?([0-5]\d):([0-5]\d)\.(\d{3}) --> (?:(\d{2,}):)?([0-5]\d):([0-5]\d)\.(\d{3})/',
             $line,
             $matches,
-        );
+        )) {
+            throw new \InvalidArgumentException('Ein WebVTT-Untertitel besitzt keine gültigen Zeitangaben.');
+        }
+
         $start = ((int) ($matches[1] ?? 0) * 3600000)
             + ((int) $matches[2] * 60000)
             + ((int) $matches[3] * 1000)

@@ -52,8 +52,16 @@ final class VideoSubtitleTrack
         string $sha256,
     ) {
         $this->id = bin2hex(random_bytes(16));
-        $this->createdAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
-        $this->revise($video, $languageCode, $label, $storageObjectId, $size, $sha256);
+        self::assertValidData($languageCode, $label, $storageObjectId, $size, $sha256);
+        $this->video = $video;
+        $this->languageCode = self::normalizeLanguageCode($languageCode);
+        $this->label = trim($label);
+        $this->storageObjectId = $storageObjectId;
+        $this->size = $size;
+        $this->sha256 = $sha256;
+        $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $this->createdAt = $now;
+        $this->updatedAt = $now;
     }
 
     public function revise(
@@ -63,18 +71,10 @@ final class VideoSubtitleTrack
         string $storageObjectId,
         int $size,
         string $sha256,
-    ): ?string {
-        if (!self::isValidLanguageCode($languageCode)
-            || !self::isValidLabel($label)
-            || 1 !== preg_match('/\A[a-f0-9]{64}\z/D', $storageObjectId)
-            || $size < 1
-            || $size > 1048576
-            || 1 !== preg_match('/\A[a-f0-9]{64}\z/D', $sha256)
-        ) {
-            throw new \InvalidArgumentException('Die Untertitelangaben sind ungültig.');
-        }
+    ): string {
+        self::assertValidData($languageCode, $label, $storageObjectId, $size, $sha256);
 
-        $previousObjectId = isset($this->storageObjectId) ? $this->storageObjectId : null;
+        $previousObjectId = $this->storageObjectId;
         $this->video = $video;
         $this->languageCode = self::normalizeLanguageCode($languageCode);
         $this->label = trim($label);
@@ -84,6 +84,24 @@ final class VideoSubtitleTrack
         $this->updatedAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
 
         return $previousObjectId;
+    }
+
+    private static function assertValidData(
+        string $languageCode,
+        string $label,
+        string $storageObjectId,
+        int $size,
+        string $sha256,
+    ): void {
+        if (!self::isValidLanguageCode($languageCode)
+            || !self::isValidLabel($label)
+            || 1 !== preg_match('/\A[a-f0-9]{64}\z/D', $storageObjectId)
+            || $size < 1
+            || $size > 1048576
+            || 1 !== preg_match('/\A[a-f0-9]{64}\z/D', $sha256)
+        ) {
+            throw new \InvalidArgumentException('Die Untertitelangaben sind ungültig.');
+        }
     }
 
     public static function isValidLanguageCode(string $languageCode): bool

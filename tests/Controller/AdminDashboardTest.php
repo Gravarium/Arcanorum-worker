@@ -2932,10 +2932,10 @@ final class AdminDashboardTest extends WebTestCase
             $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
             self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
             $entityManager->clear();
-            self::assertSame(0, (int) $entityManager->getConnection()->fetchOne(
+            self::assertSame(0, self::subtitleIntegerValue($entityManager->getConnection()->fetchOne(
                 'SELECT COUNT(*) FROM video_subtitle_tracks WHERE video_id = :id',
                 ['id' => $videoId],
-            ));
+            )));
 
             $client->request('POST', $uploadUrl, [
                 '_token' => $csrfToken,
@@ -2952,13 +2952,13 @@ final class AdminDashboardTest extends WebTestCase
                 'SELECT id, language_code, label, storage_object_id, size, sha256 FROM video_subtitle_tracks WHERE video_id = :id',
                 ['id' => $videoId],
             );
-            self::assertIsArray($track);
-            self::assertSame('en-US', $track['language_code']);
-            self::assertSame('English', $track['label']);
-            self::assertSame(strlen($firstSubtitle), (int) $track['size']);
-            self::assertSame(hash('sha256', $firstSubtitle), $track['sha256']);
-            $trackId = (string) $track['id'];
-            $oldObjectId = (string) $track['storage_object_id'];
+            $track = self::subtitleRow($track);
+            self::assertSame('en-US', self::subtitleStringValue($track, 'language_code'));
+            self::assertSame('English', self::subtitleStringValue($track, 'label'));
+            self::assertSame(strlen($firstSubtitle), self::subtitleIntegerValue($track['size'] ?? null));
+            self::assertSame(hash('sha256', $firstSubtitle), self::subtitleStringValue($track, 'sha256'));
+            $trackId = self::subtitleStringValue($track, 'id');
+            $oldObjectId = self::subtitleStringValue($track, 'storage_object_id');
 
             $client->request('GET', '/videos/'.$videoId.'/subtitles/'.$trackId);
             self::assertResponseIsSuccessful();
@@ -3002,9 +3002,10 @@ final class AdminDashboardTest extends WebTestCase
                 ['id' => $videoId],
             );
             self::assertIsArray($updatedTrack);
-            self::assertSame($trackId, $updatedTrack['id']);
-            self::assertSame('English updated', $updatedTrack['label']);
-            self::assertNotSame($oldObjectId, $updatedTrack['storage_object_id']);
+            $updatedTrack = self::subtitleRow($updatedTrack);
+            self::assertSame($trackId, self::subtitleStringValue($updatedTrack, 'id'));
+            self::assertSame('English updated', self::subtitleStringValue($updatedTrack, 'label'));
+            self::assertNotSame($oldObjectId, self::subtitleStringValue($updatedTrack, 'storage_object_id'));
 
             $client->request('GET', $editUrl);
             $deleteUrl = '/admin/videos/'.$videoId.'/subtitles/'.$trackId.'/delete';
@@ -3017,10 +3018,10 @@ final class AdminDashboardTest extends WebTestCase
             $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
             self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
             $entityManager->clear();
-            self::assertSame(0, (int) $entityManager->getConnection()->fetchOne(
+            self::assertSame(0, self::subtitleIntegerValue($entityManager->getConnection()->fetchOne(
                 'SELECT COUNT(*) FROM video_subtitle_tracks WHERE video_id = :id',
                 ['id' => $videoId],
-            ));
+            )));
             $client->request('GET', '/videos/'.$videoId.'/subtitles/'.$trackId);
             self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
 
@@ -3044,9 +3045,9 @@ final class AdminDashboardTest extends WebTestCase
                 'SELECT id, storage_object_id FROM video_subtitle_tracks WHERE video_id = :id',
                 ['id' => $videoId],
             );
-            self::assertIsArray($remainingSubtitle);
-            $remainingTrackId = (string) $remainingSubtitle['id'];
-            $remainingObjectId = (string) $remainingSubtitle['storage_object_id'];
+            $remainingSubtitle = self::subtitleRow($remainingSubtitle);
+            $remainingTrackId = self::subtitleStringValue($remainingSubtitle, 'id');
+            $remainingObjectId = self::subtitleStringValue($remainingSubtitle, 'storage_object_id');
 
             $client->request('GET', '/admin/videos');
             self::assertResponseIsSuccessful();
@@ -3065,24 +3066,22 @@ final class AdminDashboardTest extends WebTestCase
             $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
             self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
             $entityManager->clear();
-            self::assertSame(0, (int) $entityManager->getConnection()->fetchOne(
+            self::assertSame(0, self::subtitleIntegerValue($entityManager->getConnection()->fetchOne(
                 'SELECT COUNT(*) FROM video_subtitle_tracks WHERE video_id = :id',
                 ['id' => $videoId],
-            ));
-            self::assertSame(0, (int) $entityManager->getConnection()->fetchOne(
+            )));
+            self::assertSame(0, self::subtitleIntegerValue($entityManager->getConnection()->fetchOne(
                 'SELECT COUNT(*) FROM videos WHERE id = :id',
                 ['id' => $videoId],
-            ));
+            )));
             $client->request('GET', '/videos/'.$videoId.'/subtitles/'.$remainingTrackId);
             self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
-            $privateObjectWasDeleted = false;
             try {
                 $storage->read($remainingObjectId);
                 self::fail('A subtitle file remained in private storage after its video was deleted.');
             } catch (\App\Platform\Hosting\PrivateStorageOperationFailed) {
-                $privateObjectWasDeleted = true;
+                // Missing private objects are rejected by the storage adapter.
             }
-            self::assertTrue($privateObjectWasDeleted);
         } finally {
             $cleanupManager = $client->getContainer()->get(EntityManagerInterface::class);
             if ($cleanupManager instanceof EntityManagerInterface) {
@@ -3108,6 +3107,42 @@ final class AdminDashboardTest extends WebTestCase
                 unlink($updatedSubtitlePath);
             }
         }
+    }
+
+    /**
+     * @param array<string, mixed>|false $row
+     * @return array<string, mixed>
+     */
+    private static function subtitleRow(array|false $row): array
+    {
+        if (!is_array($row)) {
+            throw new \UnexpectedValueException('A subtitle database row was not found.');
+        }
+
+        return $row;
+    }
+
+    /** @param array<string, mixed> $row */
+    private static function subtitleStringValue(array $row, string $column): string
+    {
+        $value = $row[$column] ?? null;
+        if (!is_string($value)) {
+            throw new \UnexpectedValueException('A subtitle database column did not contain a string.');
+        }
+
+        return $value;
+    }
+
+    private static function subtitleIntegerValue(mixed $value): int
+    {
+        if (is_int($value)) {
+            return $value;
+        }
+        if (is_string($value) && ctype_digit($value)) {
+            return (int) $value;
+        }
+
+        throw new \UnexpectedValueException('A subtitle database value did not contain an integer.');
     }
 
     public function testAdminCanUploadPreviewAndRemoveSeriesArtwork(): void

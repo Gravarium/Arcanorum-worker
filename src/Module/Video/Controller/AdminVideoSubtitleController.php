@@ -202,7 +202,10 @@ final class AdminVideoSubtitleController extends AbstractController
         return is_string($value) ? $value : '';
     }
 
-    /** @param array<string, mixed> $input @param list<string> $allowed */
+    /**
+     * @param array<string, mixed> $input
+     * @param list<string> $allowed
+     */
     private static function hasOnlyKeys(array $input, array $allowed): bool
     {
         return [] === array_diff(array_keys($input), $allowed);
