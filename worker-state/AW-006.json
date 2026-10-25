@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "status": "claimed",
+  "status": "idle",
   "task_id": "AW-006",
-  "worker_id": "codex-aw006",
-  "run_id": "codex-aw006-20261025T232604Z-2f04fd48",
+  "worker_id": null,
+  "run_id": null,
   "task_branch": "aw-006/social-auth-module-20261025",
   "base_sha": "7bbde570920b9eccb3a5a3fd566b5cea00cfd823",
   "plan_ref": "issue #19",
@@ -14,11 +14,11 @@
     "docs/modules/SOCIAL_AUTH.md"
   ],
   "claim_duration_hours": 7,
-  "claimed_at": "2026-10-25T23:26:04Z",
-  "claim_expires_at": "2026-10-26T06:26:04Z",
-  "heartbeat_at": "2026-10-25T23:54:33Z",
-  "last_progress_at": "2026-10-25T23:54:33Z",
+  "claimed_at": null,
+  "claim_expires_at": null,
+  "heartbeat_at": null,
+  "last_progress_at": "2026-10-25T23:57:48Z",
   "last_progress_sha": "dc830f2b81dacbaab165609ea7b04814e46dcb8c",
-  "last_test_status": "Exact PR HEAD dc830f2b81dacbaab165609ea7b04814e46dcb8c: Rector suggestions applied without weakening checks, pushing is complete. Prior run passed repository, Compose, syntax, PHPStan and CS-Fixer gates; Rector had failed, so Psalm/PHPUnit were gated. New exact-head Walker run status: [].",
-  "blocker": null
+  "last_test_status": "Exact PR HEAD dc830f2b81dacbaab165609ea7b04814e46dcb8c: Walker workflow 40246840019 completed success; all required jobs and steps passed. PHPStan 10, CS-Fixer, Rector dry-run, Psalm taint, PHPUnit and report validation passed. 41 PHPUnit tests, 180 assertions, 0 failures/errors/skips. Exact-head JUnit, Clover and Psalm reports artifact 12619310410 retained until 2026-11-01.",
+  "blocker": "Draft pull request awaits project-owner review and integration. No merge or deployment."
 }
