@@ -2976,8 +2976,8 @@ final class AdminDashboardTest extends WebTestCase
 
             $client->request('GET', '/videos/'.$videoId);
             self::assertResponseIsSuccessful();
-            self::assertStringContainsString('srclang="en-US"', (string) $client->getResponse()->getContent());
-            self::assertStringContainsString('/videos/'.$videoId.'/subtitles/'.$trackId, (string) $client->getResponse()->getContent());
+            self::assertStringContainsString('srclang="en-US"', $client->getResponse()->getContent());
+            self::assertStringContainsString('/videos/'.$videoId.'/subtitles/'.$trackId, $client->getResponse()->getContent());
             $client->request('GET', '/videos/'.$videoId.'/subtitles/'.bin2hex(random_bytes(16)));
             self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
 

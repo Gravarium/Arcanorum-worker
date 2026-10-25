@@ -183,11 +183,13 @@ final readonly class VideoSubtitleUploadService
             throw new \InvalidArgumentException('Ein WebVTT-Untertitel besitzt keine gültigen Zeitangaben.');
         }
 
-        $start = ((int) ($matches[1] ?? 0) * 3600000)
+        $startHours = '' === $matches[1] ? 0 : (int) $matches[1];
+        $endHours = '' === $matches[5] ? 0 : (int) $matches[5];
+        $start = ($startHours * 3600000)
             + ((int) $matches[2] * 60000)
             + ((int) $matches[3] * 1000)
             + (int) $matches[4];
-        $end = ((int) ($matches[5] ?? 0) * 3600000)
+        $end = ($endHours * 3600000)
             + ((int) $matches[6] * 60000)
             + ((int) $matches[7] * 1000)
             + (int) $matches[8];
