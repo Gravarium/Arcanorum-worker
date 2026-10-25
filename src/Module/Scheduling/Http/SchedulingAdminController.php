@@ -156,7 +156,7 @@ final readonly class SchedulingAdminController
 
     /**
      * @param array<int|string, mixed> $data
-     * @param list<string>            $allowed
+     * @param list<string>             $allowed
      */
     private static function assertKeys(array $data, array $allowed): void
     {

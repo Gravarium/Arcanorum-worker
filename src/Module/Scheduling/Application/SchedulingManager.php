@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Module\Scheduling\Application;
 
-use App\Module\Scheduling\Domain\ScheduleFrequency;
 use App\Module\Scheduling\Domain\ScheduledTask;
+use App\Module\Scheduling\Domain\ScheduleFrequency;
 use App\Module\Scheduling\Domain\TaskExecutionRecord;
-use App\Module\Scheduling\Domain\TaskType;
 use App\Module\Scheduling\Domain\TaskStatus;
+use App\Module\Scheduling\Domain\TaskType;
 
 final readonly class SchedulingManager
 {

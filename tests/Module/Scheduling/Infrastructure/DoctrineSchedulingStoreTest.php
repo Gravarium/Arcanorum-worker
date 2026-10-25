@@ -6,8 +6,8 @@ namespace App\Tests\Module\Scheduling\Infrastructure;
 
 use App\Module\Scheduling\Domain\ExecutionResultCode;
 use App\Module\Scheduling\Domain\ExecutionState;
-use App\Module\Scheduling\Domain\ScheduleFrequency;
 use App\Module\Scheduling\Domain\ScheduledTask;
+use App\Module\Scheduling\Domain\ScheduleFrequency;
 use App\Module\Scheduling\Domain\TaskType;
 use App\Module\Scheduling\Infrastructure\DoctrineSchedulingStore;
 use Doctrine\DBAL\Connection;
