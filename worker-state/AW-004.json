@@ -16,9 +16,9 @@
   "claim_duration_hours": 7,
   "claimed_at": "2026-10-25T22:20:30Z",
   "claim_expires_at": "2026-10-26T05:20:30Z",
-  "heartbeat_at": "2026-10-25T22:43:01Z",
-  "last_progress_at": "2026-10-25T22:43:01Z",
-  "last_progress_sha": "6cab38dac36dcde56eb111f81059562a508f1ce7",
-  "last_test_status": "The second exact-head run passed repository and Compose checks. PHPStan found one remaining redundant input type guard; it is corrected and staged for another run.",
+  "heartbeat_at": "2026-10-25T22:43:08Z",
+  "last_progress_at": "2026-10-25T22:43:08Z",
+  "last_progress_sha": "3f9f3162ea9188976fb8954c177fb4380d271dbe",
+  "last_test_status": "One redundant PHPStan input guard has been removed. A third Walker exact-head run is pending.",
   "blocker": null
 }
