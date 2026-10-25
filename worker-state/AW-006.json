@@ -16,9 +16,9 @@
   "claim_duration_hours": 7,
   "claimed_at": "2026-10-25T23:26:04Z",
   "claim_expires_at": "2026-10-26T06:26:04Z",
-  "heartbeat_at": "2026-10-25T23:46:45Z",
-  "last_progress_at": "2026-10-25T23:46:45Z",
-  "last_progress_sha": "13e6d621acb98622de94ae90ef734e11f1d7b1c2",
-  "last_test_status": "Exact PR HEAD 13e6d621acb98622de94ae90ef734e11f1d7b1c2: repository/secret and PostgreSQL/Redis Compose gates passed; PHPStan failed again. PHP-CS-Fixer, Rector, Psalm and PHPUnit were skipped by the required quality gate. New PHP job is 121328160999; diagnostics are being reviewed.",
+  "heartbeat_at": "2026-10-25T23:48:10Z",
+  "last_progress_at": "2026-10-25T23:48:10Z",
+  "last_progress_sha": "345534cc5db22d91cb04a0669c1c7f12c6ca8d5b",
+  "last_test_status": "Exact PR HEAD 345534cc5db22d91cb04a0669c1c7f12c6ca8d5b: third test harness revision pushed after PHPStan findings on prior head. Repository/secret and PostgreSQL/Redis Compose checks previously passed; PHPStan and all gated follow-ups are pending for this head.",
   "blocker": null
 }
