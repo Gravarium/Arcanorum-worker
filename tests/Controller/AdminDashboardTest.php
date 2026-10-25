@@ -63,6 +63,7 @@ use App\Service\VideoProviderImportService;
 use App\Tests\Support\RecordingMemberSecurityEmailSender;
 use App\Tests\Support\VerifiedRuntimeAttestationReportProvider;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\NullLogger;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\BrowserKit\Cookie as BrowserKitCookie;
@@ -2858,6 +2859,8 @@ final class AdminDashboardTest extends WebTestCase
     public function testAdminCanUploadUpdateAndRemovePrivateVideoSubtitleTracks(): void
     {
         $client = static::createClient();
+        $client->disableReboot();
+        $client->getContainer()->set('logger', new NullLogger());
         $client->getContainer()->set(
             RuntimeAttestationReportProviderInterface::class,
             new VerifiedRuntimeAttestationReportProvider(),

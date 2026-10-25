@@ -194,6 +194,7 @@ final class VideoAdminController extends AbstractController
         $uploadedObjectIds = [];
         $thumbnailObjectIds = [];
         $subtitleObjectIds = [];
+        $subtitleTracksToRemove = [];
         if ('delete' === $action) {
             foreach ($items as $item) {
                 $objectId = $item->getUploadedObjectId();
@@ -206,11 +207,16 @@ final class VideoAdminController extends AbstractController
                 }
                 foreach ($subtitleTracks->findForVideo($item) as $subtitleTrack) {
                     $subtitleObjectIds[] = $subtitleTrack->getStorageObjectId();
+                    $subtitleTracksToRemove[] = $subtitleTrack;
                 }
             }
         }
 
-        $entityManager->getConnection()->transactional(function () use ($items, $action, $comments, $entityManager, $targetCategoryName): void {
+        $entityManager->getConnection()->transactional(function () use ($items, $action, $comments, $entityManager, $targetCategoryName, $subtitleTracksToRemove): void {
+            foreach ($subtitleTracksToRemove as $subtitleTrack) {
+                $entityManager->remove($subtitleTrack);
+            }
+
             foreach ($items as $item) {
                 if ('delete' === $action) {
                     $comments->deleteForContent(CommentContentType::Video, $item->getId());
