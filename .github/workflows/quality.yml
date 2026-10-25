@@ -233,6 +233,8 @@ jobs:
           printf 'deb [signed-by=/usr/share/keyrings/pgdg.gpg] https://apt.postgresql.org/pub/repos/apt noble-pgdg main\n' | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
           sudo apt-get update
           sudo apt-get install --yes --no-install-recommends postgresql-client-18
+          printf '/usr/lib/postgresql/18/bin\n' >> "$GITHUB_PATH"
+          export PATH="/usr/lib/postgresql/18/bin:$PATH"
           pg_dump --version | grep --fixed-strings '(PostgreSQL) 18.'
           pg_restore --version | grep --fixed-strings '(PostgreSQL) 18.'
 
