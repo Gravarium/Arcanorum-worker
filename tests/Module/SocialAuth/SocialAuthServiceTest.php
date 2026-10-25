@@ -70,8 +70,10 @@ final class SocialAuthServiceTest extends TestCase
             $query = $this->query($request->authorizationUrl);
             $state = $query['state'] ?? null;
             $challenge = $query['code_challenge'] ?? null;
-            self::assertIsString($state);
-            self::assertIsString($challenge);
+            if (!is_string($state) || !is_string($challenge)) {
+                self::fail('The authorization URL did not contain state and PKCE values.');
+            }
+
             self::assertMatchesRegularExpression('/\A[A-Za-z0-9_-]{43}\z/D', $state);
             self::assertMatchesRegularExpression('/\A[A-Za-z0-9_-]{43}\z/D', $challenge);
             self::assertSame('S256', $query['code_challenge_method'] ?? null);
@@ -122,7 +124,10 @@ final class SocialAuthServiceTest extends TestCase
         self::assertSame(Flow::REGISTRATION, $result->flow);
         self::assertSame(1, $this->identities->registrationCalls);
         $registered = $this->identities->registered['google:provider-subject-1'] ?? null;
-        self::assertNotNull($registered);
+        if ($registered === null) {
+            self::fail('The provider identity was not registered.');
+        }
+
         self::assertNull($registered->verifiedEmail);
     }
 
@@ -133,7 +138,10 @@ final class SocialAuthServiceTest extends TestCase
         $this->complete($request);
 
         $registered = $this->identities->registered['google:provider-subject-1'] ?? null;
-        self::assertNotNull($registered);
+        if ($registered === null) {
+            self::fail('The provider identity was not registered.');
+        }
+
         self::assertSame('verified@example.test', $registered->verifiedEmail?->value);
     }
 
@@ -155,10 +163,15 @@ final class SocialAuthServiceTest extends TestCase
         $query = $this->query($request->authorizationUrl);
         $state = $query['state'] ?? null;
         $challenge = $query['code_challenge'] ?? null;
-        self::assertIsString($state);
-        self::assertIsString($challenge);
+        if (!is_string($state) || !is_string($challenge)) {
+            self::fail('The authorization URL did not contain state and PKCE values.');
+        }
+
         $record = $this->states->records[hash('sha256', $state)] ?? null;
-        self::assertNotNull($record);
+        if ($record === null) {
+            self::fail('The state digest was not stored.');
+        }
+
         self::assertSame(hash('sha256', self::SESSION_BINDING), $record->sessionBindingDigest);
         self::assertArrayNotHasKey($state, $this->states->records);
         $expectedChallenge = $this->base64UrlEncode(hash('sha256', $record->codeVerifier, true));
@@ -439,9 +452,15 @@ final class SocialAuthServiceTest extends TestCase
     private function query(string $url): array
     {
         $parts = parse_url($url);
-        self::assertIsArray($parts);
+        if (!is_array($parts)) {
+            self::fail('The authorization URL could not be parsed.');
+        }
+
         $queryString = $parts['query'] ?? '';
-        self::assertIsString($queryString);
+        if (!is_string($queryString)) {
+            self::fail('The authorization URL query is invalid.');
+        }
+
         parse_str($queryString, $query);
 
         return $query;

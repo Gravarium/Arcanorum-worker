@@ -149,7 +149,8 @@ final readonly class SocialAuthSettings
             || $host === ''
             || filter_var($host, FILTER_VALIDATE_IP) !== false
             || preg_match('/\A(?=.{1,253}\z)(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\z/D', $host) !== 1
-            || preg_match('/[\x00-\x20\x7F\\]/', $path) === 1
+            || preg_match('/[\x00-\x20\x7F]/', $path) === 1
+            || str_contains($path, chr(92))
             || isset($parts['user'])
             || isset($parts['pass'])
             || isset($parts['query'])
