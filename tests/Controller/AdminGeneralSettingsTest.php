@@ -345,7 +345,7 @@ final class AdminGeneralSettingsTest extends WebTestCase
                 "font-src 'self'",
                 (string) $client->getResponse()->headers->get('Content-Security-Policy-Report-Only'),
             );
-            $videoJsStylesheetPath = dirname(__DIR__, 2).'/assets/vendor/video.js-8.23.4/video-js.min.css';
+            $videoJsStylesheetPath = dirname(__DIR__, 2).'/assets/third-party/video.js-8.23.4/video-js.min.css';
             $videoJsStylesheet = file_get_contents($videoJsStylesheetPath);
             self::assertIsString($videoJsStylesheet);
             self::assertStringContainsString('url("./video-js.woff")', $videoJsStylesheet);

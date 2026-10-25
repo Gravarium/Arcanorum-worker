@@ -8,6 +8,9 @@
          failOnRisky="true"
          failOnWarning="true"
          failOnDeprecation="true"
+         failOnEmptyTestSuite="true"
+         failOnIncomplete="true"
+         failOnSkipped="true"
          beStrictAboutOutputDuringTests="true">
     <php>
         <env name="KERNEL_CLASS" value="App\Kernel" force="true"/>

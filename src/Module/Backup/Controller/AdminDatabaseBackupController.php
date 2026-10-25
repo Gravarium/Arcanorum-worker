@@ -29,7 +29,7 @@ final class AdminDatabaseBackupController extends AbstractController
             $entries = [];
         }
 
-        return $this->noStore($this->render('admin/backups/index.html.twig', [
+        return $this->noStore($this->render('admin/database_archives/index.html.twig', [
             'entries' => $entries,
             'availability' => $availability,
         ]));

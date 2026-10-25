@@ -4,7 +4,7 @@
 
 {% block stylesheets %}
     {% if site_settings().videoPlayerEngine.value == 'videojs' and video.sourceType.value in ['file', 'stream'] %}
-        <link rel="stylesheet" href="{{ asset('vendor/video.js-8.23.4/video-js.min.css') }}">
+        <link rel="stylesheet" href="{{ asset('third-party/video.js-8.23.4/video-js.min.css') }}">
     {% endif %}
 {% endblock %}
 
@@ -174,10 +174,10 @@
 
 {% block javascripts %}
     {% if site_settings().videoPlayerEngine.value == 'videojs' and video.sourceType.value in ['file', 'stream'] %}
-        <script src="{{ asset('vendor/video.js-8.23.4/video.min.js') }}" defer></script>
+        <script src="{{ asset('third-party/video.js-8.23.4/video.min.js') }}" defer></script>
         <script src="{{ asset('video/videojs-player.js') }}" defer></script>
     {% elseif video.sourceType.value == 'stream' and stream_source is not null and stream_source.mimeType == 'application/vnd.apple.mpegurl' %}
-        <script src="{{ asset('vendor/hls.js-1.7.3/hls.min.js') }}" defer></script>
+        <script src="{{ asset('third-party/hls.js-1.7.3/hls.min.js') }}" defer></script>
         <script src="{{ asset('video/hls-player.js') }}" defer></script>
     {% endif %}
 {% endblock %}
