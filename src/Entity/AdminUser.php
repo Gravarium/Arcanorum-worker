@@ -153,6 +153,11 @@ final class AdminUser implements UserInterface, PasswordAuthenticatedUserInterfa
         $this->password = $password;
     }
 
+    public function eraseCredentials(): void
+    {
+        // The entity stores only the password hash and no transient plaintext credentials.
+    }
+
     public function getMfaSecretCiphertext(): ?string
     {
         return $this->mfaSecretCiphertext;

@@ -123,6 +123,11 @@ final class MemberAccount implements UserInterface, PasswordAuthenticatedUserInt
         $this->password = $password;
     }
 
+    public function eraseCredentials(): void
+    {
+        // The entity stores only the password hash and no transient plaintext credentials.
+    }
+
     public function getEmail(): string
     {
         return $this->email;
