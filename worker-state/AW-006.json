@@ -16,9 +16,9 @@
   "claim_duration_hours": 7,
   "claimed_at": "2026-10-25T23:26:04Z",
   "claim_expires_at": "2026-10-26T06:26:04Z",
-  "heartbeat_at": "2026-10-25T23:48:10Z",
-  "last_progress_at": "2026-10-25T23:48:10Z",
-  "last_progress_sha": "345534cc5db22d91cb04a0669c1c7f12c6ca8d5b",
-  "last_test_status": "Exact PR HEAD 345534cc5db22d91cb04a0669c1c7f12c6ca8d5b: third test harness revision pushed after PHPStan findings on prior head. Repository/secret and PostgreSQL/Redis Compose checks previously passed; PHPStan and all gated follow-ups are pending for this head.",
+  "heartbeat_at": "2026-10-25T23:49:59Z",
+  "last_progress_at": "2026-10-25T23:49:59Z",
+  "last_progress_sha": "e76a8f588c5babb59eaa31c6e823192969d0d2bf",
+  "last_test_status": "Exact PR HEAD e76a8f588c5babb59eaa31c6e823192969d0d2bf: PHP syntax compatibility correction pushed. The prior run passed repository/secret and Compose checks but PHP syntax scanning rejected the test fixture initializer; latest exact-head Walker run is [{\"status\":\"queued\",\"id\":40246509253}].",
   "blocker": null
 }
