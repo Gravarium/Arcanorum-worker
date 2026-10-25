@@ -22,7 +22,7 @@ use PHPUnit\Framework\TestCase;
 
 final class SocialAuthServiceTest extends TestCase
 {
-    private const SESSION_BINDING = 'test-session-binding-32-characters';
+    private const string SESSION_BINDING = 'test-session-binding-32-characters';
 
     private ?FakeClock $clock = null;
 

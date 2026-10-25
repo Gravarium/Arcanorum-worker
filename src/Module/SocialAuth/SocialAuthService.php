@@ -149,7 +149,7 @@ final readonly class SocialAuthService
             throw new AuthenticationRejected();
         }
 
-        $identity = (new ProviderIdentityParser($this->settings->maxProfileResponseBytes()))->parse($provider, $normalizedProfile);
+        $identity = new ProviderIdentityParser($this->settings->maxProfileResponseBytes())->parse($provider, $normalizedProfile);
 
         return match ($transaction->flow) {
             Flow::LOGIN => $this->login($identity),
@@ -169,12 +169,12 @@ final readonly class SocialAuthService
         $this->consumeRateLimit($provider, 'unlink', $account->accountId);
 
         try {
-            if (!$this->identities->unlinkIfAnotherMethodRemains($account->accountId, $provider)) {
-                throw new AuthenticationRejected();
-            }
-        } catch (AuthenticationRejected) {
-            throw new AuthenticationRejected();
+            $unlinked = $this->identities->unlinkIfAnotherMethodRemains($account->accountId, $provider);
         } catch (\Throwable) {
+            throw new AuthenticationRejected();
+        }
+
+        if (!$unlinked) {
             throw new AuthenticationRejected();
         }
     }
@@ -220,12 +220,12 @@ final readonly class SocialAuthService
         }
 
         try {
-            if (!$this->identities->linkToAccount($accountId, $identity)) {
-                throw new AuthenticationRejected();
-            }
-        } catch (AuthenticationRejected) {
-            throw new AuthenticationRejected();
+            $linked = $this->identities->linkToAccount($accountId, $identity);
         } catch (\Throwable) {
+            throw new AuthenticationRejected();
+        }
+
+        if (!$linked) {
             throw new AuthenticationRejected();
         }
 
@@ -273,7 +273,7 @@ final readonly class SocialAuthService
             'code_challenge' => $challenge,
             'code_challenge_method' => 'S256',
         ];
-        $requiredParameterNames = array_fill_keys(array_map('strtolower', array_keys($requiredParameters)), true);
+        $requiredParameterNames = array_fill_keys(array_map(strtolower(...), array_keys($requiredParameters)), true);
         $seenParameters = [];
 
         if (count($extraParameters) > 32) {
@@ -321,12 +321,12 @@ final readonly class SocialAuthService
     {
         try {
             $accountKey = null === $accountId ? null : hash('sha256', $accountId);
-            if (!$this->rateLimiter->consume($provider, $operation, $accountKey)) {
-                throw new AuthenticationRejected();
-            }
-        } catch (AuthenticationRejected) {
-            throw new AuthenticationRejected();
+            $allowed = $this->rateLimiter->consume($provider, $operation, $accountKey);
         } catch (\Throwable) {
+            throw new AuthenticationRejected();
+        }
+
+        if (!$allowed) {
             throw new AuthenticationRejected();
         }
     }
