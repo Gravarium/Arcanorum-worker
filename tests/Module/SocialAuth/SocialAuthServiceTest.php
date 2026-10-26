@@ -395,6 +395,16 @@ final class SocialAuthServiceTest extends TestCase
         $this->assertNoStateStored($this->states());
     }
 
+    public function testCredentialParametersAreRejectedBeforeBuildingAuthorizationUrl(): void
+    {
+        foreach (['client_secret', 'clientSecret', 'access_token', 'refresh_token', 'id_token', 'code_verifier', 'private_key', 'api_key', 'assertion'] as $parameterName) {
+            $this->google()->parameters = [$parameterName => 'test-secret'];
+
+            $this->assertRejected(fn () => $this->service()->begin('google', Flow::LOGIN->value, self::SESSION_BINDING));
+            $this->assertNoStateStored($this->states());
+        }
+    }
+
     /**
      * @param list<string> $enabledProviders
      */
