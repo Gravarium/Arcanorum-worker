@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "status": "claimed",
+  "status": "PR offen",
   "task_id": "AW-003",
-  "worker_id": "codex-aw003",
-  "run_id": "codex-aw003-20261026130900Z-security-review",
+  "worker_id": null,
+  "run_id": null,
   "task_branch": "aw-003/advertising-module-20261022",
   "base_sha": "7bbde570920b9eccb3a5a3fd566b5cea00cfd823",
   "plan_ref": "planning/aw003-aw004-modules-20261022/docs/WORK-PLAN.md",
@@ -14,11 +14,11 @@
     "docs/modules/ADVERTISING.md"
   ],
   "claim_duration_hours": 7,
-  "claimed_at": "2026-10-26T13:09:00.000Z",
-  "claim_expires_at": "2026-10-26T20:09:00.000Z",
-  "heartbeat_at": "2026-10-26T13:12:23.000Z",
-  "last_progress_at": "2026-10-26T13:12:23.000Z",
+  "claimed_at": null,
+  "claim_expires_at": null,
+  "heartbeat_at": null,
+  "last_progress_at": "2026-10-26T13:13:55Z",
   "last_progress_sha": "903bc3befc2c54b60b94709b64be32379c63af7b",
-  "last_test_status": "Security review found that a click token remained valid at the exact signed expiration second. ClickTokenSigner now rejects that boundary and a regression test covers 299 seconds versus the exact 300-second expiry. Walker CI is pending for exact PR HEAD 903bc3befc2c54b60b94709b64be32379c63af7b; previous green run applies only to the prior HEAD.",
-  "blocker": null
+  "last_test_status": "Exact PR HEAD 903bc3befc2c54b60b94709b64be32379c63af7b: Walker workflow run 40328536577 completed success. All 4 required jobs and 46 steps passed, with no skipped steps. PHP 8.5.12 and PHPUnit 12.5.40. The new ClickTokenSigner boundary test passed: valid at 299 seconds and rejected at the exact 300-second expiry. Current workspace has no PHP CLI; Walker executed the full suite. Draft PR awaits project-owner review and host integration. No merge or deployment.",
+  "blocker": "Draft PR awaits project-owner review and host integration. No merge or deployment."
 }
