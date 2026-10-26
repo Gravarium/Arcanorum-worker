@@ -16,9 +16,9 @@
   "claim_duration_hours": 7,
   "claimed_at": "2026-10-26T13:09:00.000Z",
   "claim_expires_at": "2026-10-26T20:09:00.000Z",
-  "heartbeat_at": "2026-10-26T13:09:00.000Z",
-  "last_progress_at": "2026-10-24T23:30:40Z",
-  "last_progress_sha": "043d86dbc28a9b6d6fa4f3cd049200082f4173bc",
-  "last_test_status": "Exact PR HEAD 043d86dbc28a9b6d6fa4f3cd049200082f4173bc: Walker CI run 136 passed all four required jobs with no skipped steps. PHPUnit reported 42 tests, 0 failures, 0 errors and 0 skipped; PHP 8.5/Symfony/PostgreSQL 18/Redis 8 checks, Composer audit, PHPStan, CS-Fixer, Rector dry-run, Psalm taint analysis and report validation passed. The local PHPUnit invocation was blocked because PHP is unavailable in the shell; Walker CI executed the test successfully. Existing schema synchronization remains skipped by --skip-sync; Doctrine adapter tests use PostgreSQL temporary tables, and host migration awaits integration.",
+  "heartbeat_at": "2026-10-26T13:12:23.000Z",
+  "last_progress_at": "2026-10-26T13:12:23.000Z",
+  "last_progress_sha": "903bc3befc2c54b60b94709b64be32379c63af7b",
+  "last_test_status": "Security review found that a click token remained valid at the exact signed expiration second. ClickTokenSigner now rejects that boundary and a regression test covers 299 seconds versus the exact 300-second expiry. Walker CI is pending for exact PR HEAD 903bc3befc2c54b60b94709b64be32379c63af7b; previous green run applies only to the prior HEAD.",
   "blocker": null
 }
