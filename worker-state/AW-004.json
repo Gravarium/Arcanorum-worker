@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "status": "PR offen",
+  "status": "in Bearbeitung",
   "task_id": "AW-004",
-  "worker_id": null,
-  "run_id": null,
+  "worker_id": "codex-aw004",
+  "run_id": "aw004-review-20261026T154037Z",
   "task_branch": "aw-004/scheduling-module-20261025",
   "base_sha": "7bbde570920b9eccb3a5a3fd566b5cea00cfd823",
   "plan_ref": "planning/aw003-aw004-modules-20261022/docs/WORK-PLAN.md",
@@ -14,11 +14,11 @@
     "docs/modules/SCHEDULING.md"
   ],
   "claim_duration_hours": 7,
-  "claimed_at": null,
-  "claim_expires_at": null,
-  "heartbeat_at": null,
-  "last_progress_at": "2026-10-25T22:49:47Z",
+  "claimed_at": "2026-10-26T15:40:37Z",
+  "claim_expires_at": "2026-10-26T22:40:37Z",
+  "heartbeat_at": "2026-10-26T15:40:37Z",
+  "last_progress_at": "2026-10-26T15:40:37Z",
   "last_progress_sha": "c531c45b287028cb6cee4c345f4d9a531bb49312",
-  "last_test_status": "Exact PR HEAD c531c45b287028cb6cee4c345f4d9a531bb49312: Walker CI completed all four required jobs successfully with no skipped steps. PHPUnit reported 38 executed tests; Composer audit, PHPStan 10, CS-Fixer, Rector dry-run, Psalm taint analysis, Symfony/Doctrine/infrastructure checks, repository scan and PostgreSQL/Redis Compose checks passed. Local PHP checks were unavailable because the workspace shell has no PHP CLI.",
-  "blocker": "Draft PR awaits project-owner review and host integration. No merge or deployment."
+  "last_test_status": "Security review of the existing scheduling module is in progress. The recorded exact-head Walker mandatory run 40241824729 completed successfully with all required jobs and steps passing.",
+  "blocker": null
 }
