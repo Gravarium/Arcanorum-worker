@@ -16,8 +16,9 @@ Jeder Auftrag braucht eine eindeutige ID, ein Ziel, Abnahmekriterien, Abhängigk
 
 ### AW-001 — Technisches PHP-/Symfony-Grundgerüst
 
-**Status:** in Bearbeitung
-**Koordination:** `worker-control/worker-state.json`, PR #5
+**Status:** PR offen
+**Koordination:** `worker-control/worker-state.json`, Branch `aw-001/full-foundation-20261021`, PR #13
+**Prüfstand:** Exakter PR-HEAD `7bbde570920b9eccb3a5a3fd566b5cea00cfd823`; Walker-Lauf `39940438265`, Versuch 2: alle 4 Pflichtjobs und 46 Schritte erfolgreich, keine übersprungenen Schritte. PHP 8.5, Symfony/Doctrine, PostgreSQL 18, Redis 8, Composer-Audit, PHPStan 10, Psalm-Taintanalyse, CS-Fixer, Rector-Dry-Run und PHPUnit bestanden. PR wartet auf Projekteigentümer-Review und Integration.
 **Abhängigkeiten:** keine
 
 **Ziel:** Das leere Repository in eine startbare, testbare Basis für die folgenden Eigentümeraufträge überführen.
@@ -50,9 +51,10 @@ Jeder Auftrag braucht eine eindeutige ID, ein Ziel, Abnahmekriterien, Abhängigk
 
 ### AW-002 — Lokale PostgreSQL-/Redis-Umgebung
 
-**Status:** bereit
+**Status:** PR offen
 **Abhängigkeiten:** keine; ausdrücklich parallel zu AW-001
-**Koordination:** eigene Sperrdatei `worker-control/worker-state/AW-002.json`
+**Koordination:** `worker-control/worker-state/AW-002.json`, Branch `aw-002/integration-loopback-guard-20261017`, PR #12
+**Prüfstand:** Exakter PR-HEAD `636a70a73499687ef879840a6a544e4f99d19bc8`; Walker-Lauf `39674621203`: alle 4 Pflichtjobs und 45 Schritte erfolgreich, keine übersprungenen Schritte. PHP 8.5, PostgreSQL 18, Redis 8, Composer-Audit, PHPStan 10, Psalm-Taintanalyse, CS-Fixer, Rector-Dry-Run und PHPUnit bestanden. PR wartet auf Projekteigentümer-Review und Integration.
 **Erlaubte Dateien:** `compose.yaml`, `scripts/ci/check_compose.sh`, `docs/LOCAL-CONTAINERS.md` und Änderungen an `.github/workflows/quality.yml` ausschließlich für die Compose-Prüfung.
 
 **Ziel:** Eine lokale, reproduzierbare Testumgebung für PostgreSQL 18 und Redis 8 bereitstellen, die neben dem von AW-001 eingerichteten Symfony-Grundgerüst entwickelt werden kann.
@@ -91,7 +93,9 @@ Die folgenden Aufgaben sind unabhaengige, eigenstaendig zu entwickelnde CMS-Modu
 
 ### AW-003 — Eigenstaendiges Anzeigenmodul
 
-**Status:** bereit (Claim vor Beginn erforderlich)
+**Status:** PR offen
+**Koordination:** `worker-control/worker-state/AW-003.json`, Branch `aw-003/advertising-module-20261022`, PR #16
+**Prüfstand:** Exakter PR-HEAD `043d86dbc28a9b6d6fa4f3cd049200082f4173bc`; Walker-Lauf `40142885848`: alle 4 Pflichtjobs und 46 Schritte erfolgreich, keine übersprungenen Schritte. PHP 8.5, Symfony/Doctrine, PostgreSQL 18, Redis 8, Composer-Audit, PHPStan 10, Psalm-Taintanalyse, CS-Fixer, Rector-Dry-Run und PHPUnit bestanden. PR wartet auf Projekteigentümer-Review und Integration.
 **Abhaengigkeiten:** startbare PHP-/Symfony-Testbasis aus AW-001
 **Parallel zu:** AW-001, AW-002, AW-004
 **Erlaubte Pfade:** ausschliesslich neue Dateien unter src/Module/Advertising/, tests/Module/Advertising/ und docs/modules/ADVERTISING.md. Keine geteilten Framework-, Composer-, Konfigurations- oder Workflow-Dateien veraendern.
@@ -109,7 +113,9 @@ Die folgenden Aufgaben sind unabhaengige, eigenstaendig zu entwickelnde CMS-Modu
 
 ### AW-004 — Eigenstaendige Aufgabenplanung
 
-**Status:** bereit (Claim vor Beginn erforderlich)
+**Status:** PR offen
+**Koordination:** `worker-control/worker-state/AW-004.json`, Branch `aw-004/scheduling-module-20261025`, PR #18
+**Prüfstand:** Exakter PR-HEAD `c531c45b287028cb6cee4c345f4d9a531bb49312`; Walker-Lauf `40241824729`: alle 4 Pflichtjobs und 46 Schritte erfolgreich, keine übersprungenen Schritte. PHP 8.5, Symfony/Doctrine, PostgreSQL 18, Redis 8, Composer-Audit, PHPStan 10, Psalm-Taintanalyse, CS-Fixer, Rector-Dry-Run und PHPUnit bestanden. PR wartet auf Projekteigentümer-Review und Integration.
 **Abhaengigkeiten:** startbare PHP-/Symfony-Testbasis aus AW-001
 **Parallel zu:** AW-001, AW-002, AW-003
 **Erlaubte Pfade:** ausschliesslich neue Dateien unter src/Module/Scheduling/, tests/Module/Scheduling/ und docs/modules/SCHEDULING.md. Keine geteilten Framework-, Composer-, Konfigurations- oder Workflow-Dateien veraendern.
