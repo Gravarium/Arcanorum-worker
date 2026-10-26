@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "status": "PR offen",
+  "status": "claimed",
   "task_id": "AW-003",
-  "worker_id": null,
-  "run_id": null,
+  "worker_id": "codex-aw003",
+  "run_id": "codex-aw003-20261026130900Z-security-review",
   "task_branch": "aw-003/advertising-module-20261022",
   "base_sha": "7bbde570920b9eccb3a5a3fd566b5cea00cfd823",
   "plan_ref": "planning/aw003-aw004-modules-20261022/docs/WORK-PLAN.md",
@@ -14,11 +14,11 @@
     "docs/modules/ADVERTISING.md"
   ],
   "claim_duration_hours": 7,
-  "claimed_at": null,
-  "claim_expires_at": null,
-  "heartbeat_at": null,
+  "claimed_at": "2026-10-26T13:09:00.000Z",
+  "claim_expires_at": "2026-10-26T20:09:00.000Z",
+  "heartbeat_at": "2026-10-26T13:09:00.000Z",
   "last_progress_at": "2026-10-24T23:30:40Z",
   "last_progress_sha": "043d86dbc28a9b6d6fa4f3cd049200082f4173bc",
   "last_test_status": "Exact PR HEAD 043d86dbc28a9b6d6fa4f3cd049200082f4173bc: Walker CI run 136 passed all four required jobs with no skipped steps. PHPUnit reported 42 tests, 0 failures, 0 errors and 0 skipped; PHP 8.5/Symfony/PostgreSQL 18/Redis 8 checks, Composer audit, PHPStan, CS-Fixer, Rector dry-run, Psalm taint analysis and report validation passed. The local PHPUnit invocation was blocked because PHP is unavailable in the shell; Walker CI executed the test successfully. Existing schema synchronization remains skipped by --skip-sync; Doctrine adapter tests use PostgreSQL temporary tables, and host migration awaits integration.",
-  "blocker": "Draft PR awaits project-owner review and host integration. No merge or deployment."
+  "blocker": null
 }
