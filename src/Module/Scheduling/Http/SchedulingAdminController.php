@@ -103,7 +103,8 @@ final readonly class SchedulingAdminController
     public function executions(string $id, Request $request): JsonResponse
     {
         try {
-            $rawLimit = $request->query->get('limit', '100');
+            $query = $request->query->all();
+            $rawLimit = $query['limit'] ?? '100';
             if (!is_string($rawLimit) || 1 !== preg_match('/\A[0-9]{1,3}\z/D', $rawLimit)) {
                 return self::error('invalid_request', 400);
             }

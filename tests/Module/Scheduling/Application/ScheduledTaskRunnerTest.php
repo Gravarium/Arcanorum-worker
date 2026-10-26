@@ -166,9 +166,9 @@ final class ScheduledTaskRunnerTest extends TestCase
     {
         $store = new InMemorySchedulingStore();
         $task = $this->activeTask($store);
-        $runner = new ScheduledTaskRunner($store, new TaskHandlerRegistry([]), new FakeSchedulingClock($due));
         $due = $task->nextRunAt;
         self::assertNotNull($due);
+        $runner = new ScheduledTaskRunner($store, new TaskHandlerRegistry([]), new FakeSchedulingClock($due));
         self::assertSame(1, $runner->runDue($due));
         self::assertSame(ExecutionResultCode::HandlerUnavailable, $store->listExecutions($task->id, 10)[0]->resultCode);
 
