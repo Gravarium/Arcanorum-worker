@@ -106,8 +106,8 @@ final class ScheduledTaskRunnerTest extends TestCase
         $due = $task->nextRunAt;
         self::assertNotNull($due);
         $clock = new FakeSchedulingClock($due);
-        $handler = new class($clock) implements ScheduledTaskHandler {
-            public function __construct(private readonly FakeSchedulingClock $clock)
+        $handler = new readonly class($clock) implements ScheduledTaskHandler {
+            public function __construct(private FakeSchedulingClock $clock)
             {
             }
 
