@@ -13,7 +13,7 @@ final readonly class ScheduledTaskRunner
     private const int BATCH_LIMIT = 100;
     private const int LEASE_SECONDS = 120;
 
-    public function __construct(private SchedulingStore $store, private TaskHandlerRegistry $handlers)
+    public function __construct(private SchedulingStore $store, private TaskHandlerRegistry $handlers, private ?SchedulingClock $clock = null)
     {
     }
 
@@ -47,7 +47,7 @@ final readonly class ScheduledTaskRunner
                 $claim,
                 $state,
                 $result,
-                $now,
+                $this->currentTime(),
                 $task->frequency->nextAfter($now),
             );
             if (null === $record) {
@@ -57,6 +57,11 @@ final readonly class ScheduledTaskRunner
         }
 
         return $processed;
+    }
+
+    private function currentTime(): \DateTimeImmutable
+    {
+        return $this->clock?->now() ?? new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
     }
 
     /** @return array{ExecutionState, ExecutionResultCode} */

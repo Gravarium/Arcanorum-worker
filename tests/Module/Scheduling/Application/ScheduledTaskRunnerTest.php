@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Module\Scheduling\Application;
 
+use App\Module\Scheduling\Application\ScheduledTaskHandler;
 use App\Module\Scheduling\Application\ScheduledTaskRunner;
 use App\Module\Scheduling\Application\TaskExecutionContext;
 use App\Module\Scheduling\Application\TaskHandlerRegistry;
@@ -13,6 +14,7 @@ use App\Module\Scheduling\Domain\ScheduledTask;
 use App\Module\Scheduling\Domain\ScheduleFrequency;
 use App\Module\Scheduling\Domain\TaskStatus;
 use App\Module\Scheduling\Domain\TaskType;
+use App\Tests\Module\Scheduling\Support\FakeSchedulingClock;
 use App\Tests\Module\Scheduling\Support\InMemorySchedulingStore;
 use App\Tests\Module\Scheduling\Support\RecordingTaskHandler;
 use PHPUnit\Framework\TestCase;
@@ -26,7 +28,7 @@ final class ScheduledTaskRunnerTest extends TestCase
         $due = $task->nextRunAt;
         self::assertNotNull($due);
         $handler = new RecordingTaskHandler(TaskType::CacheCleanup);
-        $runner = new ScheduledTaskRunner($store, new TaskHandlerRegistry([$handler]));
+        $runner = new ScheduledTaskRunner($store, new TaskHandlerRegistry([$handler]), new FakeSchedulingClock($due));
 
         self::assertSame(1, $runner->runDue($due));
         self::assertSame(0, $runner->runDue($due));
@@ -56,7 +58,7 @@ final class ScheduledTaskRunnerTest extends TestCase
 
         $retryAt = $due->modify('+121 seconds');
         self::assertNull($store->finishExecution($firstClaim, ExecutionState::Succeeded, ExecutionResultCode::Completed, $retryAt, $task->frequency->nextAfter($retryAt)));
-        $runner = new ScheduledTaskRunner($store, new TaskHandlerRegistry([$handler]));
+        $runner = new ScheduledTaskRunner($store, new TaskHandlerRegistry([$handler]), new FakeSchedulingClock($retryAt));
         self::assertSame(1, $runner->runDue($retryAt));
         self::assertCount(2, $handler->idempotencyKeys);
         self::assertSame($handler->idempotencyKeys[0], $handler->idempotencyKeys[1]);
@@ -70,7 +72,7 @@ final class ScheduledTaskRunnerTest extends TestCase
         $task = $this->activeTask($store);
         $due = $task->nextRunAt;
         self::assertNotNull($due);
-        $runner = new ScheduledTaskRunner($store, new TaskHandlerRegistry([new RecordingTaskHandler(TaskType::CacheCleanup, true)]));
+        $runner = new ScheduledTaskRunner($store, new TaskHandlerRegistry([new RecordingTaskHandler(TaskType::CacheCleanup, true)]), new FakeSchedulingClock($due));
 
         self::assertSame(1, $runner->runDue($due));
         $record = $store->listExecutions($task->id, 10)[0];
@@ -91,10 +93,48 @@ final class ScheduledTaskRunnerTest extends TestCase
         self::assertNotNull($due);
         self::assertNotNull($store->claimExecution($task->id, $due, $due, $due->modify('+120 seconds'), $task->frequency->nextAfter($due), 10));
         $handler = new RecordingTaskHandler(TaskType::CacheCleanup);
-        $runner = new ScheduledTaskRunner($store, new TaskHandlerRegistry([$handler]));
+        $runner = new ScheduledTaskRunner($store, new TaskHandlerRegistry([$handler]), new FakeSchedulingClock($due->modify('+60 seconds')));
 
         self::assertSame(0, $runner->runDue($due->modify('+60 seconds')));
         self::assertSame([], $handler->idempotencyKeys);
+    }
+
+    public function testRunnerRejectsAHandlerThatFinishesAfterItsLeaseExpires(): void
+    {
+        $store = new InMemorySchedulingStore();
+        $task = $this->activeTask($store);
+        $due = $task->nextRunAt;
+        self::assertNotNull($due);
+        $clock = new FakeSchedulingClock($due);
+        $handler = new class($clock) implements ScheduledTaskHandler {
+            public function __construct(private readonly FakeSchedulingClock $clock)
+            {
+            }
+
+            public function type(): TaskType
+            {
+                return TaskType::CacheCleanup;
+            }
+
+            public function execute(TaskExecutionContext $context): void
+            {
+                $this->clock->advance('+121 seconds');
+            }
+        };
+        $runner = new ScheduledTaskRunner($store, new TaskHandlerRegistry([$handler]), $clock);
+
+        try {
+            $runner->runDue($due);
+        } catch (\RuntimeException $exception) {
+            self::assertSame('Task execution lease is no longer current.', $exception->getMessage());
+            $record = $store->listExecutions($task->id, 10)[0];
+            self::assertSame(ExecutionState::Running, $record->state);
+            self::assertSame(1, $record->attempt);
+
+            return;
+        }
+
+        self::fail('The runner accepted a completion after the lease expired.');
     }
 
     public function testExpiredLeaseForPausedAndResumedScheduleIsRecordedAsSuperseded(): void
@@ -112,7 +152,7 @@ final class ScheduledTaskRunnerTest extends TestCase
         $resumedAt = $due->modify('+121 seconds');
         $resumed = $paused->activate($resumedAt);
         $store->updateTask($resumed, $paused->updatedAt, $resumedAt);
-        $runner = new ScheduledTaskRunner($store, new TaskHandlerRegistry([new RecordingTaskHandler(TaskType::CacheCleanup)]));
+        $runner = new ScheduledTaskRunner($store, new TaskHandlerRegistry([new RecordingTaskHandler(TaskType::CacheCleanup)]), new FakeSchedulingClock($resumedAt));
 
         self::assertSame(0, $runner->runDue($resumedAt));
         $record = $store->listExecutions($task->id, 10)[0];
@@ -126,7 +166,7 @@ final class ScheduledTaskRunnerTest extends TestCase
     {
         $store = new InMemorySchedulingStore();
         $task = $this->activeTask($store);
-        $runner = new ScheduledTaskRunner($store, new TaskHandlerRegistry([]));
+        $runner = new ScheduledTaskRunner($store, new TaskHandlerRegistry([]), new FakeSchedulingClock($due));
         $due = $task->nextRunAt;
         self::assertNotNull($due);
         self::assertSame(1, $runner->runDue($due));

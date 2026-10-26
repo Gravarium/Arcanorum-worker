@@ -104,10 +104,10 @@ final readonly class SchedulingAdminController
     {
         try {
             $rawLimit = $request->query->get('limit', '100');
-            $limit = 1 === preg_match('/\A[0-9]{1,3}\z/D', $rawLimit) ? (int) $rawLimit : null;
-            if (null === $limit) {
+            if (!is_string($rawLimit) || 1 !== preg_match('/\A[0-9]{1,3}\z/D', $rawLimit)) {
                 return self::error('invalid_request', 400);
             }
+            $limit = (int) $rawLimit;
 
             return new JsonResponse(array_map(self::executionData(...), $this->manager->executions($id, $limit)));
         } catch (SchedulingAccessDenied) {

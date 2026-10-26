@@ -60,6 +60,15 @@ final class SchedulingAdminControllerTest extends TestCase
         self::assertStringContainsString('"status":"disabled"', (string) $response->getContent());
     }
 
+    public function testExecutionLimitRejectsArrayQueryValuesAsBadRequest(): void
+    {
+        $controller = $this->controller();
+        $taskId = str_repeat('a', 32);
+        $request = Request::create('/admin/scheduling/tasks/'.$taskId.'/executions?limit[]=1');
+
+        self::assertSame(400, $controller->executions($taskId, $request)->getStatusCode());
+    }
+
     private function controller(?RecordingSchedulingAdminGuard $guard = null): SchedulingAdminController
     {
         return new SchedulingAdminController(new SchedulingManager(
