@@ -16,9 +16,9 @@
   "claim_duration_hours": 7,
   "claimed_at": "2026-10-26T15:40:37Z",
   "claim_expires_at": "2026-10-26T22:40:37Z",
-  "heartbeat_at": "2026-10-26T15:46:22Z",
-  "last_progress_at": "2026-10-26T15:46:22Z",
-  "last_progress_sha": "7b513e6da8acc3a8ad749a1ec123a43b0b45cdb3",
-  "last_test_status": "Lease timestamp and malformed query fixes are committed to this exact PR head. The previous Walker run applies only to the earlier head; the new mandatory Walker run is pending.",
+  "heartbeat_at": "2026-10-26T15:48:37Z",
+  "last_progress_at": "2026-10-26T15:48:37Z",
+  "last_progress_sha": "0440e1408ba3cc8672c1dc65c99172f5437f6eba",
+  "last_test_status": "Walker PHPStan found a redundant query type guard and a test clock initialized before its due timestamp; both were corrected on this exact head. The new mandatory Walker run is pending.",
   "blocker": null
 }
