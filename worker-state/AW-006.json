@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "status": "in Bearbeitung",
+  "status": "PR offen",
   "task_id": "AW-006",
-  "worker_id": "codex-aw006",
-  "run_id": "aw006-review-20261026T153004Z",
+  "worker_id": null,
+  "run_id": null,
   "task_branch": "aw-006/social-auth-module-20261025",
   "base_sha": "7bbde570920b9eccb3a5a3fd566b5cea00cfd823",
   "plan_ref": "issue #19",
@@ -14,11 +14,11 @@
     "docs/modules/SOCIAL_AUTH.md"
   ],
   "claim_duration_hours": 7,
-  "claimed_at": "2026-10-26T15:30:04Z",
-  "claim_expires_at": "2026-10-26T22:30:04Z",
-  "heartbeat_at": "2026-10-26T15:35:32Z",
-  "last_progress_at": "2026-10-26T15:35:32Z",
+  "claimed_at": null,
+  "claim_expires_at": null,
+  "heartbeat_at": null,
+  "last_progress_at": "2026-10-26T15:38:17Z",
   "last_progress_sha": "fc589f01cdf30636ad8434b97761b363c171fd97",
-  "last_test_status": "First Walker run stopped at Rector before PHPUnit; the finding was fixed on this exact head. A new mandatory Walker run is pending.",
-  "blocker": null
+  "last_test_status": "Exact PR HEAD fc589f01cdf30636ad8434b97761b363c171fd97: Walker workflow 40350822787 completed successfully. All 4 required jobs and 46 steps passed with no skipped steps. PHP 8.5.12 and PHPUnit 12.5.40; 42 tests passed, including the credential-like OAuth parameter regression. Composer, Symfony/Twig/Doctrine, PostgreSQL 18, Redis 8, PHPStan 10, CS-Fixer, Rector dry-run, Psalm taint analysis and report validation passed.",
+  "blocker": "Draft pull request awaits project-owner review and host integration. No merge or deployment."
 }
