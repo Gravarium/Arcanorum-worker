@@ -38,7 +38,7 @@ final readonly class ClickTokenSigner
         }
 
         $expires = (int) $parts[0];
-        if ($expires < $now->getTimestamp() || $expires > $now->getTimestamp() + self::TOKEN_LIFETIME_SECONDS) {
+        if ($expires <= $now->getTimestamp() || $expires > $now->getTimestamp() + self::TOKEN_LIFETIME_SECONDS) {
             return null;
         }
 
