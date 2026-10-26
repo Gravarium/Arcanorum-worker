@@ -16,9 +16,9 @@
   "claim_duration_hours": 7,
   "claimed_at": "2026-10-26T15:40:37Z",
   "claim_expires_at": "2026-10-26T22:40:37Z",
-  "heartbeat_at": "2026-10-26T15:40:37Z",
-  "last_progress_at": "2026-10-26T15:40:37Z",
-  "last_progress_sha": "c531c45b287028cb6cee4c345f4d9a531bb49312",
-  "last_test_status": "Security review of the existing scheduling module is in progress. The recorded exact-head Walker mandatory run 40241824729 completed successfully with all required jobs and steps passing.",
+  "heartbeat_at": "2026-10-26T15:46:22Z",
+  "last_progress_at": "2026-10-26T15:46:22Z",
+  "last_progress_sha": "7b513e6da8acc3a8ad749a1ec123a43b0b45cdb3",
+  "last_test_status": "Lease timestamp and malformed query fixes are committed to this exact PR head. The previous Walker run applies only to the earlier head; the new mandatory Walker run is pending.",
   "blocker": null
 }
