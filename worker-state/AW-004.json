@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "status": "in Bearbeitung",
+  "status": "PR offen",
   "task_id": "AW-004",
-  "worker_id": "codex-aw004",
-  "run_id": "aw004-review-20261026T154037Z",
+  "worker_id": null,
+  "run_id": null,
   "task_branch": "aw-004/scheduling-module-20261025",
   "base_sha": "7bbde570920b9eccb3a5a3fd566b5cea00cfd823",
   "plan_ref": "planning/aw003-aw004-modules-20261022/docs/WORK-PLAN.md",
@@ -14,11 +14,11 @@
     "docs/modules/SCHEDULING.md"
   ],
   "claim_duration_hours": 7,
-  "claimed_at": "2026-10-26T15:40:37Z",
-  "claim_expires_at": "2026-10-26T22:40:37Z",
-  "heartbeat_at": "2026-10-26T15:50:41Z",
-  "last_progress_at": "2026-10-26T15:50:41Z",
+  "claimed_at": null,
+  "claim_expires_at": null,
+  "heartbeat_at": null,
+  "last_progress_at": "2026-10-26T15:52:55Z",
   "last_progress_sha": "96a8a4b13f809fc65552466074be50daca9903db",
-  "last_test_status": "The exact-head Walker run stopped at Rector after PHPStan passed; Rector's readonly anonymous class suggestion has been applied. A new mandatory Walker run is pending.",
-  "blocker": null
+  "last_test_status": "Exact PR HEAD 96a8a4b13f809fc65552466074be50daca9903db: Walker workflow 40353300370 completed successfully. All 4 required jobs and 46 steps passed with no skipped steps. PHP 8.5.12 and PHPUnit 12.5.40; 40 tests passed, including the lease-expiry and malformed-query regressions. Composer, Symfony/Twig/Doctrine, PostgreSQL 18, Redis 8, PHPStan 10, CS-Fixer, Rector dry-run, Psalm taint analysis and report validation passed.",
+  "blocker": "Draft PR awaits project-owner review and host integration. No merge or deployment."
 }
