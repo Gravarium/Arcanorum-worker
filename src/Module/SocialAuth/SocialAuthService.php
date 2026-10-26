@@ -6,17 +6,6 @@ namespace App\Module\SocialAuth;
 
 final readonly class SocialAuthService
 {
-    private const SENSITIVE_AUTHORIZATION_PARAMETER_NAME_FRAGMENTS = [
-        'secret',
-        'token',
-        'password',
-        'credential',
-        'verifier',
-        'assertion',
-        'private_key',
-        'api_key',
-    ];
-
     public function __construct(
         private SocialAuthSettings $settings,
         private OAuthProviderClientRegistry $clients,
@@ -322,13 +311,7 @@ final readonly class SocialAuthService
 
     private function containsSensitiveAuthorizationParameterName(string $parameterName): bool
     {
-        foreach (self::SENSITIVE_AUTHORIZATION_PARAMETER_NAME_FRAGMENTS as $fragment) {
-            if (str_contains($parameterName, $fragment)) {
-                return true;
-            }
-        }
-
-        return false;
+        return 1 === preg_match('/secret|token|password|credential|verifier|assertion|private_key|api_key/', $parameterName);
     }
 
     private function assertRecentlyReauthenticated(AuthenticatedAccount $account): void
