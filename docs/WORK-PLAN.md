@@ -95,7 +95,7 @@ Die folgenden Aufgaben sind unabhaengige, eigenstaendig zu entwickelnde CMS-Modu
 
 **Status:** PR offen
 **Koordination:** `worker-control/worker-state/AW-003.json`, Branch `aw-003/advertising-module-20261022`, PR #16
-**Prüfstand:** Exakter PR-HEAD `043d86dbc28a9b6d6fa4f3cd049200082f4173bc`; Walker-Lauf `40142885848`: alle 4 Pflichtjobs und 46 Schritte erfolgreich, keine übersprungenen Schritte. PHP 8.5, Symfony/Doctrine, PostgreSQL 18, Redis 8, Composer-Audit, PHPStan 10, Psalm-Taintanalyse, CS-Fixer, Rector-Dry-Run und PHPUnit bestanden. PR wartet auf Projekteigentümer-Review und Integration.
+**Prüfstand:** Exakter PR-HEAD `903bc3befc2c54b60b94709b64be32379c63af7b`; Walker-Lauf `40328536577`: alle 4 Pflichtjobs und 46 Schritte erfolgreich, keine übersprungenen Schritte. PHP 8.5.12, PHPUnit 12.5.40; PHP-Syntax, Composer-Validierung/-Installation/-Audit, Symfony/Twig/Doctrine, PostgreSQL 18, Redis 8, PHPStan 10 mit Strict Rules, CS-Fixer, Rector-Dry-Run, Psalm-Taintanalyse, PHPUnit und Pflichtberichte bestanden. Der neue Klicktoken-Grenztest bestätigt gültig bei 299 Sekunden und abgelehnt bei genau 300 Sekunden. Lokale PHP-Prüfungen auf diesem Stand nicht ausgeführt; Walker-Pflichtlauf bestanden. PR wartet auf Projekteigentümer-Review und Integration.
 **Abhaengigkeiten:** startbare PHP-/Symfony-Testbasis aus AW-001
 **Parallel zu:** AW-001, AW-002, AW-004
 **Erlaubte Pfade:** ausschliesslich neue Dateien unter src/Module/Advertising/, tests/Module/Advertising/ und docs/modules/ADVERTISING.md. Keine geteilten Framework-, Composer-, Konfigurations- oder Workflow-Dateien veraendern.
