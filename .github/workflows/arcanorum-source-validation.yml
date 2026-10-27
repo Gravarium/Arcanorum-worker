@@ -67,6 +67,23 @@ jobs:
             exit 1
           fi
 
+      - name: Check out validation tools
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: Gravarium/Arcanorum-worker
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          path: worker-tools
+
+      - name: Verify validation tools
+        shell: bash
+        env:
+          WORKER_TOOLS_SHA: ${{ github.sha }}
+        run: |
+          test "$(git -C worker-tools rev-parse HEAD)" = "$WORKER_TOOLS_SHA"
+          test -f worker-tools/scripts/validate-arcanorum-junit.py
+          test -f worker-tools/scripts/validate-arcanorum-javascript.py
+
       - name: Check out private source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -152,7 +169,7 @@ jobs:
           '
           post_gate_failures=0
           validate_junit_report() {
-            if python3 "$GITHUB_WORKSPACE/scripts/validate-arcanorum-junit.py" var/test-results/junit.xml >"$logfile" 2>&1; then
+            if python3 "$GITHUB_WORKSPACE/worker-tools/scripts/validate-arcanorum-junit.py" var/test-results/junit.xml >"$logfile" 2>&1; then
               printf 'PASS: PHPUnit report completeness\n'
             else
               printf '::error::FAIL: PHPUnit report completeness\n'
@@ -166,7 +183,7 @@ jobs:
             fi
           }
           validate_javascript() {
-            if python3 "$GITHUB_WORKSPACE/scripts/validate-arcanorum-javascript.py" >"$logfile" 2>&1; then
+            if python3 "$GITHUB_WORKSPACE/worker-tools/scripts/validate-arcanorum-javascript.py" >"$logfile" 2>&1; then
               printf 'PASS: Browser JavaScript regression suite\n'
             else
               printf '::error::FAIL: Browser JavaScript regression suite\n'
