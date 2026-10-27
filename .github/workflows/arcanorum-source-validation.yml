@@ -117,7 +117,10 @@ jobs:
             if "$@" >"$logfile" 2>&1; then
               printf 'PASS: %s\n' "$name"
             else
-              printf '::error::FAIL: %s (details withheld from public logs)\n' "$name"
+              printf '::error::FAIL: %s\n' "$name"
+              if [ "$name" = "PHPUnit complete suite and coverage" ]; then
+                cat "$logfile"
+              fi
               exit 1
             fi
           }
@@ -147,5 +150,32 @@ jobs:
               --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
               --coverage-text
           '
-          gate "PHPUnit report completeness" python3 "$GITHUB_WORKSPACE/scripts/validate-arcanorum-junit.py" var/test-results/junit.xml
-          gate "Browser JavaScript regression suite" python3 "$GITHUB_WORKSPACE/scripts/validate-arcanorum-javascript.py"
+          post_gate_failures=0
+          validate_junit_report() {
+            if python3 "$GITHUB_WORKSPACE/scripts/validate-arcanorum-junit.py" var/test-results/junit.xml >"$logfile" 2>&1; then
+              printf 'PASS: PHPUnit report completeness\n'
+            else
+              printf '::error::FAIL: PHPUnit report completeness\n'
+              cat "$logfile"
+              if [ -s var/test-results/junit.xml ]; then
+                printf '::group::JUnit report diagnostics\n'
+                cat var/test-results/junit.xml
+                printf '::endgroup::\n'
+              fi
+              post_gate_failures=1
+            fi
+          }
+          validate_javascript() {
+            if python3 "$GITHUB_WORKSPACE/scripts/validate-arcanorum-javascript.py" >"$logfile" 2>&1; then
+              printf 'PASS: Browser JavaScript regression suite\n'
+            else
+              printf '::error::FAIL: Browser JavaScript regression suite\n'
+              cat "$logfile"
+              post_gate_failures=1
+            fi
+          }
+          validate_junit_report
+          validate_javascript
+          if [ "$post_gate_failures" -ne 0 ]; then
+            exit 1
+          fi
