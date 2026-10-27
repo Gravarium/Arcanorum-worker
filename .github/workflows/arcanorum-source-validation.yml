@@ -134,10 +134,7 @@ jobs:
             if "$@" >"$logfile" 2>&1; then
               printf 'PASS: %s\n' "$name"
             else
-              printf '::error::FAIL: %s\n' "$name"
-              if [ "$name" = "PHPUnit complete suite and coverage" ]; then
-                cat "$logfile"
-              fi
+              printf '::error::FAIL: %s (private diagnostics withheld)\n' "$name"
               exit 1
             fi
           }
@@ -172,13 +169,7 @@ jobs:
             if python3 "$GITHUB_WORKSPACE/worker-tools/scripts/validate-arcanorum-junit.py" var/test-results/junit.xml >"$logfile" 2>&1; then
               printf 'PASS: PHPUnit report completeness\n'
             else
-              printf '::error::FAIL: PHPUnit report completeness\n'
-              cat "$logfile"
-              if [ -s var/test-results/junit.xml ]; then
-                printf '::group::JUnit report diagnostics\n'
-                cat var/test-results/junit.xml
-                printf '::endgroup::\n'
-              fi
+              printf '::error::FAIL: PHPUnit report completeness (private diagnostics withheld)\n'
               post_gate_failures=1
             fi
           }
@@ -186,8 +177,7 @@ jobs:
             if python3 "$GITHUB_WORKSPACE/worker-tools/scripts/validate-arcanorum-javascript.py" >"$logfile" 2>&1; then
               printf 'PASS: Browser JavaScript regression suite\n'
             else
-              printf '::error::FAIL: Browser JavaScript regression suite\n'
-              cat "$logfile"
+              printf '::error::FAIL: Browser JavaScript regression suite (private diagnostics withheld)\n'
               post_gate_failures=1
             fi
           }
