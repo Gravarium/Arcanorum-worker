@@ -41,4 +41,3 @@ if any(totals[field] != 0 for field in fields if field != "tests"):
     fail()
 
 print("PHPUnit report validation passed.")
-
