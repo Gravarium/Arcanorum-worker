@@ -62,4 +62,3 @@ if any(summaries[name] != 0 for name in ("fail", "cancelled", "skipped", "todo")
     fail()
 
 print("JavaScript validation passed.")
-
