@@ -138,4 +138,14 @@ jobs:
           gate "PHP CS Fixer" vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --using-cache=no
           gate "Rector dry run" vendor/bin/rector process --config=rector.php --dry-run --no-progress-bar
           gate "Psalm taint" vendor/bin/psalm --config=psalm.xml --taint-analysis
-          gate "PHPUnit complete suite and coverage" vendor/bin/phpunit --configuration=phpunit.dist.xml --fail-on-risky --fail-on-warning --coverage-text
+          gate "PHPUnit complete suite and coverage" bash -c '
+            set -euo pipefail
+            mkdir -p var/test-results
+            vendor/bin/phpunit --configuration=phpunit.dist.xml \
+              --fail-on-risky --fail-on-warning --fail-on-deprecation \
+              --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
+              --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
+              --coverage-text
+          '
+          gate "PHPUnit report completeness" python3 "$GITHUB_WORKSPACE/scripts/validate-arcanorum-junit.py" var/test-results/junit.xml
+          gate "Browser JavaScript regression suite" python3 "$GITHUB_WORKSPACE/scripts/validate-arcanorum-javascript.py"
