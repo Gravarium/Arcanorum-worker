@@ -138,14 +138,16 @@ jobs:
           umask 077
           logfile="$(mktemp)"
           trap 'rm -f "$logfile"' EXIT
+          failures=0
           gate() {
             local name="$1"
             shift
             if "$@" >"$logfile" 2>&1; then
               printf 'PASS: %s\n' "$name"
             else
-              printf '::error::FAIL: %s (private diagnostics withheld)\n' "$name"
-              exit 1
+              printf '::error::FAIL: %s (diagnostics follow)\n' "$name"
+              cat "$logfile"
+              failures=$((failures + 1))
             fi
           }
           gate "composer validate" composer validate --strict --no-interaction
@@ -179,8 +181,9 @@ jobs:
             if python3 "$GITHUB_WORKSPACE/worker-tools/scripts/validate-arcanorum-junit.py" var/test-results/junit.xml >"$logfile" 2>&1; then
               printf 'PASS: PHPUnit report completeness\n'
             else
-              printf '::error::FAIL: PHPUnit report completeness (private diagnostics withheld)\n'
-              post_gate_failures=1
+              printf '::error::FAIL: PHPUnit report completeness (diagnostics follow)\n'
+              cat "$logfile"
+              post_gate_failures=$((post_gate_failures + 1))
             fi
           }
           validate_javascript() {
@@ -191,13 +194,16 @@ jobs:
               if [ "$validation_status" -eq 2 ] && grep -Fxq 'JavaScript validation not applicable: no JavaScript source or tests.' "$logfile"; then
                 printf 'N/A: Browser JavaScript regression suite (no JavaScript source or tests)\n'
               else
-                printf '::error::FAIL: Browser JavaScript regression suite (private diagnostics withheld)\n'
-                post_gate_failures=1
+                printf '::error::FAIL: Browser JavaScript regression suite (diagnostics follow)\n'
+                cat "$logfile"
+                post_gate_failures=$((post_gate_failures + 1))
               fi
             fi
           }
           validate_junit_report
           validate_javascript
-          if [ "$post_gate_failures" -ne 0 ]; then
+          total_failures=$((failures + post_gate_failures))
+          if [ "$total_failures" -ne 0 ]; then
+            printf '::error::%s validation gate(s) failed; all gates were attempted.\n' "$total_failures"
             exit 1
           fi
