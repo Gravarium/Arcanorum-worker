@@ -112,6 +112,16 @@ jobs:
             exit 1
           fi
 
+      - name: Suppress ephemeral database error details from public service logs
+        shell: bash
+        env:
+          PGPASSWORD: ci-test-only
+        run: |
+          set -euo pipefail
+          psql --host=127.0.0.1 --port=5432 --username=arcanorum_ci --dbname=arcanorum_test --no-psqlrc --set=ON_ERROR_STOP=1 --command="ALTER SYSTEM SET log_min_messages = 'fatal'"
+          psql --host=127.0.0.1 --port=5432 --username=arcanorum_ci --dbname=arcanorum_test --no-psqlrc --set=ON_ERROR_STOP=1 --command="SELECT pg_reload_conf()"
+          test "$(psql --host=127.0.0.1 --port=5432 --username=arcanorum_ci --dbname=arcanorum_test --no-psqlrc --tuples-only --no-align --command='SHOW log_min_messages')" = "fatal"
+
       - name: Set up PHP 8.5
         uses: shivammathur/setup-php@248e3ca37a3e439628c6c2b0c88808bd9632af5e
         with:
