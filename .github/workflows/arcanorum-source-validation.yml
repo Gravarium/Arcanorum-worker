@@ -183,7 +183,7 @@ jobs:
             else
               printf '::error::FAIL: PHPUnit report completeness (diagnostics follow)\n'
               cat "$logfile"
-              post_gate_failures=1
+              post_gate_failures=$((post_gate_failures + 1))
             fi
           }
           validate_javascript() {
@@ -196,7 +196,7 @@ jobs:
               else
                 printf '::error::FAIL: Browser JavaScript regression suite (diagnostics follow)\n'
                 cat "$logfile"
-                post_gate_failures=1
+                post_gate_failures=$((post_gate_failures + 1))
               fi
             fi
           }
