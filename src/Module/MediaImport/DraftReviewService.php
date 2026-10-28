@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Module\MediaImport;
 
-use DateTimeImmutable;
-
 final readonly class DraftReviewService
 {
     public function __construct(
@@ -18,7 +16,7 @@ final readonly class DraftReviewService
         MediaProvider $provider,
         string $externalId,
         string $actorId,
-        DateTimeImmutable $approvedAt,
+        \DateTimeImmutable $approvedAt,
     ): bool {
         if (!$provider->acceptsVideoId($externalId)
             || 1 !== preg_match('/\A[A-Za-z0-9_-]{1,80}\z/D', $actorId)

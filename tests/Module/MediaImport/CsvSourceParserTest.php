@@ -15,11 +15,11 @@ final class CsvSourceParserTest extends TestCase
     public function testCsvAcceptsSupportedRowsAndReportsBadRowsWithoutEchoingInput(): void
     {
         $csv = "\xEF\xBB\xBFprovider,source_type,source\n"
-            . "youtube,search,\"cats, dogs\"\n"
-            . "youtube,search,\"cats, dogs\"\n"
-            . "vimeo,creator,https://vimeo.com/user12345\n"
-            . "dailymotion,search,unsafe input\n"
-            . "youtube,creator,https://evil.example/channel/UC_x5XG1OV2P6uZZ5FSM9Ttw\n";
+            ."youtube,search,\"cats, dogs\"\n"
+            ."youtube,search,\"cats, dogs\"\n"
+            ."vimeo,creator,https://vimeo.com/user12345\n"
+            ."dailymotion,search,unsafe input\n"
+            ."youtube,creator,https://evil.example/channel/UC_x5XG1OV2P6uZZ5FSM9Ttw\n";
         $result = (new CsvSourceParser())->parse($csv);
 
         self::assertCount(3, $result->sources);
@@ -60,7 +60,7 @@ final class CsvSourceParserTest extends TestCase
     public function testRowLimitIsReportedAndProcessingStops(): void
     {
         $csv = "provider,source_type,source\n"
-            . implode('', array_map(
+            .implode('', array_map(
                 static fn (int $number): string => "youtube,search,source{$number}\n",
                 range(1, 501),
             ));
@@ -74,10 +74,10 @@ final class CsvSourceParserTest extends TestCase
     public function testMalformedRowsAreReportedIndividually(): void
     {
         $csv = "provider,source_type,source\n"
-            . "youtube,search,\n"
-            . "unknown,search,cats\n"
-            . "youtube,invalid,cats\n"
-            . "youtube,search,cats,unexpected\n";
+            ."youtube,search,\n"
+            ."unknown,search,cats\n"
+            ."youtube,invalid,cats\n"
+            ."youtube,search,cats,unexpected\n";
         $result = (new CsvSourceParser())->parse($csv);
 
         self::assertSame(

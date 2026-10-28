@@ -8,7 +8,7 @@ final readonly class CsvImportResult
 {
     /**
      * @param list<ImportSource> $sources
-     * @param list<CsvRowIssue> $issues
+     * @param list<CsvRowIssue>  $issues
      */
     public function __construct(
         public array $sources,

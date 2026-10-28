@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Module\MediaImport;
 
-use DateInterval;
-
 final readonly class ImportRunner
 {
     private const MAX_PAGE_SIZE = 50;
@@ -31,7 +29,7 @@ final readonly class ImportRunner
         $retryAt = $this->rateLimiter->retryAt($job->source->provider, $now);
         if (null !== $retryAt) {
             if ($retryAt <= $now) {
-                $retryAt = $now->add(new DateInterval('PT60S'));
+                $retryAt = $now->add(new \DateInterval('PT60S'));
             }
 
             $saved = $this->jobs->defer($claim, ProviderError::RateLimited, $retryAt, $now);
@@ -86,7 +84,7 @@ final readonly class ImportRunner
                 $saved = $this->jobs->defer(
                     $claim,
                     $exception->failure,
-                    $failureTime->add(new DateInterval('PT' . $retryAfter . 'S')),
+                    $failureTime->add(new \DateInterval('PT'.$retryAfter.'S')),
                     $failureTime,
                 );
 

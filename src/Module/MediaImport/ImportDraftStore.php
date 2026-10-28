@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Module\MediaImport;
 
-use DateTimeImmutable;
-
 interface ImportDraftStore
 {
     /**
@@ -21,6 +19,6 @@ interface ImportDraftStore
         MediaProvider $provider,
         string $externalId,
         string $actorId,
-        DateTimeImmutable $approvedAt,
+        \DateTimeImmutable $approvedAt,
     ): bool;
 }

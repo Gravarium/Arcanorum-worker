@@ -16,8 +16,8 @@ use App\Module\MediaImport\ImportJobControlService;
 use App\Module\MediaImport\ImportJobStatus;
 use App\Module\MediaImport\ImportJobStore;
 use App\Module\MediaImport\ImportPreviewService;
-use App\Module\MediaImport\ImportRunStatus;
 use App\Module\MediaImport\ImportRunner;
+use App\Module\MediaImport\ImportRunStatus;
 use App\Module\MediaImport\ImportSource;
 use App\Module\MediaImport\MediaProvider;
 use App\Module\MediaImport\ProviderAdapter;
@@ -28,7 +28,6 @@ use App\Module\MediaImport\ProviderPage;
 use App\Module\MediaImport\ProviderRateLimiter;
 use App\Module\MediaImport\SourceKind;
 use App\Module\MediaImport\VideoCandidate;
-use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 
 final class ImportRunnerTest extends TestCase
@@ -56,7 +55,7 @@ final class ImportRunnerTest extends TestCase
 
     public function testRetryIsIdempotentAndDoesNotOverwriteAnExistingProviderVideo(): void
     {
-        $existing = new ImportDraft(self::job()->id, self::candidate('abc12345', 'Existing title'), new DateTimeImmutable(self::NOW));
+        $existing = new ImportDraft(self::job()->id, self::candidate('abc12345', 'Existing title'), new \DateTimeImmutable(self::NOW));
         $drafts = new FakeImportDraftStore();
         self::assertTrue($drafts->saveDraftIfAbsent($existing));
         $jobs = new FakeImportJobStore(self::job());
@@ -73,7 +72,7 @@ final class ImportRunnerTest extends TestCase
     public function testConcurrentWorkerCannotClaimAnAlreadyLeasedJob(): void
     {
         $jobs = new FakeImportJobStore(self::job());
-        $claim = $jobs->claim(self::job()->id, 'worker_one', new DateTimeImmutable(self::NOW), 120);
+        $claim = $jobs->claim(self::job()->id, 'worker_one', new \DateTimeImmutable(self::NOW), 120);
         self::assertInstanceOf(ClaimedImportJob::class, $claim);
         $adapter = new FakeMediaImportAdapter(MediaProvider::YouTube, new ProviderPage([], null));
 
@@ -87,7 +86,7 @@ final class ImportRunnerTest extends TestCase
     {
         $jobs = new FakeImportJobStore(self::job());
         $adapter = new FakeMediaImportAdapter(MediaProvider::YouTube, new ProviderPage([], null));
-        $rateLimiter = new FakeMediaImportRateLimiter(new DateTimeImmutable('2026-10-28T10:02:00+00:00'));
+        $rateLimiter = new FakeMediaImportRateLimiter(new \DateTimeImmutable('2026-10-28T10:02:00+00:00'));
 
         $result = self::runner($jobs, new FakeImportDraftStore(), $adapter, $rateLimiter)->run(self::job()->id, 'worker_one');
 
@@ -139,7 +138,7 @@ final class ImportRunnerTest extends TestCase
     {
         $drafts = new FakeImportDraftStore();
         $candidate = self::candidate('abc12345', 'Already imported');
-        $drafts->saveDraftIfAbsent(new ImportDraft(self::job()->id, $candidate, new DateTimeImmutable(self::NOW)));
+        $drafts->saveDraftIfAbsent(new ImportDraft(self::job()->id, $candidate, new \DateTimeImmutable(self::NOW)));
         $adapter = new FakeMediaImportAdapter(
             MediaProvider::YouTube,
             new ProviderPage([$candidate, $candidate], null),
@@ -165,19 +164,19 @@ final class ImportRunnerTest extends TestCase
     {
         $drafts = new FakeImportDraftStore();
         $candidate = self::candidate('abc12345', 'Awaiting review');
-        $drafts->saveDraftIfAbsent(new ImportDraft(self::job()->id, $candidate, new DateTimeImmutable(self::NOW)));
+        $drafts->saveDraftIfAbsent(new ImportDraft(self::job()->id, $candidate, new \DateTimeImmutable(self::NOW)));
         $policy = new FakeDraftApprovalPolicy(false);
         $review = new DraftReviewService($policy, $drafts);
 
         try {
-            $review->approve(MediaProvider::YouTube, 'abc12345', 'moderator_one', new DateTimeImmutable(self::NOW));
+            $review->approve(MediaProvider::YouTube, 'abc12345', 'moderator_one', new \DateTimeImmutable(self::NOW));
             self::fail('An unauthorized reviewer approved a draft.');
         } catch (\DomainException) {
             self::assertSame(ImportDraft::STATUS, $drafts->statusFor(MediaProvider::YouTube, 'abc12345'));
         }
 
         $policy->allowed = true;
-        self::assertTrue($review->approve(MediaProvider::YouTube, 'abc12345', 'moderator_one', new DateTimeImmutable(self::NOW)));
+        self::assertTrue($review->approve(MediaProvider::YouTube, 'abc12345', 'moderator_one', new \DateTimeImmutable(self::NOW)));
         self::assertSame('approved', $drafts->statusFor(MediaProvider::YouTube, 'abc12345'));
         self::assertFalse($drafts->isPublished(MediaProvider::YouTube, 'abc12345'));
     }
@@ -187,7 +186,7 @@ final class ImportRunnerTest extends TestCase
         $jobs = new FakeImportJobStore(self::job());
         $policy = new FakeImportJobControlPolicy();
         $control = new ImportJobControlService($policy, $jobs);
-        $now = new DateTimeImmutable(self::NOW);
+        $now = new \DateTimeImmutable(self::NOW);
 
         try {
             $control->pause(self::job()->id, 'moderator_one', $now);
@@ -213,7 +212,7 @@ final class ImportRunnerTest extends TestCase
         $drafts = new FakeImportDraftStore();
         $jobs = new FakeImportJobStore(self::job());
         $jobs->useDrafts($drafts);
-        $now = new DateTimeImmutable(self::NOW);
+        $now = new \DateTimeImmutable(self::NOW);
         $claim = $jobs->claim(self::job()->id, 'worker_one', $now, 120);
         self::assertInstanceOf(ClaimedImportJob::class, $claim);
 
@@ -305,7 +304,7 @@ final class FakeImportJobStore implements ImportJobStore
     public ?ImportJob $job;
     public bool $leaseAvailable = true;
     public ?ProviderError $lastFailure = null;
-    public ?DateTimeImmutable $retryAt = null;
+    public ?\DateTimeImmutable $retryAt = null;
     public FakeImportDraftStore $drafts;
 
     public function __construct(?ImportJob $job)
@@ -339,7 +338,7 @@ final class FakeImportJobStore implements ImportJobStore
         return true;
     }
 
-    public function claim(string $jobId, string $workerId, DateTimeImmutable $now, int $leaseSeconds): ?ClaimedImportJob
+    public function claim(string $jobId, string $workerId, \DateTimeImmutable $now, int $leaseSeconds): ?ClaimedImportJob
     {
         if (!$this->leaseAvailable || null === $this->job || $this->job->id !== $jobId
             || ImportJobStatus::Queued !== $this->job->status) {
@@ -365,7 +364,7 @@ final class FakeImportJobStore implements ImportJobStore
         array $videos,
         ?string $nextCursor,
         bool $complete,
-        DateTimeImmutable $now,
+        \DateTimeImmutable $now,
     ): ?int {
         if (!$this->owns($claim) || null === $this->job) {
             return null;
@@ -400,8 +399,8 @@ final class FakeImportJobStore implements ImportJobStore
     public function defer(
         ClaimedImportJob $claim,
         ProviderError $reason,
-        DateTimeImmutable $retryAt,
-        DateTimeImmutable $now,
+        \DateTimeImmutable $retryAt,
+        \DateTimeImmutable $now,
     ): bool {
         if (!$this->owns($claim) || null === $this->job) {
             return false;
@@ -423,7 +422,7 @@ final class FakeImportJobStore implements ImportJobStore
         return true;
     }
 
-    public function fail(ClaimedImportJob $claim, ProviderError $reason, DateTimeImmutable $now): bool
+    public function fail(ClaimedImportJob $claim, ProviderError $reason, \DateTimeImmutable $now): bool
     {
         if (!$this->owns($claim) || null === $this->job) {
             return false;
@@ -444,7 +443,7 @@ final class FakeImportJobStore implements ImportJobStore
         return true;
     }
 
-    public function pause(string $jobId, string $actorId, DateTimeImmutable $now): bool
+    public function pause(string $jobId, string $actorId, \DateTimeImmutable $now): bool
     {
         if (null === $this->job || $this->job->id !== $jobId
             || !in_array($this->job->status, [ImportJobStatus::Queued, ImportJobStatus::Running], true)) {
@@ -465,7 +464,7 @@ final class FakeImportJobStore implements ImportJobStore
         return true;
     }
 
-    public function resume(string $jobId, string $actorId, DateTimeImmutable $now): bool
+    public function resume(string $jobId, string $actorId, \DateTimeImmutable $now): bool
     {
         if (null === $this->job || $this->job->id !== $jobId || ImportJobStatus::Paused !== $this->job->status) {
             return false;
@@ -484,7 +483,7 @@ final class FakeImportJobStore implements ImportJobStore
         return true;
     }
 
-    public function cancel(string $jobId, string $actorId, DateTimeImmutable $now): bool
+    public function cancel(string $jobId, string $actorId, \DateTimeImmutable $now): bool
     {
         if (null === $this->job || $this->job->id !== $jobId
             || !in_array($this->job->status, [ImportJobStatus::Queued, ImportJobStatus::Running, ImportJobStatus::Paused], true)) {
@@ -548,7 +547,7 @@ final class FakeImportDraftStore implements ImportDraftStore
         MediaProvider $provider,
         string $externalId,
         string $actorId,
-        DateTimeImmutable $approvedAt,
+        \DateTimeImmutable $approvedAt,
     ): bool {
         $key = $this->key($provider, $externalId);
         if (!isset($this->drafts[$key]) || ImportDraft::STATUS !== ($this->statuses[$key] ?? null)) {
@@ -577,7 +576,7 @@ final class FakeImportDraftStore implements ImportDraftStore
 
     private function key(MediaProvider $provider, string $externalId): string
     {
-        return $provider->value . ':' . $externalId;
+        return $provider->value.':'.$externalId;
     }
 }
 
@@ -610,11 +609,11 @@ final class FakeMediaImportAdapter implements ProviderAdapter
 
 final class FakeMediaImportRateLimiter implements ProviderRateLimiter
 {
-    public function __construct(private ?DateTimeImmutable $nextAllowedAt = null)
+    public function __construct(private ?\DateTimeImmutable $nextAllowedAt = null)
     {
     }
 
-    public function retryAt(MediaProvider $provider, DateTimeImmutable $now): ?DateTimeImmutable
+    public function retryAt(MediaProvider $provider, \DateTimeImmutable $now): ?\DateTimeImmutable
     {
         return $this->nextAllowedAt;
     }
@@ -622,9 +621,9 @@ final class FakeMediaImportRateLimiter implements ProviderRateLimiter
 
 final class FakeMediaImportClock implements ImportClock
 {
-    public function now(): DateTimeImmutable
+    public function now(): \DateTimeImmutable
     {
-        return new DateTimeImmutable(ImportRunnerTest::NOW);
+        return new \DateTimeImmutable(ImportRunnerTest::NOW);
     }
 }
 

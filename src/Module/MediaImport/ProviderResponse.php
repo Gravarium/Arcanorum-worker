@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Module\MediaImport;
 
-use JsonException;
-
 final readonly class ProviderResponse
 {
     public const MAX_BODY_BYTES = 1_048_576;
@@ -36,10 +34,7 @@ final readonly class ProviderResponse
             default => $this->statusCode >= 500 ? ProviderError::Unavailable : null,
         };
         if (null !== $failure) {
-            throw new ProviderException(
-                $failure,
-                ProviderError::RateLimited === $failure ? max(0, min(86400, $this->retryAfterSeconds ?? 60)) : null,
-            );
+            throw new ProviderException($failure, ProviderError::RateLimited === $failure ? max(0, min(86400, $this->retryAfterSeconds ?? 60)) : null);
         }
 
         if ($this->statusCode < 200 || $this->statusCode >= 300
@@ -49,7 +44,7 @@ final readonly class ProviderResponse
 
         try {
             $decoded = json_decode($this->body, true, 32, JSON_THROW_ON_ERROR);
-        } catch (JsonException) {
+        } catch (\JsonException) {
             throw new ProviderException(ProviderError::InvalidResponse);
         }
 

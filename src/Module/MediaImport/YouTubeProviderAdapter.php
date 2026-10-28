@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Module\MediaImport;
 
-use JsonException;
-
 final readonly class YouTubeProviderAdapter implements ProviderAdapter
 {
     public function __construct(private ProviderTransport $transport)
@@ -96,6 +94,7 @@ final readonly class YouTubeProviderAdapter implements ProviderAdapter
 
     /**
      * @param array<string, int|string|bool> $query
+     *
      * @return array<string, mixed>
      */
     private function request(ProviderEndpoint $endpoint, array $query): array
@@ -105,6 +104,7 @@ final readonly class YouTubeProviderAdapter implements ProviderAdapter
 
     /**
      * @param array<string, mixed> $payload
+     *
      * @return list<VideoCandidate>
      */
     private function videos(array $payload, string $shape): array
@@ -144,6 +144,7 @@ final readonly class YouTubeProviderAdapter implements ProviderAdapter
 
     /**
      * @param array<string, mixed> $payload
+     *
      * @return list<mixed>
      */
     private static function rows(array $payload, string $key): array
@@ -185,7 +186,7 @@ final readonly class YouTubeProviderAdapter implements ProviderAdapter
     {
         try {
             $json = json_encode([$source->reference, $playlistId, $pageToken], JSON_THROW_ON_ERROR);
-        } catch (JsonException) {
+        } catch (\JsonException) {
             throw new ProviderException(ProviderError::InvalidResponse);
         }
 
@@ -208,7 +209,7 @@ final readonly class YouTubeProviderAdapter implements ProviderAdapter
 
         try {
             $state = json_decode($decoded, true, 8, JSON_THROW_ON_ERROR);
-        } catch (JsonException) {
+        } catch (\JsonException) {
             throw new \InvalidArgumentException('The YouTube creator cursor is invalid.');
         }
 

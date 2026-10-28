@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Module\MediaImport;
 
-use DateTimeImmutable;
-
 final readonly class ImportJobControlService
 {
     public function __construct(
@@ -14,7 +12,7 @@ final readonly class ImportJobControlService
     ) {
     }
 
-    public function pause(string $jobId, string $actorId, DateTimeImmutable $now): bool
+    public function pause(string $jobId, string $actorId, \DateTimeImmutable $now): bool
     {
         $this->assertIdentifiers($jobId, $actorId);
         if (!$this->policy->mayPause($actorId, $jobId)) {
@@ -24,7 +22,7 @@ final readonly class ImportJobControlService
         return $this->jobs->pause($jobId, $actorId, $now);
     }
 
-    public function resume(string $jobId, string $actorId, DateTimeImmutable $now): bool
+    public function resume(string $jobId, string $actorId, \DateTimeImmutable $now): bool
     {
         $this->assertIdentifiers($jobId, $actorId);
         if (!$this->policy->mayResume($actorId, $jobId)) {
@@ -34,7 +32,7 @@ final readonly class ImportJobControlService
         return $this->jobs->resume($jobId, $actorId, $now);
     }
 
-    public function cancel(string $jobId, string $actorId, DateTimeImmutable $now): bool
+    public function cancel(string $jobId, string $actorId, \DateTimeImmutable $now): bool
     {
         $this->assertIdentifiers($jobId, $actorId);
         if (!$this->policy->mayCancel($actorId, $jobId)) {

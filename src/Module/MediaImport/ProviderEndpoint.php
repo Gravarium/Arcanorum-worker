@@ -35,10 +35,10 @@ enum ProviderEndpoint: string
             self::YouTubeChannels => '/youtube/v3/channels',
             self::YouTubePlaylistItems => '/youtube/v3/playlistItems',
             self::VimeoSearch => '/videos',
-            self::VimeoUserVideos => '/users/' . self::requiredId($resourceId) . '/videos',
-            self::VimeoAlbumVideos => '/albums/' . self::requiredId($resourceId) . '/videos',
-            self::DailymotionProfileVideos => '/v2/profiles/' . self::requiredId($resourceId) . '/videos',
-            self::DailymotionPlaylistVideos => '/v2/playlists/' . self::requiredId($resourceId) . '/videos',
+            self::VimeoUserVideos => '/users/'.self::requiredId($resourceId).'/videos',
+            self::VimeoAlbumVideos => '/albums/'.self::requiredId($resourceId).'/videos',
+            self::DailymotionProfileVideos => '/v2/profiles/'.self::requiredId($resourceId).'/videos',
+            self::DailymotionPlaylistVideos => '/v2/playlists/'.self::requiredId($resourceId).'/videos',
         };
     }
 

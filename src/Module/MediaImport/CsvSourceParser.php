@@ -77,7 +77,7 @@ final class CsvSourceParser
                     continue;
                 }
 
-                $key = $source->provider->value . ':' . $source->kind->value . ':' . $source->reference;
+                $key = $source->provider->value.':'.$source->kind->value.':'.$source->reference;
                 if (isset($seen[$key])) {
                     $issues[] = new CsvRowIssue($rowNumber, CsvIssueCode::DuplicateSource);
                     continue;

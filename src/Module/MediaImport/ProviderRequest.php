@@ -34,7 +34,7 @@ final readonly class ProviderRequest
             $validatedQuery[$key] = $value;
         }
 
-        /** @var array<string, int|string|bool> $validatedQuery */
+        /* @var array<string, int|string|bool> $validatedQuery */
         $this->query = $validatedQuery;
     }
 
@@ -42,7 +42,7 @@ final readonly class ProviderRequest
     {
         $baseUri = $this->endpoint->provider()->apiBaseUri();
 
-        return $baseUri . $this->path . ('' === $this->queryString() ? '' : '?' . $this->queryString());
+        return $baseUri.$this->path.('' === $this->queryString() ? '' : '?'.$this->queryString());
     }
 
     private function queryString(): string
