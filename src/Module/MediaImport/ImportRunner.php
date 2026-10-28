@@ -6,8 +6,8 @@ namespace App\Module\MediaImport;
 
 final readonly class ImportRunner
 {
-    private const MAX_PAGE_SIZE = 50;
-    private const LEASE_SECONDS = 120;
+    private const int MAX_PAGE_SIZE = 50;
+    private const int LEASE_SECONDS = 120;
 
     public function __construct(
         private ImportJobStore $jobs,

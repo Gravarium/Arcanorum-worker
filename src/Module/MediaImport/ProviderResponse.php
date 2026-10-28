@@ -6,7 +6,7 @@ namespace App\Module\MediaImport;
 
 final readonly class ProviderResponse
 {
-    public const MAX_BODY_BYTES = 1_048_576;
+    public const int MAX_BODY_BYTES = 1_048_576;
 
     public function __construct(
         public int $statusCode,

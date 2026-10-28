@@ -35,6 +35,7 @@ final class ImportSourceTest extends TestCase
         self::assertSame('xplaylist1', ImportSource::fromInput(MediaProvider::Dailymotion, SourceKind::Collection, 'https://dailymotion.com/playlist/xplaylist1')->reference);
     }
 
+    #[\PHPUnit\Framework\Attributes\DoesNotPerformAssertions]
     public function testUrlsCannotChangeSchemeHostPortOrPathSemantics(): void
     {
         $invalid = [

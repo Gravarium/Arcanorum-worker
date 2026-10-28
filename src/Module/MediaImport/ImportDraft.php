@@ -6,7 +6,7 @@ namespace App\Module\MediaImport;
 
 final readonly class ImportDraft
 {
-    public const STATUS = 'draft';
+    public const string STATUS = 'draft';
 
     public function __construct(
         public string $jobId,

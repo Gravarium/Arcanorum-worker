@@ -20,7 +20,7 @@ final class CsvSourceParserTest extends TestCase
             ."vimeo,creator,https://vimeo.com/user12345\n"
             ."dailymotion,search,unsafe input\n"
             ."youtube,creator,https://evil.example/channel/UC_x5XG1OV2P6uZZ5FSM9Ttw\n";
-        $result = (new CsvSourceParser())->parse($csv);
+        $result = new CsvSourceParser()->parse($csv);
 
         self::assertCount(3, $result->sources);
         self::assertCount(2, $result->issues);
@@ -33,14 +33,14 @@ final class CsvSourceParserTest extends TestCase
     public function testUnknownColumnsAndInvalidEncodingFailTheFileClosed(): void
     {
         try {
-            (new CsvSourceParser())->parse("provider,source_type,source,extra\n");
+            new CsvSourceParser()->parse("provider,source_type,source,extra\n");
             self::fail('Unknown columns were accepted.');
         } catch (CsvSourceException $exception) {
             self::assertSame(CsvSourceError::InvalidHeader, $exception->failure);
         }
 
         try {
-            (new CsvSourceParser())->parse("\xFF");
+            new CsvSourceParser()->parse("\xFF");
             self::fail('Invalid UTF-8 was accepted.');
         } catch (CsvSourceException $exception) {
             self::assertSame(CsvSourceError::InvalidEncoding, $exception->failure);
@@ -50,7 +50,7 @@ final class CsvSourceParserTest extends TestCase
     public function testOversizedCsvIsRejectedBeforeParsing(): void
     {
         try {
-            (new CsvSourceParser())->parse(str_repeat('a', 1_048_577));
+            new CsvSourceParser()->parse(str_repeat('a', 1_048_577));
             self::fail('An oversized CSV was accepted.');
         } catch (CsvSourceException $exception) {
             self::assertSame(CsvSourceError::TooLarge, $exception->failure);
@@ -64,7 +64,7 @@ final class CsvSourceParserTest extends TestCase
                 static fn (int $number): string => "youtube,search,source{$number}\n",
                 range(1, 501),
             ));
-        $result = (new CsvSourceParser())->parse($csv);
+        $result = new CsvSourceParser()->parse($csv);
 
         self::assertCount(500, $result->sources);
         self::assertCount(1, $result->issues);
@@ -78,7 +78,7 @@ final class CsvSourceParserTest extends TestCase
             ."unknown,search,cats\n"
             ."youtube,invalid,cats\n"
             ."youtube,search,cats,unexpected\n";
-        $result = (new CsvSourceParser())->parse($csv);
+        $result = new CsvSourceParser()->parse($csv);
 
         self::assertSame(
             [

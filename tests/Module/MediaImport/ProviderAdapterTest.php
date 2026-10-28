@@ -33,7 +33,7 @@ final class ProviderAdapterTest extends TestCase
         ]);
         $source = ImportSource::fromInput(MediaProvider::YouTube, SourceKind::Search, 'cats & dogs');
 
-        $page = (new YouTubeProviderAdapter($transport))->fetch($source, null, 20);
+        $page = new YouTubeProviderAdapter($transport)->fetch($source, null, 20);
 
         self::assertSame('https://www.googleapis.com/youtube/v3/search?part=snippet&q=cats%20%26%20dogs&type=video&maxResults=20', $transport->requests[0]->uri());
         self::assertSame('Summer & more', $page->videos[0]->title);
@@ -165,7 +165,7 @@ final class ProviderAdapterTest extends TestCase
 
         foreach ($cases as [$status, $expected]) {
             try {
-                (new ProviderResponse($status, 'application/json', '{"secret":"never surfaced"}', retryAfterSeconds: 90000))->json();
+                new ProviderResponse($status, 'application/json', '{"secret":"never surfaced"}', retryAfterSeconds: 90000)->json();
                 self::fail('A failed provider status was accepted.');
             } catch (ProviderException $exception) {
                 self::assertSame($expected, $exception->failure);

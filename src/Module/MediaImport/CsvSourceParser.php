@@ -6,9 +6,9 @@ namespace App\Module\MediaImport;
 
 final class CsvSourceParser
 {
-    private const MAX_BYTES = 1_048_576;
-    private const MAX_ROWS = 500;
-    private const MAX_RECORD_BYTES = 8192;
+    private const int MAX_BYTES = 1_048_576;
+    private const int MAX_ROWS = 500;
+    private const int MAX_RECORD_BYTES = 8192;
 
     public function parse(string $contents): CsvImportResult
     {

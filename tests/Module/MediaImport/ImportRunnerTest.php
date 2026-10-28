@@ -32,7 +32,7 @@ use PHPUnit\Framework\TestCase;
 
 final class ImportRunnerTest extends TestCase
 {
-    public const NOW = '2026-10-28T10:00:00+00:00';
+    public const string NOW = '2026-10-28T10:00:00+00:00';
 
     public function testRunnerCreatesDraftsAndAdvancesCursorAfterSuccessfulPage(): void
     {
@@ -301,15 +301,13 @@ final class ImportRunnerTest extends TestCase
 
 final class FakeImportJobStore implements ImportJobStore
 {
-    public ?ImportJob $job;
     public bool $leaseAvailable = true;
     public ?ProviderError $lastFailure = null;
     public ?\DateTimeImmutable $retryAt = null;
     public FakeImportDraftStore $drafts;
 
-    public function __construct(?ImportJob $job)
+    public function __construct(public ?ImportJob $job)
     {
-        $this->job = $job;
         $this->drafts = new FakeImportDraftStore();
     }
 
@@ -585,9 +583,9 @@ final class FakeMediaImportAdapter implements ProviderAdapter
     public int $calls = 0;
 
     public function __construct(
-        private MediaProvider $mediaProvider,
-        private ProviderPage $page,
-        private ?ProviderException $exception = null,
+        private readonly MediaProvider $mediaProvider,
+        private readonly ProviderPage $page,
+        private readonly ?ProviderException $exception = null,
     ) {
     }
 
@@ -607,7 +605,7 @@ final class FakeMediaImportAdapter implements ProviderAdapter
     }
 }
 
-final class FakeMediaImportRateLimiter implements ProviderRateLimiter
+final readonly class FakeMediaImportRateLimiter implements ProviderRateLimiter
 {
     public function __construct(private ?\DateTimeImmutable $nextAllowedAt = null)
     {
