@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -19,6 +20,29 @@ source_files = (
     "public/search/live-search-suggestions.js",
 )
 test_files = sorted((root / "tests/JavaScript").glob("*.test.mjs"))
+
+def has_application_javascript():
+    ignored_directories = {".git", "node_modules", "var", "vendor"}
+    javascript_suffixes = {".cjs", ".js", ".mjs"}
+
+    for directory, subdirectories, filenames in os.walk(root):
+        relative_directory = Path(directory).relative_to(root)
+        if relative_directory.parts[:2] == ("public", "assets"):
+            subdirectories.clear()
+            continue
+
+        subdirectories[:] = [
+            name for name in subdirectories if name not in ignored_directories
+        ]
+        if any(Path(filename).suffix.lower() in javascript_suffixes for filename in filenames):
+            return True
+
+    return False
+
+if not has_application_javascript() and not test_files:
+    print("JavaScript validation not applicable: no JavaScript source or tests.")
+    raise SystemExit(2)
+
 if not test_files or any(not (root / path).is_file() for path in source_files):
     fail()
 
