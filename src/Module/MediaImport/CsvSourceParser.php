@@ -34,7 +34,7 @@ final class CsvSourceParser
                 throw new CsvSourceException(CsvSourceError::InvalidHeader);
             }
 
-            if (isset($header[0]) && is_string($header[0])) {
+            if (isset($header[0])) {
                 $header[0] = preg_replace('/\A\xEF\xBB\xBF/', '', $header[0]) ?? $header[0];
             }
             if (['provider', 'source_type', 'source'] !== array_map(static fn (mixed $cell): mixed => is_string($cell) ? trim($cell) : $cell, $header)) {

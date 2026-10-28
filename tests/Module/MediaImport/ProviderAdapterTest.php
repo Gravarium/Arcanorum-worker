@@ -177,14 +177,14 @@ final class ProviderAdapterTest extends TestCase
         }
     }
 
+    /** @param array<string, mixed> $payload */
     private static function jsonResponse(array $payload): ProviderResponse
     {
-        $json = json_encode($payload, JSON_THROW_ON_ERROR);
-        if (!is_string($json)) {
-            throw new \RuntimeException('JSON encoding failed.');
-        }
-
-        return new ProviderResponse(200, 'application/json; charset=utf-8', $json);
+        return new ProviderResponse(
+            200,
+            'application/json; charset=utf-8',
+            json_encode($payload, JSON_THROW_ON_ERROR),
+        );
     }
 }
 

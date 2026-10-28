@@ -42,7 +42,7 @@ final readonly class ImportSource
 
         $parts = parse_url($input);
         if (!is_array($parts)
-            || 'https' !== strtolower((string) ($parts['scheme'] ?? ''))
+            || 'https' !== strtolower($parts['scheme'] ?? '')
             || isset($parts['user'])
             || isset($parts['pass'])
             || isset($parts['port'])
@@ -50,7 +50,7 @@ final readonly class ImportSource
             throw new \InvalidArgumentException('The provider URL is invalid.');
         }
 
-        $host = strtolower((string) ($parts['host'] ?? ''));
+        $host = strtolower($parts['host'] ?? '');
         $allowedHosts = match ($provider) {
             MediaProvider::YouTube => ['youtube.com', 'www.youtube.com', 'm.youtube.com'],
             MediaProvider::Vimeo => ['vimeo.com', 'www.vimeo.com'],
@@ -60,14 +60,14 @@ final readonly class ImportSource
             throw new \InvalidArgumentException('The provider URL host is not supported.');
         }
 
-        $path = (string) ($parts['path'] ?? '');
+        $path = $parts['path'] ?? '';
         if (str_contains($path, '%')
             || str_contains($path, '\\')
             || 1 === preg_match('~(?:^|/)\.{1,2}(?:/|$)~', $path)) {
             throw new \InvalidArgumentException('The provider URL path is invalid.');
         }
 
-        $query = (string) ($parts['query'] ?? '');
+        $query = $parts['query'] ?? '';
         if (MediaProvider::YouTube === $provider && SourceKind::Collection === $kind && '/playlist' === $path) {
             if (1 !== preg_match('/\Alist=([A-Za-z0-9_-]{10,64})\z/D', $query, $matches)) {
                 throw new \InvalidArgumentException('The YouTube playlist URL is invalid.');

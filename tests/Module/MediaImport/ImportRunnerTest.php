@@ -48,9 +48,9 @@ final class ImportRunnerTest extends TestCase
         self::assertSame(ImportRunStatus::Progressed, $result->status);
         self::assertSame(1, $result->processedCount);
         self::assertSame(1, $result->newDraftCount);
-        self::assertSame('next-page', $jobs->job?->cursor);
-        self::assertSame(1, $jobs->job?->processedResults);
-        self::assertSame(ImportJobStatus::Queued, $jobs->job?->status);
+        self::assertSame('next-page', $jobs->job->cursor);
+        self::assertSame(1, $jobs->job->processedResults);
+        self::assertSame(ImportJobStatus::Queued, $jobs->job->status);
         self::assertSame(ImportDraft::STATUS, $drafts->statusFor(MediaProvider::YouTube, 'abc12345'));
     }
 
@@ -94,7 +94,7 @@ final class ImportRunnerTest extends TestCase
         self::assertSame(ImportRunStatus::Deferred, $result->status);
         self::assertSame(ProviderError::RateLimited, $result->failure);
         self::assertSame(0, $adapter->calls);
-        self::assertSame(ImportJobStatus::Queued, $jobs->job?->status);
+        self::assertSame(ImportJobStatus::Queued, $jobs->job->status);
         self::assertSame(ProviderError::RateLimited, $jobs->lastFailure);
     }
 
@@ -193,18 +193,18 @@ final class ImportRunnerTest extends TestCase
             $control->pause(self::job()->id, 'moderator_one', $now);
             self::fail('An unauthorized actor paused an import.');
         } catch (\DomainException) {
-            self::assertSame(ImportJobStatus::Queued, $jobs->job?->status);
+            self::assertSame(ImportJobStatus::Queued, $jobs->job->status);
         }
 
         $policy->mayPause = true;
         $policy->mayResume = true;
         $policy->mayCancel = true;
         self::assertTrue($control->pause(self::job()->id, 'moderator_one', $now));
-        self::assertSame(ImportJobStatus::Paused, $jobs->job?->status);
+        self::assertSame(ImportJobStatus::Paused, $jobs->job->status);
         self::assertTrue($control->resume(self::job()->id, 'moderator_one', $now));
-        self::assertSame(ImportJobStatus::Queued, $jobs->job?->status);
+        self::assertSame(ImportJobStatus::Queued, $jobs->job->status);
         self::assertTrue($control->cancel(self::job()->id, 'moderator_one', $now));
-        self::assertSame(ImportJobStatus::Cancelled, $jobs->job?->status);
+        self::assertSame(ImportJobStatus::Cancelled, $jobs->job->status);
         self::assertFalse($control->resume(self::job()->id, 'moderator_one', $now));
     }
 
@@ -224,7 +224,7 @@ final class ImportRunnerTest extends TestCase
 
         self::assertNull($jobs->commitPage($claim, [self::candidate('abc12345', 'Late response')], null, true, $now));
         self::assertSame([], $drafts->drafts);
-        self::assertSame(ImportJobStatus::Cancelled, $jobs->job?->status);
+        self::assertSame(ImportJobStatus::Cancelled, $jobs->job->status);
     }
 
     public function testRunnerRejectsAnOversizedProviderPageBeforeCommittingDrafts(): void

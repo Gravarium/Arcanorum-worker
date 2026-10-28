@@ -53,10 +53,18 @@ final readonly class ProviderResponse
             throw new ProviderException(ProviderError::InvalidResponse);
         }
 
-        if (!is_array($decoded)) {
+        if (!is_array($decoded) || [] === $decoded || array_is_list($decoded)) {
             throw new ProviderException(ProviderError::InvalidResponse);
         }
 
-        return $decoded;
+        $payload = [];
+        foreach ($decoded as $key => $value) {
+            if (!is_string($key)) {
+                throw new ProviderException(ProviderError::InvalidResponse);
+            }
+            $payload[$key] = $value;
+        }
+
+        return $payload;
     }
 }

@@ -66,7 +66,9 @@ final readonly class VimeoProviderAdapter implements ProviderAdapter
             throw new ProviderException(ProviderError::InvalidResponse);
         }
 
-        return new ProviderPage($videos, '' !== $next && null !== $next ? (string) ($page + 1) : null);
+        $nextCursor = null === $next || '' === $next ? null : (string) ($page + 1);
+
+        return new ProviderPage($videos, $nextCursor);
     }
 
     private static function pageNumber(?string $cursor): int

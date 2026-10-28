@@ -53,7 +53,7 @@ final class ImportSourceTest extends TestCase
                 ImportSource::fromInput(MediaProvider::YouTube, SourceKind::Creator, $input);
                 self::fail('A non-canonical or manipulated provider URL was accepted.');
             } catch (\InvalidArgumentException) {
-                self::assertTrue(true);
+                // Expected validation exception.
             }
         }
     }
@@ -70,7 +70,7 @@ final class ImportSourceTest extends TestCase
                 ImportSource::fromInput(MediaProvider::Vimeo, SourceKind::Search, $input);
                 self::fail('Invalid search input was accepted.');
             } catch (\InvalidArgumentException) {
-                self::assertTrue(true);
+                // Expected validation exception.
             }
         }
     }
