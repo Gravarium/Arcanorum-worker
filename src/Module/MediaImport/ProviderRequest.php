@@ -12,7 +12,7 @@ final readonly class ProviderRequest
     public array $query;
 
     /**
-     * @param array<string, int|string|bool> $query
+     * @param array<array-key, mixed> $query
      */
     public function __construct(
         public ProviderEndpoint $endpoint,
@@ -20,18 +20,22 @@ final readonly class ProviderRequest
         ?string $resourceId = null,
     ) {
         $this->path = $endpoint->path($resourceId);
+        $validatedQuery = [];
         foreach ($query as $key => $value) {
-            if (!is_int($value) && !is_string($value) && !is_bool($value)) {
+            if (!is_string($key)
+                || (!is_int($value) && !is_string($value) && !is_bool($value))) {
                 throw new \InvalidArgumentException('The provider request parameters are invalid.');
             }
             if (1 !== preg_match('/\A[a-zA-Z][a-zA-Z0-9_]*\z/D', $key)
-                || strlen((string) $value) > 2048
-                || 1 === preg_match('/[\x00-\x1F\x7F]/', (string) $value)) {
+                || (is_string($value)
+                    && (strlen($value) > 2048 || 1 === preg_match('/[\x00-\x1F\x7F]/', $value)))) {
                 throw new \InvalidArgumentException('The provider request parameters are invalid.');
             }
+            $validatedQuery[$key] = $value;
         }
 
-        $this->query = $query;
+        /** @var array<string, int|string|bool> $validatedQuery */
+        $this->query = $validatedQuery;
     }
 
     public function uri(): string
