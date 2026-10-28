@@ -177,8 +177,13 @@ jobs:
             if python3 "$GITHUB_WORKSPACE/worker-tools/scripts/validate-arcanorum-javascript.py" >"$logfile" 2>&1; then
               printf 'PASS: Browser JavaScript regression suite\n'
             else
-              printf '::error::FAIL: Browser JavaScript regression suite (private diagnostics withheld)\n'
-              post_gate_failures=1
+              local validation_status=$?
+              if [ "$validation_status" -eq 2 ] && grep -Fxq 'JavaScript validation not applicable: no JavaScript source or tests.' "$logfile"; then
+                printf 'N/A: Browser JavaScript regression suite (no JavaScript source or tests)\n'
+              else
+                printf '::error::FAIL: Browser JavaScript regression suite (private diagnostics withheld)\n'
+                post_gate_failures=1
+              fi
             fi
           }
           validate_junit_report
