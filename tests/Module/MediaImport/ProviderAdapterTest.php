@@ -130,7 +130,7 @@ final class ProviderAdapterTest extends TestCase
             new ProviderRequest(ProviderEndpoint::VimeoUserVideos, [], '../../attacker');
             self::fail('A path traversal resource identifier was accepted.');
         } catch (\InvalidArgumentException) {
-            self::assertTrue(true);
+            // Expected validation exception.
         }
     }
 
