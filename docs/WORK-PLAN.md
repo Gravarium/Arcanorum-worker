@@ -16,8 +16,9 @@ Jeder Auftrag braucht eine eindeutige ID, ein Ziel, Abnahmekriterien, Abhängigk
 
 ### AW-001 — Technisches PHP-/Symfony-Grundgerüst
 
-**Status:** in Bearbeitung
-**Koordination:** `worker-control/worker-state.json`, PR #5
+**Status:** PR offen
+**Koordination:** `worker-control/worker-state.json`, Branch `aw-001/full-foundation-20261021`, PR #13
+**Prüfstand:** Exakter PR-HEAD `7bbde570920b9eccb3a5a3fd566b5cea00cfd823`; Walker-Lauf `39940438265`, Versuch 2: alle 4 Pflichtjobs und 46 Schritte erfolgreich, keine übersprungenen Schritte. PHP 8.5, Symfony/Doctrine, PostgreSQL 18, Redis 8, Composer-Audit, PHPStan 10, Psalm-Taintanalyse, CS-Fixer, Rector-Dry-Run und PHPUnit bestanden. PR wartet auf Projekteigentümer-Review und Integration.
 **Abhängigkeiten:** keine
 
 **Ziel:** Das leere Repository in eine startbare, testbare Basis für die folgenden Eigentümeraufträge überführen.
@@ -50,9 +51,10 @@ Jeder Auftrag braucht eine eindeutige ID, ein Ziel, Abnahmekriterien, Abhängigk
 
 ### AW-002 — Lokale PostgreSQL-/Redis-Umgebung
 
-**Status:** bereit
+**Status:** PR offen
 **Abhängigkeiten:** keine; ausdrücklich parallel zu AW-001
-**Koordination:** eigene Sperrdatei `worker-control/worker-state/AW-002.json`
+**Koordination:** `worker-control/worker-state/AW-002.json`, Branch `aw-002/integration-loopback-guard-20261017`, PR #12
+**Prüfstand:** Exakter PR-HEAD `636a70a73499687ef879840a6a544e4f99d19bc8`; Walker-Lauf `39674621203`: alle 4 Pflichtjobs und 45 Schritte erfolgreich, keine übersprungenen Schritte. PHP 8.5, PostgreSQL 18, Redis 8, Composer-Audit, PHPStan 10, Psalm-Taintanalyse, CS-Fixer, Rector-Dry-Run und PHPUnit bestanden. PR wartet auf Projekteigentümer-Review und Integration.
 **Erlaubte Dateien:** `compose.yaml`, `scripts/ci/check_compose.sh`, `docs/LOCAL-CONTAINERS.md` und Änderungen an `.github/workflows/quality.yml` ausschließlich für die Compose-Prüfung.
 
 **Ziel:** Eine lokale, reproduzierbare Testumgebung für PostgreSQL 18 und Redis 8 bereitstellen, die neben dem von AW-001 eingerichteten Symfony-Grundgerüst entwickelt werden kann.
@@ -84,3 +86,51 @@ Der Projekteigentümer ergänzt neue Aufgaben im folgenden Format:
 - [ ]
 **Sicherheits- und Datenhinweise:**
 **Nicht-Ziele:**
+
+## Zusaetzliche parallelisierbare CMS-Modulpakete (Eigentuemerfreigabe 22.10.2026)
+
+Die folgenden Aufgaben sind unabhaengige, eigenstaendig zu entwickelnde CMS-Module fuer das gemeinsame Projekt. Privater Arcanorum-Code wird weder ausgecheckt noch in den oeffentlichen Walker uebertragen. Der aufgabenspezifische Claim ist vor dem ersten Schreibzugriff Pflicht. Jeder Auftrag erhaelt einen eigenen Branch und PR; der bestehende AW-001- oder AW-002-Branch wird nicht beschrieben. Der stabile AW-001-Arbeitsstand kann als Basis fuer gestapelte PRs benutzt werden; fehlende Pruefgrundlagen sind Blocker, keine Freigabe.
+
+### AW-003 — Eigenstaendiges Anzeigenmodul
+
+**Status:** PR offen
+**Koordination:** `worker-control/worker-state/AW-003.json`, Branch `aw-003/advertising-module-20261022`, PR #16
+**Prüfstand:** Exakter PR-HEAD `903bc3befc2c54b60b94709b64be32379c63af7b`; Walker-Lauf `40328536577`: alle 4 Pflichtjobs und 46 Schritte erfolgreich, keine übersprungenen Schritte. PHP 8.5.12, PHPUnit 12.5.40; PHP-Syntax, Composer-Validierung/-Installation/-Audit, Symfony/Twig/Doctrine, PostgreSQL 18, Redis 8, PHPStan 10 mit Strict Rules, CS-Fixer, Rector-Dry-Run, Psalm-Taintanalyse, PHPUnit und Pflichtberichte bestanden. Der neue Klicktoken-Grenztest bestätigt gültig bei 299 Sekunden und abgelehnt bei genau 300 Sekunden. Lokale PHP-Prüfungen auf diesem Stand nicht ausgeführt; Walker-Pflichtlauf bestanden. PR wartet auf Projekteigentümer-Review und Integration.
+**Abhaengigkeiten:** startbare PHP-/Symfony-Testbasis aus AW-001
+**Parallel zu:** AW-001, AW-002, AW-004
+**Erlaubte Pfade:** ausschliesslich neue Dateien unter src/Module/Advertising/, tests/Module/Advertising/ und docs/modules/ADVERTISING.md. Keine geteilten Framework-, Composer-, Konfigurations- oder Workflow-Dateien veraendern.
+**Ziel:** Anzeigenstammdaten, erlaubte Werbeformen und sichere Aktivierungsablaeufe als spaeter integrierbare, eigenstaendige Komponenten.
+
+**Abnahmekriterien:**
+1. Typen fuer streng bereinigte HTML-Banner, statische Player-Anzeigen und Videoanzeigen-Metadaten.
+2. Eingabegrenzen, sichere URL-/HTML-Ausgabe und Negativtests fuer JavaScript, fremde Schemes, Script-Attribute, XSS sowie nicht erlaubte Anbieter.
+3. Aktivieren, Pausieren, Deaktivieren mit klaren Zustands- und Berechtigungsgrenzen.
+4. Auslieferungs-/Klickstatistik ohne IP-Adressen oder identifizierbare Personen, mit Drosselungs- und Duplikatregeln.
+5. Positive/negative PHPUnit-Tests, PHPStan Stufe 10, Psalm-Taintanalyse, CS-Fixer, Rector-Dry-Run und restliche unveraenderte Pflicht-CI auf dem exakten HEAD.
+6. Ein kleiner, dokumentierter Integrationsvertrag und Fehlerfaelle, ohne private Datenmodellannahmen.
+
+**Nicht-Ziele:** Keine Liveschaltung, kein Bezug zum privaten Hauptquellcode, kein direkter Werbenetzwerkzugriff, keine Veraenderung am Hauptprojekt, kein Merge.
+
+### AW-004 — Eigenstaendige Aufgabenplanung
+
+**Status:** PR offen
+**Koordination:** `worker-control/worker-state/AW-004.json`, Branch `aw-004/scheduling-module-20261025`, PR #18
+**Prüfstand:** Exakter PR-HEAD `c531c45b287028cb6cee4c345f4d9a531bb49312`; Walker-Lauf `40241824729`: alle 4 Pflichtjobs und 46 Schritte erfolgreich, keine übersprungenen Schritte. PHP 8.5, Symfony/Doctrine, PostgreSQL 18, Redis 8, Composer-Audit, PHPStan 10, Psalm-Taintanalyse, CS-Fixer, Rector-Dry-Run und PHPUnit bestanden. PR wartet auf Projekteigentümer-Review und Integration.
+**Abhaengigkeiten:** startbare PHP-/Symfony-Testbasis aus AW-001
+**Parallel zu:** AW-001, AW-002, AW-003
+**Erlaubte Pfade:** ausschliesslich neue Dateien unter src/Module/Scheduling/, tests/Module/Scheduling/ und docs/modules/SCHEDULING.md. Keine geteilten Framework-, Composer-, Konfigurations- oder Workflow-Dateien veraendern.
+**Ziel:** Validierte, sichere CMS-Wartungsaufgaben mit Ausfuehrungsschutz und pruefbaren Ergebnissen.
+
+**Abnahmekriterien:**
+1. Feste Task-Allowlist, validierte Zeitintervalle/Zeitzonen, aktiv/pausiert/deaktiviert.
+2. Berechtigungsgepruefte CRUD-Vertraege ohne freie Shell-Befehle, Admin-Impersonation oder beliebige Jobskripte.
+3. Idempotente Ausfuehrung, Sperre gegen Wiederholung/Parallelstarts und fail-closed bei Ausfall.
+4. Begrenztes, nicht vertrauliches Ergebnisprotokoll, fehlerfreier Wiederanlauf.
+5. Positive und negative PHPUnit-Regressionen; PHPStan 10, Psalm, CS-Fixer, Rector und alle sonstigen Pflichtgates auf dem exakten HEAD.
+6. Dokumentierter Integrationsvertrag ohne private Anwendungsdaten.
+
+**Nicht-Ziele:** Keine Produktionscronjobs, keine Datenbanksicherungen, kein Zugriff auf Hauptrepository oder produktive Server, kein Merge.
+
+### Uebergabe und Sicherheitsgrenze
+
+AW-003/AW-004 sind voneinander getrennt und duerfen nur nach Aufgabe-Claim beginnen. Keine zwei KIs schreiben am selben Pfad oder Branch. Kumulative Worker-Git-Historie darf keine rekonstruierbare Kopie des privaten Hauptprojekts enthalten. Die Ergebnisse werden erst nach gesonderter sicherer Integration, exakter CI-Pruefung und Freigabe im privaten Hauptprojekt eingesetzt. Die oeffentliche Worker-CI ersetzt NICHT die noch blockierten privaten Arcanorum-Pflichtpruefungen.
