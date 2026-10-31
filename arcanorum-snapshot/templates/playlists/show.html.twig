@@ -1,0 +1,38 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ playlist.name }} · {{ site_settings().siteName }}{% endblock %}
+
+{% block body %}
+    <header class="public-header">
+        {{ include('partials/public_brand.html.twig') }}
+        <nav class="public-navigation" aria-label="{{ 'Hauptnavigation'|trans }}">
+            <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
+            {% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}
+            <a href="{{ path('public_member_profile', {handle: playlist.owner.handle}) }}">{{ 'Kanal von %name%'|trans({'%name%': playlist.owner.displayName}) }}</a>
+            {% if module_enabled('search') %}<a href="{{ path('public_search') }}">{{ 'Suche'|trans }}</a>{% endif %}
+            {{ include('partials/public_navigation_links.html.twig') }}
+        </nav>
+    </header>
+    <main class="public-main">
+        <section class="public-hero" aria-labelledby="playlist-title">
+            <p class="eyebrow"><a href="{{ path('public_member_profile', {handle: playlist.owner.handle}) }}">{{ playlist.owner.displayName }}</a></p>
+            <h1 id="playlist-title">{{ playlist.name }}</h1>
+            {% if playlist.description %}<p class="lead">{{ playlist.description }}</p>{% endif %}
+        </section>
+        <section aria-labelledby="playlist-videos-heading">
+            <h2 id="playlist-videos-heading">{{ 'Videos'|trans }}</h2>
+            <div class="content-grid">
+                {% for item in items %}
+                    <article class="content-card">
+                        {% if item.video.thumbnailObjectId %}<img class="video-thumbnail" src="{{ path('video_thumbnail', {id: item.video.id}) }}" alt="{{ 'Vorschaubild für %title%'|trans({'%title%': item.video.title}) }}" loading="lazy" decoding="async">{% endif %}
+                        <p class="card-kicker">{{ item.video.category ?? ('Video'|trans) }}</p>
+                        <h3><a href="{{ path('video_show', {id: item.video.id}) }}">{{ item.video.title }}</a></h3>
+                        <p>{{ item.video.description|slice(0, 240) }}</p>
+                    </article>
+                {% else %}
+                    <p class="empty-state">{{ 'Diese Wiedergabeliste enthält noch keine veröffentlichten Videos.'|trans }}</p>
+                {% endfor %}
+            </div>
+        </section>
+    </main>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Bannliste'|trans }}{% endblock %}
+{% block admin_breadcrumb %}<a href="{{ path('admin_member_index') }}">{{ 'Nutzer'|trans }}</a> / {{ 'Bannliste'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <header class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Mitglieder'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ 'Bannliste'|trans }}</h1>
+            <p class="muted">{{ '%result_count% aktive Sperren · Seite %page% von %page_count%'|trans({'%result_count%': total, '%page%': page, '%page_count%': page_count}) }}</p>
+        </div>
+        <a class="button button-secondary" href="{{ path('admin_member_index') }}">{{ 'Alle Konten'|trans }}</a>
+    </header>
+
+    <section class="admin-panel" aria-labelledby="member-bans-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="member-bans-heading">{{ 'Aktive Mitgliedersperren'|trans }}</h2>
+                <p class="muted">{{ 'Die Begründungen sind nur in diesem geschützten Verwaltungsbereich sichtbar.'|trans }}</p>
+            </div>
+        </header>
+
+        <form class="admin-filter-form" method="get" action="{{ path('admin_member_ban_index') }}">
+            <label>
+                <span>{{ 'Suchen'|trans }}</span>
+                <input type="search" name="q" value="{{ search }}" maxlength="100" placeholder="{{ 'E-Mail, Kanalname oder Anzeigename'|trans }}">
+            </label>
+            <button class="button button-secondary" type="submit">{{ 'Suchen'|trans }}</button>
+        </form>
+
+        <div class="table-wrap">
+            <table class="admin-table">
+                <caption class="visually-hidden">{{ 'Aktive Mitgliedersperren'|trans }}</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">{{ 'Kanalname'|trans }}</th>
+                        <th scope="col">{{ 'E-Mail'|trans }}</th>
+                        <th scope="col">{{ 'Begründung'|trans }}</th>
+                        <th scope="col">{{ 'Erstellt am'|trans }}</th>
+                        <th scope="col">{{ 'Gebannt von'|trans }}</th>
+                        <th scope="col">{{ 'Aktionen'|trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ban in bans %}
+                        <tr>
+                            <th scope="row"><a href="{{ path('admin_member_edit', {id: ban.member.id}) }}">{{ ban.member.handle }}</a></th>
+                            <td>{{ ban.member.email }}</td>
+                            <td>{{ ban.reason }}</td>
+                            <td><time datetime="{{ ban.createdAt|date('c', 'UTC') }}">{{ ban.createdAt|date(app.request.locale starts with 'en' ? 'Y-m-d H:i' : 'd.m.Y H:i', 'UTC') }} UTC</time></td>
+                            <td>{{ ban.bannedBy ? ban.bannedBy.userIdentifier : 'Gelöschtes Administratorkonto'|trans }}</td>
+                            <td>
+                                <form method="post" action="{{ path('admin_member_ban_revoke', {id: ban.id}) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('member_account_ban_revoke_' ~ ban.id) }}">
+                                    <button class="button button-secondary" type="submit">{{ 'Bann aufheben'|trans }}</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="6">{{ 'Keine aktiven Mitgliedersperren gefunden.'|trans }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if page_count > 1 %}
+            <nav class="pagination" aria-label="{{ 'Seitennavigation'|trans }}">
+                {% if page > 1 %}<a class="button button-secondary" href="{{ path('admin_member_ban_index', {q: search, page: page - 1}) }}">{{ 'Vorherige'|trans }}</a>{% endif %}
+                <span>{{ 'Seite %page% von %page_count%'|trans({'%page%': page, '%page_count%': page_count}) }}</span>
+                {% if page < page_count %}<a class="button button-secondary" href="{{ path('admin_member_ban_index', {q: search, page: page + 1}) }}">{{ 'Nächste'|trans }}</a>{% endif %}
+            </nav>
+        {% endif %}
+    </section>
+{% endblock %}

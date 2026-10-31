@@ -1,0 +1,12 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'Zugriff verweigert'|trans }} · {{ site_settings().siteName }}{% endblock %}
+
+{% block body %}
+    <main class="denied-page">
+        <p class="eyebrow">{{ 'HTTP 403'|trans }}</p>
+        <h1>{{ 'Kein Zugriff'|trans }}</h1>
+        <p>{{ 'Für diesen Bereich ist ein berechtigtes Administratorkonto erforderlich.'|trans }}</p>
+        <a class="button button-secondary" href="{{ path('platform_home') }}">{{ 'Zur Plattformübersicht'|trans }}</a>
+    </main>
+{% endblock %}

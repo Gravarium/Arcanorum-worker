@@ -1,0 +1,59 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'E-Mail-Einstellungen'|trans }}{% endblock %}
+{% block admin_breadcrumb %}{{ 'E-Mail-Einstellungen'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Einstellungen'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ 'E-Mail-Einstellungen'|trans }}</h1>
+            <p class="muted">{{ 'Absenderadresse und geschützte Transportkonfiguration für Sicherheits- und Systemnachrichten.'|trans }}</p>
+        </div>
+    </div>
+
+    <section class="admin-panel" aria-labelledby="email-delivery-status-heading">
+        <header class="panel-heading"><h2 id="email-delivery-status-heading">{{ 'Versandstatus'|trans }}</h2></header>
+        {% if errors.form is defined %}<p class="field-error" role="alert">{{ errors.form|trans }}</p>{% endif %}
+        {% if delivery_ready %}
+            <p>{{ 'Transportkonfiguration erkannt. Die tatsächliche Zustellung wird mit einer Testnachricht geprüft.'|trans }}</p>
+        {% else %}
+            <p class="field-error" role="status">{{ 'Der E-Mail-Versand ist noch nicht vollständig eingerichtet. Die Transportzugangsdaten müssen in der geschützten Serverkonfiguration liegen.'|trans }}</p>
+        {% endif %}
+        <dl>
+            <dt>{{ 'Transport'|trans }}</dt>
+            <dd>{{ transport_configured ? ('Konfiguriert'|trans) : ('Nicht konfiguriert'|trans) }}</dd>
+            <dt>{{ 'Absender'|trans }}</dt>
+            <dd>{{ configured_from_address ?? ('Nicht konfiguriert'|trans) }}</dd>
+        </dl>
+        <p class="muted">{{ 'Transportadresse, Benutzername, Passwort und vollständige Verbindungszeichenfolge werden weder gespeichert noch angezeigt.'|trans }}</p>
+    </section>
+
+    <section class="admin-panel" aria-labelledby="email-sender-heading">
+        <header class="panel-heading"><h2 id="email-sender-heading">{{ 'Absenderadresse'|trans }}</h2></header>
+        <form method="post" action="{{ path('admin_email_settings_update') }}" class="admin-form">
+            <input type="hidden" name="token" value="{{ csrf_token('admin_email_settings') }}">
+            <div class="form-field">
+                <label for="from_address">{{ 'E-Mail-Adresse'|trans }}</label>
+                <input id="from_address" name="from_address" type="email" maxlength="254" autocomplete="email" value="{{ form.from_address }}" aria-describedby="email-from-help">
+                {% if errors.from_address is defined %}<p class="field-error" role="alert">{{ errors.from_address|trans }}</p>{% endif %}
+                <p class="muted" id="email-from-help">{{ 'Leer lassen, um die Absenderadresse der geschützten Serverkonfiguration zu verwenden.'|trans }}</p>
+            </div>
+            <div class="form-actions">
+                <button class="button button-primary" type="submit">{{ 'Einstellungen speichern'|trans }}</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="admin-panel" aria-labelledby="email-test-heading">
+        <header class="panel-heading"><h2 id="email-test-heading">{{ 'Testnachricht'|trans }}</h2></header>
+        <p>{{ 'Die Nachricht wird ausschließlich an die E-Mail-Adresse des aktuell angemeldeten Administratorkontos gesendet.'|trans }}</p>
+        <form method="post" action="{{ path('admin_email_settings_test') }}" class="admin-form">
+            <input type="hidden" name="token" value="{{ csrf_token('admin_email_test') }}">
+            <div class="form-actions">
+                <button class="button button-primary" type="submit"{% if not delivery_ready %} disabled{% endif %}>{{ 'Testnachricht an mich senden'|trans }}</button>
+            </div>
+        </form>
+        <p class="muted">{{ 'Der Versand ist auf drei Testnachrichten pro Administrator und Stunde begrenzt. Bei Zustellfehlern werden keine Zugangsdaten oder Nachrichteninhalte protokolliert.'|trans }}</p>
+    </section>
+{% endblock %}

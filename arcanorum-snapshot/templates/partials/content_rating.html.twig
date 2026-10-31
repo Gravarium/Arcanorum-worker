@@ -1,0 +1,18 @@
+<div class="content-rating" aria-label="{{ label|trans }}">
+    <p class="content-rating-counts">
+        {{ 'Gefällt mir'|trans }}: <span>{{ rating_summary['like_count'] }}</span>
+        · {{ 'Gefällt mir nicht'|trans }}: <span>{{ rating_summary['dislike_count'] }}</span>
+    </p>
+    {% if is_granted('ROLE_MEMBER') %}
+        <form class="content-rating-form" action="{{ action }}" method="post">
+            <input type="hidden" name="_token" value="{{ csrf_token(csrf_id) }}">
+            <button class="button button-secondary" type="submit" name="value" value="like" aria-pressed="{{ rating_summary['member_value'] == 'like' ? 'true' : 'false' }}">{{ 'Gefällt mir'|trans }}</button>
+            <button class="button button-secondary" type="submit" name="value" value="dislike" aria-pressed="{{ rating_summary['member_value'] == 'dislike' ? 'true' : 'false' }}">{{ 'Gefällt mir nicht'|trans }}</button>
+            {% if rating_summary['member_value'] is not null %}
+                <button class="button button-secondary" type="submit" name="value" value="none">{{ 'Bewertung entfernen'|trans }}</button>
+            {% endif %}
+        </form>
+    {% else %}
+        <p class="muted">{{ 'Melde dich an, um zu bewerten.'|trans }} <a href="{{ path('member_login') }}">{{ 'Anmelden'|trans }}</a></p>
+    {% endif %}
+</div>

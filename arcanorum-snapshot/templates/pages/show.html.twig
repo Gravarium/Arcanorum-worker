@@ -1,0 +1,28 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ page.title }} · {{ site_settings().siteName }}{% endblock %}
+{% block meta_description %}{% if page.metaDescription is not empty %}<meta name="description" content="{{ page.metaDescription }}">{% elseif page.summary is not empty %}<meta name="description" content="{{ page.summary }}">{% else %}{{ parent() }}{% endif %}{% endblock %}
+{% block meta_keywords %}{% if page.metaKeywords is not empty %}<meta name="keywords" content="{{ page.metaKeywords }}">{% endif %}{% endblock %}
+
+{% block body %}
+    <header class="public-header">
+        {{ include('partials/public_brand.html.twig') }}
+        <nav class="public-navigation" aria-label="{{ 'Hauptnavigation'|trans }}">
+            <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
+            {% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}
+            {% if module_enabled('pages') %}<a href="{{ path('page_index') }}">{{ 'Seiten'|trans }}</a>{% endif %}
+            {{ include('partials/public_navigation_links.html.twig') }}
+        </nav>
+    </header>
+    <main class="public-main">
+        <article class="public-article">
+            <p class="eyebrow">{{ 'Information'|trans }}</p>
+            <h1>{{ page.title }}</h1>
+            {% if page.summary %}<p class="lead">{{ page.summary }}</p>{% endif %}
+            <p class="byline">{{ 'Von %author%'|trans({'%author%': page.authorName}) }}</p>
+            {% if page.publishedAt %}<time datetime="{{ page.publishedAt|date('c') }}">{{ page.publishedAt|date('d.m.Y') }}</time>{% endif %}
+            <div class="article-body">{{ page.body|rich_text }}</div>
+        </article>
+        <p>{% if module_enabled('pages') %}<a href="{{ path('page_index') }}">{{ 'Zurück zu allen Seiten'|trans }}</a>{% endif %}</p>
+    </main>
+{% endblock %}

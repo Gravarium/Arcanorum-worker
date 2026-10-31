@@ -1,0 +1,82 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Kategorien verwalten'|trans }}{% endblock %}
+{% block admin_breadcrumb %}{{ 'Kategorien'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Redaktion'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ 'Kategorien'|trans }}</h1>
+            <p class="muted">{{ 'Kategorien für redaktionelle Beiträge und Videos pflegen.'|trans }}</p>
+        </div>
+        <a class="button" href="{{ path('admin_category_new', type ? {type: type} : {}) }}">{{ 'Neue Kategorie'|trans }}</a>
+    </div>
+
+    <section class="admin-panel" aria-labelledby="category-list-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="category-list-heading">{{ 'Kategorien'|trans }}</h2>
+                <p class="muted">{{ 'Treffer in dieser Ansicht: %result_count%'|trans({'%result_count%': categories|length}) }}</p>
+            </div>
+        </header>
+
+        <form class="admin-filter-form" method="get" action="{{ path('admin_category_index') }}">
+            <label>
+                <span>{{ 'Inhaltsbereich'|trans }}</span>
+                <select name="type">
+                    <option value="">{{ 'Alle Bereiche'|trans }}</option>
+                    <option value="news" {{ type == 'news' ? 'selected' : '' }}>{{ 'News'|trans }}</option>
+                    <option value="video" {{ type == 'video' ? 'selected' : '' }}>{{ 'Videos'|trans }}</option>
+                </select>
+            </label>
+            <button class="button button-secondary" type="submit">{{ 'Filtern'|trans }}</button>
+        </form>
+
+        <div class="table-wrap">
+            <table class="admin-table">
+            <caption class="visually-hidden">{{ 'Inhaltskategorien'|trans }}</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">{{ 'Kategorie'|trans }}</th>
+                        <th scope="col">{{ 'Übergeordnete Kategorie'|trans }}</th>
+                        <th scope="col">{{ 'Bereich'|trans }}</th>
+                        <th scope="col">{{ 'Startseite'|trans }}</th>
+                        <th scope="col">{{ 'Verwendung'|trans }}</th>
+                        <th scope="col">{{ 'Unterkategorien'|trans }}</th>
+                        <th scope="col"><span class="visually-hidden">{{ 'Aktionen'|trans }}</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for category in categories %}
+                        {% set usage_count = usage_counts[category.id] ?? 0 %}
+                        {% set child_count = child_counts[category.id] ?? 0 %}
+                        <tr>
+                            <th scope="row">{% if category.depth > 0 %}{% for level in 1..category.depth %}— {% endfor %}{% endif %}{{ category.name }}</th>
+                            <td>{{ category.parent ? category.parent.name : '—' }}</td>
+                            <td>{{ category.contentType.label|trans }}</td>
+                            <td>{{ category.featured ? 'Hervorgehoben'|trans : '—' }}</td>
+                            <td>{{ usage_count }}</td>
+                            <td>{{ child_count }}</td>
+                            <td class="table-actions">
+                                <a class="button button-secondary" href="{{ path('admin_category_edit', {id: category.id}) }}">{{ 'Bearbeiten'|trans }}</a>
+                                {% if usage_count == 0 and child_count == 0 %}
+                                    <form method="post" action="{{ path('admin_category_delete', {id: category.id}) }}">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('admin_category_delete_' ~ category.id) }}">
+                                        <button class="button button-danger" type="submit">{{ 'Löschen'|trans }}</button>
+                                    </form>
+                                {% else %}
+                                    <span class="muted">{{ usage_count > 0 ? 'In Verwendung'|trans : 'Enthält Unterkategorien'|trans }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="7">{{ 'Noch keine Kategorien vorhanden.'|trans }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+{% endblock %}

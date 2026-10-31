@@ -1,0 +1,9 @@
+framework:
+    test: true
+    trusted_proxies: []
+    trusted_headers: []
+    exceptions:
+        'Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException':
+            log_level: debug
+    session:
+        storage_factory_id: session.storage.factory.mock_file

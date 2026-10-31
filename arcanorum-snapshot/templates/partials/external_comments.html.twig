@@ -1,0 +1,15 @@
+{% set provider_url = comment_provider_public_url(route, route_parameters) %}
+{% if provider_url is not null %}
+<div class="external-comments" data-external-comments-provider="{{ provider.value }}" data-load-error="{{ 'Der externe Kommentarbereich konnte nicht geladen werden.'|trans }}"{% if provider.value == 'facebook' %} data-facebook-app-id="{{ settings.facebookCommentsAppId }}" data-facebook-locale="{{ app.request.locale == 'en' ? 'en_GB' : 'de_DE' }}"{% else %} data-disqus-shortname="{{ settings.disqusCommentsShortname }}" data-disqus-identifier="{{ identifier }}" data-disqus-page-url="{{ provider_url }}"{% endif %}>
+    <p data-external-comments-status role="status">{{ 'Der externe Kommentarbereich wird geladen.'|trans }}</p>
+    {% if provider.value == 'facebook' %}
+        <div class="fb-comments" data-href="{{ provider_url }}" data-numposts="10" data-width="100%"></div>
+    {% else %}
+        <div id="disqus_thread"></div>
+    {% endif %}
+</div>
+<noscript><p>{{ 'Für diesen Kommentar-Anbieter muss JavaScript aktiviert sein.'|trans }}</p></noscript>
+<script src="{{ asset('comments/external-comments.js') }}" defer></script>
+{% else %}
+<p class="muted">{{ 'Der externe Kommentarbereich ist nicht verfügbar, weil die öffentliche Website-Adresse nicht sicher eingerichtet ist.'|trans }}</p>
+{% endif %}

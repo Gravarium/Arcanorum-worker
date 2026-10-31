@@ -1,0 +1,71 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'Meine Bibliothek'|trans }} · {{ site_settings().siteName }}{% endblock %}
+
+{% block body %}
+    <header class="public-header">
+        {{ include('partials/public_brand.html.twig') }}
+        <nav class="public-navigation" aria-label="{{ 'Mitgliedsmenü'|trans }}">
+            <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
+            <a href="{{ path('member_profile') }}">{{ 'Mein Profil'|trans }}</a>
+            <a href="{{ path('member_playlist_index') }}">{{ 'Wiedergabelisten'|trans }}</a>
+            <a href="{{ path('member_video_library_index') }}" aria-current="page">{{ 'Meine Bibliothek'|trans }}</a>
+            <a href="{{ path('member_submission_history') }}">{{ 'Meine Einreichungen'|trans }}</a>
+            <a href="{{ path('member_activity_index') }}">{{ 'Meine Aktivitäten'|trans }}</a>
+            <a href="{{ path('member_follow_index') }}">{{ 'Mitglieder folgen'|trans }}</a>
+            {% if member.publicProfile %}<a href="{{ path('public_member_profile', {handle: member.handle}) }}">{{ 'Mein Kanal'|trans }}</a>{% endif %}
+            <form action="{{ path('member_logout') }}" method="post">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('member_logout') }}">
+                <button class="logout-button" type="submit">{{ 'Abmelden'|trans }}</button>
+            </form>
+        </nav>
+    </header>
+    <main class="public-main">
+        <section class="public-section" aria-labelledby="member-library-heading">
+            <p class="eyebrow">{{ 'Mitgliedskonto'|trans }}</p>
+            <h1 id="member-library-heading">{{ 'Meine Bibliothek'|trans }}</h1>
+            <p class="lead">{{ 'Diese Listen und dein Videoverlauf sind nur für dich sichtbar. Gelöschte oder nicht mehr veröffentlichte Videos werden ausgeblendet.'|trans }}</p>
+            <nav class="pagination" aria-label="{{ 'Bibliotheksbereiche'|trans }}">
+                {% for key, label in {'watch-later': 'Später ansehen', 'favorites': 'Favoriten', 'rated': 'Bewertete Videos', 'history': 'Verlauf'} %}
+                    <a href="{{ path('member_video_library_index', {view: key}) }}"{% if view == key %} aria-current="page"{% endif %}>{{ label|trans }}</a>
+                {% endfor %}
+            </nav>
+
+            {% if view == 'history' %}
+                <form action="{{ path('member_video_library_clear_history') }}" method="post">
+                    <input type="hidden" name="_token" value="{{ csrf_token('member_video_library_clear_history') }}">
+                    <button class="button button-secondary" type="submit">{{ 'Verlauf leeren'|trans }}</button>
+                </form>
+            {% endif %}
+
+            <div class="content-grid">
+                {% for item in items %}
+                    <article class="content-card">
+                        {% if view == 'history' %}
+                            <p class="card-kicker">{{ 'Zuletzt angesehen'|trans }} · <time datetime="{{ item.lastWatchedAt|date('c') }}">{{ item.lastWatchedAt|date('d.m.Y H:i') }}</time></p>
+                        {% elseif view == 'rated' %}
+                            <p class="card-kicker">{{ (item.value.value == 'like' ? 'Gefällt mir' : 'Gefällt mir nicht')|trans }} · <time datetime="{{ item.updatedAt|date('c') }}">{{ item.updatedAt|date('d.m.Y H:i') }}</time></p>
+                        {% else %}
+                            <p class="card-kicker">{{ view == 'favorites' ? ('Favorit seit'|trans) : ('Gespeichert seit'|trans) }} · <time datetime="{{ item.createdAt|date('c') }}">{{ item.createdAt|date('d.m.Y H:i') }}</time></p>
+                        {% endif %}
+                        <h2><a href="{{ path('video_show', {id: item.video.id}) }}">{{ item.video.title }}</a></h2>
+                        <form action="{{ path('member_video_library_remove', {view: view, videoId: item.video.id}) }}" method="post">
+                            <input type="hidden" name="_token" value="{{ csrf_token('member_video_library_remove_' ~ view ~ '_' ~ item.video.id) }}">
+                            <button class="button button-secondary" type="submit">{{ view == 'rated' ? ('Bewertung zurücknehmen'|trans) : ('Aus Liste entfernen'|trans) }}</button>
+                        </form>
+                    </article>
+                {% else %}
+                    <p class="empty-state">{{ ({'watch-later': 'Du hast keine Videos für später gespeichert.', 'favorites': 'Du hast noch keine Favoriten.', 'rated': 'Du hast noch keine Videos bewertet.', 'history': 'Dein Videoverlauf ist leer.'})[view]|trans }}</p>
+                {% endfor %}
+            </div>
+
+            {% if page > 1 or has_next %}
+                <nav class="pagination" aria-label="{{ 'Bibliotheksseiten'|trans }}">
+                    {% if page > 1 %}<a href="{{ path('member_video_library_index', {view: view, page: page - 1}) }}">{{ 'Vorherige Seite'|trans }}</a>{% endif %}
+                    <span>{{ 'Seite %page%'|trans({'%page%': page}) }}</span>
+                    {% if has_next %}<a href="{{ path('member_video_library_index', {view: view, page: page + 1}) }}">{{ 'Nächste Seite'|trans }}</a>{% endif %}
+                </nav>
+            {% endif %}
+        </section>
+    </main>
+{% endblock %}

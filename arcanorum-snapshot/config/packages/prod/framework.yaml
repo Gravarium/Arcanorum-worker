@@ -1,0 +1,11 @@
+framework:
+    session:
+        # The prod profile is HTTPS-only so browsers accept the __Host- cookie.
+        name: '__Host-arcanorum_session'
+        cookie_secure: true
+        cookie_httponly: true
+        cookie_samesite: lax
+        cookie_path: /
+        cookie_domain: ''
+        cookie_lifetime: 1800
+        gc_maxlifetime: 1800

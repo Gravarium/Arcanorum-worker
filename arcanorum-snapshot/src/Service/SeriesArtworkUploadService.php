@@ -1,0 +1,76 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Service;
+
+use App\Platform\Hosting\PrivateObjectStorageInterface;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+
+final readonly class SeriesArtworkUploadService
+{
+    private const int MAX_FILE_BYTES = 4194304;
+    private const int MAX_DIMENSION = 4096;
+
+    /** @var list<string> */
+    private const array ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+    public function __construct(private PrivateObjectStorageInterface $storage)
+    {
+    }
+
+    /**
+     * @return array{object_id: string, mime_type: string, size: int}
+     */
+    public function store(UploadedFile $upload): array
+    {
+        if (!$upload->isValid()) {
+            throw new \InvalidArgumentException('Das Serienbild konnte nicht sicher gelesen werden.');
+        }
+
+        $reportedSize = $upload->getSize();
+        if (false === $reportedSize || $reportedSize < 1 || $reportedSize > self::MAX_FILE_BYTES) {
+            throw new \InvalidArgumentException('Serienbilder müssen zwischen 1 Byte und 4 MiB groß sein.');
+        }
+
+        $contents = file_get_contents($upload->getPathname(), false, null, 0, self::MAX_FILE_BYTES + 1);
+        if (false === $contents) {
+            throw new \InvalidArgumentException('Das Serienbild konnte nicht sicher gelesen werden.');
+        }
+
+        $size = strlen($contents);
+        if ($size !== $reportedSize) {
+            throw new \InvalidArgumentException('Das Serienbild ist leer, zu groß oder wurde während der Prüfung verändert.');
+        }
+
+        $mimeType = new \finfo(FILEINFO_MIME_TYPE)->buffer($contents);
+        if (!is_string($mimeType) || !in_array($mimeType, self::ALLOWED_MIME_TYPES, true)) {
+            throw new \InvalidArgumentException('Erlaubt sind ausschließlich JPEG-, PNG- und WebP-Bilder.');
+        }
+
+        $imageInfo = @getimagesizefromstring($contents);
+        if (false === $imageInfo
+            || $mimeType !== $imageInfo['mime']
+            || $imageInfo[0] < 1
+            || $imageInfo[1] < 1
+            || $imageInfo[0] > self::MAX_DIMENSION
+            || $imageInfo[1] > self::MAX_DIMENSION
+        ) {
+            throw new \InvalidArgumentException('Das Bildformat oder die Bildabmessungen sind ungültig.');
+        }
+
+        $objectId = bin2hex(random_bytes(32));
+        $this->storage->write($objectId, $contents);
+
+        return ['object_id' => $objectId, 'mime_type' => $mimeType, 'size' => $size];
+    }
+
+    public function delete(string $objectId): void
+    {
+        if (1 !== preg_match('/\A[a-f0-9]{64}\z/', $objectId)) {
+            throw new \InvalidArgumentException('Die Kennung des privaten Serienbilds ist ungültig.');
+        }
+
+        $this->storage->delete($objectId);
+    }
+}

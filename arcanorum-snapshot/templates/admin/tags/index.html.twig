@@ -1,0 +1,61 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Schlagwörter verwalten'|trans }}{% endblock %}
+{% block admin_breadcrumb %}{{ 'Schlagwörter'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Redaktion'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ 'Schlagwörter'|trans }}</h1>
+            <p class="muted">{{ 'Gemeinsame News- und Video-Schlagwörter pflegen und ihre Verwendung prüfen.'|trans }}</p>
+        </div>
+        <a class="button" href="{{ path('admin_tag_new') }}">{{ 'Neues Schlagwort'|trans }}</a>
+    </div>
+
+    <section class="admin-panel" aria-labelledby="tag-list-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="tag-list-heading">{{ 'Schlagwortliste'|trans }}</h2>
+                <p class="muted">{{ '%tag_count% Schlagwörter'|trans({'%tag_count%': tags|length}) }}</p>
+            </div>
+        </header>
+
+        <div class="table-wrap">
+            <table class="admin-table">
+                <caption class="visually-hidden">{{ 'Verwaltete Schlagwörter'|trans }}</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">{{ 'Schlagwort'|trans }}</th>
+                        <th scope="col">{{ 'Verwendung'|trans }}</th>
+                        <th scope="col"><span class="visually-hidden">{{ 'Aktionen'|trans }}</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tag in tags %}
+                        {% set usage_count = usage_counts[tag.id] ?? 0 %}
+                        <tr>
+                            <th scope="row">{{ tag.name }}</th>
+                            <td>{{ usage_count }}</td>
+                            <td class="table-actions">
+                                <a class="button button-secondary" href="{{ path('admin_tag_edit', {id: tag.id}) }}">{{ 'Bearbeiten'|trans }}</a>
+                                {% if usage_count == 0 %}
+                                    <form method="post" action="{{ path('admin_tag_delete', {id: tag.id}) }}">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('admin_tag_delete_' ~ tag.id) }}">
+                                        <button class="button button-danger" type="submit">{{ 'Löschen'|trans }}</button>
+                                    </form>
+                                {% else %}
+                                    <span class="muted">{{ 'In Verwendung'|trans }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="3">{{ 'Noch keine Schlagwörter angelegt. Sie werden auch beim Speichern eines Inhalts erstellt.'|trans }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+{% endblock %}

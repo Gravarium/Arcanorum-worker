@@ -1,0 +1,133 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ (is_edit ? 'News bearbeiten' : 'News verfassen')|trans }}{% endblock %}
+{% block admin_breadcrumb %}<a href="{{ path('admin_news_index') }}">{{ 'News'|trans }}</a> / {{ (is_edit ? 'Bearbeiten' : 'Verfassen')|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Redaktion'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ (is_edit ? 'News bearbeiten' : 'News verfassen')|trans }}</h1>
+            <p class="muted">{{ 'Veröffentlichte Beiträge können geplant, hervorgehoben und auf Mitglieder beschränkt werden.'|trans }}</p>
+        </div>
+        <div class="button-group">
+            <a class="button button-secondary" href="{{ path('admin_news_index') }}">{{ 'Zurück zur Übersicht'|trans }}</a>
+            {% if is_edit %}<a class="button button-secondary" href="{{ path('admin_news_history', {id: article_id}) }}">{{ 'Änderungsverlauf'|trans }}</a>{% endif %}
+        </div>
+    </div>
+
+    {% if errors is not empty %}
+        <div class="flash-message is-error" role="alert">
+            <strong>{{ 'Bitte prüfe die Eingaben.'|trans }}</strong>
+            <ul>
+                {% for error in errors %}<li>{{ error|trans }}</li>{% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <section class="admin-panel" aria-labelledby="news-form-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="news-form-heading">{{ 'Beitragsdaten'|trans }}</h2>
+                <p class="muted">{{ 'Lege hier Inhalt, Veröffentlichungszeitpunkt, Permalink und Zugriffsoptionen fest.'|trans }}</p>
+            </div>
+        </header>
+
+        <form class="admin-form" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="_token" value="{{ csrf_token('admin_news_save') }}">
+
+            <label>
+                <span>{{ 'Titel'|trans }}</span>
+                <input name="title" value="{{ values.title }}" maxlength="180" required>
+            </label>
+
+            <label>
+                <span>{{ 'Permalink'|trans }}</span>
+                <input name="slug" value="{{ values.slug }}" maxlength="200" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" aria-describedby="news-slug-help">
+                <small id="news-slug-help">{{ 'Leer lassen, um den Permalink aus dem Titel zu bilden. Erlaubt sind Kleinbuchstaben, Ziffern und Bindestriche.'|trans }}</small>
+            </label>
+
+            <label>
+                <span>{{ 'Autorenangabe'|trans }}</span>
+                <input name="author_name" value="{{ values.author_name }}" maxlength="120" required>
+                <small>{{ 'Dieser Name erscheint öffentlich beim News-Beitrag.'|trans }}</small>
+            </label>
+
+            <div class="form-grid">
+                <label>
+                    <span>{{ 'Kategorie'|trans }}</span>
+                    <select name="category">
+                        <option value="">{{ 'Keine Kategorie'|trans }}</option>
+                        {% for category in categories %}
+                            <option value="{{ category.name }}" {{ values.category == category.name ? 'selected' : '' }}>{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>
+                    <span>{{ 'Status'|trans }}</span>
+                    <select name="status">
+                        <option value="draft" {{ values.status == 'draft' ? 'selected' : '' }}>{{ 'Entwurf'|trans }}</option>
+                        <option value="published" {{ values.status == 'published' ? 'selected' : '' }}>{{ 'Veröffentlicht'|trans }}</option>
+                    </select>
+                </label>
+            </div>
+
+            <label for="news-publish-at">
+                <span>{{ 'Veröffentlichungszeitpunkt'|trans }}</span>
+                <input id="news-publish-at" name="publish_at" type="datetime-local" value="{{ values.publish_at }}" step="60">
+                <small>{{ 'Nur bei Status „Veröffentlicht“. Leer lassen, um sofort zu veröffentlichen. Zeitzone: %timezone%.'|trans({'%timezone%': site_timezone}) }}</small>
+            </label>
+
+            <label>
+                <span>{{ 'Schlagwörter'|trans }}</span>
+                <input name="tags" value="{{ values.tags }}" maxlength="1000" placeholder="{{ 'z. B. Kultur, Interviews, Neuigkeiten'|trans }}">
+                <small>{{ 'Bis zu zehn Schlagwörter, getrennt durch Komma oder Zeilenumbruch.'|trans }}</small>
+            </label>
+
+            <label>
+                <span>{{ 'Vorspann'|trans }}</span>
+                <textarea name="summary" rows="3" maxlength="500">{{ values.summary }}</textarea>
+            </label>
+
+            {{ include('admin/partials/rich_text_editor.html.twig', {
+                id: 'news-body',
+                label: 'Inhalt',
+                value: values.body,
+                rows: 12,
+                image_upload_url: image_upload_url,
+                image_upload_token: article_id ? csrf_token('admin_inline_image_upload_news_' ~ article_id) : ''
+            }) }}
+
+            {{ include('admin/partials/custom_fields_editor.html.twig', {custom_fields: values.custom_fields, field_id_prefix: 'news-custom-field'}) }}
+
+            <fieldset class="admin-fieldset">
+                <legend>{{ 'Vorschaubild'|trans }}</legend>
+                {% if has_thumbnail %}
+                    <img class="video-thumbnail" src="{{ path('admin_news_thumbnail_preview', {id: article_id}) }}" alt="{{ 'Aktuelles Vorschaubild für %title%'|trans({'%title%': values.title}) }}" loading="lazy" decoding="async">
+                    <label><input type="checkbox" name="remove_thumbnail" value="1"> {{ 'Vorschaubild entfernen'|trans }}</label>
+                {% endif %}
+                <label>
+                    <span>{{ 'Bilddatei'|trans }}</span>
+                    <input type="file" name="thumbnail" accept="image/jpeg,image/png,image/webp">
+                    <small>{{ 'JPEG, PNG oder WebP bis 4 MiB. SVG-Dateien sind nicht zugelassen; die Bilddatei bleibt außerhalb des öffentlichen Webpfads.'|trans }}</small>
+                </label>
+            </fieldset>
+
+            <div class="form-checks">
+                <label><input type="checkbox" name="featured" value="1" {{ values.featured ? 'checked' : '' }}> {{ 'Auf der Startseite hervorheben'|trans }}</label>
+                <label><input type="checkbox" name="comments_enabled" value="1" {{ values.comments_enabled ? 'checked' : '' }}> {{ 'Kommentare erlauben'|trans }}</label>
+                <label><input type="checkbox" name="members_only" value="1" {{ values.members_only ? 'checked' : '' }}> {{ 'Vollständigen Beitrag nur Mitgliedern zeigen'|trans }}</label>
+            </div>
+
+            <div class="form-actions">
+                <button class="button" type="submit">{{ (is_edit ? 'Änderungen speichern' : 'News speichern')|trans }}</button>
+                <a class="button button-secondary" href="{{ path('admin_news_index') }}">{{ 'Abbrechen'|trans }}</a>
+            </div>
+        </form>
+    </section>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script defer src="{{ asset('admin/rich-text-editor.js') }}"></script>
+{% endblock %}

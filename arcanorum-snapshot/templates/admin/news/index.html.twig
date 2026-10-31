@@ -1,0 +1,149 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'News verwalten'|trans }}{% endblock %}
+{% block admin_breadcrumb %}{{ 'News'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Redaktion'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ 'News und Artikel'|trans }}</h1>
+            <p class="muted">{{ 'Beiträge suchen, Entwürfe prüfen und Veröffentlichungen vorbereiten.'|trans }}</p>
+        </div>
+        <a class="button" href="{{ path('admin_news_new') }}">{{ 'News verfassen'|trans }}</a>
+    </div>
+
+    <section class="admin-panel" aria-labelledby="news-list-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="news-list-heading">{{ 'Beiträge'|trans }}</h2>
+                <p class="muted">{{ '%result_count% Treffer · Seite %page% von %page_count%'|trans({'%result_count%': total, '%page%': page, '%page_count%': page_count}) }}</p>
+            </div>
+        </header>
+
+        <form class="admin-filter-form" method="get" action="{{ path('admin_news_index') }}">
+            <label>
+                <span>{{ 'Suchen'|trans }}</span>
+                <input type="search" name="q" value="{{ search }}" maxlength="180" placeholder="{{ 'Titel oder Kategorie'|trans }}">
+            </label>
+            <label>
+                <span>{{ 'Status'|trans }}</span>
+                <select name="status">
+                    <option value="">{{ 'Alle Beiträge'|trans }}</option>
+                    <option value="draft" {{ status == 'draft' ? 'selected' : '' }}>{{ 'Entwürfe'|trans }}</option>
+                    <option value="published" {{ status == 'published' ? 'selected' : '' }}>{{ 'Veröffentlicht'|trans }}</option>
+                </select>
+            </label>
+            <label>
+                <span>{{ 'Kategorie'|trans }}</span>
+                <select name="category">
+                    <option value="">{{ 'Alle Kategorien'|trans }}</option>
+                    {% for option in categories %}
+                        <option value="{{ option.name }}"{% if category == option.name %} selected{% endif %}>{{ option.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                <span>{{ 'Schlagwort'|trans }}</span>
+                <select name="tag">
+                    <option value="">{{ 'Alle Schlagwörter'|trans }}</option>
+                    {% for option in tags %}
+                        <option value="{{ option.name }}"{% if tag == option.name %} selected{% endif %}>{{ option.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                <span>{{ 'Sortierung'|trans }}</span>
+                <select name="sort">
+                    <option value="created" {{ sort == 'created' ? 'selected' : '' }}>{{ 'Änderungsdatum'|trans }}</option>
+                    <option value="title" {{ sort == 'title' ? 'selected' : '' }}>{{ 'Titel'|trans }}</option>
+                    <option value="status" {{ sort == 'status' ? 'selected' : '' }}>{{ 'Status'|trans }}</option>
+                </select>
+            </label>
+            <label>
+                <span>{{ 'Reihenfolge'|trans }}</span>
+                <select name="direction">
+                    <option value="desc" {{ direction == 'desc' ? 'selected' : '' }}>{{ 'Absteigend'|trans }}</option>
+                    <option value="asc" {{ direction == 'asc' ? 'selected' : '' }}>{{ 'Aufsteigend'|trans }}</option>
+                </select>
+            </label>
+            <button class="button button-secondary" type="submit">{{ 'Filtern'|trans }}</button>
+        </form>
+
+        <form class="admin-bulk-form" method="post" action="{{ path('admin_news_bulk') }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('admin_news_bulk') }}">
+            <div class="admin-filter-form">
+                <label>
+                    <span>{{ 'Auswahlaktion'|trans }}</span>
+                    <select name="action" required>
+                        <option value="">{{ 'Bitte wählen'|trans }}</option>
+                        <option value="publish">{{ 'Veröffentlichen'|trans }}</option>
+                        <option value="draft">{{ 'Als Entwurf speichern'|trans }}</option>
+                        <option value="feature">{{ 'Hervorheben'|trans }}</option>
+                        <option value="unfeature">{{ 'Hervorhebung entfernen'|trans }}</option>
+                        {% if is_granted('ROLE_ADMIN') %}<option value="delete">{{ 'Ausgewählte löschen'|trans }}</option>{% endif %}
+                    </select>
+                </label>
+                {% if is_granted('ROLE_ADMIN') %}<label class="form-check-label">
+                    <span>{{ 'Löschen bestätigen'|trans }}</span>
+                    <span><input type="checkbox" name="confirm_delete" value="1"> {{ 'Ich bestätige das Löschen'|trans }}</span>
+                </label>{% endif %}
+                <button class="button button-secondary" type="submit">{{ 'Auf Auswahl anwenden'|trans }}</button>
+            </div>
+            <p class="muted">{{ 'Wähle bis zu 50 Einträge aus.'|trans }}{% if is_granted('ROLE_ADMIN') %} {{ 'Löschen entfernt auch ihre Kommentare.'|trans }}{% endif %}</p>
+
+        <div class="table-wrap">
+            <table class="admin-table">
+                <caption class="visually-hidden">{{ 'News und Artikel'|trans }}</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">{{ 'Auswahl'|trans }}</th>
+                        <th scope="col">{{ 'Titel'|trans }}</th>
+                        <th scope="col">{{ 'Kategorie'|trans }}</th>
+                        <th scope="col">{{ 'Schlagwörter'|trans }}</th>
+                        <th scope="col">{{ 'Zugriff'|trans }}</th>
+                        <th scope="col">{{ 'Status'|trans }}</th>
+                        <th scope="col">{{ 'Zuletzt geändert'|trans }}</th>
+                        <th scope="col"><span class="visually-hidden">{{ 'Aktion'|trans }}</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for article in articles %}
+                        <tr>
+                            <td><input type="checkbox" name="ids[]" value="{{ article.id }}" aria-label="{{ '%title% auswählen'|trans({'%title%': article.title}) }}"></td>
+                            <th scope="row">{{ article.title }}</th>
+                            <td>{{ article.category ?? '—' }}</td>
+                            <td>{% for content_tag in article.tags %}{{ content_tag.name }}{% if not loop.last %}, {% endif %}{% else %}—{% endfor %}</td>
+                            <td>{% if article.membersOnly %}<span class="status-pill is-later">{{ 'Nur für Mitglieder'|trans }}</span>{% else %}{{ 'Öffentlich'|trans }}{% endif %}</td>
+                            <td>
+                                {% if article.status.value == 'published' and article.publishedAt is not null and article.publishedAt > now %}
+                                    <span class="status-pill is-next">{{ 'Geplant für %datetime%'|trans({'%datetime%': article.publishedAt|date('Y-m-d H:i', site_timezone)}) }}</span>
+                                {% else %}
+                                    <span class="status-pill {{ article.status.cssClass }}">{{ article.status.label|trans }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ article.updatedAt|date('d.m.Y H:i') }}</td>
+                            <td><a class="button button-secondary" href="{{ path('admin_news_edit', {id: article.id}) }}">{{ 'Bearbeiten'|trans }}</a></td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="8">{{ 'Noch keine Beiträge. Verfasse den ersten News-Beitrag.'|trans }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if page_count > 1 %}
+            <nav class="pagination" aria-label="{{ 'Verwaltungsseiten'|trans }}">
+                {% if page > 1 %}
+                    <a href="{{ path('admin_news_index', {q: search, status: status, category: category, tag: tag, sort: sort, direction: direction, page: page - 1}) }}">{{ 'Vorherige Seite'|trans }}</a>
+                {% endif %}
+                <span>{{ 'Seite %page% von %page_count%'|trans({'%page%': page, '%page_count%': page_count}) }}</span>
+                {% if page < page_count %}
+                    <a href="{{ path('admin_news_index', {q: search, status: status, category: category, tag: tag, sort: sort, direction: direction, page: page + 1}) }}">{{ 'Nächste Seite'|trans }}</a>
+                {% endif %}
+            </nav>
+        {% endif %}
+        </form>
+    </section>
+{% endblock %}

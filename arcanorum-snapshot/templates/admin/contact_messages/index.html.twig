@@ -1,0 +1,51 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Kontaktpostfach'|trans }}{% endblock %}
+{% block admin_breadcrumb %}{{ 'Kontaktpostfach'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <header class="admin-page-header">
+        <div>
+            <p class="eyebrow">{{ 'Website'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ 'Kontaktpostfach'|trans }}</h1>
+            <p class="page-intro">{{ 'Nachrichten werden nur hier angezeigt. Erledigte Nachrichten können gelöscht werden.'|trans }}</p>
+        </div>
+    </header>
+
+    <form class="content-search" action="{{ path('admin_contact_message_index') }}" method="get">
+        <label for="contact-search">{{ 'Suche'|trans }}</label>
+        <input id="contact-search" type="search" name="q" maxlength="100" value="{{ search }}" placeholder="{{ 'Name, E-Mail, Betreff oder Text'|trans }}">
+        <label for="contact-status">{{ 'Status'|trans }}</label>
+        <select id="contact-status" name="status">
+            <option value="">{{ 'Alle Status'|trans }}</option>
+            {% for status in statuses %}
+                <option value="{{ status.value }}"{% if selected_status == status.value %} selected{% endif %}>{{ (status.value == 'pending' ? 'Offen' : 'Erledigt')|trans }}</option>
+            {% endfor %}
+        </select>
+        <button class="button" type="submit">{{ 'Filtern'|trans }}</button>
+    </form>
+
+    <section class="comment-list" aria-label="{{ 'Kontaktnachrichten'|trans }}">
+        {% for message in messages %}
+            <article class="comment-card">
+                <p class="card-kicker">{{ (message.status.value == 'pending' ? 'Offen' : 'Erledigt')|trans }} · <time datetime="{{ message.createdAt|date('c') }}">{{ message.createdAt|date('d.m.Y H:i') }}</time></p>
+                <h2>{{ message.subject }}</h2>
+                <p><strong>{{ message.name }}</strong> · {{ message.email }}</p>
+                <p class="comment-body">{{ message.body }}</p>
+                {% if message.status.value == 'pending' %}
+                    <form action="{{ path('admin_contact_message_close', {id: message.id}) }}" method="post">
+                        <input type="hidden" name="_token" value="{{ csrf_token('admin_contact_message_close_' ~ message.id) }}">
+                        <button class="button" type="submit">{{ 'Als erledigt markieren'|trans }}</button>
+                    </form>
+                {% else %}
+                    <form action="{{ path('admin_contact_message_delete', {id: message.id}) }}" method="post">
+                        <input type="hidden" name="_token" value="{{ csrf_token('admin_contact_message_delete_' ~ message.id) }}">
+                        <button class="button button-secondary" type="submit">{{ 'Löschen'|trans }}</button>
+                    </form>
+                {% endif %}
+            </article>
+        {% else %}
+            <p class="empty-state">{{ 'Keine Kontaktnachrichten gefunden.'|trans }}</p>
+        {% endfor %}
+    </section>
+{% endblock %}

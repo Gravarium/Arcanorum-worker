@@ -1,0 +1,85 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ (is_edit ? 'Serie bearbeiten' : 'Neue Serie')|trans }}{% endblock %}
+{% block admin_breadcrumb %}<a href="{{ path('admin_series_index') }}">{{ 'Serien'|trans }}</a> / {{ (is_edit ? 'Bearbeiten' : 'Neue Serie')|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Videokatalog'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ (is_edit ? 'Serie bearbeiten' : 'Neue Serie')|trans }}</h1>
+            <p class="muted">{{ 'Folgen verweisen auf vorhandene Videos und besitzen einen eigenen Sichtbarkeitsstatus.'|trans }}</p>
+        </div>
+        <a class="button button-secondary" href="{{ path('admin_series_index') }}">{{ 'Zurück zur Übersicht'|trans }}</a>
+    </div>
+
+    {% if errors is not empty %}
+        <div class="flash-message is-error" role="alert">
+            <strong>{{ 'Bitte prüfe die Eingaben.'|trans }}</strong>
+            <ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul>
+        </div>
+    {% endif %}
+
+    <section class="admin-panel" aria-labelledby="series-form-heading">
+        <header class="panel-heading"><div><h2 id="series-form-heading">{{ 'Seriendaten'|trans }}</h2></div></header>
+        <form class="admin-form" method="post">
+            <input type="hidden" name="_token" value="{{ csrf_token('admin_series_save') }}">
+            <label><span>{{ 'Titel'|trans }}</span><input name="title" value="{{ values.title }}" maxlength="180" required></label>
+            <label><span>{{ 'URL-Name'|trans }}</span><input name="slug" value="{{ values.slug }}" maxlength="200" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" required></label>
+            <label><span>{{ 'Beschreibung'|trans }}</span><textarea name="description" rows="8" maxlength="50000">{{ values.description }}</textarea></label>
+            <label>
+                <span>{{ 'Genres'|trans }}</span>
+                <textarea name="genres" rows="3" maxlength="600">{{ values.genres }}</textarea>
+                <small>{{ 'Kommagetrennt oder je Genre eine Zeile; höchstens 12 Einträge mit jeweils 40 Zeichen. Neue Namen werden im Genrekatalog angelegt.'|trans }}</small>
+            </label>
+            <label>
+                <span>{{ 'Status'|trans }}</span>
+                <select name="status">
+                    <option value="draft" {{ values.status == 'draft' ? 'selected' : '' }}>{{ 'Entwurf'|trans }}</option>
+                    <option value="published" {{ values.status == 'published' ? 'selected' : '' }}>{{ 'Veröffentlicht'|trans }}</option>
+                </select>
+            </label>
+            <div class="form-actions">
+                <button class="button" type="submit">{{ (is_edit ? 'Änderungen speichern' : 'Serie anlegen')|trans }}</button>
+                <a class="button button-secondary" href="{{ path('admin_series_index') }}">{{ 'Abbrechen'|trans }}</a>
+            </div>
+        </form>
+    </section>
+
+    {% if is_edit and series is not null %}
+        <section class="admin-panel" aria-labelledby="series-artwork-heading">
+            <header class="panel-heading">
+                <div>
+                    <h2 id="series-artwork-heading">{{ 'Serienbild'|trans }}</h2>
+                    <p class="muted">{{ 'JPEG, PNG oder WebP bis 4 MiB. SVG-Dateien sind nicht zugelassen; die Bilddatei bleibt außerhalb des öffentlichen Webpfads.'|trans }}</p>
+                </div>
+            </header>
+
+            {% if series.artworkObjectId is not null %}
+                <img class="video-thumbnail video-thumbnail-admin" src="{{ path('admin_series_artwork_preview', {id: series.id}) }}" alt="{{ 'Aktuelles Serienbild für %title%'|trans({'%title%': values.title}) }}">
+            {% endif %}
+
+            <form class="admin-form" method="post" enctype="multipart/form-data" action="{{ path('admin_series_artwork_manage', {id: series.id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('admin_series_artwork_' ~ series.id) }}">
+                <input type="hidden" name="action" value="upload">
+                <label>
+                    <span>{{ 'Bilddatei'|trans }}</span>
+                    <input type="file" name="artwork_file" accept="image/jpeg,image/png,image/webp" required>
+                </label>
+                <div class="form-actions">
+                    <button class="button" type="submit">{{ 'Serienbild hochladen'|trans }}</button>
+                </div>
+            </form>
+
+            {% if series.artworkObjectId is not null %}
+                <form method="post" action="{{ path('admin_series_artwork_manage', {id: series.id}) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('admin_series_artwork_' ~ series.id) }}">
+                    <input type="hidden" name="action" value="remove">
+                    <div class="form-actions">
+                        <button class="button button-secondary" type="submit">{{ 'Serienbild entfernen'|trans }}</button>
+                    </div>
+                </form>
+            {% endif %}
+        </section>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,31 @@
+{% set editor_id = id %}
+{% set label_id = editor_id ~ '-label' %}
+{% set source_name = field_name|default('body') %}
+{% set source_required = required is defined ? required : true %}
+{% set source_maxlength = maxlength|default(100000) %}
+<label for="{{ editor_id }}"><span id="{{ label_id }}">{{ label|trans }}</span></label>
+{% set upload_url = image_upload_url|default('') %}
+{% set upload_token = image_upload_token|default('') %}
+<div class="rich-text-widget" data-rich-text-editor data-rich-text-image-upload-url="{{ upload_url }}" data-rich-text-image-upload-token="{{ upload_token }}">
+    <div class="rich-text-toolbar" role="toolbar" aria-label="{{ 'Textformatierung'|trans }}" hidden>
+        <button type="button" data-rich-text-command="bold" aria-label="{{ 'Fett'|trans }}" title="{{ 'Fett'|trans }}"><strong>B</strong></button>
+        <button type="button" data-rich-text-command="italic" aria-label="{{ 'Kursiv'|trans }}" title="{{ 'Kursiv'|trans }}"><em>I</em></button>
+        <button type="button" data-rich-text-command="formatBlock" data-rich-text-value="h2">{{ 'Überschrift'|trans }}</button>
+        <button type="button" data-rich-text-command="insertUnorderedList">{{ 'Aufzählung'|trans }}</button>
+        <button type="button" data-rich-text-command="insertOrderedList">{{ 'Nummerierung'|trans }}</button>
+        <button type="button" data-rich-text-command="formatBlock" data-rich-text-value="blockquote">{{ 'Zitat'|trans }}</button>
+        <button type="button" data-rich-text-command="createLink">{{ 'Link einfügen'|trans }}</button>
+        <button type="button" data-rich-text-command="insertImage" {{ '' == upload_url ? 'disabled' : '' }}>{{ 'Bild einfügen'|trans }}</button>
+    </div>
+    <input type="file" accept="image/jpeg,image/png,image/webp" data-rich-text-image-input hidden>
+    <p class="form-error" role="alert" data-rich-text-image-error hidden></p>
+    <div class="rich-text-surface" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="{{ label_id }}" data-rich-text-surface hidden>{{ value|rich_text }}</div>
+    <textarea id="{{ editor_id }}" name="{{ source_name }}" rows="{{ rows }}" maxlength="{{ source_maxlength }}" data-rich-text-source{% if source_required %} required{% endif %}>{{ value }}</textarea>
+    <small>
+        {% if upload_url %}
+            {{ 'Formatierungen und Bilder werden sicher geprüft. Vorschauen sind privat; verknüpfte Bilder erscheinen auf der öffentlichen Seite.'|trans }}
+        {% else %}
+            {{ 'Speichere den Inhalt zuerst, bevor du Bilder hochlädst.'|trans }}
+        {% endif %}
+    </small>
+</div>

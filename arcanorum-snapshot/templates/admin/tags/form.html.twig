@@ -1,0 +1,43 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ (is_edit ? 'Schlagwort bearbeiten' : 'Neues Schlagwort')|trans }}{% endblock %}
+{% block admin_breadcrumb %}<a href="{{ path('admin_tag_index') }}">{{ 'Schlagwörter'|trans }}</a> / {{ (is_edit ? 'Bearbeiten' : 'Neues Schlagwort')|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Redaktion'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ (is_edit ? 'Schlagwort bearbeiten' : 'Neues Schlagwort')|trans }}</h1>
+            <p class="muted">{{ 'Eine Umbenennung gilt sofort für alle zugeordneten News- und Videoinhalte.'|trans }}</p>
+        </div>
+        <a class="button button-secondary" href="{{ path('admin_tag_index') }}">{{ 'Zurück zur Übersicht'|trans }}</a>
+    </div>
+
+    {% if errors is not empty %}
+        <div class="flash-message is-error" role="alert">
+            <strong>{{ 'Bitte prüfe die Eingaben.'|trans }}</strong>
+            <ul>{% for error in errors %}<li>{{ error|trans }}</li>{% endfor %}</ul>
+        </div>
+    {% endif %}
+
+    <section class="admin-panel" aria-labelledby="tag-form-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="tag-form-heading">{{ 'Schlagwortdaten'|trans }}</h2>
+                <p class="muted">{{ 'Namen sind unabhängig von Groß- und Kleinschreibung eindeutig.'|trans }}</p>
+            </div>
+        </header>
+
+        <form class="admin-form" method="post">
+            <input type="hidden" name="_token" value="{{ csrf_token('admin_tag_save') }}">
+            <label>
+                <span>{{ 'Name'|trans }}</span>
+                <input name="name" value="{{ values.name }}" maxlength="100" required>
+            </label>
+            <div class="form-actions">
+                <button class="button" type="submit">{{ (is_edit ? 'Änderungen speichern' : 'Schlagwort anlegen')|trans }}</button>
+                <a class="button button-secondary" href="{{ path('admin_tag_index') }}">{{ 'Abbrechen'|trans }}</a>
+            </div>
+        </form>
+    </section>
+{% endblock %}

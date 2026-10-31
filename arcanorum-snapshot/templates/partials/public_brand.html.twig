@@ -1,0 +1,9 @@
+{% set site_identity = site_settings() %}
+<a class="public-brand" href="{{ path('platform_home') }}">
+    {% if site_identity.siteLogoSha256 is not null %}
+        <img class="public-brand-logo" src="{{ path('site_logo_image', {sha256: site_identity.siteLogoSha256}) }}" alt="{{ site_identity.siteName }}" width="233" height="80" decoding="async">
+    {% else %}
+        <span class="public-brand-name">{{ site_identity.siteName }}</span>
+    {% endif %}
+    {% if site_identity.tagline is not empty %}<small class="public-brand-tagline">{{ site_identity.tagline }}</small>{% endif %}
+</a>

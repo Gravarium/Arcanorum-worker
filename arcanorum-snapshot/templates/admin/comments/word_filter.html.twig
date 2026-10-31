@@ -1,0 +1,84 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Kommentar-Wortfilter'|trans }}{% endblock %}
+{% block admin_breadcrumb %}<a href="{{ path('admin_comment_index') }}">{{ 'Kommentare'|trans }}</a> / {{ 'Wortfilter'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <header class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Community'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ 'Kommentar-Wortfilter'|trans }}</h1>
+            <p class="muted">{{ 'Für jedes Filterwort kannst du Kommentare zur Prüfung zurückhalten, automatisch ablehnen oder das Wort durch *** ersetzen. Zurückgehaltene und zensierte Kommentare bleiben bis zur Freigabe verborgen.'|trans }}</p>
+        </div>
+        <a class="button button-secondary" href="{{ path('admin_comment_index') }}">{{ 'Zur Kommentarprüfung'|trans }}</a>
+    </header>
+
+    {% if errors is not empty %}
+        <div class="flash-message is-error" role="alert">
+            <strong>{{ 'Bitte prüfe die Eingabe.'|trans }}</strong>
+            <ul>{% for error in errors %}<li>{{ error|trans }}</li>{% endfor %}</ul>
+        </div>
+    {% endif %}
+
+    <section class="admin-panel" aria-labelledby="comment-filter-form-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="comment-filter-form-heading">{{ 'Filterwort hinzufügen'|trans }}</h2>
+                <p>{{ '%count% von %max% Einträgen'|trans({'%count%': term_count, '%max%': max_terms}) }}</p>
+            </div>
+        </header>
+        {% if term_count < max_terms %}
+            <form class="admin-form" method="post" action="{{ path('admin_comment_filter_save') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('admin_comment_filter_save') }}">
+                <label>
+                    <span>{{ 'Wort oder Wortgruppe'|trans }}</span>
+                    <input name="term" value="{{ term_value }}" maxlength="100" required>
+                    <small>{{ 'Groß- und Kleinschreibung wird ignoriert. Einzelne Wörter werden nur als ganzes Wort erkannt.'|trans }}</small>
+                </label>
+                <label>
+                    <span>{{ 'Filteraktion'|trans }}</span>
+                    <select name="action" required>
+                        <option value="review"{% if action_value == 'review' %} selected{% endif %}>{{ 'Zur manuellen Prüfung zurückhalten'|trans }}</option>
+                        <option value="reject"{% if action_value == 'reject' %} selected{% endif %}>{{ 'Kommentar automatisch ablehnen'|trans }}</option>
+                        <option value="censor"{% if action_value == 'censor' %} selected{% endif %}>{{ 'Treffer durch *** ersetzen'|trans }}</option>
+                    </select>
+                </label>
+                <button class="button" type="submit">{{ 'Wortfilter hinzufügen'|trans }}</button>
+            </form>
+        {% else %}
+            <p class="empty-state">{{ 'Die Liste ist voll. Entferne einen Eintrag, bevor du einen weiteren hinzufügst.'|trans }}</p>
+        {% endif %}
+    </section>
+
+    <section class="admin-panel" aria-labelledby="comment-filter-list-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="comment-filter-list-heading">{{ 'Aktive Filter'|trans }}</h2>
+                <p>{{ 'Wortgruppen werden mit normalisierten Leerzeichen und ohne Beachtung der Großschreibung verglichen.'|trans }}</p>
+            </div>
+        </header>
+        <div class="table-wrap">
+            <table class="admin-table">
+                <caption class="visually-hidden">{{ 'Aktive Kommentarfilter'|trans }}</caption>
+                <thead><tr><th scope="col">{{ 'Wort oder Wortgruppe'|trans }}</th><th scope="col">{{ 'Filteraktion'|trans }}</th><th scope="col">{{ 'Hinzugefügt'|trans }}</th><th scope="col">{{ 'Aktionen'|trans }}</th></tr></thead>
+                <tbody>
+                    {% for term in terms %}
+                        <tr>
+                            <th scope="row">{{ term.term }}</th>
+                            <td>{{ ('comment_filter_action_' ~ term.action.value)|trans }}</td>
+                            <td><time datetime="{{ term.createdAt|date('c') }}">{{ term.createdAt|date('d.m.Y H:i') }}</time></td>
+                            <td>
+                                <form method="post" action="{{ path('admin_comment_filter_delete', {id: term.id}) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('admin_comment_filter_delete_' ~ term.id) }}">
+                                    <button class="button button-danger" type="submit">{{ 'Wortfilter entfernen'|trans }}</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="4"><p class="empty-state">{{ 'Noch keine Filterwörter eingetragen.'|trans }}</p></td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+{% endblock %}

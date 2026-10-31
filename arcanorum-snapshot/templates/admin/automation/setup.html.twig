@@ -1,0 +1,53 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Private Scheduler-Einrichtung'|trans }}{% endblock %}
+{% block admin_breadcrumb %}{{ 'Einrichtung'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Hintergrundaufgaben'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ 'Private Scheduler-Einrichtung'|trans }}</h1>
+            <p class="muted">{{ 'Aufgaben starten nur über die lokale Kommandozeile. Es gibt keinen öffentlichen Scheduler-Endpunkt.'|trans }}</p>
+        </div>
+    </div>
+
+    <section class="admin-panel" aria-labelledby="scheduler-key-heading">
+        <header class="panel-heading"><h2 id="scheduler-key-heading">{{ 'Signaturschlüssel'|trans }}</h2></header>
+        <p role="status">{{ configured ? 'Der private Scheduler-Schlüssel ist konfiguriert.'|trans : 'Der private Scheduler-Schlüssel ist nicht konfiguriert. Aufträge werden bis dahin nicht ausgeführt.'|trans }}</p>
+        <p>{{ 'Setze AUTOMATION_SCHEDULER_KEY in der privaten Laufzeitkonfiguration außerhalb des Webverzeichnisses. Erzeuge einen zufälligen Schlüssel mit mindestens 32 Zeichen, zum Beispiel mit openssl rand -hex 32. Der Schlüssel wird auf dieser Seite weder angezeigt noch gespeichert.'|trans }}</p>
+    </section>
+
+    <section class="admin-panel" aria-labelledby="scheduler-request-heading">
+        <header class="panel-heading"><h2 id="scheduler-request-heading">{{ 'Signierte CLI-Anfrage'|trans }}</h2></header>
+        <p>{{ 'Der Cron-Host signiert die Nachricht mit HMAC-SHA-256 und dem privaten Schlüssel. Die Signatur bindet Versionskennung, feste Scheduler-Identität, aktuellen Unix-Zeitstempel und eine frische zufällige Nonce.'|trans }}</p>
+        <pre><code>{{ 'Nachricht: arcanorum-scheduler-v1\n{identity}\n{issued_at}\n{nonce}' }}</code></pre>
+        <p>{{ 'Jede Anfrage ist höchstens zwei Minuten gültig. Eine Nonce darf nur einmal verwendet werden. Erzeuge für jeden Lauf eine neue Nonce und Signatur; übermittle niemals den Schlüssel als Kommandozeilenargument oder HTTP-Feld.'|trans }}</p>
+        <p>{{ 'Ersetze im Beispiel den Projektpfad durch das private Arcanorum-Verzeichnis. Zeitstempel, Nonce und Signatur werden direkt vor jedem Lauf neu erzeugt. AUTOMATION_SCHEDULER_KEY muss bereits als private Laufzeitvariable gesetzt sein. Schlüssel und Signatur erscheinen weder in Prozessargumenten noch in einer HTTP-Anfrage; die Signatur wird nur über die Standardeingabe an den CLI-Befehl geleitet.'|trans }}</p>
+        <pre><code>#!/bin/sh
+set -eu
+cd /path/to/arcanorum
+identity='host-cron'
+issued_at="$(date +%s)"
+nonce="$(openssl rand -hex 16)"
+signature="$(
+    printf 'arcanorum-scheduler-v1\n%s\n%s\n%s' "$identity" "$issued_at" "$nonce" \
+        | php -r '
+            $key = getenv("AUTOMATION_SCHEDULER_KEY");
+            if (!is_string($key) || 1 !== preg_match("/\A[\x21-\x7E]{32,256}\z/D", $key)) {
+                fwrite(STDERR, "Scheduler-Schlüssel ist ungültig.\n");
+                exit(2);
+            }
+            $message = stream_get_contents(STDIN);
+            if (!is_string($message) || 1 !== preg_match("/\Aarcanorum-scheduler-v1\n[a-zA-Z0-9][a-zA-Z0-9._-]{1,63}\n[0-9]{10}\n[a-f0-9]{32}\z/D", $message)) {
+                fwrite(STDERR, "Scheduler-Anfrage ist ungültig.\n");
+                exit(2);
+            }
+            echo hash_hmac("sha256", $message, $key), "\n";
+        '
+)"
+printf '%s\n' "$signature" | php bin/console arcanorum:scheduled-tasks:run --identity="$identity" --issued-at="$issued_at" --nonce="$nonce"
+unset signature</code></pre>
+        <p>{{ 'Zurück zu Aufgaben'|trans }}: <a href="{{ path('admin_automation_index') }}">{{ 'Aufgaben verwalten'|trans }}</a></p>
+    </section>
+{% endblock %}

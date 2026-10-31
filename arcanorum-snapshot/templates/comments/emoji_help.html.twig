@@ -1,0 +1,47 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'Emoji-Hilfe'|trans }} · {{ site_settings().siteName }}{% endblock %}
+
+{% block body %}
+    <header class="public-header">
+        {{ include('partials/public_brand.html.twig') }}
+        <nav class="public-navigation" aria-label="{{ 'Hauptnavigation'|trans }}">
+            <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
+            {% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}
+            {% if module_enabled('series') %}<a href="{{ path('series_index') }}">{{ 'Serien'|trans }}</a>{% endif %}
+            {% if module_enabled('search') %}<a href="{{ path('public_search') }}">{{ 'Suche'|trans }}</a>{% endif %}
+            {% if module_enabled('pages') %}<a href="{{ path('page_index') }}">{{ 'Seiten'|trans }}</a>{% endif %}
+            <a href="{{ path('content_sitemap') }}">{{ 'Sitemap'|trans }}</a>
+            {{ include('partials/public_navigation_links.html.twig') }}
+        </nav>
+    </header>
+    <main class="public-main emoji-help-page" data-emoji-catalog>
+        <section class="public-page-heading">
+            <p class="eyebrow">{{ 'Kommentare'|trans }}</p>
+            <h1>{{ 'Emoji-Hilfe'|trans }}</h1>
+            <p class="lead">{{ 'Durchsuche Emojis nach Kategorien und füge sie mit der Tastatur oder dem Zeiger ein.'|trans }}</p>
+        </section>
+        <label for="emoji-catalog-search">{{ 'Emoji suchen'|trans }}</label>
+        <input id="emoji-catalog-search" type="search" data-emoji-catalog-search data-emoji-empty-message="{{ 'Kein Emoji gefunden.'|trans }}" autocomplete="off" maxlength="80">
+        <p class="emoji-picker-status" data-emoji-catalog-status role="status" aria-live="polite"></p>
+        <div class="emoji-picker-categories">
+            {% for category in categories %}
+                <section class="emoji-picker-category" data-emoji-catalog-category="{{ category.key }}" aria-labelledby="emoji-catalog-{{ category.key }}">
+                    <h2 id="emoji-catalog-{{ category.key }}">{{ category.label|trans }}</h2>
+                    <div class="emoji-picker-items">
+                        {% for item in category.items %}
+                            {% set item_label = item.label|trans %}
+                            <span class="emoji-catalog-item" data-emoji-catalog-item data-emoji-value="{{ item.value }}" data-emoji-label="{{ item_label }}" data-emoji-search="{{ item.search }}">
+                                <span class="emoji-catalog-glyph" aria-hidden="true">{{ item.value }}</span>
+                                <span>{{ item_label }}</span>
+                            </span>
+                        {% endfor %}
+                    </div>
+                </section>
+            {% endfor %}
+        </div>
+        <p><a href="{{ path('video_index') }}">{{ 'Zurück zur Website'|trans }}</a></p>
+    </main>
+{% endblock %}
+
+{% block javascripts %}<script src="{{ asset('comments/emoji-picker.js') }}" defer></script>{% endblock %}

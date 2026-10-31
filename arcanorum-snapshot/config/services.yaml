@@ -1,0 +1,404 @@
+parameters:
+    env(TRUSTED_PROXIES): ''
+    env(ADMIN_MFA_ENCRYPTION_KEY): ''
+    env(RUNTIME_ATTESTATION_TARGET_ID): ''
+    env(RUNTIME_ATTESTATION_ALERT_URL): ''
+    env(RUNTIME_ATTESTATION_ALERT_BEARER_TOKEN): ''
+    env(RUNTIME_ATTESTATION_REPLAY_URL): ''
+    env(RUNTIME_ATTESTATION_REPLAY_BEARER_TOKEN): ''
+    env(RUNTIME_ATTESTATION_REPORT_URL): ''
+    env(RUNTIME_ATTESTATION_REPORT_BEARER_TOKEN): ''
+    env(RUNTIME_ATTESTATION_ALERT_ALLOWED_HOSTS): '[]'
+    env(RUNTIME_ATTESTATION_REPLAY_ALLOWED_HOSTS): '[]'
+    env(RUNTIME_ATTESTATION_REPORT_ALLOWED_HOSTS): '[]'
+    env(RUNTIME_ATTESTATION_TRUSTED_KEYS): '{}'
+    env(YOUTUBE_DATA_API_KEY): ''
+    env(YOUTUBE_OAUTH_CLIENT_ID): ''
+    env(YOUTUBE_OAUTH_CLIENT_SECRET): ''
+    env(YOUTUBE_OAUTH_REFRESH_TOKEN): ''
+    env(VIMEO_ACCESS_TOKEN): ''
+    env(DAILYMOTION_CLIENT_ID): ''
+    env(DAILYMOTION_CLIENT_SECRET): ''
+    env(DAILYMOTION_PLAYER_ID): ''
+    env(VIDEO_STREAM_ALLOWED_HOSTS): '[]'
+    env(MAILER_DSN): ''
+    env(MEMBER_SECURITY_FROM_ADDRESS): ''
+    env(PUBLIC_BASE_URL): ''
+    env(GOOGLE_OAUTH_CLIENT_ID): ''
+    env(GOOGLE_OAUTH_CLIENT_SECRET): ''
+    env(FACEBOOK_OAUTH_CLIENT_ID): ''
+    env(FACEBOOK_OAUTH_CLIENT_SECRET): ''
+    env(TWITTER_OAUTH_CLIENT_ID): ''
+    env(TWITTER_OAUTH_CLIENT_SECRET): ''
+    env(DATABASE_BACKUP_KEY): ''
+    env(DATABASE_BACKUP_DIRECTORY): ''
+    env(AUTOMATION_SCHEDULER_KEY): ''
+
+    app.security.csp_report_only_route_policies:
+        platform_home: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_login: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        member_login: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        member_google_start: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        member_google_callback: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        member_google_link: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        member_google_unlink: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        member_social_register: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        member_social_start: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        member_social_callback: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        member_social_link: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        member_social_unlink: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        member_register: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        member_setup: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        member_email_request: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        member_email_verify: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        member_password_reset_request: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        member_password_reset: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        member_profile: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        member_password: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        member_submission_history: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        member_activity_index: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        member_follow_index: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        member_follow_action: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        member_video_library_index: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        member_video_library_change: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        member_video_library_remove: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        member_video_library_clear_history: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        member_playlist_index: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        member_playlist_update: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        member_playlist_delete: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        member_playlist_add_video: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        member_playlist_remove_video: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        public_member_index: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        public_member_profile: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        public_playlist_show: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_dashboard: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_system_index: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_search_statistics_index: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_search_statistics_clear: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_statistics_index: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_automation_index: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_automation_setup: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_automation_create: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_automation_update: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_automation_toggle: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_automation_delete: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_series_genre_index: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_series_genre_create: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_series_genre_rename: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_series_genre_delete: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_activity_index: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_activity_clear: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_database_backup_index: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_database_backup_create: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_database_backup_verify: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_database_backup_download: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_database_backup_delete: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_email_settings_index: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_email_settings_update: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_email_settings_test: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_staff_index: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_staff_role_update: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_design_settings_index: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_design_settings_update: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_design_settings_preview_css: "default-src 'none'; style-src 'self'; base-uri 'none'; frame-ancestors 'none'"
+        site_theme_css: "default-src 'none'; style-src 'self'; base-uri 'none'; frame-ancestors 'none'"
+        admin_member_new: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_member_index: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_member_invitation: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_member_edit: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_member_identity: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_member_status: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_member_export: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_news_index: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_news_new: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_news_edit: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_content_inline_image_upload: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        content_inline_image_show: "default-src 'none'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; sandbox"
+        admin_video_index: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_video_report_index: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_video_report_moderate: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_video_submission_index: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_video_submission_review: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_video_submission_preview: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_video_new: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_video_edit: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_video_subtitle_upload: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_video_subtitle_delete: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_page_index: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_page_new: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_page_edit: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        page_index: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        page_show: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_category_index: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_category_new: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_category_edit: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_category_delete: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_tag_index: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_tag_new: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_tag_edit: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_tag_delete: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_news_bulk: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_video_bulk: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_video_import: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_video_provider_import: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        news_index: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        news_show: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        news_category: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        video_categories: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        video_index: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        video_category: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        video_popular: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        video_show: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'; frame-src 'self' https://www.youtube-nocookie.com https://player.vimeo.com https://geo.dailymotion.com https://www.facebook.com https://drive.google.com https://rutube.ru https://vk.com https://player.youku.com"
+        video_embed_show: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'; frame-src 'self' https://www.youtube-nocookie.com https://player.vimeo.com https://geo.dailymotion.com https://www.facebook.com https://drive.google.com https://rutube.ru https://vk.com https://player.youku.com"
+        video_report: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        public_video_submission_new: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        video_media: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        public_comment_submit: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        public_comment_report: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_comment_index: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_comment_moderate: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_comment_filter_index: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_comment_filter_save: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_comment_filter_delete: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        contact_new: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_contact_message_index: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_contact_message_close: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_contact_message_delete: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        news_feed: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        video_feed: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        content_sitemap: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        public_search: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_series_index: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_series_new: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_series_edit: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_series_artwork_manage: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_series_artwork_preview: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_series_delete: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_episode_index: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_episode_new: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_episode_edit: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        admin_episode_delete: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        series_index: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        series_show: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        series_artwork: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'"
+        series_episode_show: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'; frame-src 'self' https://www.youtube-nocookie.com https://player.vimeo.com https://geo.dailymotion.com https://www.facebook.com https://drive.google.com https://rutube.ru https://vk.com https://player.youku.com"
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    _instanceof:
+        App\Platform\Hosting\CapabilityProbeInterface:
+            tags: ['app.hosting_capability_probe']
+        App\Platform\Hosting\HostingAdapterDefinitionInterface:
+            tags: ['app.hosting_adapter']
+        App\Module\Automation\Application\ScheduledTaskHandlerInterface:
+            tags: ['app.scheduled_task_handler']
+
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/Kernel.php'
+
+    App\Module\Automation\Application\SchedulerRequestAuthenticator:
+        arguments:
+            $schedulerKey: '%env(string:AUTOMATION_SCHEDULER_KEY)%'
+
+    App\Module\Automation\Application\ScheduledTaskStore: '@App\Repository\ScheduledTaskRepository'
+    App\Module\Automation\Application\ScheduledTaskRunStore: '@App\Repository\ScheduledTaskRunRepository'
+    App\Module\Automation\Application\ExternalVideoSourceStore: '@App\Repository\VideoRepository'
+    App\Module\Automation\Application\SchedulerRequestSignatureReaderInterface: '@App\Module\Automation\Application\SchedulerRequestSignatureReader'
+    App\Module\Feed\Service\SitemapDocumentBuilderInterface: '@App\Module\Feed\Service\SitemapDocumentBuilder'
+
+    App\Module\Automation\Controller\:
+        resource: '../src/Module/Automation/Controller/'
+        tags: ['controller.service_arguments']
+
+    App\Module\Settings\Controller\:
+        resource: '../src/Module/Settings/Controller/'
+        tags: ['controller.service_arguments']
+
+    App\Module\Admin\Controller\:
+        resource: '../src/Module/Admin/Controller/'
+        tags: ['controller.service_arguments']
+
+    App\Module\News\Controller\:
+        resource: '../src/Module/News/Controller/'
+        tags: ['controller.service_arguments']
+
+    App\Module\Advertising\Application\AdvertisingAdminGuard:
+        alias: App\Module\Advertising\Infrastructure\SymfonyAdvertisingAdminGuard
+
+    App\Module\Advertising\Application\AdvertisingStore:
+        alias: App\Module\Advertising\Infrastructure\DoctrineAdvertisingStore
+
+    App\Module\Advertising\Application\StatisticsStore:
+        alias: App\Module\Advertising\Infrastructure\DoctrineStatisticsStore
+
+    App\Platform\Hosting\PrivateStorageProbe:
+        arguments:
+            $publicDirectory: '%kernel.project_dir%/public'
+            $storageDirectory: '%kernel.project_dir%/var/private'
+
+    App\Platform\Hosting\RedisCapabilityProbe:
+        arguments:
+            $redisDsn: '%env(REDIS_URL)%'
+
+    App\Platform\Hosting\PrivateFileStorage:
+        arguments:
+            $publicDirectory: '%kernel.project_dir%/public'
+            $storageDirectory: '%kernel.project_dir%/var/private'
+            $storageCapabilityProbe: '@App\Platform\Hosting\PrivateStorageProbe'
+
+    App\Module\Backup\Service\DatabaseBackupService:
+        arguments:
+            $storageProbe: '@app.database_backup_storage_probe'
+            $applicationDirectory: '%kernel.project_dir%'
+            $publicDirectory: '%kernel.project_dir%/public'
+            $privateDirectory: '%env(DATABASE_BACKUP_DIRECTORY)%'
+            $encryptionKey: '%env(DATABASE_BACKUP_KEY)%'
+
+    app.database_backup_storage_probe:
+        class: App\Platform\Hosting\PrivateStorageProbe
+        arguments:
+            $publicDirectory: '%kernel.project_dir%/public'
+            $storageDirectory: '%env(DATABASE_BACKUP_DIRECTORY)%'
+
+    App\Module\Backup\Service\PostgresBackupExecutorInterface:
+        alias: App\Module\Backup\Service\ProcessPostgresBackupExecutor
+
+    App\Platform\Hosting\PrivateObjectStorageInterface:
+        alias: App\Service\PrivateObjectStorageGateway
+
+    App\Service\PhpRuntimeInspectorInterface:
+        alias: App\Service\NativePhpRuntimeInspector
+
+    App\Module\Member\Security\MemberSecurityEmailSenderInterface:
+        alias: App\Module\Member\Security\SymfonyMemberSecurityEmailSender
+
+    App\Module\Settings\Service\EmailDeliveryConfiguration:
+        arguments:
+            $mailerDsn: '%env(string:MAILER_DSN)%'
+            $fallbackFromAddress: '%env(string:MEMBER_SECURITY_FROM_ADDRESS)%'
+
+    App\Platform\Hosting\RedisCachePoolAdapter:
+        arguments:
+            $redisDsn: '%env(REDIS_URL)%'
+
+    App\Platform\Hosting\HostingCachePoolProvider:
+        arguments:
+            0: 'arcanorum'
+            $safeFallback: '@App\Platform\Hosting\ArrayCachePoolAdapter'
+
+    Symfony\Contracts\HttpClient\HttpClientInterface:
+        factory: ['Symfony\Component\HttpClient\HttpClient', 'create']
+
+    App\Platform\Security\AdminMfaSecretCipher:
+        arguments:
+            $base64MasterKey: '%env(string:ADMIN_MFA_ENCRYPTION_KEY)%'
+
+    App\Platform\Security\ContentSecurityPolicyReportOnlySubscriber:
+        arguments:
+            $routePolicies: '%app.security.csp_report_only_route_policies%'
+
+    App\Module\Video\Service\VideoStreamSourceResolver:
+        arguments:
+            $allowedHosts: '%env(json:VIDEO_STREAM_ALLOWED_HOSTS)%'
+
+    App\Module\Video\EventSubscriber\VideoStreamContentSecurityPolicySubscriber:
+        arguments:
+            $routePolicies: '%app.security.csp_report_only_route_policies%'
+
+    App\Module\Feed\Service\CanonicalPublicUrlGenerator:
+        arguments:
+            $urlGenerator: '@router.default'
+            $publicBaseUrl: '%env(string:PUBLIC_BASE_URL)%'
+
+    App\Module\Feed\Controller\ContentFeedController:
+        arguments:
+            $publicUrls: '@App\Module\Feed\Service\CanonicalPublicUrlGenerator'
+
+    App\Platform\Security\AttestationHttpClient:
+        class: Symfony\Component\HttpClient\NoPrivateNetworkHttpClient
+        autoconfigure: false
+        arguments:
+            - '@Symfony\Contracts\HttpClient\HttpClientInterface'
+
+    App\Service\VideoProviderImportService:
+        arguments:
+            $httpClient: '@App\Platform\Security\AttestationHttpClient'
+            $youtubeApiKey: '%env(string:YOUTUBE_DATA_API_KEY)%'
+            $youtubeOAuthClientId: '%env(string:YOUTUBE_OAUTH_CLIENT_ID)%'
+            $youtubeOAuthClientSecret: '%env(string:YOUTUBE_OAUTH_CLIENT_SECRET)%'
+            $youtubeOAuthRefreshToken: '%env(string:YOUTUBE_OAUTH_REFRESH_TOKEN)%'
+            $vimeoAccessToken: '%env(string:VIMEO_ACCESS_TOKEN)%'
+            $dailymotionClientId: '%env(string:DAILYMOTION_CLIENT_ID)%'
+            $dailymotionClientSecret: '%env(string:DAILYMOTION_CLIENT_SECRET)%'
+
+    App\Service\VideoThumbnailImportService:
+        arguments:
+            $httpClient: '@App\Platform\Security\AttestationHttpClient'
+
+    App\Service\ExternalVideoEmbedResolver:
+        arguments:
+            $dailymotionPlayerId: '%env(string:DAILYMOTION_PLAYER_ID)%'
+
+    App\Module\Member\Security\GoogleOAuthClient:
+        arguments:
+            $httpClient: '@App\Platform\Security\AttestationHttpClient'
+            $clientId: '%env(string:GOOGLE_OAUTH_CLIENT_ID)%'
+            $clientSecret: '%env(string:GOOGLE_OAUTH_CLIENT_SECRET)%'
+            $publicBaseUrl: '%env(string:PUBLIC_BASE_URL)%'
+
+    App\Module\Member\Security\BoundedOAuthJsonClient:
+        arguments:
+            $httpClient: '@App\Platform\Security\AttestationHttpClient'
+
+    App\Module\Member\Security\FacebookOAuthClient:
+        arguments:
+            $clientId: '%env(string:FACEBOOK_OAUTH_CLIENT_ID)%'
+            $clientSecret: '%env(string:FACEBOOK_OAUTH_CLIENT_SECRET)%'
+            $publicBaseUrl: '%env(string:PUBLIC_BASE_URL)%'
+
+    App\Module\Member\Security\TwitterOAuthClient:
+        arguments:
+            $clientId: '%env(string:TWITTER_OAUTH_CLIENT_ID)%'
+            $clientSecret: '%env(string:TWITTER_OAUTH_CLIENT_SECRET)%'
+            $publicBaseUrl: '%env(string:PUBLIC_BASE_URL)%'
+
+    App\Platform\Security\HttpRuntimeAttestationIncidentReporter:
+        arguments:
+            $httpClient: '@App\Platform\Security\AttestationHttpClient'
+            $allowedHosts: '%env(json:RUNTIME_ATTESTATION_ALERT_ALLOWED_HOSTS)%'
+            $targetId: '%env(string:RUNTIME_ATTESTATION_TARGET_ID)%'
+            $endpoint: '%env(string:RUNTIME_ATTESTATION_ALERT_URL)%'
+            $bearerToken: '%env(string:RUNTIME_ATTESTATION_ALERT_BEARER_TOKEN)%'
+
+    App\Platform\Security\RuntimeAttestationIncidentReporterInterface:
+        alias: App\Platform\Security\HttpRuntimeAttestationIncidentReporter
+
+    App\Platform\Security\HttpRuntimeAttestationReplayProtection:
+        arguments:
+            $httpClient: '@App\Platform\Security\AttestationHttpClient'
+            $allowedHosts: '%env(json:RUNTIME_ATTESTATION_REPLAY_ALLOWED_HOSTS)%'
+            $endpoint: '%env(string:RUNTIME_ATTESTATION_REPLAY_URL)%'
+            $bearerToken: '%env(string:RUNTIME_ATTESTATION_REPLAY_BEARER_TOKEN)%'
+
+    App\Platform\Security\RuntimeAttestationReplayProtectionInterface:
+        alias: App\Platform\Security\HttpRuntimeAttestationReplayProtection
+
+    App\Platform\Security\HttpRuntimeAttestationReportProvider:
+        arguments:
+            $httpClient: '@App\Platform\Security\AttestationHttpClient'
+            $allowedHosts: '%env(json:RUNTIME_ATTESTATION_REPORT_ALLOWED_HOSTS)%'
+            $targetId: '%env(string:RUNTIME_ATTESTATION_TARGET_ID)%'
+            $endpoint: '%env(string:RUNTIME_ATTESTATION_REPORT_URL)%'
+            $bearerToken: '%env(string:RUNTIME_ATTESTATION_REPORT_BEARER_TOKEN)%'
+            $trustedKeys: '%env(json:RUNTIME_ATTESTATION_TRUSTED_KEYS)%'
+
+    App\Platform\Security\RuntimeAttestationReportProviderInterface:
+        alias: App\Platform\Security\HttpRuntimeAttestationReportProvider
+
+    App\Platform\Security\InteractiveConsoleTerminalInterface:
+        alias: App\Platform\Security\NativeInteractiveConsoleTerminal

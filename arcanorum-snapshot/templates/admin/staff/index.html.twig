@@ -1,0 +1,87 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Rollen und Rechte'|trans }}{% endblock %}
+{% block admin_breadcrumb %}{{ 'Rollen und Rechte'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <header class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Fortress'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ 'Rollen und Rechte'|trans }}</h1>
+            <p class="muted">{{ 'Verwaltungszugriff wird pro MFA-geschütztem Mitarbeiterkonto aus einer festen Rollenliste vergeben.'|trans }}</p>
+        </div>
+    </header>
+
+    <section class="admin-panel" aria-labelledby="staff-roles-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="staff-roles-heading">{{ 'Mitarbeiterkonten'|trans }}</h2>
+                <p class="muted">{{ '%count% Konten · Seite %page% von %page_count%'|trans({'%count%': total, '%page%': page, '%page_count%': page_count}) }}</p>
+            </div>
+        </header>
+
+        {% if errors.form is defined %}<p class="field-error" role="alert">{{ errors.form|trans }}</p>{% endif %}
+
+        <div class="table-wrap">
+            <table class="admin-table">
+                <caption class="visually-hidden">{{ 'Verwaltungsrollen'|trans }}</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">{{ 'E-Mail-Adresse'|trans }}</th>
+                        <th scope="col">{{ 'MFA'|trans }}</th>
+                        <th scope="col">{{ 'Verwaltungszugriff'|trans }}</th>
+                        <th scope="col">{{ 'Aktion'|trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for account in accounts %}
+                        {% set selected_role = selected_roles[account.id] %}
+                        {% set is_viewer = account.id == viewer_id %}
+                        <tr>
+                            <th scope="row">{{ account.userIdentifier }}</th>
+                            <td>{{ (account.mfaSecretCiphertext is not null ? 'Eingerichtet' : 'Nicht eingerichtet')|trans }}</td>
+                            <td>
+                                <form id="staff-role-{{ account.id }}" class="admin-form" method="post" action="{{ path('admin_staff_role_update', {id: account.id, page: page}) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('admin_staff_role_' ~ account.id) }}">
+                                    {% if is_viewer %}
+                                        <input type="hidden" name="role" value="{{ selected_role }}">
+                                        <span>{{ role_options|filter(option => option.value == selected_role)|first.label|trans }} · {{ 'eigenes Konto'|trans }}</span>
+                                    {% else %}
+                                        <label for="staff-role-{{ account.id }}" class="visually-hidden">{{ 'Verwaltungsrolle für %identifier%'|trans({'%identifier%': account.userIdentifier}) }}</label>
+                                        <select id="staff-role-{{ account.id }}" name="role">
+                                            {% for option in role_options %}
+                                                <option value="{{ option.value }}"{% if option.value == selected_role %} selected{% endif %}{% if account.mfaSecretCiphertext is null and option.value != '' and option.value != selected_role %} disabled{% endif %}>{{ option.label|trans }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    {% endif %}
+                                </form>
+                            </td>
+                            <td>
+                                <button class="button button-secondary" form="staff-role-{{ account.id }}" type="submit"{% if is_viewer %} disabled aria-describedby="staff-self-role-note"{% endif %}>{{ 'Speichern'|trans }}</button>
+                                {% if is_viewer %}<span id="staff-self-role-note" class="visually-hidden">{{ 'Eigene Rolle geschützt'|trans }}</span>{% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="4">{{ 'Keine Mitarbeiterkonten gefunden.'|trans }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <ul class="muted">
+            <li>{{ 'Administratoren verwalten die gesamte Website sowie Video- und Kommentarmoderation.'|trans }}</li>
+            <li>{{ 'Redakteure verwalten News und News-Kategorien, aber keine Videos, Seiten, Kommentare oder Verwaltungsrollen.'|trans }}</li>
+            <li>{{ 'Moderatoren bearbeiten ausschließlich Video- und Kommentarmeldungen.'|trans }}</li>
+            <li>{{ 'Video- und Kommentarmoderatoren sehen jeweils nur ihre zuständigen Warteschlangen.'|trans }}</li>
+            <li>{{ 'Rollenänderungen invalidieren bestehende Sitzungen des betroffenen Kontos beim nächsten Zugriff.'|trans }}</li>
+        </ul>
+
+        {% if page_count > 1 %}
+            <nav class="pagination" aria-label="{{ 'Seitennavigation'|trans }}">
+                {% if page > 1 %}<a class="button button-secondary" href="{{ path('admin_staff_index', {page: page - 1}) }}">{{ 'Vorherige'|trans }}</a>{% endif %}
+                <span>{{ 'Seite %page% von %page_count%'|trans({'%page%': page, '%page_count%': page_count}) }}</span>
+                {% if page < page_count %}<a class="button button-secondary" href="{{ path('admin_staff_index', {page: page + 1}) }}">{{ 'Nächste'|trans }}</a>{% endif %}
+            </nav>
+        {% endif %}
+    </section>
+{% endblock %}

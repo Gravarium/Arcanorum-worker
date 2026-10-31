@@ -1,0 +1,57 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Änderungsverlauf'|trans }} · {{ article.title }}{% endblock %}
+{% block admin_breadcrumb %}<a href="{{ path('admin_news_index') }}">{{ 'News'|trans }}</a> / <a href="{{ path('admin_news_edit', {id: article.id}) }}">{{ article.title }}</a> / {{ 'Änderungsverlauf'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Redaktion'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ 'Änderungsverlauf'|trans }}</h1>
+            <p class="muted">{{ article.title }}</p>
+        </div>
+        <a class="button button-secondary" href="{{ path('admin_news_edit', {id: article.id}) }}">{{ 'Beitrag bearbeiten'|trans }}</a>
+    </div>
+
+    <section class="admin-panel" aria-labelledby="news-history-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="news-history-heading">{{ 'Versionen'|trans }}</h2>
+                <p class="muted">{{ '%result_count% Treffer · Seite %page% von %page_count%'|trans({'%result_count%': total, '%page%': page, '%page_count%': page_count}) }}</p>
+            </div>
+        </header>
+
+        {% for revision in revisions %}
+            <details class="admin-panel" {% if loop.first %}open{% endif %}>
+                <summary>{{ 'Version %version%'|trans({'%version%': revision.version}) }} · {{ revision.createdAt|date('d.m.Y H:i') }}</summary>
+                <p>{{ 'Bearbeitet von %editor%'|trans({'%editor%': revision.editor ? revision.editor.userIdentifier : ('Historischer Stand'|trans)}) }}</p>
+                <dl class="definition-list">
+                    <dt>{{ 'Titel'|trans }}</dt><dd>{{ revision.title }}</dd>
+                    <dt>{{ 'Autorenangabe'|trans }}</dt><dd>{{ revision.authorName }}</dd>
+                    <dt>{{ 'Status'|trans }}</dt><dd>{{ revision.status.label|trans }}</dd>
+                    <dt>{{ 'Zugriff'|trans }}</dt><dd>{{ revision.membersOnly ? ('Nur für Mitglieder'|trans) : ('Öffentlich'|trans) }}</dd>
+                    <dt>{{ 'Kategorie'|trans }}</dt><dd>{{ revision.category ?? ('Keine Kategorie'|trans) }}</dd>
+                    <dt>{{ 'Schlagwörter'|trans }}</dt><dd>{{ revision.tagNames ?: ('Keine Schlagwörter'|trans) }}</dd>
+                    {% if revision.customFields is not empty %}
+                        <dt>{{ 'Weitere Angaben'|trans }}</dt>
+                        <dd><ul>{% for field in revision.customFields %}<li>{{ field.key }}: {{ field.value }}</li>{% endfor %}</ul></dd>
+                    {% endif %}
+                    <dt>{{ 'Vorspann'|trans }}</dt><dd>{{ revision.summary ?? '' }}</dd>
+                    <dt>{{ 'Veröffentlicht am'|trans }}</dt><dd>{{ revision.publishedAt ? revision.publishedAt|date('d.m.Y H:i') : '—' }}</dd>
+                </dl>
+                <h3>{{ 'Inhalt'|trans }}</h3>
+                <pre class="article-revision-body">{{ revision.body }}</pre>
+            </details>
+        {% else %}
+            <p class="empty-state">{{ 'Noch keine Änderungsversion vorhanden.'|trans }}</p>
+        {% endfor %}
+
+        {% if page_count > 1 %}
+            <nav class="pagination" aria-label="{{ 'Versionen'|trans }}">
+                {% if page > 1 %}<a href="{{ path('admin_news_history', {id: article.id, page: page - 1}) }}">{{ 'Vorherige Seite'|trans }}</a>{% endif %}
+                <span>{{ 'Seite %page%'|trans({'%page%': page}) }}</span>
+                {% if page < page_count %}<a href="{{ path('admin_news_history', {id: article.id, page: page + 1}) }}">{{ 'Nächste Seite'|trans }}</a>{% endif %}
+            </nav>
+        {% endif %}
+    </section>
+{% endblock %}

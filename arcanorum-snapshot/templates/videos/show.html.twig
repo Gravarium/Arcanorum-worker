@@ -1,0 +1,326 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ video.title }} · {{ site_settings().siteName }}{% endblock %}
+
+{% block social_metadata %}{{ include('partials/social_metadata.html.twig', {metadata: social_metadata}) }}{% endblock %}
+
+{% block stylesheets %}
+    {% if site_settings().videoPlayerEngine.value == 'videojs' and ((video.sourceType.value == 'file' and not video.isAudio) or (video.sourceType.value == 'stream' and stream_source is not null and not stream_source.isAudio)) %}
+        <link rel="stylesheet" href="{{ asset('third-party/video.js-8.23.4/video-js.min.css') }}">
+    {% endif %}
+{% endblock %}
+
+{% block body %}
+    <header class="public-header">
+        {{ include('partials/public_brand.html.twig') }}
+        <nav class="public-navigation" aria-label="{{ 'Hauptnavigation'|trans }}">
+            <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>{% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}{% if module_enabled('series') %}<a href="{{ path('series_index') }}">{{ 'Serien'|trans }}</a>{% endif %}
+            {% if site_settings().isPublicVideoSubmissionsEnabled %}<a href="{{ path('public_video_submission_new') }}">{{ 'Video einreichen'|trans }}</a>{% endif %}
+            {% if module_enabled('search') %}<a href="{{ path('public_search') }}">{{ 'Suche'|trans }}</a>{% endif %}{% if module_enabled('pages') %}<a href="{{ path('page_index') }}">{{ 'Seiten'|trans }}</a>{% endif %}
+            {{ include('partials/public_navigation_links.html.twig') }}
+        </nav>
+    </header>
+    <main class="public-main">
+        <article class="public-article">
+            <p class="eyebrow">{{ video.category ?? ('Video'|trans) }}</p>
+            <h1>{{ video.title }}</h1>
+            <time datetime="{{ video.publishedAt|date('c') }}">{{ video.publishedAt|date('d.m.Y') }}</time>
+            {% if video.durationSeconds is not null %}
+                {% set duration_seconds = video.durationSeconds %}
+                {% set duration_message = video.isAudio ? 'Audiodauer: %duration%' : 'Videolaufzeit: %duration%' %}
+                <p>{{ duration_message|trans({'%duration%': '%02d:%02d:%02d'|format(duration_seconds // 3600, (duration_seconds % 3600) // 60, duration_seconds % 60)}) }}</p>
+            {% endif %}
+            {% if video.thumbnailObjectId %}<img class="video-thumbnail video-thumbnail-feature" src="{{ path('video_thumbnail', {id: video.id}) }}" alt="{{ 'Vorschaubild für %title%'|trans({'%title%': video.title}) }}" decoding="async">{% endif %}
+            {% if video.tags is not empty %}
+                <p class="tag-list" aria-label="{{ 'Schlagwörter'|trans }}">
+                    {% for tag in video.tags %}<a href="{{ path('video_index', {tag: tag.name}) }}">{{ tag.name }}</a>{% endfor %}
+                </p>
+            {% endif %}
+            {{ advertising_slot('video-player-top') }}
+            {% set video_preroll_available = false %}
+            {% if (video.sourceType.value == 'file' and not video.isAudio) or (video.sourceType.value == 'stream' and stream_source is not null and not stream_source.isAudio) %}
+                {% set video_preroll_markup = advertising_slot('video-player-preroll') %}
+                {% set video_preroll_available = advertising_preroll_available(video_preroll_markup) %}
+                {% if video_preroll_available %}
+                    <div data-video-preroll-container>
+                        {{ video_preroll_markup }}
+                        <p data-video-preroll-status role="status" hidden
+                           data-started-message="{{ 'Spiele die Anzeige, bevor du das Video startest.'|trans }}"
+                           data-completed-message="{{ 'Die Anzeige ist beendet. Du kannst jetzt das Video starten.'|trans }}"
+                           data-error-message="{{ 'Die Anzeige ist nicht verfügbar. Du kannst jetzt das Video starten.'|trans }}"></p>
+                    </div>
+                {% endif %}
+            {% endif %}
+            <div class="video-stage" data-player-color-scheme="{{ site_settings().videoPlayerColorScheme.value }}">
+                {% if video.sourceType.value == 'file' %}
+                    {% if video.isAudio %}
+                        <audio id="audio-player-{{ video.id }}" class="audio-player" data-testid="video-audio-file" controls preload="{{ site_settings().videoPreloadMode.value }}" aria-label="{{ video.title }}">
+                            <source src="{{ path('video_media', {id: video.id}) }}" type="{{ video.uploadedMimeType }}">
+                            {% for subtitle in subtitle_tracks %}<track kind="subtitles" src="{{ path('video_subtitle_track', {videoId: video.id, trackId: subtitle.id}) }}" srclang="{{ subtitle.languageCode }}" label="{{ subtitle.label }}"{% if loop.first %} default{% endif %}>{% endfor %}
+                            {{ 'Dein Browser kann diese Audiodatei nicht abspielen.'|trans }}
+                        </audio>
+                    {% else %}
+                        <video id="video-player-{{ video.id }}" data-player-aspect-ratio="{{ site_settings().videoPlayerAspectRatio.value }}" data-player-max-width="{{ site_settings().videoPlayerMaxWidth.value }}" controls{% if video_preroll_available %} data-video-preroll-content{% endif %} preload="{{ site_settings().videoPreloadMode.value }}" playsinline aria-label="{{ video.title }}"{% if site_settings().videoPlayerEngine.value == 'videojs' %} class="video-js vjs-default-skin" data-video-player-engine="videojs" data-player-message-ready="{{ 'Video ist bereit.'|trans }}" data-player-message-error="{{ 'Die Video-Wiedergabe ist derzeit nicht verfügbar.'|trans }}"{% endif %}{% if site_settings().isPlayerAutoplayEnabled and not video_preroll_available %} autoplay muted{% endif %}>
+                            <source src="{{ path('video_media', {id: video.id}) }}" type="{{ video.uploadedMimeType }}">
+                            {% for subtitle in subtitle_tracks %}<track kind="subtitles" src="{{ path('video_subtitle_track', {videoId: video.id, trackId: subtitle.id}) }}" srclang="{{ subtitle.languageCode }}" label="{{ subtitle.label }}"{% if loop.first %} default{% endif %}>{% endfor %}
+                            {{ 'Dein Browser kann dieses Video nicht abspielen.'|trans }}
+                        </video>
+                        {{ include('partials/video_quality_selector.html.twig', {player_id: 'video-player-' ~ video.id, base_source_url: path('video_media', {id: video.id}), base_source_mime: video.uploadedMimeType, quality_sources: quality_sources}) }}
+                        {% if site_settings().videoPlayerEngine.value == 'videojs' %}<p data-video-player-status role="status">{{ 'Video-Player wird vorbereitet.'|trans }}</p>{% endif %}
+                    {% endif %}
+                {% elseif video.sourceType.value == 'stream' %}
+                    {% if stream_source is not null %}
+                        {% if stream_source.isAudio %}
+                            <audio id="audio-player-{{ video.id }}" class="audio-player" data-testid="video-audio-stream" controls preload="{{ site_settings().videoPreloadMode.value }}" referrerpolicy="no-referrer" aria-label="{{ video.title }}">
+                                <source src="{{ stream_source.url }}" type="{{ stream_source.mimeType }}">
+                                {% for subtitle in subtitle_tracks %}<track kind="subtitles" src="{{ path('video_subtitle_track', {videoId: video.id, trackId: subtitle.id}) }}" srclang="{{ subtitle.languageCode }}" label="{{ subtitle.label }}"{% if loop.first %} default{% endif %}>{% endfor %}
+                                {{ 'Dein Browser kann diesen Audiostream nicht abspielen.'|trans }}
+                            </audio>
+                        {% else %}
+                            <video id="video-player-{{ video.id }}" data-testid="video-stream" data-player-aspect-ratio="{{ site_settings().videoPlayerAspectRatio.value }}" data-player-max-width="{{ site_settings().videoPlayerMaxWidth.value }}" controls{% if video_preroll_available %} data-video-preroll-content{% endif %} preload="{{ site_settings().videoPreloadMode.value }}" playsinline referrerpolicy="no-referrer" aria-label="{{ video.title }}"{% if site_settings().videoPlayerEngine.value == 'videojs' %} class="video-js vjs-default-skin" data-video-player-engine="videojs" data-player-message-ready="{{ 'Video ist bereit.'|trans }}" data-player-message-error="{{ 'Die Video-Wiedergabe ist derzeit nicht verfügbar.'|trans }}"{% endif %}{% if site_settings().isPlayerAutoplayEnabled and not video_preroll_available %} autoplay muted{% endif %}{% if stream_source.mimeType == 'application/vnd.apple.mpegurl' %} data-hls-url="{{ stream_source.url }}" data-hls-message-invalid-url="{{ 'Dieser Live-Stream ist nicht verfügbar.'|trans }}" data-hls-message-error="{{ 'Der Live-Stream ist derzeit nicht verfügbar. Bitte versuche es später erneut.'|trans }}" data-hls-message-ready="{{ 'Live-Stream bereit. Drücke Wiedergabe.'|trans }}" data-hls-message-unsupported="{{ 'Dieser Browser unterstützt die Live-Wiedergabe nicht. Nutze den Link zum Stream.'|trans }}"{% endif %}>
+                                {% if stream_source.mimeType != 'application/vnd.apple.mpegurl' %}
+                                    <source src="{{ stream_source.url }}" type="{{ stream_source.mimeType }}">
+                                {% endif %}
+                                {% for subtitle in subtitle_tracks %}<track kind="subtitles" src="{{ path('video_subtitle_track', {videoId: video.id, trackId: subtitle.id}) }}" srclang="{{ subtitle.languageCode }}" label="{{ subtitle.label }}"{% if loop.first %} default{% endif %}>{% endfor %}
+                                {{ 'Dein Browser kann diesen Stream nicht abspielen.'|trans }}
+                            </video>
+                            {{ include('partials/video_quality_selector.html.twig', {player_id: 'video-player-' ~ video.id, base_source_url: stream_source.url, base_source_mime: stream_source.mimeType, quality_sources: quality_sources}) }}
+                            {% if site_settings().videoPlayerEngine.value == 'videojs' %}
+                                <p data-video-player-status role="status">{{ 'Video-Player wird vorbereitet.'|trans }}</p>
+                            {% elseif stream_source.mimeType == 'application/vnd.apple.mpegurl' %}
+                                <p data-hls-status role="status">{{ 'Live-Stream wird vorbereitet.'|trans }}</p>
+                            {% endif %}
+                        {% endif %}
+                        <p>{{ 'Falls dein Browser das Format nicht unterstützt, kannst du den Stream direkt öffnen.'|trans }}</p>
+                        <a data-testid="video-stream-fallback" href="{{ stream_source.url }}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">{{ 'Stream direkt öffnen'|trans }}</a>
+                    {% else %}
+                        <p>{{ 'Dieser Stream ist derzeit nicht verfügbar oder für diese Website nicht freigegeben.'|trans }}</p>
+                    {% endif %}
+                {% elseif video.sourceType.value == 'embed' %}
+                    {% if embed_url is not null %}
+                        {{ include('partials/provider_video_embed.html.twig', {embed_url: embed_url, embed_title: video.title}) }}
+                    {% else %}
+                        <p>{{ 'Diese Einbettung ist derzeit nicht verfügbar.'|trans }}</p>
+                    {% endif %}
+                {% else %}
+                    <p>{{ 'Videoquelle: %source%'|trans({'%source%': video.sourceHost}) }}</p>
+                    <a data-testid="video-source" href="{{ video.sourceUrl }}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">{{ 'Video beim Anbieter ansehen'|trans }}</a>
+                {% endif %}
+                {% if site_settings().isVideoPlayerWatermarkEnabled and ((video.sourceType.value == 'file' and not video.isAudio) or (video.sourceType.value == 'stream' and stream_source is not null and not stream_source.isAudio)) %}
+                    {{ include('partials/video_player_watermark.html.twig') }}
+                {% endif %}
+            </div>
+            {{ advertising_slot('video-player-bottom') }}
+            <div class="article-body">{{ video.description }}</div>
+            {% if video.customFields is not empty %}
+                <section class="article-custom-fields" aria-labelledby="video-custom-fields-heading">
+                    <h2 id="video-custom-fields-heading">{{ 'Weitere Angaben'|trans }}</h2>
+                    <dl>{% for field in video.customFields %}<div><dt>{{ field.key }}</dt><dd>{{ field.value }}</dd></div>{% endfor %}</dl>
+                </section>
+            {% endif %}
+        </article>
+        <section class="comment-section" id="video-rating" aria-labelledby="video-rating-heading">
+            <h2 id="video-rating-heading">{{ 'Video bewerten'|trans }}</h2>
+            {{ include('partials/content_rating.html.twig', {
+                action: path('public_rating_video', {id: video.id}),
+                csrf_id: 'content_rating_video_' ~ video.id,
+                label: 'Video bewerten',
+                rating_summary: video_rating,
+            }) }}
+        </section>
+        {% if share_widget_enabled %}<section class="comment-section" id="video-share" aria-labelledby="video-share-heading">
+            <h2 id="video-share-heading">{{ 'Diesen Inhalt teilen'|trans }}</h2>
+            {{ include('partials/public_share_links.html.twig', {
+                share_title: social_metadata is not null ? social_metadata.title : video.title,
+                share_url: social_metadata is not null ? social_metadata.url : null,
+                fallback_url: path('video_show', {id: video.id}),
+            }) }}
+        </section>{% endif %}
+        {% if video_email_share_available %}
+            <section class="comment-section" id="video-email-share" aria-labelledby="video-email-share-heading">
+                <h2 id="video-email-share-heading">{{ 'Videolink per E-Mail senden'|trans }}</h2>
+                <p>{{ 'Die Empfängeradresse wird nur zur Zustellung an den eingerichteten E-Mail-Dienst weitergegeben und nicht im CMS gespeichert.'|trans }}</p>
+                {% for message in app.flashes('video_email_share_success') %}<p class="flash-message is-success" role="status">{{ message|trans }}</p>{% endfor %}
+                {% for message in app.flashes('video_email_share_error') %}<p class="flash-message is-error" role="alert">{{ message|trans }}</p>{% endfor %}
+                <form class="comment-form" action="{{ path('member_video_email_share', {id: video.id}) }}" method="post">
+                    <input type="hidden" name="_token" value="{{ csrf_token('member_video_email_share_' ~ video.id) }}">
+                    <label for="video-share-email">{{ 'E-Mail-Adresse der empfangenden Person'|trans }}</label>
+                    <input id="video-share-email" name="email" type="email" maxlength="254" autocomplete="email" required>
+                    <label class="checkbox-label">
+                        <input name="consent" type="checkbox" value="1" required>
+                        {{ 'Ich habe die Erlaubnis, dieser Person den Videolink per E-Mail zu senden.'|trans }}
+                    </label>
+                    <button class="button" type="submit">{{ 'Videolink senden'|trans }}</button>
+                </form>
+            </section>
+        {% endif %}
+        {% if embed_code %}
+            <section class="comment-section" id="video-embed-code" aria-labelledby="video-embed-code-heading">
+                <h2 id="video-embed-code-heading">{{ 'Einbettungscode'|trans }}</h2>
+                <p>{{ 'Der Player funktioniert nur auf den oben freigegebenen HTTPS-Ursprüngen.'|trans }}</p>
+                <label for="public-video-embed-code">{{ 'HTML-Code zum Kopieren'|trans }}</label>
+                <textarea id="public-video-embed-code" data-testid="video-embed-code" rows="4" readonly>{{ embed_code }}</textarea>
+            </section>
+        {% endif %}
+        {% if is_granted('ROLE_MEMBER') %}
+            {% if member_video_library is not null %}
+                <section class="comment-section" id="video-library" aria-labelledby="video-library-heading">
+                    <h2 id="video-library-heading">{{ 'In deiner Bibliothek'|trans }}</h2>
+                    {% for message in app.flashes('member_video_library_error') %}<p class="flash-message is-error" role="alert">{{ message|trans }}</p>{% endfor %}
+                    <form action="{{ path('member_video_library_change', {collection: 'watch-later', action: member_video_library.watch_later ? 'remove' : 'add', videoId: video.id}) }}" method="post">
+                        <input type="hidden" name="_token" value="{{ csrf_token('member_video_library_watch-later_' ~ (member_video_library.watch_later ? 'remove' : 'add') ~ '_' ~ video.id) }}">
+                        <button class="button button-secondary" type="submit">{{ (member_video_library.watch_later ? 'Aus Später ansehen entfernen' : 'Später ansehen')|trans }}</button>
+                    </form>
+                    <form action="{{ path('member_video_library_change', {collection: 'favorites', action: member_video_library.favorite ? 'remove' : 'add', videoId: video.id}) }}" method="post">
+                        <input type="hidden" name="_token" value="{{ csrf_token('member_video_library_favorites_' ~ (member_video_library.favorite ? 'remove' : 'add') ~ '_' ~ video.id) }}">
+                        <button class="button button-secondary" type="submit">{{ (member_video_library.favorite ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen')|trans }}</button>
+                    </form>
+                    <p><a href="{{ path('member_video_library_index') }}">{{ 'Deine Bibliothek öffnen'|trans }}</a></p>
+                </section>
+            {% endif %}
+            <section class="comment-section" id="video-playlists" aria-labelledby="video-playlists-heading">
+                <h2 id="video-playlists-heading">{{ 'In Wiedergabeliste speichern'|trans }}</h2>
+                {% for message in app.flashes('playlist_success') %}<p class="flash-message is-success" role="status">{{ message|trans }}</p>{% endfor %}
+                {% for message in app.flashes('playlist_error') %}<p class="flash-message is-error" role="alert">{{ message|trans }}</p>{% endfor %}
+                {% if member_playlists is not empty %}
+                    <form class="comment-form" action="{{ path('member_playlist_add_video', {videoId: video.id}) }}" method="post">
+                        <label for="playlist-target">{{ 'Wiedergabeliste'|trans }}</label>
+                        <select id="playlist-target" name="playlist_id" required>
+                            {% for playlist in member_playlists %}<option value="{{ playlist.id }}">{{ playlist.name }}</option>{% endfor %}
+                        </select>
+                        <input type="hidden" name="_token" value="{{ csrf_token('playlist_add_' ~ video.id) }}">
+                        <button class="button" type="submit">{{ 'Video speichern'|trans }}</button>
+                    </form>
+                    <p><a href="{{ path('member_playlist_index') }}">{{ 'Wiedergabelisten verwalten'|trans }}</a></p>
+                {% else %}
+                    <p>{{ 'Erstelle zuerst eine Wiedergabeliste.'|trans }}</p>
+                    <a class="button" href="{{ path('member_playlist_index') }}">{{ 'Wiedergabeliste erstellen'|trans }}</a>
+                {% endif %}
+            </section>
+        {% endif %}
+        <section class="comment-section" id="video-report" aria-labelledby="video-report-heading">
+            <h2 id="video-report-heading">{{ 'Video melden'|trans }}</h2>
+            {% for message in app.flashes('public_video_report_success') %}
+                <p class="flash-message is-success" role="status">{{ message|trans }}</p>
+            {% endfor %}
+            {% for message in app.flashes('public_video_report_error') %}
+                <p class="flash-message is-error" role="alert">{{ message|trans }}</p>
+            {% endfor %}
+            <form class="comment-form video-report-form" action="{{ path('video_report', {id: video.id}) }}" method="post">
+                <input type="hidden" name="_token" value="{{ csrf_token('public_video_report_' ~ video.id) }}">
+                <label for="video-report-reason">{{ 'Grund'|trans }}</label>
+                <select id="video-report-reason" name="reason" required>
+                    {% for reason in video_report_reasons %}
+                        <option value="{{ reason.value }}">{{ reason.label|trans }}</option>
+                    {% endfor %}
+                </select>
+                <label for="video-report-details">{{ 'Zusätzliche Angaben (optional)'|trans }}</label>
+                <textarea id="video-report-details" name="details" maxlength="1000" rows="4"></textarea>
+                <div class="comment-honeypot" aria-hidden="true">
+                    <label for="video-report-website">{{ 'Dieses Feld leer lassen'|trans }}</label>
+                    <input id="video-report-website" name="website" type="text" tabindex="-1" autocomplete="off">
+                </div>
+                <button class="button button-secondary" type="submit">{{ 'Video melden'|trans }}</button>
+            </form>
+        </section>
+        {% if module_enabled('comments') %}<section class="comment-section" id="comments" aria-labelledby="comments-heading">
+            <h2 id="comments-heading">{{ 'Kommentare'|trans }}</h2>
+            {% if not video.commentsEnabled %}
+                <p class="muted">{{ 'Kommentare sind für diesen Inhalt deaktiviert.'|trans }}</p>
+            {% elseif site_settings().commentProvider.value != 'native' %}
+                {% if comment_provider_external_allowed() %}
+                    {{ include('partials/external_comments.html.twig', {
+                        provider: site_settings().commentProvider,
+                        settings: site_settings(),
+                        route: 'video_show',
+                        route_parameters: {id: video.id},
+                        identifier: video.id,
+                    }) }}
+                {% else %}
+                    <p class="muted">{{ 'Externe Kommentare bleiben gesperrt, bis du optionale Inhalte ausdrücklich erlaubst.'|trans }}</p>
+                    <a href="{{ path('cookie_consent_preferences', {return_to: cookie_consent_return_to()}) }}">{{ 'Cookie-Einstellungen öffnen'|trans }}</a>
+                {% endif %}
+            {% else %}
+                {% for message in app.flashes('public_comment_success') %}
+                    <p class="flash-message is-success" role="status">{{ message|trans }}</p>
+                {% endfor %}
+                {% for message in app.flashes('public_comment_error') %}
+                    <p class="flash-message is-error" role="alert">{{ message|trans }}</p>
+                {% endfor %}
+                <div class="comment-list">
+                    {% for comment in comments %}
+                        {{ include('partials/comment_card.html.twig', {
+                            comment: comment,
+                            comment_rating_summaries: comment_rating_summaries,
+                            muted_comment_ids: muted_comment_ids,
+                            comment_page: comment_page,
+                        }) }}
+                    {% else %}
+                        <p class="empty-state">{{ 'Noch keine freigegebenen Kommentare.'|trans }}</p>
+                    {% endfor %}
+                </div>
+                {{ include('partials/comment_pagination.html.twig', {
+                    current_page: comment_page,
+                    page_count: comment_page_count,
+                    previous_url: comment_page > 1
+                        ? path('video_show', comment_page > 2
+                            ? {id: video.id, comment_page: comment_page - 1, _fragment: 'comments'}
+                            : {id: video.id, _fragment: 'comments'})
+                        : null,
+                    next_url: comment_page < comment_page_count ? path('video_show', {id: video.id, comment_page: comment_page + 1, _fragment: 'comments'}) : null,
+                }) }}
+                {% if app.user is not null or site_settings().guestCommentsEnabled %}<form class="comment-form" action="{{ comment_page > 1 ? path('public_comment_submit', {contentType: 'video', reference: video.id, comment_page: comment_page}) : path('public_comment_submit', {contentType: 'video', reference: video.id}) }}" method="post">
+                    <h3>{{ 'Kommentar schreiben'|trans }}</h3>
+                    <input type="hidden" name="_token" value="{{ csrf_token('public_comment_video_' ~ video.id) }}">
+                    <label for="video-comment-name">{{ 'Name'|trans }}</label>
+                    <input id="video-comment-name" name="author_name" type="text" maxlength="80" autocomplete="name" required>
+                    <label for="video-comment-body">{{ 'Kommentar'|trans }}</label>
+                    <textarea id="video-comment-body" name="body" minlength="5" maxlength="3000" rows="5" required></textarea>
+                    {{ include('partials/emoji_picker.html.twig', {target_id: 'video-comment-body'}) }}
+                    <div class="comment-honeypot" aria-hidden="true">
+                        <label for="video-comment-website">{{ 'Dieses Feld leer lassen'|trans }}</label>
+                        <input id="video-comment-website" name="website" type="text" tabindex="-1" autocomplete="off">
+                    </div>
+                    <button class="button" type="submit">{{ 'Kommentar zur Prüfung senden'|trans }}</button>
+                    <p class="muted">{{ 'Kommentare erscheinen erst nach Freigabe.'|trans }}</p>
+                </form>{% else %}<p class="muted">{{ 'Bitte melde dich an, um einen Kommentar zu schreiben.'|trans }} <a href="{{ path('member_login') }}">{{ 'Anmelden'|trans }}</a></p>{% endif %}
+            {% endif %}
+        </section>{% endif %}
+        {% if related_videos is not empty %}<section class="public-section" aria-labelledby="related-videos-heading">
+            <div class="public-section-heading"><div><p class="eyebrow">{{ 'Ähnliche Inhalte'|trans }}</p><h2 id="related-videos-heading">{{ 'Ähnliche Videos'|trans }}</h2></div></div>
+            <div class="content-grid">
+                {% for related in related_videos %}<article class="content-card">
+                    {% if related.thumbnailObjectId %}<img class="video-thumbnail" src="{{ path('video_thumbnail', {id: related.id}) }}" alt="{{ 'Vorschaubild für %title%'|trans({'%title%': related.title}) }}" loading="lazy" decoding="async">{% endif %}
+                    <p class="card-kicker">{{ related.category ?? ('Video'|trans) }}</p>
+                    <h3><a href="{{ path('video_show', {id: related.id}) }}">{{ related.title }}</a></h3>
+                </article>{% endfor %}
+            </div>
+        </section>{% endif %}
+        {% if top_rated_videos is not empty %}<section class="public-section" aria-labelledby="top-rated-videos-heading">
+            <div class="public-section-heading"><div><p class="eyebrow">{{ 'Mitgliederbewertungen'|trans }}</p><h2 id="top-rated-videos-heading">{{ 'Am besten bewertete Videos'|trans }}</h2></div></div>
+            <div class="content-grid">
+                {% for rated in top_rated_videos %}<article class="content-card">
+                    {% if rated.thumbnailObjectId %}<img class="video-thumbnail" src="{{ path('video_thumbnail', {id: rated.id}) }}" alt="{{ 'Vorschaubild für %title%'|trans({'%title%': rated.title}) }}" loading="lazy" decoding="async">{% endif %}
+                    <p class="card-kicker">{{ rated.category ?? ('Video'|trans) }}</p>
+                    <h3><a href="{{ path('video_show', {id: rated.id}) }}">{{ rated.title }}</a></h3>
+                </article>{% endfor %}
+            </div>
+        </section>{% endif %}
+        <p><a href="{{ path('video_index') }}">{{ 'Zurück zu allen Videos'|trans }}</a></p>
+    </main>
+{% endblock %}
+
+{% block javascripts %}
+    <script src="{{ asset('video/video-preroll.js') }}" defer></script>
+    {% if module_enabled('comments') and video.commentsEnabled and site_settings().commentProvider.value == 'native' %}<script src="{{ asset('comments/emoji-picker.js') }}" defer></script>{% endif %}
+    {% if site_settings().videoPlayerEngine.value == 'videojs' and ((video.sourceType.value == 'file' and not video.isAudio) or (video.sourceType.value == 'stream' and stream_source is not null and not stream_source.isAudio)) %}
+        <script src="{{ asset('third-party/video.js-8.23.4/video.min.js') }}" defer></script>
+        <script src="{{ asset('video/videojs-player.js') }}" defer></script>
+    {% elseif video.sourceType.value == 'stream' and stream_source is not null and stream_source.mimeType == 'application/vnd.apple.mpegurl' %}
+        <script src="{{ asset('third-party/hls.js-1.7.3/hls.min.js') }}" defer></script>
+        <script src="{{ asset('video/hls-player.js') }}" defer></script>
+    {% elseif video.sourceType.value == 'embed' and embed_url is not null %}
+        <script src="{{ asset('video/provider-embed-consent.js') }}" defer></script>
+    {% endif %}
+    {% if quality_sources is not empty %}<script src="{{ asset('video/video-quality-selector.js') }}" defer></script>{% endif %}
+{% endblock %}

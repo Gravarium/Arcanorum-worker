@@ -1,0 +1,87 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Seriengenres'|trans }}{% endblock %}
+{% block admin_breadcrumb %}{{ 'Seriengenres'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="admin-page-heading">
+        <div>
+            <h1 id="seitenueberschrift">{{ 'Seriengenres'|trans }}</h1>
+            <p>{{ 'Lege Genres unabhängig von Serien an, oder verwalte bestehende Zuordnungen für alle Serien.'|trans }}</p>
+        </div>
+    </div>
+
+    <section class="admin-panel" aria-labelledby="genre-create-heading">
+        <header class="panel-heading"><div><h2 id="genre-create-heading">{{ 'Neues Genre'|trans }}</h2></div></header>
+        <form class="admin-form" method="post" action="{{ path('admin_series_genre_create') }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('series_genre_create') }}">
+            <label><span>{{ 'Name'|trans }}</span><input name="name" maxlength="40" required></label>
+            <div class="form-actions"><button class="button" type="submit">{{ 'Genre anlegen'|trans }}</button></div>
+        </form>
+    </section>
+
+    {% if genres is empty %}
+        <p class="empty-state">{{ 'Noch keine Seriengenres vorhanden.'|trans }}</p>
+    {% else %}
+        <p class="admin-result-count">{{ 'Genres im Katalog: %count%'|trans({'%count%': total}) }}</p>
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th scope="col">{{ 'Genre'|trans }}</th>
+                        <th scope="col">{{ 'Serien'|trans }}</th>
+                        <th scope="col">{{ 'Startseite'|trans }}</th>
+                        <th scope="col">{{ 'Umbenennen'|trans }}</th>
+                        <th scope="col">{{ 'Entfernen'|trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in genres %}
+                        <tr>
+                            <th scope="row">{{ entry.name }}</th>
+                            <td>{{ entry.count }}</td>
+                            <td>
+                                <form method="post" action="{{ path('admin_series_genre_feature') }}">
+                                    <input type="hidden" name="genre_id" value="{{ entry.id }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('series_genre_feature_' ~ entry.id) }}">
+                                    <label><input type="checkbox" name="featured" value="1"{% if entry.is_featured %} checked{% endif %}> {{ 'Auf der Startseite hervorheben'|trans }}</label>
+                                    <label>
+                                        <span class="visually-hidden">{{ 'Sortierreihenfolge der Startseite'|trans }}</span>
+                                        <input type="number" name="sort_order" min="0" max="10000" value="{{ entry.featured_sort_order }}" required>
+                                    </label>
+                                    <button class="button button-secondary" type="submit">{{ 'Hervorhebung speichern'|trans }}</button>
+                                </form>
+                            </td>
+                            <td>
+                                <form method="post" action="{{ path('admin_series_genre_rename') }}">
+                                    <input type="hidden" name="genre" value="{{ entry.name }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('series_genre_rename_' ~ entry.name) }}">
+                                    <label>
+                                        <span class="visually-hidden">{{ 'Neuer Name für %name%'|trans({'%name%': entry.name}) }}</span>
+                                        <input name="new_name" value="{{ entry.name }}" maxlength="40" required>
+                                    </label>
+                                    <button class="button button-secondary" type="submit">{{ 'Umbenennen'|trans }}</button>
+                                </form>
+                            </td>
+                            <td>
+                                <form method="post" action="{{ path('admin_series_genre_delete') }}">
+                                    <input type="hidden" name="genre" value="{{ entry.name }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('series_genre_delete_' ~ entry.name) }}">
+                                    <label><input type="checkbox" name="confirm_delete" value="1"> {{ 'Entfernen bestätigen'|trans }}</label>
+                                    <button class="button button-secondary" type="submit">{{ 'Entfernen'|trans }}</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if page_count > 1 %}
+            <nav class="admin-pagination" aria-label="{{ 'Genreseiten'|trans }}">
+                {% if page > 1 %}<a class="button button-secondary" href="{{ path('admin_series_genre_index', {page: page - 1}) }}">{{ 'Vorherige Seite'|trans }}</a>{% endif %}
+                <span>{{ 'Seite %page% von %page_count%'|trans({'%page%': page, '%page_count%': page_count}) }}</span>
+                {% if page < page_count %}<a class="button button-secondary" href="{{ path('admin_series_genre_index', {page: page + 1}) }}">{{ 'Nächste Seite'|trans }}</a>{% endif %}
+            </nav>
+        {% endif %}
+    {% endif %}
+{% endblock %}

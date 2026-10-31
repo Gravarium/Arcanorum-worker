@@ -1,0 +1,42 @@
+<!doctype html>
+{% set site_configuration = site_settings() %}
+{% set current_return_to = cookie_consent_return_to() %}
+{% set saved_public_view = app.request.cookies.get('arcanorum_public_view') %}
+{% set public_view = saved_public_view in ['compact', 'desktop'] ? saved_public_view : 'site' %}
+{% set public_layout = public_view == 'compact' ? 'compact' : (public_view == 'desktop' ? 'grid' : site_configuration.publicLayout.value) %}
+{% set current_route = app.request.attributes.get('_route', '') %}
+{% set analytics_context = google_analytics_context() %}
+<html lang="{{ app.request.locale }}" dir="{{ locale_text_direction(app.request.locale) }}" data-public-theme="{{ site_configuration.publicTheme.value }}" data-public-layout="{{ public_layout }}" data-public-view="{{ public_view }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>{% block title %}{{ site_configuration.siteName }}{% endblock %}</title>
+    {% block meta_description %}{% if site_configuration.seoDescription is not empty %}<meta name="description" content="{{ site_configuration.seoDescription }}">{% endif %}{% endblock %}
+    {% block meta_keywords %}{% endblock %}
+    {% block social_metadata %}{% endblock %}
+    {% if not site_configuration.searchIndexingEnabled %}<meta name="robots" content="noindex,nofollow">{% endif %}
+    <link rel="stylesheet" href="{{ asset('styles/app.css') }}">
+    <link rel="stylesheet" href="{{ path('site_theme_css') }}">
+    {% block stylesheets %}{% endblock %}
+</head>
+<body{% if current_route|slice(0, 6) != 'admin_' %} class="public-site"{% endif %}>
+{% block body %}{% endblock %}
+{% block javascripts %}{% endblock %}
+{% if analytics_context is not null %}<script src="{{ asset('analytics/google-analytics.js') }}" data-measurement-id="{{ analytics_context.measurement_id }}" data-page-type="{{ analytics_context.page_type }}" defer referrerpolicy="no-referrer"></script>{% endif %}
+{% if cookie_consent_needs_choice() %}{{ include('partials/cookie_consent_banner.html.twig', {token: cookie_consent_csrf_token(), message: site_configuration.cookieConsentMessage, return_to: current_return_to}) }}{% endif %}
+<nav class="site-preferences" aria-label="{{ 'Datenschutzeinstellungen'|trans }}"><a href="{{ path('cookie_consent_preferences', {return_to: current_return_to}) }}">{{ 'Cookie-Einstellungen'|trans }}</a></nav>
+{% if not (current_route starts with 'admin_') and not (current_route starts with 'public_view_preference') %}
+    <form class="site-view-preferences" action="{{ path('public_view_preference') }}" method="post">
+        <label for="public-view-mode">{{ 'Ansicht'|trans }}</label>
+        <select id="public-view-mode" name="mode">
+            <option value="site"{% if public_view == 'site' %} selected{% endif %}>{{ 'Website-Standard'|trans }}</option>
+            <option value="compact"{% if public_view == 'compact' %} selected{% endif %}>{{ 'Kompakte Mobilansicht'|trans }}</option>
+            <option value="desktop"{% if public_view == 'desktop' %} selected{% endif %}>{{ 'Desktopansicht'|trans }}</option>
+        </select>
+        <input type="hidden" name="return_to" value="{{ current_return_to }}">
+        <button class="button button-secondary" type="submit">{{ 'Ansicht wechseln'|trans }}</button>
+    </form>
+{% endif %}
+</body>
+</html>

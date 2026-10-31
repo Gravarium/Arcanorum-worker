@@ -1,0 +1,55 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'Meine Einreichungen'|trans }} · {{ site_settings().siteName }}{% endblock %}
+
+{% block body %}
+    <header class="public-header">
+        {{ include('partials/public_brand.html.twig') }}
+        <nav class="public-navigation" aria-label="{{ 'Mitgliedsmenü'|trans }}">
+            <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
+            {% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}
+            <a href="{{ path('member_profile') }}">{{ 'Mein Profil'|trans }}</a>
+            <a href="{{ path('member_playlist_index') }}">{{ 'Wiedergabelisten'|trans }}</a>
+            <a href="{{ path('member_video_library_index') }}">{{ 'Meine Bibliothek'|trans }}</a>
+            <a href="{{ path('member_submission_history') }}" aria-current="page">{{ 'Meine Einreichungen'|trans }}</a>
+            <a href="{{ path('member_activity_index') }}">{{ 'Meine Aktivitäten'|trans }}</a>
+            <a href="{{ path('member_follow_index') }}">{{ 'Mitglieder folgen'|trans }}</a>
+            {% if member.publicProfile %}<a href="{{ path('public_member_profile', {handle: member.handle}) }}">{{ 'Mein Kanal'|trans }}</a>{% endif %}
+            <form action="{{ path('member_logout') }}" method="post">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('member_logout') }}">
+                <button class="logout-button" type="submit">{{ 'Abmelden'|trans }}</button>
+            </form>
+        </nav>
+    </header>
+    <main class="public-main">
+        <section class="public-section" aria-labelledby="member-submissions-heading">
+            <p class="eyebrow">{{ 'Mitgliedskonto'|trans }}</p>
+            <h1 id="member-submissions-heading">{{ 'Meine Videoeinreichungen'|trans }}</h1>
+            <p class="lead">{{ 'Hier siehst du den Prüfstatus deiner Einreichungen. Wartende oder abgelehnte Beiträge kannst du bearbeiten und löschen. Freigegebene Videos bleiben im Katalog.'|trans }}</p>
+            {% for message in app.flashes('success') %}<p class="flash-message is-success" role="status">{{ message|trans }}</p>{% endfor %}
+            {% for message in app.flashes('error') %}<p class="flash-message is-error" role="alert">{{ message|trans }}</p>{% endfor %}
+            {% for message in app.flashes('warning') %}<p class="flash-message is-error" role="alert">{{ message|trans }}</p>{% endfor %}
+            <div class="content-grid">
+                {% for submission in submissions %}
+                    <article class="content-card">
+                        <p class="card-kicker">
+                            <time datetime="{{ submission.createdAt|date('c') }}">{{ submission.createdAt|date('d.m.Y H:i') }}</time>
+                        </p>
+                        <h2>{{ submission.video.title }}</h2>
+                        <p>{{ 'Prüfstatus:'|trans }} <strong>{{ submission.status.label|trans }}</strong></p>
+                        <p>{{ 'Quelle:'|trans }} {{ submission.video.sourceHost }}</p>
+                        {% if submission.isEditableBySubmitter %}
+                            <p><a class="button button-secondary" href="{{ path('member_submission_edit', {id: submission.id}) }}">{{ 'Einreichung bearbeiten'|trans }}</a></p>
+                            <form action="{{ path('member_submission_delete', {id: submission.id}) }}" method="post">
+                                <input type="hidden" name="_token" value="{{ csrf_token('member_submission_delete_' ~ submission.id) }}">
+                                <button class="button button-secondary" type="submit">{{ 'Einreichung löschen'|trans }}</button>
+                            </form>
+                        {% endif %}
+                    </article>
+                {% else %}
+                    <p class="empty-state">{{ 'Du hast noch keine Videos eingereicht.'|trans }}</p>
+                {% endfor %}
+            </div>
+        </section>
+    </main>
+{% endblock %}

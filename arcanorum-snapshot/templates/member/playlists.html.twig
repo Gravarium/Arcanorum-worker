@@ -1,0 +1,99 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'Meine Wiedergabelisten'|trans }} · {{ site_settings().siteName }}{% endblock %}
+
+{% block body %}
+    <header class="public-header">
+        {{ include('partials/public_brand.html.twig') }}
+        <nav class="public-navigation" aria-label="{{ 'Mitgliedsmenü'|trans }}">
+            <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
+            <a href="{{ path('member_profile') }}">{{ 'Mein Profil'|trans }}</a>
+            <a href="{{ path('member_playlist_index') }}" aria-current="page">{{ 'Wiedergabelisten'|trans }}</a>
+            <a href="{{ path('member_video_library_index') }}">{{ 'Meine Bibliothek'|trans }}</a>
+            <a href="{{ path('member_submission_history') }}">{{ 'Meine Einreichungen'|trans }}</a>
+            <a href="{{ path('member_activity_index') }}">{{ 'Meine Aktivitäten'|trans }}</a>
+            <a href="{{ path('member_follow_index') }}">{{ 'Mitglieder folgen'|trans }}</a>
+            {% if member.publicProfile %}<a href="{{ path('public_member_profile', {handle: member.handle}) }}">{{ 'Mein Kanal'|trans }}</a>{% endif %}
+            <form action="{{ path('member_logout') }}" method="post">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('member_logout') }}">
+                <button class="logout-button" type="submit">{{ 'Abmelden'|trans }}</button>
+            </form>
+        </nav>
+    </header>
+    <main class="public-main">
+        <section class="public-section" aria-labelledby="playlist-heading">
+            <p class="eyebrow">{{ 'Mitgliedskonto'|trans }}</p>
+            <h1 id="playlist-heading">{{ 'Meine Wiedergabelisten'|trans }}</h1>
+            {% for message in app.flashes('playlist_success') %}<p class="flash-message is-success" role="status">{{ message|trans }}</p>{% endfor %}
+            {% for message in app.flashes('playlist_error') %}<p class="flash-message is-error" role="alert">{{ message|trans }}</p>{% endfor %}
+            {% for error in errors %}<p class="login-error" role="alert">{{ error|trans }}</p>{% endfor %}
+
+            <form class="comment-form" action="{{ path('member_playlist_index') }}" method="post">
+                <h2>{{ 'Neue Wiedergabeliste'|trans }}</h2>
+                <label for="playlist-name">{{ 'Name'|trans }}</label>
+                <input id="playlist-name" name="name" type="text" value="{{ values.name }}" maxlength="80" required>
+                <label for="playlist-description">{{ 'Beschreibung (optional)'|trans }}</label>
+                <textarea id="playlist-description" name="description" rows="3" maxlength="500">{{ values.description }}</textarea>
+                <label for="playlist-visibility">{{ 'Sichtbarkeit'|trans }}</label>
+                <select id="playlist-visibility" name="visibility">
+                    <option value="private"{% if values.visibility == 'private' %} selected{% endif %}>{{ 'Privat'|trans }}</option>
+                    <option value="public"{% if values.visibility == 'public' %} selected{% endif %}>{{ 'Öffentlich'|trans }}</option>
+                </select>
+                <p class="field-hint">{{ 'Öffentliche Listen erscheinen nur, wenn auch dein Kanal öffentlich ist. Nicht veröffentlichte Videos bleiben aus öffentlichen Listen ausgeblendet.'|trans }}</p>
+                <input type="hidden" name="_token" value="{{ csrf_token('playlist_create') }}">
+                <button class="button" type="submit">{{ 'Wiedergabeliste erstellen'|trans }}</button>
+            </form>
+        </section>
+
+        <section aria-labelledby="playlist-list-heading">
+            <h2 id="playlist-list-heading">{{ 'Vorhandene Listen'|trans }}</h2>
+            <div class="content-grid">
+                {% for playlist in playlists %}
+                    <article class="content-card" id="playlist-{{ playlist.id }}">
+                        <p class="card-kicker">{{ (playlist.isPublic ? 'Öffentlich' : 'Privat')|trans }} · {{ playlist.items|length }} {{ 'Videos'|trans }}</p>
+                        <h3>{{ playlist.name }}</h3>
+                        {% if playlist.description %}<p>{{ playlist.description }}</p>{% endif %}
+                        {% if playlist.isPublic and member.publicProfile %}
+                            <p><a href="{{ path('public_playlist_show', {id: playlist.id}) }}">{{ 'Öffentliche Liste ansehen'|trans }}</a></p>
+                        {% elseif playlist.isPublic %}
+                            <p class="muted">{{ 'Die Liste bleibt verborgen, bis dein Kanal öffentlich ist.'|trans }}</p>
+                        {% endif %}
+                        <form class="comment-form" action="{{ path('member_playlist_update', {id: playlist.id}) }}" method="post">
+                            <label for="playlist-name-{{ playlist.id }}">{{ 'Name'|trans }}</label>
+                            <input id="playlist-name-{{ playlist.id }}" name="name" value="{{ playlist.name }}" maxlength="80" required>
+                            <label for="playlist-description-{{ playlist.id }}">{{ 'Beschreibung'|trans }}</label>
+                            <textarea id="playlist-description-{{ playlist.id }}" name="description" rows="2" maxlength="500">{{ playlist.description }}</textarea>
+                            <label for="playlist-visibility-{{ playlist.id }}">{{ 'Sichtbarkeit'|trans }}</label>
+                            <select id="playlist-visibility-{{ playlist.id }}" name="visibility">
+                                <option value="private"{% if not playlist.isPublic %} selected{% endif %}>{{ 'Privat'|trans }}</option>
+                                <option value="public"{% if playlist.isPublic %} selected{% endif %}>{{ 'Öffentlich'|trans }}</option>
+                            </select>
+                            <input type="hidden" name="_token" value="{{ csrf_token('playlist_update_' ~ playlist.id) }}">
+                            <button class="button button-secondary" type="submit">{{ 'Änderungen speichern'|trans }}</button>
+                        </form>
+                        <ul class="playlist-item-list">
+                            {% for item in playlist.items %}
+                                <li>
+                                    <a href="{{ path('video_show', {id: item.video.id}) }}">{{ item.video.title }}</a>
+                                    {% if item.video.status.value != 'published' %}<span class="muted"> {{ '(nicht veröffentlicht)'|trans }}</span>{% endif %}
+                                    <form action="{{ path('member_playlist_remove_video', {id: playlist.id, videoId: item.video.id}) }}" method="post">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('playlist_remove_' ~ playlist.id ~ '_' ~ item.video.id) }}">
+                                        <button class="button button-secondary" type="submit">{{ 'Entfernen'|trans }}</button>
+                                    </form>
+                                </li>
+                            {% else %}
+                                <li class="empty-state">{{ 'Noch keine Videos gespeichert.'|trans }}</li>
+                            {% endfor %}
+                        </ul>
+                        <form action="{{ path('member_playlist_delete', {id: playlist.id}) }}" method="post">
+                            <input type="hidden" name="_token" value="{{ csrf_token('playlist_delete_' ~ playlist.id) }}">
+                            <button class="button button-secondary" type="submit">{{ 'Wiedergabeliste löschen'|trans }}</button>
+                        </form>
+                    </article>
+                {% else %}
+                    <p class="empty-state">{{ 'Du hast noch keine Wiedergabelisten erstellt.'|trans }}</p>
+                {% endfor %}
+            </div>
+        </section>
+    </main>
+{% endblock %}

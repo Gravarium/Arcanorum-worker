@@ -1,0 +1,66 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Folgen verwalten'|trans }}{% endblock %}
+{% block admin_breadcrumb %}{{ 'Folgen'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Videokatalog'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ 'Folgen'|trans }}</h1>
+            <p class="muted">{{ 'Videos zu Staffeln und Folgen zuordnen. Öffentlich erscheinen nur veröffentlichte Folgen zu veröffentlichten Serien und Videos.'|trans }}</p>
+        </div>
+        <a class="button" href="{{ path('admin_episode_new', series_filter ? {series: series_filter.id} : {}) }}">{{ 'Folge zuordnen'|trans }}</a>
+    </div>
+
+    <section class="admin-panel" aria-labelledby="episode-list-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="episode-list-heading">{{ 'Folgenliste'|trans }}</h2>
+                <p class="muted">{{ '%count% Treffer in dieser Ansicht'|trans({'%count%': episodes|length}) }}</p>
+            </div>
+        </header>
+        <form class="admin-filter-form" method="get" action="{{ path('admin_episode_index') }}">
+            <label><span>{{ 'Suchen'|trans }}</span><input type="search" name="q" value="{{ search }}" maxlength="100" placeholder="{{ 'Serie oder Videotitel'|trans }}"></label>
+            <label>
+                <span>{{ 'Serie'|trans }}</span>
+                <select name="series">
+                    <option value="">{{ 'Alle Serien'|trans }}</option>
+                    {% for option in series_options %}
+                        <option value="{{ option.id }}"{% if series_filter and series_filter.id == option.id %} selected{% endif %}>{{ option.title }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <button class="button button-secondary" type="submit">{{ 'Filtern'|trans }}</button>
+        </form>
+
+        <div class="table-wrap">
+            <table class="admin-table">
+                <caption class="visually-hidden">{{ 'Serienfolgen'|trans }}</caption>
+                <thead><tr><th scope="col">{{ 'Serie'|trans }}</th><th scope="col">{{ 'Staffel / Folge'|trans }}</th><th scope="col">{{ 'Video'|trans }}</th><th scope="col">{{ 'Status'|trans }}</th><th scope="col"><span class="visually-hidden">{{ 'Aktionen'|trans }}</span></th></tr></thead>
+                <tbody>
+                    {% for episode in episodes %}
+                        <tr>
+                            <th scope="row">{{ episode.series.title }}</th>
+                            <td>{{ episode.seasonNumber }} / {{ episode.episodeNumber }}</td>
+                            <td>{{ episode.title }}</td>
+                            <td>
+                                <span class="status-pill {{ episode.status.cssClass }}">{{ episode.status.label|trans }}</span>
+                                <small>{{ 'Video: %status%'|trans({'%status%': episode.video.status.label|trans}) }}</small>
+                            </td>
+                            <td class="table-actions">
+                                <a class="button button-secondary" href="{{ path('admin_episode_edit', {id: episode.id}) }}">{{ 'Bearbeiten'|trans }}</a>
+                                <form method="post" action="{{ path('admin_episode_delete', {id: episode.id}) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('admin_episode_delete_' ~ episode.id) }}">
+                                    <button class="button button-danger" type="submit">{{ 'Zuordnung entfernen'|trans }}</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="5">{{ 'Noch keine Folgen zugeordnet.'|trans }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+{% endblock %}

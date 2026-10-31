@@ -1,0 +1,106 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Öffentliche Anzeige'|trans }}{% endblock %}
+{% block admin_breadcrumb %}{{ 'Öffentliche Anzeige'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Einstellungen · Website'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ 'Öffentliche Anzeige'|trans }}</h1>
+            <p class="muted">{{ 'Lege fest, wie viele veröffentlichte Videos, News, Empfehlungen und öffentliche Kennzahlen angezeigt werden.'|trans }}</p>
+        </div>
+    </div>
+
+    {% if errors.form is defined %}<p class="field-error" role="alert">{{ errors.form|trans }}</p>{% endif %}
+    {% for field, message in errors %}{% if field != 'form' %}<p class="field-error" role="alert">{{ message|trans }}</p>{% endif %}{% endfor %}
+
+    <section class="admin-panel" aria-labelledby="display-options-heading">
+        <header class="panel-heading"><h2 id="display-options-heading">{{ 'Startseite und Videolisten'|trans }}</h2></header>
+        <form method="post" action="{{ path('admin_public_display_settings_update') }}" class="admin-form">
+            <input type="hidden" name="token" value="{{ csrf_token('admin_public_display_settings') }}">
+            <label>
+                <span>{{ 'Hervorgehobene Videos auf der Startseite'|trans }}</span>
+                <select name="homepage_featured_limit" required>
+                    {% for count in 1..8 %}<option value="{{ count }}"{% if form.homepage_featured_limit == count ~ '' %} selected{% endif %}>{{ count }}</option>{% endfor %}
+                </select>
+            </label>
+            <label>
+                <span>{{ 'Neueste Videos auf der Startseite'|trans }}</span>
+                <select name="homepage_video_limit" required>
+                    {% for count in [0, 6, 12, 18, 24] %}<option value="{{ count }}"{% if form.homepage_video_limit == count ~ '' %} selected{% endif %}>{{ count }}</option>{% endfor %}
+                </select>
+            </label>
+            <label>
+                <span>{{ 'News auf der Startseite'|trans }}</span>
+                <select name="homepage_news_limit" required>
+                    {% for count in [0, 3, 6, 9, 12] %}<option value="{{ count }}"{% if form.homepage_news_limit == count ~ '' %} selected{% endif %}>{{ count }}</option>{% endfor %}
+                </select>
+            </label>
+            <label>
+                <span>{{ 'Videos je Übersichtsseite'|trans }}</span>
+                <select name="public_video_page_limit" required>
+                    {% for count in [12, 24, 36, 48] %}<option value="{{ count }}"{% if form.public_video_page_limit == count ~ '' %} selected{% endif %}>{{ count }}</option>{% endfor %}
+                </select>
+            </label>
+            <label>
+                <span>{{ 'Sortierung beliebter Videos'|trans }}</span>
+                <select name="popular_video_sort" required>
+                    <option value="views"{% if form.popular_video_sort == 'views' %} selected{% endif %}>{{ 'Gesamtaufrufe'|trans }}</option>
+                    <option value="recent_views"{% if form.popular_video_sort == 'recent_views' %} selected{% endif %}>{{ 'Aufrufe im Zeitraum'|trans }}</option>
+                    <option value="ratings"{% if form.popular_video_sort == 'ratings' %} selected{% endif %}>{{ 'Mitgliederbewertungen'|trans }}</option>
+                </select>
+            </label>
+            <label>
+                <span>{{ 'Zeitraum für aktuelle Aufrufe'|trans }}</span>
+                <select name="popular_video_period_days" required>
+                    {% for count in [7, 30, 90] %}<option value="{{ count }}"{% if form.popular_video_period_days == count ~ '' %} selected{% endif %}>{{ count }} {{ 'Tage'|trans }}</option>{% endfor %}
+                </select>
+            </label>
+            <label>
+                <span>{{ 'Kürzlich angesehene Videos auf der Startseite'|trans }}</span>
+                <select name="currently_watching_limit" required>
+                    {% for count in [0, 4, 6, 8, 12] %}<option value="{{ count }}"{% if form.currently_watching_limit == count ~ '' %} selected{% endif %}>{{ count }}</option>{% endfor %}
+                </select>
+            </label>
+            <input type="hidden" name="public_statistics_enabled" value="0">
+            <label><input type="checkbox" name="public_statistics_enabled" value="1"{% if form.public_statistics_enabled == '1' %} checked{% endif %}> {{ 'Öffentliche Gesamtzahlen anzeigen'|trans }}</label>
+            <p class="muted">{{ 'Die Liste „kürzlich angesehen“ speichert nur einen Zeitstempel am Video. Sie enthält keine Besucherkennung und keine IP-Adresse.'|trans }}</p>
+            <div class="form-actions"><button class="button button-primary" type="submit">{{ 'Anzeigeeinstellungen speichern'|trans }}</button></div>
+        </form>
+    </section>
+
+    <section class="admin-panel" aria-labelledby="discovery-options-heading">
+        <header class="panel-heading"><h2 id="discovery-options-heading">{{ 'Schlagwörter und Empfehlungen'|trans }}</h2></header>
+        <form method="post" action="{{ path('admin_public_display_settings_update') }}" class="admin-form">
+            <input type="hidden" name="token" value="{{ csrf_token('admin_public_display_settings') }}">
+            {% for field in ['homepage_featured_limit', 'homepage_video_limit', 'homepage_news_limit', 'public_video_page_limit', 'popular_video_sort', 'popular_video_period_days', 'currently_watching_limit', 'public_statistics_enabled'] %}<input type="hidden" name="{{ field }}" value="{{ form[field] }}">{% endfor %}
+            <input type="hidden" name="tag_cloud_enabled" value="0">
+            <label><input type="checkbox" name="tag_cloud_enabled" value="1"{% if form.tag_cloud_enabled == '1' %} checked{% endif %}> {{ 'Schlagwort-Wolke auf der Startseite anzeigen'|trans }}</label>
+            <label>
+                <span>{{ 'Anzahl der Schlagwörter'|trans }}</span>
+                <select name="tag_cloud_limit" required>
+                    {% for count in [0, 10, 20, 30, 50] %}<option value="{{ count }}"{% if form.tag_cloud_limit == count ~ '' %} selected{% endif %}>{{ count }}</option>{% endfor %}
+                </select>
+            </label>
+            <input type="hidden" name="tag_cloud_shuffle" value="0">
+            <label><input type="checkbox" name="tag_cloud_shuffle" value="1"{% if form.tag_cloud_shuffle == '1' %} checked{% endif %}> {{ 'Schlagwörter täglich gemischt anzeigen'|trans }}</label>
+            <label>
+                <span>{{ 'Ähnliche Videos auf der Videoseite'|trans }}</span>
+                <select name="related_video_limit" required>
+                    {% for count in [0, 3, 6, 9, 12] %}<option value="{{ count }}"{% if form.related_video_limit == count ~ '' %} selected{% endif %}>{{ count }}</option>{% endfor %}
+                </select>
+            </label>
+            <label>
+                <span>{{ 'Am besten bewertete Videos auf der Videoseite'|trans }}</span>
+                <select name="top_rated_video_limit" required>
+                    {% for count in [0, 3, 6, 9, 12] %}<option value="{{ count }}"{% if form.top_rated_video_limit == count ~ '' %} selected{% endif %}>{{ count }}</option>{% endfor %}
+                </select>
+            </label>
+            <input type="hidden" name="video_share_widget_enabled" value="0">
+            <label><input type="checkbox" name="video_share_widget_enabled" value="1"{% if form.video_share_widget_enabled == '1' %} checked{% endif %}> {{ 'Teilen-Bereich für Videos, News und Serienfolgen anzeigen'|trans }}</label>
+            <p class="muted">{{ 'Empfehlungen und Schlagwörter enthalten nur veröffentlichte öffentliche Inhalte. Bewertungen werden ausschließlich als Gesamtwert ausgegeben.'|trans }}</p>
+            <div class="form-actions"><button class="button button-primary" type="submit">{{ 'Anzeigeeinstellungen speichern'|trans }}</button></div>
+        </form>
+    </section>
+{% endblock %}

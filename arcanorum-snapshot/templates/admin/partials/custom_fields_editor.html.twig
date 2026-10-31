@@ -1,0 +1,33 @@
+{% set field_total = custom_fields|length %}
+<fieldset class="admin-fieldset" aria-labelledby="{{ field_id_prefix }}-heading">
+    <legend id="{{ field_id_prefix }}-heading">{{ 'Benutzerdefinierte Felder'|trans }}</legend>
+    <p class="muted">{{ 'Füge bis zu 30 eigene Textfelder hinzu. Alle Werte werden öffentlich als Text ausgegeben. Leere Schlüssel-Wert-Zeilen werden ignoriert.'|trans }}</p>
+    <input type="hidden" name="custom_fields_present" value="1">
+    {% for field in custom_fields %}
+        <div class="form-grid">
+            <label for="{{ field_id_prefix }}-key-{{ loop.index0 }}">
+                <span>{{ 'Schlüssel'|trans }}</span>
+                <input id="{{ field_id_prefix }}-key-{{ loop.index0 }}" name="custom_fields[{{ loop.index0 }}][key]" value="{{ field.key }}" maxlength="255">
+            </label>
+            <label for="{{ field_id_prefix }}-value-{{ loop.index0 }}">
+                <span>{{ 'Wert'|trans }}</span>
+                <input id="{{ field_id_prefix }}-value-{{ loop.index0 }}" name="custom_fields[{{ loop.index0 }}][value]" value="{{ field.value }}" maxlength="4096">
+            </label>
+        </div>
+    {% endfor %}
+    {% if field_total < 30 %}
+        {% set blank_rows = field_total < 25 ? 5 : 30 - field_total %}
+        {% for slot in range(field_total, field_total + blank_rows - 1) %}
+            <div class="form-grid">
+                <label for="{{ field_id_prefix }}-key-{{ slot }}">
+                    <span>{{ 'Schlüssel'|trans }}</span>
+                    <input id="{{ field_id_prefix }}-key-{{ slot }}" name="custom_fields[{{ slot }}][key]" maxlength="255">
+                </label>
+                <label for="{{ field_id_prefix }}-value-{{ slot }}">
+                    <span>{{ 'Wert'|trans }}</span>
+                    <input id="{{ field_id_prefix }}-value-{{ slot }}" name="custom_fields[{{ slot }}][value]" maxlength="4096">
+                </label>
+            </div>
+        {% endfor %}
+    {% endif %}
+</fieldset>

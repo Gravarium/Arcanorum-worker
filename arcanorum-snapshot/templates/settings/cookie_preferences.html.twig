@@ -1,0 +1,28 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'Cookie-Einstellungen'|trans }} · {{ settings.siteName }}{% endblock %}
+
+{% block body %}
+    <main class="landing" aria-labelledby="cookie-preferences-heading">
+        <p class="eyebrow">{{ 'Datenschutz'|trans }}</p>
+        <h1 id="cookie-preferences-heading">{{ 'Cookie-Einstellungen'|trans }}</h1>
+        <p class="lead">{{ settings.cookieConsentMessage }}</p>
+        <p>{{ 'Notwendige Cookies unterstützen Anmeldung, Sicherheit und die Ansichtspräferenz in diesem Browser. Derzeit werden keine Analyse- oder Werbecookies gesetzt.'|trans }}</p>
+        {% if settings.commentProvider.value != 'native' %}
+            {% set external_comment_provider = settings.commentProvider.value == 'facebook' ? 'Facebook' : 'Disqus' %}
+            <p>{{ 'Wenn du optionale Inhalte erlaubst, wird %provider% geladen und erhält die öffentliche Seitenadresse sowie übliche Verbindungsdaten wie IP-Adresse und Browserinformationen.'|trans({'%provider%': external_comment_provider}) }}</p>
+        {% endif %}
+        {% if choice is not null %}<p role="status">{{ 'Ihre gespeicherte Auswahl: %choice%.'|trans({'%choice%': choice == 'all' ? ('Alle Cookies'|trans) : ('Nur notwendige Cookies'|trans)}) }}</p>{% endif %}
+        <form method="post" action="{{ path('cookie_consent_submit') }}" class="admin-form">
+            <input type="hidden" name="token" value="{{ token }}">
+            <input type="hidden" name="return_to" value="{{ return_to }}">
+            <fieldset>
+                <legend>{{ 'Ihre Auswahl'|trans }}</legend>
+                <label><input type="radio" name="choice" value="all"{% if choice == 'all' %} checked{% endif %}> {{ 'Alle optionalen Kategorien erlauben'|trans }}</label>
+                <label><input type="radio" name="choice" value="necessary"{% if choice != 'all' %} checked{% endif %}> {{ 'Nur notwendige Cookies erlauben'|trans }}</label>
+            </fieldset>
+            <button class="button button-primary" type="submit">{{ 'Auswahl speichern'|trans }}</button>
+        </form>
+        <p><a href="{{ path('platform_home') }}">{{ 'Zur Website'|trans }}</a></p>
+    </main>
+{% endblock %}

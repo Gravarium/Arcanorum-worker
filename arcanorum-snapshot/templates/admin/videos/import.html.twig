@@ -1,0 +1,45 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Video-CSV-Import'|trans }}{% endblock %}
+{% block admin_breadcrumb %}<a href="{{ path('admin_video_index') }}">{{ 'Videos'|trans }}</a> / {{ 'CSV-Import'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Videokatalog'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ 'Video-Metadaten importieren'|trans }}</h1>
+            <p class="muted">{{ 'Die CSV wird nur im temporären Uploadbereich gelesen und nach dem Request verworfen. Video-Quell-URLs werden nicht abgerufen. Optionale Vorschaubilder werden sicher geprüft und privat gespeichert.'|trans }}</p>
+        </div>
+        <a class="button button-secondary" href="{{ path('admin_video_index') }}">{{ 'Zurück zu Videos'|trans }}</a>
+    </div>
+
+    {% if errors is not empty %}
+        <div class="flash-message is-error" role="alert">
+            <strong>{{ 'Der Import wurde nicht gespeichert.'|trans }}</strong>
+            <ul>{% for error in errors %}<li>{{ error|trans }}</li>{% endfor %}</ul>
+        </div>
+    {% endif %}
+
+    <section class="admin-panel" aria-labelledby="video-import-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="video-import-heading">{{ 'CSV-Datei'|trans }}</h2>
+                <p class="muted">{{ 'Maximal 2 MiB und 500 Videos. Höchstens 50 Vorschaubilder und insgesamt 32 MiB Bilddaten je Import. Alle importierten Videos werden als Entwürfe angelegt.'|trans }}</p>
+            </div>
+        </header>
+        <form class="admin-form" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="_token" value="{{ csrf_token('admin_video_import_csv') }}">
+            <label>
+                <span>{{ 'CSV-Datei'|trans }}</span>
+                <input type="file" name="csv_file" accept=".csv,text/csv" required>
+            </label>
+            <p>{{ 'Arcanorum-Format:'|trans }} <code>{{ headers|join(', ') }}</code>. {{ 'Optional können thumbnail_url und duration_seconds ergänzt werden.'|trans }}</p>
+            <p>{{ 'Legacy-Format ohne Kopfzeile:'|trans }} <code>{{ 'Video-URL, Titel, Beschreibung, Schlagwörter, Vorschaubild-URL, Dauer in Sekunden'|trans }}</code>. {{ 'Der Titel ist optional; ohne Titel wird der Quellhost verwendet. Quellart und Kategorie werden sicher abgeleitet beziehungsweise leer gelassen.'|trans }}</p>
+            <p>{{ 'Textfelder mit Kommas müssen CSV-gerecht in Anführungszeichen stehen. Video-Quelladressen werden niemals abgerufen. Vorschaubild-Adressen müssen HTTPS verwenden; Weiterleitungen, private Netze, nicht unterstützte Bildformate und Bilder über 4 MiB werden abgewiesen.'|trans }}</p>
+            <div class="form-actions">
+                <button class="button" type="submit">{{ 'CSV prüfen und Entwürfe importieren'|trans }}</button>
+                <a class="button button-secondary" href="{{ path('admin_video_index') }}">{{ 'Abbrechen'|trans }}</a>
+            </div>
+        </form>
+    </section>
+{% endblock %}

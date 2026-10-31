@@ -1,0 +1,174 @@
+framework:
+    mailer:
+        dsn: '%env(MAILER_DSN)%'
+    rate_limiter:
+        member_password_change:
+            policy: sliding_window
+            limit: 5
+            interval: '15 minutes'
+            cache_pool: cache.app
+        member_social_login_start:
+            policy: sliding_window
+            limit: 15
+            interval: '15 minutes'
+            cache_pool: cache.app
+        member_social_login_callback:
+            policy: sliding_window
+            limit: 20
+            interval: '15 minutes'
+            cache_pool: cache.app
+        video_view:
+            policy: fixed_window
+            limit: 50
+            interval: '1 day'
+            cache_pool: cache.app
+        content_rating:
+            policy: sliding_window
+            limit: 30
+            interval: '15 minutes'
+            cache_pool: cache.app
+        search_log:
+            policy: fixed_window
+            limit: 100
+            interval: '1 day'
+            cache_pool: cache.app
+        live_search_suggestions:
+            policy: sliding_window
+            limit: 180
+            interval: '15 minutes'
+            cache_pool: cache.app
+        video_provider_import:
+            policy: sliding_window
+            limit: 10
+            interval: '15 minutes'
+            cache_pool: cache.app
+        member_video_email_share_account:
+            policy: sliding_window
+            limit: 5
+            interval: '1 hour'
+            cache_pool: cache.app
+        member_video_email_share_ip:
+            policy: sliding_window
+            limit: 20
+            interval: '1 hour'
+            cache_pool: cache.app
+        member_follow_account:
+            policy: sliding_window
+            limit: 30
+            interval: '1 hour'
+            cache_pool: cache.app
+        member_follow_ip:
+            policy: sliding_window
+            limit: 90
+            interval: '1 hour'
+            cache_pool: cache.app
+        member_video_library_account:
+            policy: sliding_window
+            limit: 60
+            interval: '1 hour'
+            cache_pool: cache.app
+        member_video_library_ip:
+            policy: sliding_window
+            limit: 120
+            interval: '1 hour'
+            cache_pool: cache.app
+        admin_email_test:
+            policy: sliding_window
+            limit: 3
+            interval: '1 hour'
+            cache_pool: cache.app
+        admin_password_change:
+            policy: sliding_window
+            limit: 5
+            interval: '15 minutes'
+            cache_pool: cache.app
+
+security:
+    session_fixation_strategy: migrate
+    role_hierarchy:
+        ROLE_ADMIN:
+            - ROLE_ADMIN_STAFF
+            - ROLE_MODERATOR
+            - ROLE_MODERATOR_VIDEO
+            - ROLE_MODERATOR_COMMENTS
+            - ROLE_CONTENT_EDITOR
+        ROLE_MODERATOR:
+            - ROLE_ADMIN_STAFF
+            - ROLE_MODERATOR_VIDEO
+            - ROLE_MODERATOR_COMMENTS
+        ROLE_MODERATOR_VIDEO: ROLE_ADMIN_STAFF
+        ROLE_MODERATOR_COMMENTS: ROLE_ADMIN_STAFF
+        ROLE_CONTENT_EDITOR: ROLE_ADMIN_STAFF
+    password_hashers:
+        App\Entity\AdminUser:
+            algorithm: auto
+        App\Entity\MemberAccount:
+            algorithm: auto
+
+    providers:
+        app_admin_users:
+            entity:
+                class: App\Entity\AdminUser
+        app_members:
+            entity:
+                class: App\Entity\MemberAccount
+                property: email
+
+    firewalls:
+        dev:
+            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            security: false
+
+        members:
+            # Öffentliche Seiten teilen den Mitgliederkontext; Admin bleibt im separaten Firewall.
+            pattern: ^/(?!admin(?:/|$))
+            lazy: true
+            provider: app_members
+            user_checker: App\Module\Member\Security\MemberAccountUserChecker
+            form_login:
+                login_path: member_login
+                check_path: member_login
+                enable_csrf: true
+                default_target_path: /konto/profil
+            login_throttling:
+                max_attempts: 5
+                interval: '15 minutes'
+                cache_pool: cache.app
+            logout:
+                path: member_logout
+                target: member_login
+                enable_csrf: true
+                csrf_token_id: member_logout
+                invalidate_session: true
+
+        main:
+            lazy: true
+            provider: app_admin_users
+            custom_authenticators:
+                - App\Platform\Security\AdminMfaLoginAuthenticator
+            entry_point: App\Platform\Security\AdminMfaLoginAuthenticator
+            login_throttling:
+                max_attempts: 5
+                interval: '15 minutes'
+                cache_pool: cache.app
+            logout:
+                path: admin_logout
+                target: admin_login
+                enable_csrf: true
+                csrf_token_id: logout
+                invalidate_session: true
+
+    access_control:
+        - { path: ^/admin/login$, roles: PUBLIC_ACCESS }
+        - { path: ^/konto/(anmelden|registrieren|einrichten|verifizierung|passwort-vergessen)$, roles: PUBLIC_ACCESS }
+        - { path: '^/konto/(verifizieren|passwort-zuruecksetzen)/[A-Za-z0-9_-]{43}$', roles: PUBLIC_ACCESS }
+        - { path: ^/konto/sozial/google(?:/callback)?$, roles: PUBLIC_ACCESS }
+        - { path: ^/konto/sozial/(facebook|twitter)(?:/callback)?$, roles: PUBLIC_ACCESS }
+        - { path: ^/konto/sozial/registrieren$, roles: PUBLIC_ACCESS }
+        - { path: ^/konto(?:/|$), roles: ROLE_MEMBER }
+        - { request_matcher: App\Module\Admin\Security\AdminLogoutRequestMatcher, roles: ROLE_ADMIN_STAFF }
+        - { request_matcher: App\Module\Admin\Security\AdminEntryRequestMatcher, roles: ROLE_ADMIN_STAFF }
+        - { request_matcher: App\Module\Admin\Security\VideoModerationRequestMatcher, roles: ROLE_MODERATOR_VIDEO }
+        - { request_matcher: App\Module\Admin\Security\CommentModerationRequestMatcher, roles: ROLE_MODERATOR_COMMENTS }
+        - { request_matcher: App\Module\Admin\Security\EditorialContentRequestMatcher, roles: ROLE_CONTENT_EDITOR }
+        - { request_matcher: App\Platform\Security\DecodedAdminAreaRequestMatcher, roles: ROLE_ADMIN }

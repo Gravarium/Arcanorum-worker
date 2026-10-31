@@ -1,0 +1,18 @@
+<aside class="cookie-consent-banner" aria-labelledby="cookie-consent-heading">
+    <div>
+        <h2 id="cookie-consent-heading">{{ 'Cookie-Einstellungen'|trans }}</h2>
+        <p>{{ message }}</p>
+        <p>{{ 'Notwendige Cookies unterstützen Anmeldung, Sicherheit und die Ansichtspräferenz in diesem Browser. Derzeit werden keine Analyse- oder Werbecookies gesetzt.'|trans }}</p>
+        {% if site_settings().commentProvider.value != 'native' %}
+            {% set external_comment_provider = site_settings().commentProvider.value == 'facebook' ? 'Facebook' : 'Disqus' %}
+            <p>{{ 'Wenn du optionale Inhalte erlaubst, wird %provider% geladen und erhält die öffentliche Seitenadresse sowie übliche Verbindungsdaten wie IP-Adresse und Browserinformationen.'|trans({'%provider%': external_comment_provider}) }}</p>
+        {% endif %}
+        <a href="{{ path('cookie_consent_preferences', {return_to: return_to}) }}">{{ 'Einstellungen ansehen'|trans }}</a>
+    </div>
+    <form method="post" action="{{ path('cookie_consent_submit') }}" class="cookie-consent-actions">
+        <input type="hidden" name="token" value="{{ token }}">
+        <input type="hidden" name="return_to" value="{{ return_to }}">
+        <button class="button button-primary" type="submit" name="choice" value="all">{{ 'Alle zulassen'|trans }}</button>
+        <button class="button button-secondary" type="submit" name="choice" value="necessary">{{ 'Nur notwendige'|trans }}</button>
+    </form>
+</aside>

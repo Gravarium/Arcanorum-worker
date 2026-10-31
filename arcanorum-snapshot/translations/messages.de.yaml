@@ -1,0 +1,405 @@
+'comment_filter_action_review': 'Zur manuellen Prüfung zurückhalten'
+'comment_filter_action_reject': 'Kommentar automatisch ablehnen'
+'comment_filter_action_censor': 'Treffer durch *** ersetzen'
+'Emoji-Hilfe': 'Emoji-Hilfe'
+'Emoji einfügen': 'Emoji einfügen'
+'Emoji suchen': 'Emoji suchen'
+'Kein Emoji gefunden.': 'Kein Emoji gefunden.'
+'Das Emoji passt nicht mehr in den Kommentar.': 'Das Emoji passt nicht mehr in den Kommentar.'
+'Durchsuche Emojis nach Kategorien und füge sie mit der Tastatur oder dem Zeiger ein.': 'Durchsuche Emojis nach Kategorien und füge sie mit der Tastatur oder dem Zeiger ein.'
+'Emoji-Auswahl schließen': 'Emoji-Auswahl schließen'
+'Emoji werden geladen …': 'Emoji werden geladen …'
+'Die Emoji konnten nicht geladen werden.': 'Die Emoji konnten nicht geladen werden.'
+'Menschen': 'Menschen'
+'Emoji-Aktivität': 'Aktivität'
+'Natur': 'Natur'
+'Essen': 'Essen'
+'Reisen': 'Reisen'
+'Objekte': 'Objekte'
+'Symbole': 'Symbole'
+'Flaggen': 'Flaggen'
+'Emoji einfügen: %name%': 'Emoji einfügen: %name%'
+'Zurück zur Website': 'Zurück zur Website'
+'Grinsendes Gesicht': 'Grinsendes Gesicht'
+'Grinsendes Gesicht mit lachenden Augen': 'Grinsendes Gesicht mit lachenden Augen'
+'Gesicht mit Freudentränen': 'Gesicht mit Freudentränen'
+'Lächelndes Gesicht': 'Lächelndes Gesicht'
+'Gesicht mit Herzaugen': 'Gesicht mit Herzaugen'
+'Nachdenkendes Gesicht': 'Nachdenkendes Gesicht'
+'Gesicht mit Sonnenbrille': 'Gesicht mit Sonnenbrille'
+'Feierndes Gesicht': 'Feierndes Gesicht'
+'Weinendes Gesicht': 'Weinendes Gesicht'
+'Winkende Hand': 'Winkende Hand'
+'Daumen hoch': 'Daumen hoch'
+'Daumen runter': 'Daumen runter'
+'Klatschende Hände': 'Klatschende Hände'
+'Gefaltete Hände': 'Gefaltete Hände'
+'Fußball': 'Fußball'
+'Basketball': 'Basketball'
+'Pokal': 'Pokal'
+'Videospiel': 'Videospiel'
+'Künstlerpalette': 'Künstlerpalette'
+'Musiknote': 'Musiknote'
+'Gitarre': 'Gitarre'
+'Filmklappe': 'Filmklappe'
+'Hund': 'Hund'
+'Katze': 'Katze'
+'Fuchs': 'Fuchs'
+'Panda': 'Panda'
+'Einhorn': 'Einhorn'
+'Schmetterling': 'Schmetterling'
+'Sonnenblume': 'Sonnenblume'
+'Regenbogen': 'Regenbogen'
+'Feuer': 'Feuer'
+'Sonne': 'Sonne'
+'Apfel': 'Apfel'
+'Mandarine': 'Mandarine'
+'Erdbeere': 'Erdbeere'
+'Pizza': 'Pizza'
+'Burger': 'Burger'
+'Sushi': 'Sushi'
+'Kuchen': 'Kuchen'
+'Kaffee': 'Kaffee'
+'Auto': 'Auto'
+'Fahrrad': 'Fahrrad'
+'Bus': 'Bus'
+'Flugzeug': 'Flugzeug'
+'Rakete': 'Rakete'
+'Haus': 'Haus'
+'Strand mit Sonnenschirm': 'Strand mit Sonnenschirm'
+'Freiheitsstatue': 'Freiheitsstatue'
+'Armbanduhr': 'Armbanduhr'
+'Mobiltelefon': 'Mobiltelefon'
+'Laptop': 'Laptop'
+'Kamera': 'Kamera'
+'Bücher': 'Bücher'
+'Glühbirne': 'Glühbirne'
+'Geschenk': 'Geschenk'
+'Schlüssel': 'Schlüssel'
+'Wert': 'Wert'
+'Benutzerdefinierte Felder': 'Benutzerdefinierte Felder'
+'Füge bis zu 30 eigene Textfelder hinzu. Alle Werte werden öffentlich als Text ausgegeben. Leere Schlüssel-Wert-Zeilen werden ignoriert.': 'Füge bis zu 30 eigene Textfelder hinzu. Alle Werte werden öffentlich als Text ausgegeben. Leere Schlüssel-Wert-Zeilen werden ignoriert.'
+'Weitere Angaben': 'Weitere Angaben'
+'Rotes Herz': 'Rotes Herz'
+'Stern': 'Stern'
+'Funkeln': 'Funkeln'
+'Haken': 'Haken'
+'Kreuz': 'Kreuz'
+'Warnsymbol': 'Warnung'
+'Glocke': 'Glocke'
+'Hundert Punkte': 'Hundert Punkte'
+'Recycling': 'Recycling'
+'Flagge von Deutschland': 'Flagge von Deutschland'
+'Flagge des Vereinigten Königreichs': 'Flagge des Vereinigten Königreichs'
+'Flagge der Vereinigten Staaten': 'Flagge der Vereinigten Staaten'
+'Flagge von Frankreich': 'Flagge von Frankreich'
+'Flagge von Japan': 'Flagge von Japan'
+'Regenbogenflagge': 'Regenbogenflagge'
+"Öffentliche Anzeige": "Öffentliche Anzeige"
+"Einstellungen · Website": "Einstellungen · Website"
+"Lege fest, wie viele veröffentlichte Videos, News, Empfehlungen und öffentliche Kennzahlen angezeigt werden.": "Lege fest, wie viele veröffentlichte Videos, News, Empfehlungen und öffentliche Kennzahlen angezeigt werden."
+"Startseite und Videolisten": "Startseite und Videolisten"
+"Hervorgehobene Videos auf der Startseite": "Hervorgehobene Videos auf der Startseite"
+"Neueste Videos auf der Startseite": "Neueste Videos auf der Startseite"
+"News auf der Startseite": "News auf der Startseite"
+"Videos je Übersichtsseite": "Videos je Übersichtsseite"
+"Sortierung beliebter Videos": "Sortierung beliebter Videos"
+"Gesamtaufrufe": "Gesamtaufrufe"
+"Aufrufe im Zeitraum": "Aufrufe im Zeitraum"
+"Mitgliederbewertungen": "Mitgliederbewertungen"
+"Zeitraum für aktuelle Aufrufe": "Zeitraum für aktuelle Aufrufe"
+"Tage": "Tage"
+"Kürzlich angesehene Videos auf der Startseite": "Kürzlich angesehene Videos auf der Startseite"
+"Öffentliche Gesamtzahlen anzeigen": "Öffentliche Gesamtzahlen anzeigen"
+"Die Liste „kürzlich angesehen“ speichert nur einen Zeitstempel am Video. Sie enthält keine Besucherkennung und keine IP-Adresse.": "Die Liste „kürzlich angesehen“ speichert nur einen Zeitstempel am Video. Sie enthält keine Besucherkennung und keine IP-Adresse."
+"Anzeigeeinstellungen speichern": "Anzeigeeinstellungen speichern"
+"Schlagwörter und Empfehlungen": "Schlagwörter und Empfehlungen"
+"Schlagwort-Wolke auf der Startseite anzeigen": "Schlagwort-Wolke auf der Startseite anzeigen"
+"Anzahl der Schlagwörter": "Anzahl der Schlagwörter"
+"Schlagwörter täglich gemischt anzeigen": "Schlagwörter täglich gemischt anzeigen"
+"Ähnliche Videos auf der Videoseite": "Ähnliche Videos auf der Videoseite"
+"Am besten bewertete Videos auf der Videoseite": "Am besten bewertete Videos auf der Videoseite"
+"Teilen-Bereich für Videos, News und Serienfolgen anzeigen": "Teilen-Bereich für Videos, News und Serienfolgen anzeigen"
+"Diesen Inhalt teilen": "Diesen Inhalt teilen"
+"Teilen": "Teilen"
+"Bei Facebook teilen": "Bei Facebook teilen"
+"Bei X teilen": "Bei X teilen"
+"Bei Pinterest teilen": "Bei Pinterest teilen"
+"Öffentlicher Link": "Öffentlicher Link"
+"Externe Teilen-Links erfordern eine konfigurierte öffentliche Website-Adresse.": "Externe Teilen-Links erfordern eine konfigurierte öffentliche Website-Adresse."
+"Beim Öffnen eines Teilen-Links wird die Seitenadresse an den gewählten Dienst übermittelt. Diese Seite lädt dafür keine externen Skripte.": "Beim Öffnen eines Teilen-Links wird die Seitenadresse an den gewählten Dienst übermittelt. Diese Seite lädt dafür keine externen Skripte."
+"Empfehlungen und Schlagwörter enthalten nur veröffentlichte öffentliche Inhalte. Bewertungen werden ausschließlich als Gesamtwert ausgegeben.": "Empfehlungen und Schlagwörter enthalten nur veröffentlichte öffentliche Inhalte. Bewertungen werden ausschließlich als Gesamtwert ausgegeben."
+"Weitere hervorgehobene Videos": "Weitere hervorgehobene Videos"
+"Hervorgehobene Videos": "Hervorgehobene Videos"
+"Gerade aktiv": "Gerade aktiv"
+"Kürzlich angesehen": "Kürzlich angesehen"
+"Öffentliche Video-Schlagwörter": "Öffentliche Video-Schlagwörter"
+"%count% veröffentlichte Videos": "%count% veröffentlichte Videos"
+"Gesamtüberblick": "Gesamtüberblick"
+"Website-Statistik": "Website-Statistik"
+"Öffentliche Videos": "Öffentliche Videos"
+"Öffentliche News": "Öffentliche News"
+"Öffentliche Mitgliederprofile": "Öffentliche Mitgliederprofile"
+"Veröffentlichte Videos nach Gesamtaufrufen.": "Veröffentlichte Videos nach Gesamtaufrufen."
+"Veröffentlichte Videos nach Aufrufen im eingestellten Zeitraum.": "Veröffentlichte Videos nach Aufrufen im eingestellten Zeitraum."
+"Veröffentlichte Videos nach dem Saldo der Mitgliederbewertungen.": "Veröffentlichte Videos nach dem Saldo der Mitgliederbewertungen."
+"Ähnliche Inhalte": "Ähnliche Inhalte"
+"Ähnliche Videos": "Ähnliche Videos"
+"Am besten bewertete Videos": "Am besten bewertete Videos"
+"Die Anfrage enthält eine unbekannte Anzeigeeinstellung.": "Die Anfrage enthält eine unbekannte Anzeigeeinstellung."
+"Bitte wähle eine unterstützte Sortierung für beliebte Videos.": "Bitte wähle eine unterstützte Sortierung für beliebte Videos."
+"Bitte wähle einen der angebotenen Werte.": "Bitte wähle einen der angebotenen Werte."
+"Öffentliche Anzeigeeinstellungen wurden gespeichert.": "Öffentliche Anzeigeeinstellungen wurden gespeichert."
+"Öffentliche Anzeigeeinstellungen konnten nicht gespeichert werden.": "Öffentliche Anzeigeeinstellungen konnten nicht gespeichert werden."
+'Automatisierte Aufgaben': 'Automatisierte Aufgaben'
+'Hintergrundaufgaben': 'Hintergrundaufgaben'
+'Aufgaben werden ausschließlich durch den privaten, signierten CLI-Scheduler ausgeführt. Jeder Providerimport wird als Entwurf gespeichert.': 'Aufgaben werden ausschließlich durch den privaten, signierten CLI-Scheduler ausgeführt. Jeder Providerimport wird als Entwurf gespeichert.'
+'Aufgabe anlegen': 'Aufgabe anlegen'
+'Bis zu %limit% Aufträge können eingerichtet werden. Intervalle sind auf 15 Minuten bis sieben Tage begrenzt.': 'Bis zu %limit% Aufträge können eingerichtet werden. Intervalle sind auf 15 Minuten bis sieben Tage begrenzt.'
+'Name': 'Name'
+'Intervall (Minuten)': 'Intervall (Minuten)'
+'Videoanbieter': 'Videoanbieter'
+'Importart': 'Importart'
+'Gespeicherte Suche': 'Gespeicherte Suche'
+'Kanal oder Nutzerabo': 'Kanal oder Nutzerabo'
+'Suchbegriff': 'Suchbegriff'
+'Kanal- oder Nutzerkennung': 'Kanal- oder Nutzerkennung'
+'Zielkategorie': 'Zielkategorie'
+'Keine Kategorie': 'Keine Kategorie'
+'Ausschlussbegriffe (einer pro Zeile)': 'Ausschlussbegriffe (einer pro Zeile)'
+'Provideraufrufe sind auf feste Adapter, kurze Antwortzeiten und höchstens 25 Treffer pro Lauf begrenzt. Doppelte Videos werden übersprungen.': 'Provideraufrufe sind auf feste Adapter, kurze Antwortzeiten und höchstens 25 Treffer pro Lauf begrenzt. Doppelte Videos werden übersprungen.'
+'Importauftrag anlegen': 'Importauftrag anlegen'
+'Sitemap-Auftrag anlegen': 'Sitemap-Auftrag anlegen'
+'Der Auftrag erzeugt die reguläre Sitemap und die Video-Sitemap neu. Öffentliche Sitemaps werden zusätzlich spätestens nach zehn Minuten dynamisch erneuert.': 'Der Auftrag erzeugt die reguläre Sitemap und die Video-Sitemap neu. Öffentliche Sitemaps werden zusätzlich spätestens nach zehn Minuten dynamisch erneuert.'
+'Fester Systemauftrag': 'Fester Systemauftrag'
+'Externe Videoquellen prüfen': 'Externe Videoquellen prüfen'
+'Videos aus einem Anbieter importieren': 'Videos aus einem Anbieter importieren'
+'Öffentliche Sitemaps aktualisieren': 'Öffentliche Sitemaps aktualisieren'
+'Aktiviert': 'Aktiviert'
+'Pausiert': 'Pausiert'
+'Nächster Lauf': 'Nächster Lauf'
+'Letzter Lauf': 'Letzter Lauf'
+'Speichern': 'Speichern'
+'Pausieren': 'Pausieren'
+'Aktivieren': 'Aktivieren'
+'Aufgabe löschen': 'Aufgabe löschen'
+'Der feste Videoquellenprüfer kann pausiert, aber nicht gelöscht oder umkonfiguriert werden.': 'Der feste Videoquellenprüfer kann pausiert, aber nicht gelöscht oder umkonfiguriert werden.'
+'Es sind keine Aufgaben eingerichtet.': 'Es sind keine Aufgaben eingerichtet.'
+'Nicht verfügbare Videoquellen': 'Nicht verfügbare Videoquellen'
+'Der Systemauftrag meldet bestätigte Providerantworten zur Moderation. Videos werden niemals automatisch entfernt oder entveröffentlicht.': 'Der Systemauftrag meldet bestätigte Providerantworten zur Moderation. Videos werden niemals automatisch entfernt oder entveröffentlicht.'
+'Keine nicht verfügbaren externen Quellen gemeldet.': 'Keine nicht verfügbaren externen Quellen gemeldet.'
+'Letzte Ausführungen': 'Letzte Ausführungen'
+'Für diese Aufgaben liegen noch keine Ausführungen vor.': 'Für diese Aufgaben liegen noch keine Ausführungen vor.'
+'Aufgabe': 'Aufgabe'
+'Gestartet': 'Gestartet'
+'Status': 'Status'
+'Scheduler': 'Scheduler'
+'Ergebnis': 'Ergebnis'
+'Lauf läuft.': 'Lauf läuft.'
+'Pro Aufgabe bleiben höchstens 200 Ausführungsprotokolle erhalten. Fehlerdetails und Geheimnisse werden nicht aufgezeichnet.': 'Pro Aufgabe bleiben höchstens 200 Ausführungsprotokolle erhalten. Fehlerdetails und Geheimnisse werden nicht aufgezeichnet.'
+'Private Scheduler-Einrichtung': 'Private Scheduler-Einrichtung'
+'Einrichtung': 'Einrichtung'
+'Aufgaben starten nur über die lokale Kommandozeile. Es gibt keinen öffentlichen Scheduler-Endpunkt.': 'Aufgaben starten nur über die lokale Kommandozeile. Es gibt keinen öffentlichen Scheduler-Endpunkt.'
+'Signaturschlüssel': 'Signaturschlüssel'
+'Der private Scheduler-Schlüssel ist konfiguriert.': 'Der private Scheduler-Schlüssel ist konfiguriert.'
+'Der private Scheduler-Schlüssel ist nicht konfiguriert. Aufträge werden bis dahin nicht ausgeführt.': 'Der private Scheduler-Schlüssel ist nicht konfiguriert. Aufträge werden bis dahin nicht ausgeführt.'
+'Setze AUTOMATION_SCHEDULER_KEY in der privaten Laufzeitkonfiguration außerhalb des Webverzeichnisses. Erzeuge einen zufälligen Schlüssel mit mindestens 32 Zeichen, zum Beispiel mit openssl rand -hex 32. Der Schlüssel wird auf dieser Seite weder angezeigt noch gespeichert.': 'Setze AUTOMATION_SCHEDULER_KEY in der privaten Laufzeitkonfiguration außerhalb des Webverzeichnisses. Erzeuge einen zufälligen Schlüssel mit mindestens 32 Zeichen, zum Beispiel mit openssl rand -hex 32. Der Schlüssel wird auf dieser Seite weder angezeigt noch gespeichert.'
+'Signierte CLI-Anfrage': 'Signierte CLI-Anfrage'
+'Der Cron-Host signiert die Nachricht mit HMAC-SHA-256 und dem privaten Schlüssel. Die Signatur bindet Versionskennung, feste Scheduler-Identität, aktuellen Unix-Zeitstempel und eine frische zufällige Nonce.': 'Der Cron-Host signiert die Nachricht mit HMAC-SHA-256 und dem privaten Schlüssel. Die Signatur bindet Versionskennung, feste Scheduler-Identität, aktuellen Unix-Zeitstempel und eine frische zufällige Nonce.'
+'Jede Anfrage ist höchstens zwei Minuten gültig. Eine Nonce darf nur einmal verwendet werden. Erzeuge für jeden Lauf eine neue Nonce und Signatur; übermittle niemals den Schlüssel als Kommandozeilenargument oder HTTP-Feld.': 'Jede Anfrage ist höchstens zwei Minuten gültig. Eine Nonce darf nur einmal verwendet werden. Erzeuge für jeden Lauf eine neue Nonce und Signatur; übermittle niemals den Schlüssel als Kommandozeilenargument oder HTTP-Feld.'
+'Die Signatur wird nur über die Standardeingabe gelesen und erscheint dadurch nicht in Prozessargumenten.': 'Die Signatur wird nur über die Standardeingabe gelesen und erscheint dadurch nicht in Prozessargumenten.'
+'Ersetze im Beispiel den Projektpfad durch das private Arcanorum-Verzeichnis. Zeitstempel, Nonce und Signatur werden direkt vor jedem Lauf neu erzeugt. AUTOMATION_SCHEDULER_KEY muss bereits als private Laufzeitvariable gesetzt sein. Schlüssel und Signatur erscheinen weder in Prozessargumenten noch in einer HTTP-Anfrage; die Signatur wird nur über die Standardeingabe an den CLI-Befehl geleitet.': 'Ersetze im Beispiel den Projektpfad durch das private Arcanorum-Verzeichnis. Zeitstempel, Nonce und Signatur werden direkt vor jedem Lauf neu erzeugt. AUTOMATION_SCHEDULER_KEY muss bereits als private Laufzeitvariable gesetzt sein. Schlüssel und Signatur erscheinen weder in Prozessargumenten noch in einer HTTP-Anfrage; die Signatur wird nur über die Standardeingabe an den CLI-Befehl geleitet.'
+'Zurück zu Aufgaben': 'Zurück zu Aufgaben'
+'Bild einfügen': 'Bild einfügen'
+'Formatierungen und Bilder werden sicher geprüft. Vorschauen sind privat; verknüpfte Bilder erscheinen auf der öffentlichen Seite.': 'Formatierungen und Bilder werden sicher geprüft. Vorschauen sind privat; verknüpfte Bilder erscheinen auf der öffentlichen Seite.'
+'Speichere den Inhalt zuerst, bevor du Bilder hochlädst.': 'Speichere den Inhalt zuerst, bevor du Bilder hochlädst.'
+'Standardreihenfolge der Kommentare': 'Standardreihenfolge der Kommentare'
+'Neueste Kommentare zuerst': 'Neueste Kommentare zuerst'
+'Am besten bewertete Kommentare zuerst': 'Am besten bewertete Kommentare zuerst'
+'Kommentar einklappen ab dieser Zahl von Ablehnungen': 'Kommentar einklappen ab dieser Zahl von Ablehnungen'
+'Der Wert 0 schaltet das Einklappen aus. Ein Kommentar wird erst eingeklappt, wenn die Ablehnungen den Schwellenwert erreichen und die Ablehnungen die Zustimmungen übersteigen. Der Text bleibt über eine tastaturbedienbare Aufklappsteuerung erreichbar.': 'Der Wert 0 schaltet das Einklappen aus. Ein Kommentar wird erst eingeklappt, wenn die Ablehnungen den Schwellenwert erreichen und die Ablehnungen die Zustimmungen übersteigen. Der Text bleibt über eine tastaturbedienbare Aufklappsteuerung erreichbar.'
+'Dieser Kommentar wurde wegen negativer Bewertungen eingeklappt.': 'Dieser Kommentar wurde wegen negativer Bewertungen eingeklappt.'
+'Bitte wähle eine unterstützte Kommentarsortierung.': 'Bitte wähle eine unterstützte Kommentarsortierung.'
+'Die Schwelle muss eine ganze Zahl von 0 bis 1000 sein.': 'Die Schwelle muss eine ganze Zahl von 0 bis 1000 sein.'
+'Kommentare pro Seite': 'Kommentare pro Seite'
+'Lege fest, wie viele freigegebene Kommentare pro Seite erscheinen. Der Seitenwechsel funktioniert auch ohne JavaScript.': 'Lege fest, wie viele freigegebene Kommentare pro Seite erscheinen. Der Seitenwechsel funktioniert auch ohne JavaScript.'
+'Die Zahl der Kommentare pro Seite muss zwischen 1 und 100 liegen.': 'Die Zahl der Kommentare pro Seite muss zwischen 1 und 100 liegen.'
+'Kommentarseiten': 'Kommentarseiten'
+'Vorherige Kommentarseite': 'Vorherige Kommentarseite'
+'Nächste Kommentarseite': 'Nächste Kommentarseite'
+'Seite %page% von %pages%': 'Seite %page% von %pages%'
+'run': 'Läuft'
+'succeeded': 'Erfolgreich'
+'failed': 'Fehlgeschlagen'
+'Farben werden als feste Hexwerte gespeichert. Eingebettetes CSS und externe Stylesheets werden nicht angenommen. Textfarben müssen den erforderlichen Kontrast zu ihrer gewählten Fläche erreichen.': 'Farben werden als feste Hexwerte gespeichert. Eingebettetes CSS und externe Stylesheets werden nicht angenommen. Textfarben müssen den erforderlichen Kontrast zu ihrer gewählten Fläche erreichen.'
+'Website-Logo': 'Website-Logo'
+'Laden Sie ein JPEG-, PNG- oder WebP-Bild hoch. Das Bild wird geprüft, auf ein transparentes PNG normalisiert und im Kopfbereich auf höchstens 233 × 80 Pixel begrenzt.': 'Laden Sie ein JPEG-, PNG- oder WebP-Bild hoch. Das Bild wird geprüft, auf ein transparentes PNG normalisiert und im Kopfbereich auf höchstens 233 × 80 Pixel begrenzt.'
+'Aktuelles Website-Logo': 'Aktuelles Website-Logo'
+'Es ist kein eigenes Logo festgelegt.': 'Es ist kein eigenes Logo festgelegt.'
+'Logo auswählen': 'Logo auswählen'
+'Logo hochladen': 'Logo hochladen'
+'Logo entfernen': 'Logo entfernen'
+'Das Website-Logo wurde gespeichert.': 'Das Website-Logo wurde gespeichert.'
+'Das Website-Logo wurde entfernt.': 'Das Website-Logo wurde entfernt.'
+'Bitte wählen Sie ein Logo aus.': 'Bitte wählen Sie ein Logo aus.'
+'Das Logo konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.': 'Das Logo konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.'
+'Das Logo konnte nicht entfernt werden. Bitte versuchen Sie es erneut.': 'Das Logo konnte nicht entfernt werden. Bitte versuchen Sie es erneut.'
+'Das Logo konnte nicht sicher gelesen werden.': 'Das Logo konnte nicht sicher gelesen werden.'
+'Das Logo muss zwischen 1 Byte und 4 MiB groß sein.': 'Das Logo muss zwischen 1 Byte und 4 MiB groß sein.'
+'Das Logo ist leer, zu groß oder wurde während der Prüfung verändert.': 'Das Logo ist leer, zu groß oder wurde während der Prüfung verändert.'
+'Erlaubt sind ausschließlich JPEG-, PNG- und WebP-Logos.': 'Erlaubt sind ausschließlich JPEG-, PNG- und WebP-Logos.'
+'Das Logoformat oder seine Abmessungen sind ungültig.': 'Das Logoformat oder seine Abmessungen sind ungültig.'
+'Das Logo kann nicht sicher verarbeitet werden.': 'Das Logo kann nicht sicher verarbeitet werden.'
+'Das normalisierte Logo ist ungültig oder zu groß.': 'Das normalisierte Logo ist ungültig oder zu groß.'
+'Weitere Farben der öffentlichen Website': 'Weitere Farben der öffentlichen Website'
+'Weitere Themes': 'Weitere Themes'
+'Weitere kaufbare Themes, Vorschauen und Kompatibilitätshinweise finden Sie im externen PHPSUGAR Theme Store.': 'Weitere kaufbare Themes, Vorschauen und Kompatibilitätshinweise finden Sie im externen PHPSUGAR Theme Store.'
+'PHPSUGAR Theme Store öffnen': 'PHPSUGAR Theme Store öffnen'
+'Legen Sie die Flächen, Überschriften, Links und Navigation einzeln fest. Die Eingabe akzeptiert nur Hexfarben; Text- und Fokusfarben werden auf Kontrast geprüft.': 'Legen Sie die Flächen, Überschriften, Links und Navigation einzeln fest. Die Eingabe akzeptiert nur Hexfarben; Text- und Fokusfarben werden auf Kontrast geprüft.'
+'Überschriften': 'Überschriften'
+'Inhaltsfläche und Karten': 'Inhaltsfläche und Karten'
+'Inhaltstext': 'Inhaltstext'
+'Seitenhintergrund': 'Seitenhintergrund'
+'Kopfbereich und Navigation': 'Kopfbereich und Navigation'
+'Hintergrund des Kopfbereichs': 'Hintergrund des Kopfbereichs'
+'Text im Kopfbereich': 'Text im Kopfbereich'
+'Navigationshintergrund': 'Navigationshintergrund'
+'Navigationslinks': 'Navigationslinks'
+'Inhaltslinks': 'Inhaltslinks'
+'Video- und Artikeltitel': 'Video- und Artikeltitel'
+'Website-Titel': 'Website-Titel'
+'Fußbereich und Seitenbreite': 'Fußbereich und Seitenbreite'
+'Hintergrund des Fußbereichs': 'Hintergrund des Fußbereichs'
+'Text und Links im Fußbereich': 'Text und Links im Fußbereich'
+'Maximale Inhaltsbreite in Pixeln': 'Maximale Inhaltsbreite in Pixeln'
+'Eine Kategorie gehört zu News oder Videos. Verwendete Kategorien und Kategorien mit Unterkategorien können nicht gelöscht werden.': 'Eine Kategorie gehört zu News oder Videos. Verwendete Kategorien und Kategorien mit Unterkategorien können nicht gelöscht werden.'
+'URL-Slug': 'URL-Slug'
+'Leer lassen, um den Slug beim Anlegen aus dem Namen zu erzeugen. Ein gespeicherter Slug bleibt beim Umbenennen unverändert.': 'Leer lassen, um den Slug beim Anlegen aus dem Namen zu erzeugen. Ein gespeicherter Slug bleibt beim Umbenennen unverändert.'
+'Übergeordnete Kategorie': 'Übergeordnete Kategorie'
+'Keine — oberste Ebene': 'Keine — oberste Ebene'
+'Unterkategorien sind auf acht Ebenen begrenzt und bleiben im selben Inhaltsbereich.': 'Unterkategorien sind auf acht Ebenen begrenzt und bleiben im selben Inhaltsbereich.'
+'Meta-Titel': 'Meta-Titel'
+'Unterkategorien': 'Unterkategorien'
+'News-Kategorien': 'News-Kategorien'
+'Die Kategorien-Metadaten sind ungültig.': 'Die Kategorien-Metadaten sind ungültig.'
+'Der Kategorien-Slug darf nur Kleinbuchstaben, Zahlen und Bindestriche enthalten.': 'Der Kategorien-Slug darf nur Kleinbuchstaben, Zahlen und Bindestriche enthalten.'
+'Dieser Kategorien-Slug wird in diesem Inhaltsbereich bereits verwendet.': 'Dieser Kategorien-Slug wird in diesem Inhaltsbereich bereits verwendet.'
+'Die übergeordnete Kategorie ist ungültig.': 'Die übergeordnete Kategorie ist ungültig.'
+'Die Beschreibung darf höchstens 2000 Zeichen lang sein.': 'Die Beschreibung darf höchstens 2000 Zeichen lang sein.'
+'Die Beschreibung ist zu groß oder enthält ungültigen Text.': 'Die Beschreibung ist zu groß oder enthält ungültigen Text.'
+'Die Beschreibung ist ungültig.': 'Die Beschreibung ist ungültig.'
+'Die Beschreibung darf nur Inline-Bilder dieser Kategorie verwenden.': 'Die Beschreibung darf nur Inline-Bilder dieser Kategorie verwenden.'
+'Inline-Bilder können erst eingefügt werden, nachdem die Kategorie gespeichert wurde.': 'Inline-Bilder können erst eingefügt werden, nachdem die Kategorie gespeichert wurde.'
+'Der Meta-Titel darf höchstens 160 Zeichen lang sein.': 'Der Meta-Titel darf höchstens 160 Zeichen lang sein.'
+'Die Meta-Beschreibung darf höchstens 500 Zeichen lang sein.': 'Die Meta-Beschreibung darf höchstens 500 Zeichen lang sein.'
+'Die Meta-Schlagwörter dürfen höchstens 255 Zeichen lang sein.': 'Die Meta-Schlagwörter dürfen höchstens 255 Zeichen lang sein.'
+'Die Sortierung muss eine Zahl zwischen 0 und 10000 sein.': 'Die Sortierung muss eine Zahl zwischen 0 und 10000 sein.'
+'Die Kategorie wird noch verwendet oder enthält Unterkategorien und kann nicht gelöscht werden.': 'Die Kategorie wird noch verwendet oder enthält Unterkategorien und kann nicht gelöscht werden.'
+'Enthält Unterkategorien': 'Enthält Unterkategorien'
+'Auf der Startseite hervorheben': 'Auf der Startseite hervorheben'
+'Ausgewählte Videokategorien erscheinen mit ihren neuesten veröffentlichten Videos auf der Startseite.': 'Ausgewählte Videokategorien erscheinen mit ihren neuesten veröffentlichten Videos auf der Startseite.'
+'Nur Videokategorien können auf der Startseite hervorgehoben werden.': 'Nur Videokategorien können auf der Startseite hervorgehoben werden.'
+'Der Startseitenstatus der Kategorie ist ungültig.': 'Der Startseitenstatus der Kategorie ist ungültig.'
+'Kategorie-Artwork': 'Kategorie-Artwork'
+'JPEG, PNG oder WebP bis 4 MiB. Das Bild wird geprüft und auf höchstens 320 × 180 Pixel verkleinert.': 'JPEG, PNG oder WebP bis 4 MiB. Das Bild wird geprüft und auf höchstens 320 × 180 Pixel verkleinert.'
+'Artwork ersetzen': 'Artwork ersetzen'
+'Artwork hochladen': 'Artwork hochladen'
+'Bild ersetzen': 'Bild ersetzen'
+'Bild speichern': 'Bild speichern'
+'Artwork entfernen': 'Artwork entfernen'
+'Kategorie-Artwork wurde gespeichert.': 'Kategorie-Artwork wurde gespeichert.'
+'Kategorie-Artwork wurde entfernt.': 'Kategorie-Artwork wurde entfernt.'
+'Bitte wähle eine gültige Artwork-Aktion aus.': 'Bitte wähle eine gültige Artwork-Aktion aus.'
+'Beim Entfernen darf keine Datei mitgesendet werden.': 'Beim Entfernen darf keine Datei mitgesendet werden.'
+'Der sichere private Dateispeicher ist nicht verfügbar; das Artwork wurde nicht gespeichert.': 'Der sichere private Dateispeicher ist nicht verfügbar; das Artwork wurde nicht gespeichert.'
+'Das Kategorie-Artwork konnte nicht sicher gelesen werden.': 'Das Kategorie-Artwork konnte nicht sicher gelesen werden.'
+'Kategorie-Artworks dürfen höchstens 4 MiB groß sein.': 'Kategorie-Artworks dürfen höchstens 4 MiB groß sein.'
+'Das Kategorie-Artwork ist leer, zu groß oder wurde während der Prüfung verändert.': 'Das Kategorie-Artwork ist leer, zu groß oder wurde während der Prüfung verändert.'
+'Erlaubt sind ausschließlich JPEG-, PNG- und WebP-Bilder.': 'Erlaubt sind ausschließlich JPEG-, PNG- und WebP-Bilder.'
+'Bildformat oder Bildabmessungen des Kategorie-Artworks sind ungültig.': 'Bildformat oder Bildabmessungen des Kategorie-Artworks sind ungültig.'
+'Das Kategorie-Artwork ist kein lesbares Rasterbild.': 'Das Kategorie-Artwork ist kein lesbares Rasterbild.'
+'Das Kategorie-Artwork konnte nicht verarbeitet werden.': 'Das Kategorie-Artwork konnte nicht verarbeitet werden.'
+'Das Kategorie-Artwork konnte nicht verkleinert werden.': 'Das Kategorie-Artwork konnte nicht verkleinert werden.'
+'Das verkleinerte Kategorie-Artwork überschreitet die Speichergrenze.': 'Das verkleinerte Kategorie-Artwork überschreitet die Speichergrenze.'
+'Das Kategorie-Artwork konnte nicht sicher neu kodiert werden.': 'Das Kategorie-Artwork konnte nicht sicher neu kodiert werden.'
+'Die Daten des Kategorie-Artworks sind ungültig.': 'Die Daten des Kategorie-Artworks sind ungültig.'
+'Die Kennung des privaten Kategorie-Artworks ist ungültig.': 'Die Kennung des privaten Kategorie-Artworks ist ungültig.'
+'Ein nicht zugeordnetes Videokategorie-Artwork konnte nicht bereinigt oder zur Bereinigung vorgemerkt werden.': 'Ein nicht zugeordnetes Videokategorie-Artwork konnte nicht bereinigt oder zur Bereinigung vorgemerkt werden.'
+'Ein Videokategorie-Artwork konnte weder gelöscht noch zur Bereinigung vorgemerkt werden.': 'Ein Videokategorie-Artwork konnte weder gelöscht noch zur Bereinigung vorgemerkt werden.'
+'Das frühere Kategorie-Artwork konnte nicht sicher bereinigt werden.': 'Das frühere Kategorie-Artwork konnte nicht sicher bereinigt werden.'
+'Videokategorien': 'Videokategorien'
+'Durchsuche die Themenbereiche des Videokatalogs.': 'Durchsuche die Themenbereiche des Videokatalogs.'
+'Alle Videos ansehen': 'Alle Videos ansehen'
+'Kategorie %category% öffnen': 'Kategorie %category% öffnen'
+'Noch keine Videokategorien vorhanden.': 'Noch keine Videokategorien vorhanden.'
+'Videokategorie': 'Videokategorie'
+'Alle Videos dieser Kategorie': 'Alle Videos dieser Kategorie'
+'Videokategorien durchsuchen': 'Videokategorien durchsuchen'
+'Artwork für %category%': 'Artwork für %category%'
+'Sortierreihenfolge der Startseite': 'Sortierreihenfolge der Startseite'
+'Hervorhebung speichern': 'Hervorhebung speichern'
+'Startseitenhervorhebung für das Seriengenre gespeichert.': 'Startseitenhervorhebung für das Seriengenre gespeichert.'
+'Seriengenre aus der Startseitenhervorhebung entfernt.': 'Seriengenre aus der Startseitenhervorhebung entfernt.'
+'Websiteanalyse': 'Websiteanalyse'
+'Google-Analytics-4-Mess-ID': 'Google-Analytics-4-Mess-ID'
+'Nur eine gültige G-XXXXXXXXXX-Mess-ID wird akzeptiert. Die feste GA4-Einbindung lädt ausschließlich nach gültiger Zustimmung zu optionalen Cookies auf öffentlichen Inhaltsseiten. Suchbegriffe, Seitenpfade, Seitentitel und Referrer werden nicht übertragen; Google erhält bei Einwilligung weiterhin technische Verbindungsdaten.': 'Nur eine gültige G-XXXXXXXXXX-Mess-ID wird akzeptiert. Die feste GA4-Einbindung lädt ausschließlich nach gültiger Zustimmung zu optionalen Cookies auf öffentlichen Inhaltsseiten. Suchbegriffe, Seitenpfade, Seitentitel und Referrer werden nicht übertragen; Google erhält bei Einwilligung weiterhin technische Verbindungsdaten.'
+'Notwendige Sicherheits- und Sitzungscookies bleiben aktiv. Optionale externe Dienste wie die konfigurierte Websiteanalyse und externe Kommentare werden nur nach gültiger Einwilligung geladen.': 'Notwendige Sicherheits- und Sitzungscookies bleiben aktiv. Optionale externe Dienste wie die konfigurierte Websiteanalyse und externe Kommentare werden nur nach gültiger Einwilligung geladen.'
+'Wir verwenden notwendige Cookies für Anmeldung, Sicherheit und die Ansichtspräferenz in diesem Browser. Optionale Analyse- und Werbedienste werden nur nach Ihrer Zustimmung geladen.': 'Wir verwenden notwendige Cookies für Anmeldung, Sicherheit und die Ansichtspräferenz in diesem Browser. Optionale Analyse- und Werbedienste werden nur nach Ihrer Zustimmung geladen.'
+'Bitte gib eine gültige GA4-Mess-ID im Format G-XXXXXXXXXX ein oder lasse das Feld leer.': 'Bitte gib eine gültige GA4-Mess-ID im Format G-XXXXXXXXXX ein oder lasse das Feld leer.'
+'Serien aus %genre%': 'Serien aus %genre%'
+'Quellenstatus prüfen': 'Quellenstatus prüfen'
+'Pro Quellenprüfung können höchstens fünf Videos ausgewählt werden.': 'Pro Quellenprüfung können höchstens fünf Videos ausgewählt werden.'
+'Die Quellenprüfung ist nur für eingebettete Videos verfügbar.': 'Die Quellenprüfung ist nur für eingebettete Videos verfügbar.'
+'Der gemeinsame Importschutz ist nicht verfügbar. Es wurden keine Videoanbieter angefragt.': 'Der gemeinsame Importschutz ist nicht verfügbar. Es wurden keine Videoanbieter angefragt.'
+'Das Limit für Quellenprüfungen ist erreicht. Bitte versuche es später erneut.': 'Das Limit für Quellenprüfungen ist erreicht. Bitte versuche es später erneut.'
+'Quellenprüfung abgeschlossen: %checked% geprüft, %unavailable% nicht verfügbar, %unsupported% nicht unterstützt und %failed% fehlgeschlagen.': 'Quellenprüfung abgeschlossen: %checked% geprüft, %unavailable% nicht verfügbar, %unsupported% nicht unterstützt und %failed% fehlgeschlagen.'
+'Externer Quellenstatus': 'Externer Quellenstatus'
+'Noch nicht geprüft': 'Noch nicht geprüft'
+'Quelle verfügbar': 'Quelle verfügbar'
+'Quelle nicht verfügbar': 'Quelle nicht verfügbar'
+'Anbieter nicht unterstützt': 'Anbieter nicht unterstützt'
+'Prüfung fehlgeschlagen': 'Prüfung fehlgeschlagen'
+'Zuletzt geprüft: %date%': 'Zuletzt geprüft: %date%'
+'Letzter Prüfversuch: %date%': 'Letzter Prüfversuch: %date%'
+'Letzter bekannter Status: %status%': 'Letzter bekannter Status: %status%'
+'Keine externe Einbettungsquelle': 'Keine externe Einbettungsquelle'
+'Wähle bis zu 50 Einträge aus. Für eine Quellenprüfung werden höchstens fünf externe Einbettungen abgefragt; Uploads, Streams und direkte URLs werden nicht kontaktiert. Löschen entfernt auch ihre Kommentare.': 'Wähle bis zu 50 Einträge aus. Für eine Quellenprüfung werden höchstens fünf externe Einbettungen abgefragt; Uploads, Streams und direkte URLs werden nicht kontaktiert. Löschen entfernt auch ihre Kommentare.'
+
+"Mitgliederaktivitäten": "Mitgliederaktivitäten"
+"Öffentliche Aktivitäten können aus dem Mitgliederfeed ausgeblendet oder entfernt werden. Videos, Wiedergabelisten und Kommentare bleiben dabei unverändert.": "Öffentliche Aktivitäten können aus dem Mitgliederfeed ausgeblendet oder entfernt werden. Videos, Wiedergabelisten und Kommentare bleiben dabei unverändert."
+"Mitglied oder Inhalt suchen": "Mitglied oder Inhalt suchen"
+"Aktivitätstyp": "Aktivitätstyp"
+"Alle Aktivitätstypen": "Alle Aktivitätstypen"
+"Videoeinreichung": "Videoeinreichung"
+"Öffentliche Wiedergabeliste": "Öffentliche Wiedergabeliste"
+"Videokommentar": "Videokommentar"
+"News-Kommentar": "News-Kommentar"
+"Im Feed": "Im Feed"
+"Ausgeblendet": "Ausgeblendet"
+"Aus dem Feed entfernt": "Aus dem Feed entfernt"
+"Suchen und filtern": "Suchen und filtern"
+"Keine öffentlichen Aktivitäten gefunden.": "Keine öffentlichen Aktivitäten gefunden."
+"Ausblenden": "Ausblenden"
+"Wiederherstellen": "Wiederherstellen"
+"Aus dem Feed entfernen": "Aus dem Feed entfernen"
+"Aktivitäten auswählen": "Aktivitäten auswählen"
+"Aktivität auswählen: %member% – %content%": "Aktivität auswählen: %member% – %content%"
+"Mitgliederaktivitäten aktualisiert. %count% Einträge wurden geändert.": "Mitgliederaktivitäten aktualisiert. %count% Einträge wurden geändert."
+"Die ausgewählte Aktivität ist nicht mehr verfügbar. Bitte aktualisiere die Liste.": "Die ausgewählte Aktivität ist nicht mehr verfügbar. Bitte aktualisiere die Liste."
+"Neueste Videos": "Neueste Videos"
+"Videos zur Prüfung": "Videos zur Prüfung"
+"Videomeldungen": "Videomeldungen"
+"Videoeinreichungen": "Videoeinreichungen"
+"Erstellt am %date% UTC": "Erstellt am %date% UTC"
+"Neueste Artikel": "Neueste Artikel"
+"Neueste Mitglieder": "Neueste Mitglieder"
+"Mitglieder verwalten": "Mitglieder verwalten"
+"Noch keine Mitglieder vorhanden.": "Noch keine Mitglieder vorhanden."
+"Neueste Kommentare": "Neueste Kommentare"
+"Kommentare verwalten": "Kommentare verwalten"
+"Noch keine Kommentare vorhanden.": "Noch keine Kommentare vorhanden."
+"Noch keine Artikel vorhanden.": "Noch keine Artikel vorhanden."
+"Registriert am %date% UTC": "Registriert am %date% UTC"
+"Schwelle für automatische Video-Hervorhebung": "Schwelle für automatische Video-Hervorhebung"
+"Gezählte öffentliche Aufrufe bis zur einmaligen Hervorhebung; 0 deaktiviert die automatische Hervorhebung.": "Gezählte öffentliche Aufrufe bis zur einmaligen Hervorhebung; 0 deaktiviert die automatische Hervorhebung."
+"Die Schwelle für die automatische Hervorhebung muss eine ganze Zahl von 0 bis 2147483647 sein.": "Die Schwelle für die automatische Hervorhebung muss eine ganze Zahl von 0 bis 2147483647 sein."

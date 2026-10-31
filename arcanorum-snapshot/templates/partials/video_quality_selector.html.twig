@@ -1,0 +1,18 @@
+{% if quality_sources is not empty %}
+    <div class="video-quality-control">
+        <label for="video-quality-{{ player_id }}">{{ 'Wiedergabequalität'|trans }}</label>
+        <select
+            id="video-quality-{{ player_id }}"
+            data-video-quality-selector
+            data-video-player-id="{{ player_id }}"
+            data-quality-message-changed="{{ 'Die Videoqualität wurde geändert.'|trans }}"
+            data-quality-message-error="{{ 'Die Videoqualität konnte nicht geändert werden.'|trans }}"
+        >
+            <option value="{{ base_source_url }}" data-mime-type="{{ base_source_mime }}" selected>{{ 'Originalquelle'|trans }}</option>
+            {% for quality_source in quality_sources %}
+                <option value="{{ quality_source.url }}" data-mime-type="{{ quality_source.mime_type }}">{{ quality_source.resolution }}</option>
+            {% endfor %}
+        </select>
+        <p class="muted" data-video-quality-status role="status" aria-live="polite"></p>
+    </div>
+{% endif %}

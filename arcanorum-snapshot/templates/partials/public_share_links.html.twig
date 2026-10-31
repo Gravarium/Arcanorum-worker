@@ -1,0 +1,11 @@
+{% if share_url is not null %}
+    <p class="muted">{{ 'Beim Öffnen eines Teilen-Links wird die Seitenadresse an den gewählten Dienst übermittelt. Diese Seite lädt dafür keine externen Skripte.'|trans }}</p>
+    <ul class="share-links" aria-label="{{ 'Teilen'|trans }}">
+        <li><a data-testid="share-facebook" href="https://www.facebook.com/sharer/sharer.php?u={{ share_url|url_encode }}" target="_blank" rel="nofollow noopener noreferrer" referrerpolicy="no-referrer">{{ 'Bei Facebook teilen'|trans }}</a></li>
+        <li><a data-testid="share-x" href="https://twitter.com/intent/tweet?url={{ share_url|url_encode }}&amp;text={{ share_title|url_encode }}" target="_blank" rel="nofollow noopener noreferrer" referrerpolicy="no-referrer">{{ 'Bei X teilen'|trans }}</a></li>
+        <li><a data-testid="share-pinterest" href="https://www.pinterest.com/pin/create/button/?url={{ share_url|url_encode }}&amp;description={{ share_title|url_encode }}" target="_blank" rel="nofollow noopener noreferrer" referrerpolicy="no-referrer">{{ 'Bei Pinterest teilen'|trans }}</a></li>
+    </ul>
+{% else %}
+    <p class="muted">{{ 'Externe Teilen-Links erfordern eine konfigurierte öffentliche Website-Adresse.'|trans }}</p>
+{% endif %}
+<a data-testid="public-share-url" rel="bookmark" href="{{ fallback_url }}">{{ 'Öffentlicher Link'|trans }}</a>

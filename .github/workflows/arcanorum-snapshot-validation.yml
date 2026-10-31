@@ -1,0 +1,2269 @@
+name: Arcanorum snapshot validation
+
+on:
+  workflow_dispatch:
+    inputs:
+      validation_scope:
+        description: "Choose the full validation or the affected regression scope."
+        required: true
+        default: full
+        type: choice
+        options:
+          - full
+          - p01-p03-focused
+          - automation-focused
+          - analytics-focused
+          - analytics-followup
+          - analytics-tests-only
+          - member-activity-focused
+          - member-activity-followup
+          - dashboard-latest-content
+          - dashboard-latest-content-followup
+          - admin-password-change-followup
+          - video-provider-player-followup
+          - auto-feature-threshold-followup
+          - public-share-widget-followup
+          - public-share-widget-testfix-followup
+          - video-report-heading-testfix-followup
+          - manual-video-source-check-followup
+          - historical-core-data-rollback-testfix
+          - historical-rollback-pending-gates
+          - historical-rollback-rector-only
+          - rollback-guard-pending-gates
+          - rollback-guard-style-followup
+          - rollback-guard-rector-followup
+          - rollback-guard-full-test-retry
+          - rollback-guard-migration-lock-audit
+          - rollback-guard-migration-lock-audit-followup
+          - rollback-guard-final-pending-gates
+          - rollback-guard-advertising-assertion-retry
+  push:
+    branches:
+      - codex/arcanorum-snapshot-validation-sync-20261029
+
+permissions:
+  contents: read
+
+concurrency:
+  group: arcanorum-snapshot-${{ github.ref }}-${{ inputs.validation_scope || 'push' }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    if: github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'full'
+    name: PHP 8.5, Symfony, PostgreSQL 18, Redis 8 and JavaScript
+    runs-on: ubuntu-26.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: arcanorum-snapshot
+    env:
+      APP_ENV: test
+      APP_DEBUG: '0'
+      APP_SECRET: ci-only-not-a-production-secret
+      DATABASE_URL: 'postgresql://arcanorum_ci:ci-only-test-password@127.0.0.1:5432/arcanorum_test?serverVersion=18&charset=utf8'
+      REDIS_URL: 'redis://127.0.0.1:6379'
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: arcanorum_test
+          POSTGRES_USER: arcanorum_ci
+          POSTGRES_PASSWORD: ci-only-test-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U arcanorum_ci -d arcanorum_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Check out public validation branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Verify exact source commit and exclude credentials
+        shell: bash
+        env:
+          EXPECTED_SOURCE_SHA: 'c96df1383aa1377bba3cf7ac3016a4ea5eb3742c'
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$EXPECTED_SOURCE_SHA" | cmp -s - SOURCE_BASE_SHA
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path('.')
+          blocked = []
+          for path in root.rglob('*'):
+              if not path.is_file():
+                  continue
+              relative = path.as_posix()
+              if (path.name.startswith('.env')
+                  or '/secrets/' in f'/{relative}/'
+                  or relative.startswith(('var/', 'vendor/', 'node_modules/', 'logs/', 'test-results/', 'coverage/', 'public/uploads/', 'storage/private/', 'backups/'))
+                  or path.suffix.lower() in {'.pem', '.p12', '.key', '.sql', '.dump', '.sqlite', '.db'}):
+                  blocked.append(relative)
+
+          patterns = {
+              'private-key': re.compile(rb'-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----'),
+              'github-token': re.compile(rb'(?:gh[pousr]_[A-Za-z0-9_]{30,}|github_pat_[A-Za-z0-9_]{30,})'),
+              'aws-key': re.compile(rb'AKIA[0-9A-Z]{16}'),
+              'stripe-live': re.compile(rb'sk_live_[A-Za-z0-9]{16,}'),
+              'slack-token': re.compile(rb'xox[baprs]-[A-Za-z0-9-]{20,}'),
+          }
+          matches = []
+          for path in root.rglob('*'):
+              if path.is_file():
+                  data = path.read_bytes()
+                  for name, pattern in patterns.items():
+                      if pattern.search(data):
+                          matches.append((name, path.as_posix()))
+
+          if blocked or matches:
+              for relative in blocked:
+                  print(f'Forbidden file path: {relative}')
+              for name, relative in matches:
+                  print(f'Credential pattern {name} in {relative}')
+              raise SystemExit('Snapshot security check failed.')
+          print('Snapshot check passed: no forbidden files or high-confidence credential patterns.')
+          PY
+
+      - name: Set up PHP 8.5 and extensions
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0; Node 24
+        with:
+          php-version: '8.5'
+          extensions: gd, intl, mbstring, pcov, pdo_pgsql, redis, xml, zip
+          coverage: pcov
+          tools: composer:v2
+          ini-values: memory_limit=1G
+
+      - name: Set up Node 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0; Node 24
+        with:
+          node-version: '24'
+
+      - name: Validate and install locked Composer dependencies
+        run: |
+          composer validate --strict --no-interaction
+          composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader
+          composer audit --locked --no-interaction
+
+      - name: Check PostgreSQL client and tracked PHP syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          pg_dump --version | grep -Eq ' 18\.'
+          mapfile -d '' php_files < <(
+            find . -maxdepth 1 -type f -name '*.php' -print0
+            for directory in bin config migrations src templates tests; do
+              if [ -d "$directory" ]; then find "$directory" -type f -name '*.php' -print0; fi
+            done
+          )
+          if [ "${#php_files[@]}" -eq 0 ]; then
+            echo 'No application PHP files were found.' >&2
+            exit 1
+          fi
+          for file in "${php_files[@]}"; do php -l "$file"; done
+
+      - name: Validate Symfony, Doctrine, PostgreSQL, Redis and assets
+        run: |
+          touch .env
+          php bin/console lint:container --env=dev
+          APP_ENV=prod APP_DEBUG=0 php bin/console lint:container --env=prod
+          php bin/console lint:yaml config
+          php bin/console lint:twig templates
+          php bin/console doctrine:migrations:migrate --env=test --no-interaction
+          # Arcanorum also owns migration-managed tables and PostgreSQL objects outside Doctrine ORM metadata.
+          # Keep mapping validation and execute every migration; ORM schema synchronization would propose dropping those objects.
+          php bin/console doctrine:schema:validate --skip-sync
+          APP_ENV=prod APP_DEBUG=0 php bin/console asset-map:compile
+          php -r '$pdo = new PDO("pgsql:host=127.0.0.1;port=5432;dbname=arcanorum_test", "arcanorum_ci", "ci-only-test-password"); echo "PostgreSQL connection passed\n";'
+          php -r '$socket = stream_socket_client("tcp://127.0.0.1:6379", $error, $message, 3); if (!$socket) { exit(1); } fwrite($socket, "*1\r\n$4\r\nPING\r\n"); if (fgets($socket) !== "+PONG\r\n") { exit(1); } fclose($socket); echo "Redis connection passed\n";'
+
+      - name: PHPStan level 10 with strict rules
+        run: vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --no-progress --error-format=github --memory-limit=1G
+
+      - name: PHP CS Fixer
+        run: vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --diff --using-cache=no
+
+      - name: Rector dry run
+        run: vendor/bin/rector process --config=rector.php --dry-run --no-progress-bar --output-format=github
+
+      - name: Psalm taint analysis
+        run: |
+          mkdir -p var/test-results
+          vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm.sarif
+
+      - name: JavaScript syntax and regression tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            case "$file" in
+              *.mjs) node --check "$file" ;;
+              *) node --input-type=module --check < "$file" ;;
+            esac
+          done < <(find assets public tests/JavaScript -type f \( -name '*.js' -o -name '*.mjs' \) -print0)
+          node --test --test-reporter=tap tests/JavaScript/*.test.mjs
+
+      - name: PHPUnit full suite with strict failures and coverage
+        run: |
+          mkdir -p var/test-results
+          php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
+            --fail-on-risky --fail-on-warning --fail-on-deprecation \
+            --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
+            --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
+            --coverage-text --coverage-clover=var/test-results/coverage.xml
+
+      - name: Validate PHPUnit report completeness
+        run: python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
+
+  validate-p01-p03-focused:
+    if: github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'p01-p03-focused'
+    name: Focused P-01/P-03 regression checks
+    runs-on: ubuntu-26.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: arcanorum-snapshot
+    env:
+      APP_ENV: test
+      APP_DEBUG: '0'
+      APP_SECRET: ci-only-not-a-production-secret
+      DATABASE_URL: 'postgresql://arcanorum_ci:ci-only-test-password@127.0.0.1:5432/arcanorum_test?serverVersion=18&charset=utf8'
+      REDIS_URL: 'redis://127.0.0.1:6379'
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: arcanorum_test
+          POSTGRES_USER: arcanorum_ci
+          POSTGRES_PASSWORD: ci-only-test-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U arcanorum_ci -d arcanorum_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Check out public validation branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Verify exact source commit and exclude credentials
+        shell: bash
+        env:
+          EXPECTED_SOURCE_SHA: 'c96df1383aa1377bba3cf7ac3016a4ea5eb3742c'
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$EXPECTED_SOURCE_SHA" | cmp -s - SOURCE_BASE_SHA
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path('.')
+          blocked = []
+          for path in root.rglob('*'):
+              if not path.is_file():
+                  continue
+              relative = path.as_posix()
+              if (path.name.startswith('.env')
+                  or '/secrets/' in f'/{relative}/'
+                  or relative.startswith(('var/', 'vendor/', 'node_modules/', 'logs/', 'test-results/', 'coverage/', 'public/uploads/', 'storage/private/', 'backups/'))
+                  or path.suffix.lower() in {'.pem', '.p12', '.key', '.sql', '.dump', '.sqlite', '.db'}):
+                  blocked.append(relative)
+
+          patterns = {
+              'private-key': re.compile(rb'-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----'),
+              'github-token': re.compile(rb'(?:gh[pousr]_[A-Za-z0-9_]{30,}|github_pat_[A-Za-z0-9_]{30,})'),
+              'aws-key': re.compile(rb'AKIA[0-9A-Z]{16}'),
+              'stripe-live': re.compile(rb'sk_live_[A-Za-z0-9]{16,}'),
+              'slack-token': re.compile(rb'xox[baprs]-[A-Za-z0-9-]{20,}'),
+          }
+          matches = []
+          for path in root.rglob('*'):
+              if path.is_file():
+                  data = path.read_bytes()
+                  for name, pattern in patterns.items():
+                      if pattern.search(data):
+                          matches.append((name, path.as_posix()))
+
+          if blocked or matches:
+              for relative in blocked:
+                  print(f'Forbidden file path: {relative}')
+              for name, relative in matches:
+                  print(f'Credential pattern {name} in {relative}')
+              raise SystemExit('Snapshot security check failed.')
+          print('Snapshot check passed: no forbidden files or high-confidence credential patterns.')
+          PY
+
+      - name: Set up PHP 8.5 and extensions
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0; Node 24
+        with:
+          php-version: '8.5'
+          extensions: gd, intl, mbstring, pcov, pdo_pgsql, redis, xml, zip
+          coverage: pcov
+          tools: composer:v2
+          ini-values: memory_limit=1G
+
+      - name: Validate and install locked Composer dependencies
+        run: |
+          composer validate --strict --no-interaction
+          composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader
+          composer audit --locked --no-interaction
+
+      - name: Check changed application PHP syntax
+        run: |
+          set -euo pipefail
+          for file in \
+            src/Module/News/Controller/NewsPublicController.php \
+            src/Repository/ContentCategoryRepository.php \
+            src/Repository/VideoRepository.php; do
+            php -l "$file"
+          done
+
+      - name: Check changed regression PHP syntax
+        run: |
+          set -euo pipefail
+          for file in \
+            tests/Controller/CategoryTaxonomyFlowTest.php \
+            tests/Controller/HomePageTest.php \
+            tests/Controller/PublicContentTest.php; do
+            php -l "$file"
+          done
+
+      - name: Lint News Twig templates
+        shell: bash
+        run: |
+          set -euo pipefail
+          touch .env
+          twig_output_file="$(mktemp)"
+          if php bin/console lint:twig templates/news >"$twig_output_file" 2>&1; then
+            cat "$twig_output_file"
+          else
+            python3 - "$twig_output_file" <<'PY'
+          from pathlib import Path
+          import sys
+
+          lines = Path(sys.argv[1]).read_text(errors='replace').splitlines()
+          message = '\n'.join(lines[-10:])[:1800]
+          message = message.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+          print(f'::error title=News Twig lint diagnostic::{message}')
+          PY
+            exit 1
+          fi
+
+      - name: Lint video Twig templates
+        run: php bin/console lint:twig templates/videos
+
+      - name: Compile Symfony development container
+        run: |
+          php bin/console lint:container --env=dev
+
+      - name: Prepare PostgreSQL schema and validate Doctrine mapping
+        run: |
+          php bin/console doctrine:migrations:migrate --env=test --no-interaction
+          php bin/console doctrine:schema:validate --skip-sync
+
+      - name: PHPStan on affected application and regression files
+        run: >-
+          vendor/bin/phpstan analyse
+          --configuration=phpstan.neon.dist
+          --no-progress
+          --error-format=github
+          --memory-limit=1G
+          src/Module/News/Controller/NewsPublicController.php
+          src/Repository/ContentCategoryRepository.php
+          src/Repository/VideoRepository.php
+          tests/Controller/CategoryTaxonomyFlowTest.php
+          tests/Controller/HomePageTest.php
+          tests/Controller/PublicContentTest.php
+
+      - name: PHP CS Fixer on affected PHP files
+        run: >-
+          vendor/bin/php-cs-fixer check
+          --config=.php-cs-fixer.dist.php
+          --diff
+          --using-cache=no
+          src/Module/News/Controller/NewsPublicController.php
+          src/Repository/ContentCategoryRepository.php
+          src/Repository/VideoRepository.php
+          tests/Controller/CategoryTaxonomyFlowTest.php
+          tests/Controller/HomePageTest.php
+          tests/Controller/PublicContentTest.php
+
+      - name: Rector dry run on affected PHP files
+        run: >-
+          vendor/bin/rector process
+          src/Module/News/Controller/NewsPublicController.php
+          src/Repository/ContentCategoryRepository.php
+          src/Repository/VideoRepository.php
+          tests/Controller/CategoryTaxonomyFlowTest.php
+          tests/Controller/HomePageTest.php
+          tests/Controller/PublicContentTest.php
+          --config=rector.php
+          --dry-run
+          --no-progress-bar
+          --output-format=github
+
+      - name: Run only changed P-01/P-03 regressions
+        run: |
+          mkdir -p var/test-results
+          php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
+            --fail-on-risky --fail-on-warning --fail-on-deprecation \
+            --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
+            --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
+            --filter='testVideoCategoryDirectoryShowsRootCategoriesAndParentPageShowsChildren|testNewestHomeVideosKeepAStableOrderWhenPublicationTimesMatch|testCategoryPagesKeepFiltersAcrossPaginationAndExcludeDrafts|testPublicPagesShowPublishedContentAndHideDrafts' \
+            tests/Controller/CategoryTaxonomyFlowTest.php \
+            tests/Controller/HomePageTest.php \
+            tests/Controller/PublicContentTest.php
+          python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
+
+  validate-automation-focused:
+    if: github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'automation-focused'
+    name: Focused M-31/M-32 scheduler checks
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: arcanorum-snapshot
+    env:
+      APP_ENV: test
+      APP_DEBUG: '0'
+      APP_SECRET: ci-only-not-a-production-secret
+      DATABASE_URL: 'postgresql://arcanorum_ci:ci-only-test-password@127.0.0.1:5432/arcanorum_test?serverVersion=18&charset=utf8'
+      REDIS_URL: 'redis://127.0.0.1:6379'
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: arcanorum_test
+          POSTGRES_USER: arcanorum_ci
+          POSTGRES_PASSWORD: ci-only-test-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U arcanorum_ci -d arcanorum_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Check out public validation branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Verify exact source commit and exclude credentials
+        shell: bash
+        env:
+          EXPECTED_SOURCE_SHA: 'c96df1383aa1377bba3cf7ac3016a4ea5eb3742c'
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$EXPECTED_SOURCE_SHA" | cmp -s - SOURCE_BASE_SHA
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path('.')
+          blocked = []
+          for path in root.rglob('*'):
+              if not path.is_file():
+                  continue
+              relative = path.as_posix()
+              if (path.name.startswith('.env')
+                  or '/secrets/' in f'/{relative}/'
+                  or relative.startswith(('var/', 'vendor/', 'node_modules/', 'logs/', 'test-results/', 'coverage/', 'public/uploads/', 'storage/private/', 'backups/'))
+                  or path.suffix.lower() in {'.pem', '.p12', '.key', '.sql', '.dump', '.sqlite', '.db'}):
+                  blocked.append(relative)
+
+          patterns = {
+              'private-key': re.compile(rb'-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----'),
+              'github-token': re.compile(rb'(?:gh[pousr]_[A-Za-z0-9_]{30,}|github_pat_[A-Za-z0-9_]{30,})'),
+              'aws-key': re.compile(rb'AKIA[0-9A-Z]{16}'),
+              'stripe-live': re.compile(rb'sk_live_[A-Za-z0-9]{16,}'),
+              'slack-token': re.compile(rb'xox[baprs]-[A-Za-z0-9-]{20,}'),
+          }
+          matches = []
+          for path in root.rglob('*'):
+              if path.is_file():
+                  data = path.read_bytes()
+                  for name, pattern in patterns.items():
+                      if pattern.search(data):
+                          matches.append((name, path.as_posix()))
+
+          if blocked or matches:
+              for relative in blocked:
+                  print(f'Forbidden file path: {relative}')
+              for name, relative in matches:
+                  print(f'Credential pattern {name} in {relative}')
+              raise SystemExit('Snapshot security check failed.')
+          print('Snapshot check passed: no forbidden files or high-confidence credential patterns.')
+          PY
+
+      - name: Set up PHP 8.5 and extensions
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0; Node 24
+        with:
+          php-version: '8.5'
+          extensions: gd, intl, mbstring, pdo_pgsql, xml, zip
+          tools: composer:v2
+          ini-values: memory_limit=1G
+
+      - name: Prepare Symfony environment
+        run: touch .env
+
+      - name: Validate and install locked Composer dependencies
+        run: |
+          composer validate --strict --no-interaction
+          composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader
+          composer audit --locked --no-interaction
+
+      - name: Prepare PostgreSQL schema
+        run: |
+          php bin/console doctrine:migrations:migrate --env=test --no-interaction
+          php bin/console doctrine:schema:validate --skip-sync
+
+      - name: Check changed PHP syntax
+        run: |
+          set -euo pipefail
+          for file in \
+            src/Entity/ScheduledTaskRun.php \
+            src/Module/Automation/Application/ScheduledTaskRunner.php \
+            tests/Entity/ScheduledTaskRunTest.php \
+            tests/Module/Automation/Application/ScheduledTaskRunnerTest.php \
+            tests/Repository/ScheduledTaskRepositoryTest.php; do
+            php -l "$file"
+          done
+
+      - name: PHPStan on changed scheduler files
+        run: >-
+          vendor/bin/phpstan analyse
+          --configuration=phpstan.neon.dist
+          --no-progress
+          --error-format=github
+          --memory-limit=1G
+          src/Entity/ScheduledTaskRun.php
+          src/Module/Automation/Application/ScheduledTaskRunner.php
+          tests/Entity/ScheduledTaskRunTest.php
+          tests/Module/Automation/Application/ScheduledTaskRunnerTest.php
+          tests/Repository/ScheduledTaskRepositoryTest.php
+
+      - name: PHP CS Fixer on changed scheduler files
+        run: >-
+          vendor/bin/php-cs-fixer check
+          --config=.php-cs-fixer.dist.php
+          --diff
+          --using-cache=no
+          src/Entity/ScheduledTaskRun.php
+          src/Module/Automation/Application/ScheduledTaskRunner.php
+          tests/Entity/ScheduledTaskRunTest.php
+          tests/Module/Automation/Application/ScheduledTaskRunnerTest.php
+          tests/Repository/ScheduledTaskRepositoryTest.php
+
+      - name: Rector dry run on changed scheduler files
+        run: >-
+          vendor/bin/rector process
+          src/Entity/ScheduledTaskRun.php
+          src/Module/Automation/Application/ScheduledTaskRunner.php
+          tests/Entity/ScheduledTaskRunTest.php
+          tests/Module/Automation/Application/ScheduledTaskRunnerTest.php
+          tests/Repository/ScheduledTaskRepositoryTest.php
+          --config=rector.php
+          --dry-run
+          --no-progress-bar
+          --output-format=github
+
+      - name: Run changed scheduler regression tests
+        run: |
+          mkdir -p var/test-results
+          php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
+            --fail-on-risky --fail-on-warning --fail-on-deprecation \
+            --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
+            --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
+            tests/Entity/ScheduledTaskRunTest.php \
+            tests/Module/Automation/Application/ScheduledTaskRunnerTest.php \
+            tests/Repository/ScheduledTaskRepositoryTest.php
+          python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
+
+  validate-analytics-focused:
+    if: github.event_name == 'workflow_dispatch' && (inputs.validation_scope == 'analytics-focused' || inputs.validation_scope == 'analytics-followup' || inputs.validation_scope == 'analytics-tests-only')
+    name: Focused M-54 GA4 consent and privacy checks
+    runs-on: ubuntu-26.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: arcanorum-snapshot
+    env:
+      APP_ENV: test
+      APP_DEBUG: '0'
+      APP_SECRET: ci-only-not-a-production-secret
+      DATABASE_URL: 'postgresql://arcanorum_ci:ci-only-test-password@127.0.0.1:5432/arcanorum_test?serverVersion=18&charset=utf8'
+      REDIS_URL: 'redis://127.0.0.1:6379'
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: arcanorum_test
+          POSTGRES_USER: arcanorum_ci
+          POSTGRES_PASSWORD: ci-only-test-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U arcanorum_ci -d arcanorum_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Check out public validation branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Verify exact source commit and exclude credentials
+        shell: bash
+        env:
+          EXPECTED_SOURCE_SHA: 'c96df1383aa1377bba3cf7ac3016a4ea5eb3742c'
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$EXPECTED_SOURCE_SHA" | cmp -s - SOURCE_BASE_SHA
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path('.')
+          blocked = []
+          for path in root.rglob('*'):
+              if not path.is_file():
+                  continue
+              relative = path.as_posix()
+              if (path.name.startswith('.env')
+                  or '/secrets/' in f'/{relative}/'
+                  or relative.startswith(('var/', 'vendor/', 'node_modules/', 'logs/', 'test-results/', 'coverage/', 'public/uploads/', 'storage/private/', 'backups/'))
+                  or path.suffix.lower() in {'.pem', '.p12', '.key', '.sql', '.dump', '.sqlite', '.db'}):
+                  blocked.append(relative)
+
+          patterns = {
+              'private-key': re.compile(rb'-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----'),
+              'github-token': re.compile(rb'(?:gh[pousr]_[A-Za-z0-9_]{30,}|github_pat_[A-Za-z0-9_]{30,})'),
+              'aws-key': re.compile(rb'AKIA[0-9A-Z]{16}'),
+              'stripe-live': re.compile(rb'sk_live_[A-Za-z0-9]{16,}'),
+              'slack-token': re.compile(rb'xox[baprs]-[A-Za-z0-9-]{20,}'),
+          }
+          matches = []
+          for path in root.rglob('*'):
+              if path.is_file():
+                  data = path.read_bytes()
+                  for name, pattern in patterns.items():
+                      if pattern.search(data):
+                          matches.append((name, path.as_posix()))
+
+          if blocked or matches:
+              for relative in blocked:
+                  print(f'Forbidden file path: {relative}')
+              for name, relative in matches:
+                  print(f'Credential pattern {name} in {relative}')
+              raise SystemExit('Snapshot security check failed.')
+          print('Snapshot check passed: no forbidden files or high-confidence credential patterns.')
+          PY
+
+      - name: Set up PHP 8.5 and Node 24
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.5'
+          extensions: gd, intl, mbstring, pcov, pdo_pgsql, redis, xml, zip
+          coverage: pcov
+          tools: composer:v2
+          ini-values: memory_limit=1G
+
+      - name: Set up Node 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+
+      - name: Validate and install locked Composer dependencies
+        run: |
+          touch .env
+          composer validate --strict --no-interaction
+          composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader
+          composer audit --locked --no-interaction
+
+      - name: Check affected PHP syntax
+        if: inputs.validation_scope == 'analytics-focused'
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in \
+            src/Entity/SiteSettings.php \
+            src/Module/Settings/Controller/AdminGeneralSettingsController.php \
+            src/Module/Settings/Controller/CookieConsentController.php \
+            src/Module/Settings/EventSubscriber/GoogleAnalyticsContentSecurityPolicySubscriber.php \
+            src/Module/Settings/Twig/GoogleAnalyticsExtension.php \
+            src/Service/GoogleAnalyticsContext.php \
+            migrations/Version20261030140000.php \
+            tests/Controller/AdminGeneralSettingsTest.php \
+            tests/Controller/CookieConsentControllerTest.php \
+            tests/Controller/GoogleAnalyticsConsentFlowTest.php \
+            tests/Entity/SiteSettingsTest.php \
+            tests/Migration/GoogleAnalyticsSettingsMigrationTest.php; do
+            php -l "$file"
+          done
+
+      - name: Lint affected Symfony configuration and Twig templates
+        if: inputs.validation_scope == 'analytics-focused'
+        run: |
+          php bin/console lint:yaml config/services.yaml
+          php bin/console lint:yaml translations
+          php bin/console lint:twig templates/admin/settings/general.html.twig
+          php bin/console lint:twig templates/base.html.twig
+          php bin/console lint:container --env=dev
+
+      - name: Prepare PostgreSQL schema and validate Doctrine mapping
+        if: inputs.validation_scope == 'analytics-focused' || inputs.validation_scope == 'analytics-followup' || inputs.validation_scope == 'analytics-tests-only'
+        run: |
+          php bin/console doctrine:migrations:migrate --env=test --no-interaction
+          php bin/console doctrine:schema:validate --skip-sync
+
+      - name: PHPStan level 10 on affected PHP files
+        if: inputs.validation_scope == 'analytics-focused'
+        run: >-
+          vendor/bin/phpstan analyse
+          --configuration=phpstan.neon.dist
+          --no-progress
+          --error-format=github
+          --memory-limit=1G
+          src/Entity/SiteSettings.php
+          src/Module/Settings/Controller/AdminGeneralSettingsController.php
+          src/Module/Settings/Controller/CookieConsentController.php
+          src/Module/Settings/EventSubscriber/GoogleAnalyticsContentSecurityPolicySubscriber.php
+          src/Module/Settings/Twig/GoogleAnalyticsExtension.php
+          src/Service/GoogleAnalyticsContext.php
+          migrations/Version20261030140000.php
+          tests/Controller/AdminGeneralSettingsTest.php
+          tests/Controller/CookieConsentControllerTest.php
+          tests/Controller/GoogleAnalyticsConsentFlowTest.php
+          tests/Entity/SiteSettingsTest.php
+          tests/Migration/GoogleAnalyticsSettingsMigrationTest.php
+
+      - name: PHPStan on the corrected Vary subscriber
+        if: inputs.validation_scope == 'analytics-followup'
+        run: >-
+          vendor/bin/phpstan analyse
+          --configuration=phpstan.neon.dist
+          --no-progress
+          --error-format=github
+          --memory-limit=1G
+          src/Module/Settings/EventSubscriber/GoogleAnalyticsContentSecurityPolicySubscriber.php
+
+      - name: PHP CS Fixer on affected PHP files
+        if: inputs.validation_scope == 'analytics-focused'
+        run: >-
+          vendor/bin/php-cs-fixer check
+          --config=.php-cs-fixer.dist.php
+          --diff
+          --using-cache=no
+          src/Entity/SiteSettings.php
+          src/Module/Settings/Controller/AdminGeneralSettingsController.php
+          src/Module/Settings/Controller/CookieConsentController.php
+          src/Module/Settings/EventSubscriber/GoogleAnalyticsContentSecurityPolicySubscriber.php
+          src/Module/Settings/Twig/GoogleAnalyticsExtension.php
+          src/Service/GoogleAnalyticsContext.php
+          migrations/Version20261030140000.php
+          tests/Controller/AdminGeneralSettingsTest.php
+          tests/Controller/CookieConsentControllerTest.php
+          tests/Controller/GoogleAnalyticsConsentFlowTest.php
+          tests/Entity/SiteSettingsTest.php
+          tests/Migration/GoogleAnalyticsSettingsMigrationTest.php
+
+      - name: PHP CS Fixer on the corrected Vary subscriber
+        if: inputs.validation_scope == 'analytics-followup'
+        run: >-
+          vendor/bin/php-cs-fixer check
+          --config=.php-cs-fixer.dist.php
+          --diff
+          --using-cache=no
+          src/Module/Settings/EventSubscriber/GoogleAnalyticsContentSecurityPolicySubscriber.php
+
+      - name: Rector dry run on affected PHP files
+        if: inputs.validation_scope == 'analytics-focused'
+        run: >-
+          vendor/bin/rector process
+          src/Entity/SiteSettings.php
+          src/Module/Settings/Controller/AdminGeneralSettingsController.php
+          src/Module/Settings/Controller/CookieConsentController.php
+          src/Module/Settings/EventSubscriber/GoogleAnalyticsContentSecurityPolicySubscriber.php
+          src/Module/Settings/Twig/GoogleAnalyticsExtension.php
+          src/Service/GoogleAnalyticsContext.php
+          migrations/Version20261030140000.php
+          tests/Controller/AdminGeneralSettingsTest.php
+          tests/Controller/CookieConsentControllerTest.php
+          tests/Controller/GoogleAnalyticsConsentFlowTest.php
+          tests/Entity/SiteSettingsTest.php
+          tests/Migration/GoogleAnalyticsSettingsMigrationTest.php
+          --config=rector.php
+          --dry-run
+          --no-progress-bar
+          --output-format=github
+
+      - name: Rector dry run on the corrected Vary subscriber
+        if: inputs.validation_scope == 'analytics-followup'
+        run: >-
+          vendor/bin/rector process
+          src/Module/Settings/EventSubscriber/GoogleAnalyticsContentSecurityPolicySubscriber.php
+          --config=rector.php
+          --dry-run
+          --no-progress-bar
+          --output-format=github
+
+      - name: Check corrected M-54 test syntax
+        if: inputs.validation_scope == 'analytics-tests-only'
+        run: |
+          php -l tests/Controller/AdminGeneralSettingsTest.php
+          php -l tests/Controller/CookieConsentControllerTest.php
+
+      - name: PHPStan on corrected M-54 tests
+        if: inputs.validation_scope == 'analytics-tests-only'
+        run: >-
+          vendor/bin/phpstan analyse
+          --configuration=phpstan.neon.dist
+          --no-progress
+          --error-format=github
+          --memory-limit=1G
+          tests/Controller/AdminGeneralSettingsTest.php
+          tests/Controller/CookieConsentControllerTest.php
+
+      - name: PHP CS Fixer on corrected M-54 tests
+        if: inputs.validation_scope == 'analytics-tests-only'
+        run: >-
+          vendor/bin/php-cs-fixer check
+          --config=.php-cs-fixer.dist.php
+          --diff
+          --using-cache=no
+          tests/Controller/AdminGeneralSettingsTest.php
+          tests/Controller/CookieConsentControllerTest.php
+
+      - name: Rector dry run on corrected M-54 tests
+        if: inputs.validation_scope == 'analytics-tests-only'
+        run: >-
+          vendor/bin/rector process
+          tests/Controller/AdminGeneralSettingsTest.php
+          tests/Controller/CookieConsentControllerTest.php
+          --config=rector.php
+          --dry-run
+          --no-progress-bar
+          --output-format=github
+
+      - name: Psalm taint analysis
+        if: inputs.validation_scope != 'analytics-tests-only'
+        run: |
+          mkdir -p var/test-results
+          vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm.sarif
+
+      - name: Run focused analytics JavaScript regression
+        if: inputs.validation_scope != 'analytics-tests-only'
+        run: |
+          node --check assets/analytics/google-analytics.js
+          node --test --test-reporter=tap tests/JavaScript/google-analytics.test.mjs
+
+      - name: Run only affected analytics PHP regressions
+        run: |
+          mkdir -p var/test-results
+          php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
+            --fail-on-risky --fail-on-warning --fail-on-deprecation \
+            --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
+            --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
+            --filter='testGoogleAnalyticsMeasurementIdAcceptsOnlyTheExactGa4FormatAtomically|testAdministratorCanSaveSettingsThatAffectPublicPagesAndDateRendering|testGeneralSettingsRejectUnknownFieldsWithoutSavingValidFields|testWithdrawingOptionalConsentExpiresOnlyGoogleAnalyticsCookies|testTrackingLoadsOnlyAfterOptionalConsentOnAllowlistedPublicRoutes|testMeasurementIdIsDisabledByDefaultAndDatabaseConstraintRejectsMalformedValues|testDowngradeRefusesToDiscardConfiguredMeasurementId' \
+            tests/Entity/SiteSettingsTest.php \
+            tests/Controller/AdminGeneralSettingsTest.php \
+            tests/Controller/CookieConsentControllerTest.php \
+            tests/Controller/GoogleAnalyticsConsentFlowTest.php \
+            tests/Migration/GoogleAnalyticsSettingsMigrationTest.php
+          python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
+
+  validate-member-activity-focused:
+    if: github.event_name == 'workflow_dispatch' && (inputs.validation_scope == 'member-activity-focused' || inputs.validation_scope == 'member-activity-followup' || inputs.validation_scope == 'dashboard-latest-content' || inputs.validation_scope == 'dashboard-latest-content-followup' || inputs.validation_scope == 'admin-password-change-followup' || inputs.validation_scope == 'video-provider-player-followup' || inputs.validation_scope == 'auto-feature-threshold-followup' || inputs.validation_scope == 'public-share-widget-followup' || inputs.validation_scope == 'public-share-widget-testfix-followup' || inputs.validation_scope == 'video-report-heading-testfix-followup')
+    name: Focused regression checks
+    runs-on: ubuntu-26.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: arcanorum-snapshot
+    env:
+      APP_ENV: test
+      APP_DEBUG: '0'
+      APP_SECRET: ci-only-not-a-production-secret
+      DATABASE_URL: 'postgresql://arcanorum_ci:ci-only-test-password@127.0.0.1:5432/arcanorum_test?serverVersion=18&charset=utf8'
+      REDIS_URL: 'redis://127.0.0.1:6379'
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: arcanorum_test
+          POSTGRES_USER: arcanorum_ci
+          POSTGRES_PASSWORD: ci-only-test-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U arcanorum_ci -d arcanorum_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Check out public validation branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Verify exact source commit and exclude credentials
+        shell: bash
+        env:
+          EXPECTED_SOURCE_SHA: 'c96df1383aa1377bba3cf7ac3016a4ea5eb3742c'
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$EXPECTED_SOURCE_SHA" | cmp -s - SOURCE_BASE_SHA
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path('.')
+          blocked = []
+          for path in root.rglob('*'):
+              if not path.is_file():
+                  continue
+              relative = path.as_posix()
+              if (path.name.startswith('.env')
+                  or '/secrets/' in f'/{relative}/'
+                  or relative.startswith(('var/', 'vendor/', 'node_modules/', 'logs/', 'test-results/', 'coverage/', 'public/uploads/', 'storage/private/', 'backups/'))
+                  or path.suffix.lower() in {'.pem', '.p12', '.key', '.sql', '.dump', '.sqlite', '.db'}):
+                  blocked.append(relative)
+
+          patterns = {
+              'private-key': re.compile(rb'-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----'),
+              'github-token': re.compile(rb'(?:gh[pousr]_[A-Za-z0-9_]{30,}|github_pat_[A-Za-z0-9_]{30,})'),
+              'aws-key': re.compile(rb'AKIA[0-9A-Z]{16}'),
+              'stripe-live': re.compile(rb'sk_live_[A-Za-z0-9]{16,}'),
+              'slack-token': re.compile(rb'xox[baprs]-[A-Za-z0-9-]{20,}'),
+          }
+          matches = []
+          for path in root.rglob('*'):
+              if path.is_file():
+                  data = path.read_bytes()
+                  for name, pattern in patterns.items():
+                      if pattern.search(data):
+                          matches.append((name, path.as_posix()))
+
+          if blocked or matches:
+              for relative in blocked:
+                  print(f'Forbidden file path: {relative}')
+              for name, relative in matches:
+                  print(f'Credential pattern {name} in {relative}')
+              raise SystemExit('Snapshot security check failed.')
+          print('Snapshot check passed: no forbidden files or high-confidence credential patterns.')
+          PY
+
+      - name: Set up PHP 8.5 and extensions
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.5'
+          extensions: gd, intl, mbstring, pcov, pdo_pgsql, redis, xml, zip
+          coverage: pcov
+          tools: composer:v2
+          ini-values: memory_limit=1G
+
+      - name: Validate and install locked Composer dependencies
+        if: inputs.validation_scope == 'member-activity-focused' || inputs.validation_scope == 'admin-password-change-followup' || inputs.validation_scope == 'video-provider-player-followup' || inputs.validation_scope == 'auto-feature-threshold-followup'
+        run: |
+          touch .env
+          composer validate --strict --no-interaction
+          composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader
+          composer audit --locked --no-interaction
+
+      - name: Install unchanged locked Composer dependencies
+        if: inputs.validation_scope == 'member-activity-followup' || inputs.validation_scope == 'dashboard-latest-content' || inputs.validation_scope == 'dashboard-latest-content-followup' || inputs.validation_scope == 'public-share-widget-followup' || inputs.validation_scope == 'public-share-widget-testfix-followup' || inputs.validation_scope == 'video-report-heading-testfix-followup'
+        run: |
+          touch .env
+          composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader
+
+      - name: Check dashboard PHP syntax
+        if: inputs.validation_scope == 'dashboard-latest-content' || inputs.validation_scope == 'dashboard-latest-content-followup'
+        run: |
+          php -l src/Module/Admin/Controller/DashboardController.php
+          php -l src/Repository/ContentCommentRepository.php
+          php -l src/Repository/StaticPageRepository.php
+          php -l src/Repository/VideoReportRepository.php
+          php -l src/Repository/VideoSubmissionRepository.php
+          php -l tests/Controller/AdminDashboardTest.php
+
+      - name: Check administrator password change PHP syntax
+        if: inputs.validation_scope == 'admin-password-change-followup'
+        run: |
+          php -l src/Module/Admin/Controller/AdminPasswordChangeController.php
+          php -l tests/Controller/AdminPasswordChangeFlowTest.php
+
+      - name: Check video provider player regression PHP syntax
+        if: inputs.validation_scope == 'video-provider-player-followup'
+        run: php -l tests/Controller/VideoEmbedFlowTest.php
+
+      - name: Check automatic feature threshold PHP syntax
+        if: inputs.validation_scope == 'auto-feature-threshold-followup'
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in \
+            migrations/Version20261030221700.php \
+            src/Entity/SiteSettings.php \
+            src/Module/Settings/Controller/AdminContentSettingsController.php \
+            src/Repository/VideoRepository.php \
+            src/Service/VideoViewCounter.php \
+            tests/Controller/AdminGeneralSettingsTest.php \
+            tests/Controller/PopularVideoTest.php \
+            tests/Entity/SiteSettingsTest.php \
+            tests/Migration/VideoPlayerSettingsMigrationTest.php \
+            tests/Translation/AdminSettingsTranslationTest.php; do
+            php -l "$file"
+          done
+
+      - name: Check public share widget PHP syntax
+        if: inputs.validation_scope == 'public-share-widget-followup'
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in \
+            src/Module/News/Controller/NewsPublicController.php \
+            src/Module/Series/Controller/PublicSeriesController.php \
+            src/Module/Video/Controller/VideoPublicController.php \
+            tests/Controller/AdminGeneralSettingsTest.php \
+            tests/Controller/PublicContentTest.php \
+            tests/Controller/PublicSeriesFlowTest.php \
+            tests/Controller/PublicVideoRecommendationTest.php; do
+            php -l "$file"
+          done
+
+      - name: Check corrected public display admin test syntax
+        if: inputs.validation_scope == 'public-share-widget-testfix-followup'
+        run: php -l tests/Controller/AdminGeneralSettingsTest.php
+
+      - name: Check video report share heading regression syntax
+        if: inputs.validation_scope == 'video-report-heading-testfix-followup'
+        run: php -l tests/Controller/VideoReportFlowTest.php
+
+      - name: Check affected PHP syntax
+        if: inputs.validation_scope == 'member-activity-focused'
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in \
+            migrations/Version20261030203000.php \
+            src/Entity/MemberActivityModeration.php \
+            src/Entity/MemberActivityModerationStatus.php \
+            src/Entity/MemberActivityType.php \
+            src/Module/Admin/Controller/MemberActivityAdminController.php \
+            src/Repository/MemberActivityAdminRepository.php \
+            src/Repository/MemberFollowRepository.php \
+            tests/Controller/MemberActivityAdminFlowTest.php \
+            tests/Entity/MemberActivityModerationTest.php \
+            tests/Migration/MemberActivityModerationMigrationTest.php \
+            tests/Translation/MemberActivityTranslationTest.php; do
+            php -l "$file"
+          done
+
+      - name: Check only the corrected migration test syntax
+        if: inputs.validation_scope == 'member-activity-followup'
+        run: php -l tests/Migration/MemberActivityModerationMigrationTest.php
+
+      - name: Lint affected Symfony translations and Twig templates
+        if: inputs.validation_scope == 'member-activity-focused'
+        run: |
+          php bin/console lint:yaml translations
+          php bin/console lint:twig templates/admin/layout.html.twig templates/admin/member_activity/index.html.twig
+          php bin/console lint:container --env=dev
+          APP_ENV=prod APP_DEBUG=0 php bin/console lint:container --env=prod
+
+      - name: Lint dashboard translation catalogs
+        if: inputs.validation_scope == 'dashboard-latest-content' || inputs.validation_scope == 'dashboard-latest-content-followup'
+        run: |
+          php bin/console lint:yaml translations/messages.de.yaml
+          php bin/console lint:yaml translations/messages.en.yaml
+          php bin/console lint:yaml translations/messages.ar.yaml
+
+      - name: Lint dashboard Twig template and service containers
+        if: inputs.validation_scope == 'dashboard-latest-content' || inputs.validation_scope == 'dashboard-latest-content-followup'
+        run: |
+          php bin/console lint:twig templates/admin/dashboard.html.twig
+          php bin/console lint:container --env=dev
+          APP_ENV=prod APP_DEBUG=0 php bin/console lint:container --env=prod
+
+      - name: Lint administrator password page and service containers
+        if: inputs.validation_scope == 'admin-password-change-followup'
+        run: |
+          php bin/console lint:twig templates/admin/security/password.html.twig
+          php bin/console lint:container --env=dev
+          APP_ENV=prod APP_DEBUG=0 php bin/console lint:container --env=prod
+
+      - name: Lint video page and service containers
+        if: inputs.validation_scope == 'video-provider-player-followup'
+        run: |
+          php bin/console lint:twig templates/videos/show.html.twig
+          php bin/console lint:container --env=dev
+          APP_ENV=prod APP_DEBUG=0 php bin/console lint:container --env=prod
+
+      - name: Lint automatic feature threshold translations, Twig and service containers
+        if: inputs.validation_scope == 'auto-feature-threshold-followup'
+        run: |
+          php bin/console lint:yaml translations/messages.de.yaml translations/messages.en.yaml translations/messages.ar.yaml
+          php bin/console lint:twig templates/admin/settings/content.html.twig
+          php bin/console lint:container --env=dev
+          APP_ENV=prod APP_DEBUG=0 php bin/console lint:container --env=prod
+
+      - name: Lint public share widget translations, Twig and service containers
+        if: inputs.validation_scope == 'public-share-widget-followup'
+        run: |
+          php bin/console lint:yaml translations/messages.de.yaml translations/messages.en.yaml translations/messages.ar.yaml
+          php bin/console lint:twig templates/admin/settings/public_display.html.twig templates/news/show.html.twig templates/videos/show.html.twig templates/series/episode.html.twig templates/partials/public_share_links.html.twig
+          php bin/console lint:container --env=dev
+          APP_ENV=prod APP_DEBUG=0 php bin/console lint:container --env=prod
+
+      - name: Prepare PostgreSQL schema and validate Doctrine mapping
+        run: |
+          php bin/console doctrine:migrations:migrate --env=test --no-interaction
+          php bin/console doctrine:schema:validate --skip-sync
+
+      - name: PHPStan level 10 on affected PHP files
+        if: inputs.validation_scope == 'member-activity-focused'
+        run: >-
+          vendor/bin/phpstan analyse
+          --configuration=phpstan.neon.dist
+          --no-progress
+          --error-format=table
+          --memory-limit=1G
+          migrations/Version20261030203000.php
+          src/Entity/MemberActivityModeration.php
+          src/Entity/MemberActivityModerationStatus.php
+          src/Entity/MemberActivityType.php
+          src/Module/Admin/Controller/MemberActivityAdminController.php
+          src/Repository/MemberActivityAdminRepository.php
+          src/Repository/MemberFollowRepository.php
+          tests/Controller/MemberActivityAdminFlowTest.php
+          tests/Entity/MemberActivityModerationTest.php
+          tests/Migration/MemberActivityModerationMigrationTest.php
+          tests/Translation/MemberActivityTranslationTest.php
+
+      - name: PHPStan on the corrected migration test
+        if: inputs.validation_scope == 'member-activity-followup'
+        run: >-
+          vendor/bin/phpstan analyse
+          --configuration=phpstan.neon.dist
+          --no-progress
+          --error-format=table
+          --memory-limit=1G
+          tests/Migration/MemberActivityModerationMigrationTest.php
+
+      - name: PHPStan on dashboard PHP files
+        if: inputs.validation_scope == 'dashboard-latest-content' || inputs.validation_scope == 'dashboard-latest-content-followup'
+        run: >-
+          vendor/bin/phpstan analyse
+          --configuration=phpstan.neon.dist
+          --no-progress
+          --error-format=table
+          --memory-limit=1G
+          src/Module/Admin/Controller/DashboardController.php
+          src/Repository/ContentCommentRepository.php
+          src/Repository/StaticPageRepository.php
+          src/Repository/VideoReportRepository.php
+          src/Repository/VideoSubmissionRepository.php
+          tests/Controller/AdminDashboardTest.php
+
+      - name: PHPStan on administrator password change
+        if: inputs.validation_scope == 'admin-password-change-followup'
+        run: >-
+          vendor/bin/phpstan analyse
+          --configuration=phpstan.neon.dist
+          --no-progress
+          --error-format=table
+          --memory-limit=1G
+          src/Module/Admin/Controller/AdminPasswordChangeController.php
+          tests/Controller/AdminPasswordChangeFlowTest.php
+
+      - name: PHPStan on video provider player regression
+        if: inputs.validation_scope == 'video-provider-player-followup'
+        run: >-
+          vendor/bin/phpstan analyse
+          --configuration=phpstan.neon.dist
+          --no-progress
+          --error-format=table
+          --memory-limit=1G
+          tests/Controller/VideoEmbedFlowTest.php
+
+      - name: PHPStan on automatic feature threshold
+        if: inputs.validation_scope == 'auto-feature-threshold-followup'
+        run: >-
+          vendor/bin/phpstan analyse
+          --configuration=phpstan.neon.dist
+          --no-progress
+          --error-format=table
+          --memory-limit=1G
+          migrations/Version20261030221700.php
+          src/Entity/SiteSettings.php
+          src/Module/Settings/Controller/AdminContentSettingsController.php
+          src/Repository/VideoRepository.php
+          src/Service/VideoViewCounter.php
+          tests/Controller/AdminGeneralSettingsTest.php
+          tests/Controller/PopularVideoTest.php
+          tests/Entity/SiteSettingsTest.php
+          tests/Migration/VideoPlayerSettingsMigrationTest.php
+          tests/Translation/AdminSettingsTranslationTest.php
+
+      - name: PHPStan on public share widget regressions
+        if: inputs.validation_scope == 'public-share-widget-followup'
+        run: >-
+          vendor/bin/phpstan analyse
+          --configuration=phpstan.neon.dist
+          --no-progress
+          --error-format=table
+          --memory-limit=1G
+          src/Module/News/Controller/NewsPublicController.php
+          src/Module/Series/Controller/PublicSeriesController.php
+          src/Module/Video/Controller/VideoPublicController.php
+          tests/Controller/AdminGeneralSettingsTest.php
+          tests/Controller/PublicContentTest.php
+          tests/Controller/PublicSeriesFlowTest.php
+          tests/Controller/PublicVideoRecommendationTest.php
+
+      - name: PHPStan on corrected public display admin test
+        if: inputs.validation_scope == 'public-share-widget-testfix-followup'
+        run: >-
+          vendor/bin/phpstan analyse
+          --configuration=phpstan.neon.dist
+          --no-progress
+          --error-format=table
+          --memory-limit=1G
+          tests/Controller/AdminGeneralSettingsTest.php
+
+      - name: PHPStan on video report share heading regression
+        if: inputs.validation_scope == 'video-report-heading-testfix-followup'
+        run: >-
+          vendor/bin/phpstan analyse
+          --configuration=phpstan.neon.dist
+          --no-progress
+          --error-format=table
+          --memory-limit=1G
+          tests/Controller/VideoReportFlowTest.php
+
+      - name: PHP CS Fixer on affected PHP files
+        if: inputs.validation_scope == 'member-activity-focused'
+        run: >-
+          vendor/bin/php-cs-fixer check
+          --config=.php-cs-fixer.dist.php
+          --diff
+          --using-cache=no
+          migrations/Version20261030203000.php
+          src/Entity/MemberActivityModeration.php
+          src/Entity/MemberActivityModerationStatus.php
+          src/Entity/MemberActivityType.php
+          src/Module/Admin/Controller/MemberActivityAdminController.php
+          src/Repository/MemberActivityAdminRepository.php
+          src/Repository/MemberFollowRepository.php
+          tests/Controller/MemberActivityAdminFlowTest.php
+          tests/Entity/MemberActivityModerationTest.php
+          tests/Migration/MemberActivityModerationMigrationTest.php
+          tests/Translation/MemberActivityTranslationTest.php
+
+      - name: PHP CS Fixer on the corrected migration test
+        if: inputs.validation_scope == 'member-activity-followup'
+        run: >-
+          vendor/bin/php-cs-fixer check
+          --config=.php-cs-fixer.dist.php
+          --diff
+          --using-cache=no
+          tests/Migration/MemberActivityModerationMigrationTest.php
+
+      - name: PHP CS Fixer on dashboard PHP files
+        if: inputs.validation_scope == 'dashboard-latest-content' || inputs.validation_scope == 'dashboard-latest-content-followup'
+        run: >-
+          vendor/bin/php-cs-fixer check
+          --config=.php-cs-fixer.dist.php
+          --diff
+          --using-cache=no
+          src/Module/Admin/Controller/DashboardController.php
+          src/Repository/ContentCommentRepository.php
+          src/Repository/StaticPageRepository.php
+          src/Repository/VideoReportRepository.php
+          src/Repository/VideoSubmissionRepository.php
+          tests/Controller/AdminDashboardTest.php
+
+      - name: PHP CS Fixer on administrator password change
+        if: inputs.validation_scope == 'admin-password-change-followup'
+        run: >-
+          vendor/bin/php-cs-fixer check
+          --config=.php-cs-fixer.dist.php
+          --diff
+          --using-cache=no
+          src/Module/Admin/Controller/AdminPasswordChangeController.php
+          tests/Controller/AdminPasswordChangeFlowTest.php
+
+      - name: PHP CS Fixer on video provider player regression
+        if: inputs.validation_scope == 'video-provider-player-followup'
+        run: >-
+          vendor/bin/php-cs-fixer check
+          --config=.php-cs-fixer.dist.php
+          --diff
+          --using-cache=no
+          tests/Controller/VideoEmbedFlowTest.php
+
+      - name: PHP CS Fixer on automatic feature threshold
+        if: inputs.validation_scope == 'auto-feature-threshold-followup'
+        run: >-
+          vendor/bin/php-cs-fixer check
+          --config=.php-cs-fixer.dist.php
+          --diff
+          --using-cache=no
+          migrations/Version20261030221700.php
+          src/Entity/SiteSettings.php
+          src/Module/Settings/Controller/AdminContentSettingsController.php
+          src/Repository/VideoRepository.php
+          src/Service/VideoViewCounter.php
+          tests/Controller/AdminGeneralSettingsTest.php
+          tests/Controller/PopularVideoTest.php
+          tests/Entity/SiteSettingsTest.php
+          tests/Migration/VideoPlayerSettingsMigrationTest.php
+          tests/Translation/AdminSettingsTranslationTest.php
+
+      - name: PHP CS Fixer on public share widget regressions
+        if: inputs.validation_scope == 'public-share-widget-followup'
+        run: >-
+          vendor/bin/php-cs-fixer check
+          --config=.php-cs-fixer.dist.php
+          --diff
+          --using-cache=no
+          src/Module/News/Controller/NewsPublicController.php
+          src/Module/Series/Controller/PublicSeriesController.php
+          src/Module/Video/Controller/VideoPublicController.php
+          tests/Controller/AdminGeneralSettingsTest.php
+          tests/Controller/PublicContentTest.php
+          tests/Controller/PublicSeriesFlowTest.php
+          tests/Controller/PublicVideoRecommendationTest.php
+
+      - name: PHP CS Fixer on corrected public display admin test
+        if: inputs.validation_scope == 'public-share-widget-testfix-followup'
+        run: >-
+          vendor/bin/php-cs-fixer check
+          --config=.php-cs-fixer.dist.php
+          --diff
+          --using-cache=no
+          tests/Controller/AdminGeneralSettingsTest.php
+
+      - name: PHP CS Fixer on video report share heading regression
+        if: inputs.validation_scope == 'video-report-heading-testfix-followup'
+        run: >-
+          vendor/bin/php-cs-fixer check
+          --config=.php-cs-fixer.dist.php
+          --diff
+          --using-cache=no
+          tests/Controller/VideoReportFlowTest.php
+
+      - name: Rector dry run on affected PHP files
+        if: inputs.validation_scope == 'member-activity-focused'
+        run: >-
+          vendor/bin/rector process
+          migrations/Version20261030203000.php
+          src/Entity/MemberActivityModeration.php
+          src/Entity/MemberActivityModerationStatus.php
+          src/Entity/MemberActivityType.php
+          src/Module/Admin/Controller/MemberActivityAdminController.php
+          src/Repository/MemberActivityAdminRepository.php
+          src/Repository/MemberFollowRepository.php
+          tests/Controller/MemberActivityAdminFlowTest.php
+          tests/Entity/MemberActivityModerationTest.php
+          tests/Migration/MemberActivityModerationMigrationTest.php
+          tests/Translation/MemberActivityTranslationTest.php
+          --config=rector.php
+          --dry-run
+          --no-progress-bar
+
+      - name: Rector dry run on the corrected migration test
+        if: inputs.validation_scope == 'member-activity-followup'
+        run: >-
+          vendor/bin/rector process
+          tests/Migration/MemberActivityModerationMigrationTest.php
+          --config=rector.php
+          --dry-run
+          --no-progress-bar
+
+      - name: Rector dry run on dashboard PHP files
+        if: inputs.validation_scope == 'dashboard-latest-content' || inputs.validation_scope == 'dashboard-latest-content-followup'
+        run: >-
+          vendor/bin/rector process
+          src/Module/Admin/Controller/DashboardController.php
+          src/Repository/ContentCommentRepository.php
+          src/Repository/StaticPageRepository.php
+          src/Repository/VideoReportRepository.php
+          src/Repository/VideoSubmissionRepository.php
+          tests/Controller/AdminDashboardTest.php
+          --config=rector.php
+          --dry-run
+          --no-progress-bar
+
+      - name: Rector dry run on administrator password change
+        if: inputs.validation_scope == 'admin-password-change-followup'
+        run: >-
+          vendor/bin/rector process
+          src/Module/Admin/Controller/AdminPasswordChangeController.php
+          tests/Controller/AdminPasswordChangeFlowTest.php
+          --config=rector.php
+          --dry-run
+          --no-progress-bar
+
+      - name: Rector dry run on video provider player regression
+        if: inputs.validation_scope == 'video-provider-player-followup'
+        run: >-
+          vendor/bin/rector process
+          tests/Controller/VideoEmbedFlowTest.php
+          --config=rector.php
+          --dry-run
+          --no-progress-bar
+
+      - name: Rector dry run on automatic feature threshold
+        if: inputs.validation_scope == 'auto-feature-threshold-followup'
+        run: >-
+          vendor/bin/rector process
+          migrations/Version20261030221700.php
+          src/Entity/SiteSettings.php
+          src/Module/Settings/Controller/AdminContentSettingsController.php
+          src/Repository/VideoRepository.php
+          src/Service/VideoViewCounter.php
+          tests/Controller/AdminGeneralSettingsTest.php
+          tests/Controller/PopularVideoTest.php
+          tests/Entity/SiteSettingsTest.php
+          tests/Migration/VideoPlayerSettingsMigrationTest.php
+          tests/Translation/AdminSettingsTranslationTest.php
+          --config=rector.php
+          --dry-run
+          --no-progress-bar
+
+      - name: Rector dry run on public share widget regressions
+        if: inputs.validation_scope == 'public-share-widget-followup'
+        run: >-
+          vendor/bin/rector process
+          src/Module/News/Controller/NewsPublicController.php
+          src/Module/Series/Controller/PublicSeriesController.php
+          src/Module/Video/Controller/VideoPublicController.php
+          tests/Controller/AdminGeneralSettingsTest.php
+          tests/Controller/PublicContentTest.php
+          tests/Controller/PublicSeriesFlowTest.php
+          tests/Controller/PublicVideoRecommendationTest.php
+          --config=rector.php
+          --dry-run
+          --no-progress-bar
+
+      - name: Rector dry run on corrected public display admin test
+        if: inputs.validation_scope == 'public-share-widget-testfix-followup'
+        run: >-
+          vendor/bin/rector process
+          tests/Controller/AdminGeneralSettingsTest.php
+          --config=rector.php
+          --dry-run
+          --no-progress-bar
+
+      - name: Rector dry run on video report share heading regression
+        if: inputs.validation_scope == 'video-report-heading-testfix-followup'
+        run: >-
+          vendor/bin/rector process
+          tests/Controller/VideoReportFlowTest.php
+          --config=rector.php
+          --dry-run
+          --no-progress-bar
+
+      - name: Psalm taint analysis
+        if: inputs.validation_scope == 'member-activity-focused' || inputs.validation_scope == 'dashboard-latest-content' || inputs.validation_scope == 'dashboard-latest-content-followup' || inputs.validation_scope == 'admin-password-change-followup' || inputs.validation_scope == 'video-provider-player-followup' || inputs.validation_scope == 'auto-feature-threshold-followup'
+        run: |
+          mkdir -p var/test-results
+          vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm.sarif
+
+      - name: Psalm taint analysis on public share widget regressions
+        if: inputs.validation_scope == 'public-share-widget-followup'
+        run: |
+          mkdir -p var/test-results
+          vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm.sarif \
+            src/Module/News/Controller/NewsPublicController.php \
+            src/Module/Series/Controller/PublicSeriesController.php \
+            src/Module/Video/Controller/VideoPublicController.php \
+            tests/Controller/AdminGeneralSettingsTest.php \
+            tests/Controller/PublicContentTest.php \
+            tests/Controller/PublicSeriesFlowTest.php \
+            tests/Controller/PublicVideoRecommendationTest.php
+
+      - name: Psalm taint analysis on corrected public display admin test
+        if: inputs.validation_scope == 'public-share-widget-testfix-followup'
+        run: |
+          mkdir -p var/test-results
+          vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm.sarif \
+            tests/Controller/AdminGeneralSettingsTest.php
+
+      - name: Psalm taint analysis on video report share heading regression
+        if: inputs.validation_scope == 'video-report-heading-testfix-followup'
+        run: |
+          mkdir -p var/test-results
+          vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm.sarif \
+            tests/Controller/VideoReportFlowTest.php
+
+      - name: Run dashboard latest content regressions
+        if: inputs.validation_scope == 'dashboard-latest-content' || inputs.validation_scope == 'dashboard-latest-content-followup'
+        run: |
+          mkdir -p var/test-results
+          php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
+            --fail-on-risky --fail-on-warning --fail-on-deprecation \
+            --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
+            --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
+            --filter='testSystemOverviewShowsOnlyCuratedRuntimeValuesToAdmin|testDashboardShowsBoundedPendingVideoReviewQueuesWithoutPrivateDetails' \
+            tests/Controller/AdminDashboardTest.php
+          python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
+
+      - name: Run administrator password change regressions
+        if: inputs.validation_scope == 'admin-password-change-followup'
+        run: |
+          mkdir -p var/test-results
+          php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
+            --fail-on-risky --fail-on-warning --fail-on-deprecation \
+            --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
+            --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
+            tests/Controller/AdminPasswordChangeFlowTest.php
+          python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
+
+      - name: Run video provider player regression
+        if: inputs.validation_scope == 'video-provider-player-followup'
+        run: |
+          mkdir -p var/test-results
+          php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
+            --fail-on-risky --fail-on-warning --fail-on-deprecation \
+            --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
+            --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
+            --filter='testSiteWideEmbeddingSwitchAndPlayerOptionsApplyToArcanorumPlayer|testProviderEmbedsIgnoreSiteWideVideoJsEngineAndRemainConsentGated' \
+            tests/Controller/VideoEmbedFlowTest.php
+          python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
+
+      - name: Run automatic feature threshold regressions
+        if: inputs.validation_scope == 'auto-feature-threshold-followup'
+        run: |
+          mkdir -p var/test-results
+          php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
+            --fail-on-risky --fail-on-warning --fail-on-deprecation \
+            --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
+            --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
+            tests/Controller/AdminGeneralSettingsTest.php \
+            tests/Controller/PopularVideoTest.php \
+            tests/Entity/SiteSettingsTest.php \
+            tests/Migration/VideoPlayerSettingsMigrationTest.php \
+            tests/Translation/AdminSettingsTranslationTest.php
+          python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
+
+      - name: Run only public share widget regressions
+        if: inputs.validation_scope == 'public-share-widget-followup'
+        run: |
+          mkdir -p var/test-results
+          php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
+            --fail-on-risky --fail-on-warning --fail-on-deprecation \
+            --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
+            --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
+            --filter='testNewsShareLinksUseTheConfiguredCanonicalUrlAndRespectVisibilitySettings|testSeriesEpisodeShareLinksUseTheCanonicalRouteAndRespectTheSiteSetting|testDetailRecommendationsUseRelatedPublicContentAndAggregateRatings|testAdministratorCanConfigurePublicDisplayWithoutExposingPrivateSettings' \
+            tests/Controller/AdminGeneralSettingsTest.php \
+            tests/Controller/PublicContentTest.php \
+            tests/Controller/PublicSeriesFlowTest.php \
+            tests/Controller/PublicVideoRecommendationTest.php
+          python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
+
+      - name: Run video report share heading regression
+        if: inputs.validation_scope == 'video-report-heading-testfix-followup'
+        run: |
+          mkdir -p var/test-results
+          php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
+            --fail-on-risky --fail-on-warning --fail-on-deprecation \
+            --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
+            --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
+            --filter='testPublishedVideoCanBeReportedButDraftCannot' \
+            tests/Controller/VideoReportFlowTest.php
+          python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
+
+      - name: Run only public display admin assertion regression
+        if: inputs.validation_scope == 'public-share-widget-testfix-followup'
+        run: |
+          mkdir -p var/test-results
+          php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
+            --fail-on-risky --fail-on-warning --fail-on-deprecation \
+            --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
+            --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
+            --filter='testAdministratorCanConfigurePublicDisplayWithoutExposingPrivateSettings' \
+            tests/Controller/AdminGeneralSettingsTest.php
+          python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
+
+      - name: Run affected member activity and public feed regressions
+        if: inputs.validation_scope == 'member-activity-focused'
+        run: |
+          mkdir -p var/test-results
+          php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
+            --fail-on-risky --fail-on-warning --fail-on-deprecation \
+            --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
+            --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
+            tests/Controller/MemberActivityAdminFlowTest.php \
+            tests/Controller/MemberFollowFlowTest.php \
+            tests/Entity/MemberActivityModerationTest.php \
+            tests/Migration/MemberActivityModerationMigrationTest.php \
+            tests/Translation/MemberActivityTranslationTest.php
+          python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
+
+      - name: Run only the corrected migration regression
+        if: inputs.validation_scope == 'member-activity-followup'
+        run: |
+          mkdir -p var/test-results
+          php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
+            --fail-on-risky --fail-on-warning --fail-on-deprecation \
+            --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
+            --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
+            --filter='testSourceDeletionCascadesAndDowngradePreservesModerationState' \
+            tests/Migration/MemberActivityModerationMigrationTest.php
+          python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
+
+  validate-manual-video-source-check:
+    if: github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'manual-video-source-check-followup'
+    name: Focused manual video source status checks
+    runs-on: ubuntu-26.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: arcanorum-snapshot
+    env:
+      APP_ENV: test
+      APP_DEBUG: '0'
+      APP_SECRET: ci-only-not-a-production-secret
+      DATABASE_URL: 'postgresql://arcanorum_ci:ci-only-test-password@127.0.0.1:5432/arcanorum_test?serverVersion=18&charset=utf8'
+      REDIS_URL: 'redis://127.0.0.1:6379'
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: arcanorum_test
+          POSTGRES_USER: arcanorum_ci
+          POSTGRES_PASSWORD: ci-only-test-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U arcanorum_ci -d arcanorum_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Check out public validation branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Verify exact source commit and exclude credentials
+        shell: bash
+        env:
+          EXPECTED_SOURCE_SHA: 'c96df1383aa1377bba3cf7ac3016a4ea5eb3742c'
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$EXPECTED_SOURCE_SHA" | cmp -s - SOURCE_BASE_SHA
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path('.')
+          blocked = []
+          patterns = {
+              'private-key': re.compile(rb'-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----'),
+              'github-token': re.compile(rb'(?:gh[pousr]_[A-Za-z0-9_]{30,}|github_pat_[A-Za-z0-9_]{30,})'),
+              'aws-key': re.compile(rb'AKIA[0-9A-Z]{16}'),
+              'stripe-live': re.compile(rb'sk_live_[A-Za-z0-9]{16,}'),
+              'slack-token': re.compile(rb'xox[baprs]-[A-Za-z0-9-]{20,}'),
+          }
+          matches = []
+          for path in root.rglob('*'):
+              if not path.is_file():
+                  continue
+              relative = path.as_posix()
+              if (path.name.startswith('.env')
+                  or '/secrets/' in f'/{relative}/'
+                  or relative.startswith(('var/', 'vendor/', 'node_modules/', 'logs/', 'test-results/', 'coverage/', 'public/uploads/', 'storage/private/', 'backups/'))
+                  or path.suffix.lower() in {'.pem', '.p12', '.key', '.sql', '.dump', '.sqlite', '.db'}):
+                  blocked.append(relative)
+              data = path.read_bytes()
+              for name, pattern in patterns.items():
+                  if pattern.search(data):
+                      matches.append((name, relative))
+
+          if blocked or matches:
+              for relative in blocked:
+                  print(f'Forbidden file path: {relative}')
+              for name, relative in matches:
+                  print(f'Credential pattern {name} in {relative}')
+              raise SystemExit('Snapshot security check failed.')
+          print('Snapshot check passed: no forbidden files or high-confidence credential patterns.')
+          PY
+
+      - name: Set up PHP 8.5 and extensions
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.5'
+          extensions: gd, intl, mbstring, pcov, pdo_pgsql, redis, xml, zip
+          coverage: pcov
+          tools: composer:v2
+          ini-values: memory_limit=1G
+
+      - name: Install unchanged locked Composer dependencies
+        run: |
+          touch .env
+          composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader
+
+      - name: Check affected PHP syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in \
+            migrations/Version20261030230000.php \
+            src/Entity/Video.php \
+            src/Module/Video/Controller/VideoAdminController.php \
+            tests/Controller/AdminDashboardTest.php \
+            tests/Entity/VideoExternalSourceStatusTest.php \
+            tests/Module/Automation/Application/VideoSourceCheckTaskHandlerTest.php; do
+            php -l "$file"
+          done
+
+      - name: Lint affected Symfony translations, Twig and service containers
+        run: |
+          php bin/console lint:yaml translations/messages.de.yaml translations/messages.en.yaml translations/messages.ar.yaml
+          php bin/console lint:twig templates/admin/videos/index.html.twig
+          php bin/console lint:container --env=dev
+          APP_ENV=prod APP_DEBUG=0 php bin/console lint:container --env=prod
+
+      - name: Prepare PostgreSQL schema and validate Doctrine mapping
+        run: |
+          php bin/console doctrine:migrations:migrate --env=test --no-interaction
+          php bin/console doctrine:schema:validate --skip-sync
+
+      - name: PHPStan level 10 on affected PHP files
+        run: >-
+          vendor/bin/phpstan analyse
+          --configuration=phpstan.neon.dist
+          --no-progress
+          --error-format=table
+          --memory-limit=1G
+          migrations/Version20261030230000.php
+          src/Entity/Video.php
+          src/Module/Video/Controller/VideoAdminController.php
+          tests/Controller/AdminDashboardTest.php
+          tests/Entity/VideoExternalSourceStatusTest.php
+          tests/Module/Automation/Application/VideoSourceCheckTaskHandlerTest.php
+
+      - name: PHP CS Fixer on affected PHP files
+        run: >-
+          vendor/bin/php-cs-fixer check
+          --config=.php-cs-fixer.dist.php
+          --diff
+          --using-cache=no
+          migrations/Version20261030230000.php
+          src/Entity/Video.php
+          src/Module/Video/Controller/VideoAdminController.php
+          tests/Controller/AdminDashboardTest.php
+          tests/Entity/VideoExternalSourceStatusTest.php
+          tests/Module/Automation/Application/VideoSourceCheckTaskHandlerTest.php
+
+      - name: Rector dry run on affected PHP files
+        run: >-
+          vendor/bin/rector process
+          migrations/Version20261030230000.php
+          src/Entity/Video.php
+          src/Module/Video/Controller/VideoAdminController.php
+          tests/Controller/AdminDashboardTest.php
+          tests/Entity/VideoExternalSourceStatusTest.php
+          tests/Module/Automation/Application/VideoSourceCheckTaskHandlerTest.php
+          --config=rector.php
+          --dry-run
+          --no-progress-bar
+
+      - name: Psalm taint analysis on affected PHP files
+        run: |
+          mkdir -p var/test-results
+          vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm.sarif \
+            migrations/Version20261030230000.php \
+            src/Entity/Video.php \
+            src/Module/Video/Controller/VideoAdminController.php \
+            tests/Controller/AdminDashboardTest.php \
+            tests/Entity/VideoExternalSourceStatusTest.php \
+            tests/Module/Automation/Application/VideoSourceCheckTaskHandlerTest.php
+
+      - name: Run manual video source check regressions
+        run: |
+          mkdir -p var/test-results
+          php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
+            --fail-on-risky --fail-on-warning --fail-on-deprecation \
+            --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
+            --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
+            --filter='testVideoBulkSourceCheckUsesFixedProvidersAndStoresTheOutcome|testFailedCheckIsRecordedWithoutDiscardingTheLastKnownStatus|testProviderFailureAdvancesRetryCursorAndPreservesLastKnownStatus' \
+            tests/Controller/AdminDashboardTest.php \
+            tests/Entity/VideoExternalSourceStatusTest.php \
+            tests/Module/Automation/Application/VideoSourceCheckTaskHandlerTest.php
+          python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
+
+  historical-core-data-rollback-testfix:
+    if: github.event_name == 'workflow_dispatch' && (inputs.validation_scope == 'historical-core-data-rollback-testfix' || inputs.validation_scope == 'historical-rollback-pending-gates' || inputs.validation_scope == 'historical-rollback-rector-only' || inputs.validation_scope == 'rollback-guard-pending-gates' || inputs.validation_scope == 'rollback-guard-style-followup' || inputs.validation_scope == 'rollback-guard-rector-followup' || inputs.validation_scope == 'rollback-guard-full-test-retry' || inputs.validation_scope == 'rollback-guard-migration-lock-audit' || inputs.validation_scope == 'rollback-guard-migration-lock-audit-followup' || inputs.validation_scope == 'rollback-guard-final-pending-gates' || inputs.validation_scope == 'rollback-guard-advertising-assertion-retry')
+    name: Rollback migration guard regression checks
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      APP_ENV: test
+      APP_DEBUG: '0'
+      APP_SECRET: ci-only-not-a-production-secret
+      DATABASE_URL: 'postgresql://arcanorum_ci:ci-only-test-password@127.0.0.1:5432/arcanorum_test?serverVersion=18&charset=utf8'
+      REDIS_URL: 'redis://127.0.0.1:6379'
+      COMPOSER_PROCESS_TIMEOUT: '0'
+      COMPOSER_NO_INTERACTION: '1'
+      COMPOSER_NO_AUDIT: '1'
+      VALIDATION_SCOPE: ${{ inputs.validation_scope }}
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: arcanorum_test
+          POSTGRES_USER: arcanorum_ci
+          POSTGRES_PASSWORD: ci-only-test-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U arcanorum_ci -d arcanorum_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Check out public validation branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Verify exact source commit and exclude credentials
+        shell: bash
+        env:
+          EXPECTED_SOURCE_SHA: 'c96df1383aa1377bba3cf7ac3016a4ea5eb3742c'
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$EXPECTED_SOURCE_SHA" | cmp -s - arcanorum-snapshot/SOURCE_BASE_SHA
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path('arcanorum-snapshot')
+          blocked = []
+          patterns = {
+              'private-key': re.compile(rb'-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----'),
+              'github-token': re.compile(rb'(?:gh[pousr]_[A-Za-z0-9_]{30,}|github_pat_[A-Za-z0-9_]{30,})'),
+              'aws-key': re.compile(rb'AKIA[0-9A-Z]{16}'),
+              'stripe-live': re.compile(rb'sk_live_[A-Za-z0-9]{16,}'),
+              'slack-token': re.compile(rb'xox[baprs]-[A-Za-z0-9-]{20,}'),
+          }
+          for path in root.rglob('*'):
+              if not path.is_file():
+                  continue
+              relative = path.relative_to(root).as_posix()
+              if (path.name.startswith('.env')
+                  or '/secrets/' in f'/{relative}/'
+                  or relative.startswith(('var/', 'vendor/', 'node_modules/', 'logs/', 'test-results/', 'coverage/', 'public/uploads/', 'storage/private/', 'backups/'))
+                  or path.suffix.lower() in {'.pem', '.p12', '.key', '.sql', '.dump', '.sqlite', '.db'}):
+                  blocked.append(relative)
+              data = path.read_bytes()
+              for name, pattern in patterns.items():
+                  if pattern.search(data):
+                      blocked.append(f'{relative} (credential-pattern: {name})')
+
+          if blocked:
+              raise SystemExit('Forbidden snapshot content: ' + ', '.join(blocked))
+          print('Snapshot security check passed.')
+          PY
+
+      - name: Set up PHP 8.5 and extensions
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.5'
+          extensions: gd, intl, mbstring, pcov, pdo_pgsql, redis, xml, zip
+          tools: composer:v2
+          ini-values: memory_limit=1G
+
+      - name: Validate and install locked Composer dependencies
+        working-directory: arcanorum-snapshot
+        run: |
+          if [[ "$VALIDATION_SCOPE" == 'historical-core-data-rollback-testfix' || "$VALIDATION_SCOPE" == 'rollback-guard-migration-lock-audit' || "$VALIDATION_SCOPE" == 'rollback-guard-migration-lock-audit-followup' ]]; then
+            composer validate --strict --no-interaction
+            composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader
+            composer audit --locked --no-interaction
+          else
+            composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader
+          fi
+
+      - name: Validate the targeted PHP file and database schema
+        working-directory: arcanorum-snapshot
+        run: |
+          touch .env
+          if [[ "$VALIDATION_SCOPE" == 'rollback-guard-final-pending-gates' ]]; then
+            php -l src/Service/MigrationRollbackGuard.php
+          elif [[ "$VALIDATION_SCOPE" == 'rollback-guard-advertising-assertion-retry' ]]; then
+            php -l tests/Migration/AdvertisingMigrationRollbackTest.php
+          elif [[ "$VALIDATION_SCOPE" == 'rollback-guard-migration-lock-audit-followup' ]]; then
+            php -l migrations/Version20261030110000.php
+            php -l migrations/Version20261028223107.php
+            php -l migrations/Version20261026190000.php
+            php -l migrations/Version20261026100000.php
+            php -l migrations/Version20261018110000.php
+            php -l migrations/Version20261026200000.php
+            php -l migrations/Version20261025200000.php
+            php -l migrations/Version20261022110000.php
+            php -l migrations/Version20261022120000.php
+            php -l migrations/Version20261023100000.php
+            php -l migrations/Version20261026130000.php
+            php -l migrations/Version20261030050500.php
+            php -l tests/Migration/VideoMp3UploadConstraintMigrationTest.php
+            php -l migrations/Version20261024100000.php
+            php -l migrations/Version20261025120000.php
+            php -l migrations/Version20261025160000.php
+            php -l migrations/Version20261025170000.php
+            php -l migrations/Version20261025200000.php
+            php -l src/Service/MigrationRollbackGuard.php
+            php -l tests/Service/MigrationRollbackGuardTest.php
+            php -l tests/Service/MigrationRollbackGuardConcurrencyTest.php
+            php -l tests/Migration/CategoryInlineImageMigrationTest.php
+            php -l tests/Migration/ContentInlineImageMigrationTest.php
+          elif [[ "$VALIDATION_SCOPE" == 'rollback-guard-migration-lock-audit' ]]; then
+            while IFS= read -r -d '' file; do php -l "$file"; done < <(find migrations -type f -name '*.php' -print0)
+            php -l tests/Controller/PublicContentTest.php
+            php -l tests/Service/MigrationRollbackGuardConcurrencyTest.php
+          elif [[ "$VALIDATION_SCOPE" == 'rollback-guard-full-test-retry' ]]; then
+            php -l migrations/Version20261030230000.php
+          elif [[ "$VALIDATION_SCOPE" == 'rollback-guard-rector-followup' ]]; then
+            php -l src/Service/MemberEmailChallengeMigrationGuard.php
+            php -l tests/Service/MigrationRollbackGuardTest.php
+          elif [[ "$VALIDATION_SCOPE" == 'rollback-guard-style-followup' ]]; then
+            php -l migrations/Version20261027130000.php
+          elif [[ "$VALIDATION_SCOPE" == 'rollback-guard-pending-gates' ]]; then
+            php -l tests/Service/MigrationRollbackGuardTest.php
+          elif [[ "$VALIDATION_SCOPE" == 'historical-rollback-rector-only' ]]; then
+            php -l tests/Migration/HistoricalPrimaryDataMigrationRollbackTest.php
+          elif [[ "$VALIDATION_SCOPE" == 'historical-rollback-pending-gates' ]]; then
+            php -l tests/Migration/AdvertisingMigrationRollbackTest.php
+            php -l tests/Migration/HistoricalPrimaryDataMigrationRollbackTest.php
+          else
+            php -l migrations/Version20261024100000.php
+            php -l tests/Migration/AdvertisingMigrationRollbackTest.php
+            php -l migrations/Version20261030230000.php
+            php -l tests/Migration/HistoricalPrimaryDataMigrationRollbackTest.php
+            php -l tests/Migration/HistoricalCoreDataMigrationRollbackTest.php
+          fi
+          php bin/console doctrine:migrations:migrate --env=test --no-interaction
+          if [[ "$VALIDATION_SCOPE" != 'rollback-guard-final-pending-gates' ]]; then
+            php bin/console doctrine:schema:validate --skip-sync
+          fi
+
+      - name: PHPStan on the affected migration and regressions
+        if: inputs.validation_scope != 'historical-rollback-rector-only' && inputs.validation_scope != 'rollback-guard-style-followup' && inputs.validation_scope != 'rollback-guard-rector-followup' && inputs.validation_scope != 'rollback-guard-final-pending-gates'
+        working-directory: arcanorum-snapshot
+        run: |
+          if [[ "$VALIDATION_SCOPE" == 'rollback-guard-advertising-assertion-retry' ]]; then
+            vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --no-progress --error-format=github --memory-limit=1G \
+              tests/Migration/AdvertisingMigrationRollbackTest.php
+          elif [[ "$VALIDATION_SCOPE" == 'rollback-guard-migration-lock-audit-followup' ]]; then
+            vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --no-progress --error-format=github --memory-limit=1G \
+              migrations/Version20261030110000.php migrations/Version20261028223107.php \
+              migrations/Version20261026190000.php migrations/Version20261026100000.php \
+              migrations/Version20261018110000.php migrations/Version20261026200000.php \
+              migrations/Version20261025200000.php migrations/Version20261022110000.php \
+              migrations/Version20261022120000.php migrations/Version20261023100000.php \
+              migrations/Version20261026130000.php migrations/Version20261030050500.php \
+              migrations/Version20261024100000.php migrations/Version20261025120000.php \
+              migrations/Version20261025160000.php migrations/Version20261025170000.php \
+              migrations/Version20261025200000.php \
+              src/Service/MigrationRollbackGuard.php \
+              tests/Migration/VideoMp3UploadConstraintMigrationTest.php \
+              tests/Service/MigrationRollbackGuardTest.php \
+              tests/Service/MigrationRollbackGuardConcurrencyTest.php \
+              tests/Migration/CategoryInlineImageMigrationTest.php \
+              tests/Migration/ContentInlineImageMigrationTest.php
+          elif [[ "$VALIDATION_SCOPE" == 'rollback-guard-migration-lock-audit' ]]; then
+            vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --no-progress --error-format=github --memory-limit=1G \
+              migrations tests/Migration tests/Controller/PublicContentTest.php \
+              tests/Service/MigrationRollbackGuardTest.php tests/Service/MigrationRollbackGuardConcurrencyTest.php
+          elif [[ "$VALIDATION_SCOPE" == 'rollback-guard-full-test-retry' ]]; then
+            vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --no-progress --error-format=github --memory-limit=1G \
+              migrations/Version20261030230000.php
+          elif [[ "$VALIDATION_SCOPE" == 'rollback-guard-pending-gates' ]]; then
+            vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --no-progress --error-format=github --memory-limit=1G \
+              tests/Service/MigrationRollbackGuardTest.php
+          elif [[ "$VALIDATION_SCOPE" == 'historical-rollback-pending-gates' ]]; then
+            vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --no-progress --error-format=github --memory-limit=1G \
+              tests/Migration/AdvertisingMigrationRollbackTest.php \
+              tests/Migration/HistoricalPrimaryDataMigrationRollbackTest.php
+          else
+            vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --no-progress --error-format=github --memory-limit=1G \
+              migrations/Version20261024100000.php \
+              tests/Migration/AdvertisingMigrationRollbackTest.php \
+              migrations/Version20261030230000.php \
+              tests/Migration/HistoricalPrimaryDataMigrationRollbackTest.php \
+              tests/Migration/HistoricalCoreDataMigrationRollbackTest.php
+          fi
+
+      - name: PHP CS Fixer on the affected migration and regressions
+        if: inputs.validation_scope != 'historical-rollback-rector-only' && inputs.validation_scope != 'rollback-guard-style-followup' && inputs.validation_scope != 'rollback-guard-rector-followup'
+        working-directory: arcanorum-snapshot
+        run: |
+          if [[ "$VALIDATION_SCOPE" == 'rollback-guard-final-pending-gates' ]]; then
+            vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --diff --using-cache=no src/Service/MigrationRollbackGuard.php
+          elif [[ "$VALIDATION_SCOPE" == 'rollback-guard-advertising-assertion-retry' ]]; then
+            vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --diff --using-cache=no tests/Migration/AdvertisingMigrationRollbackTest.php
+          elif [[ "$VALIDATION_SCOPE" == 'rollback-guard-migration-lock-audit-followup' ]]; then
+            vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --diff --using-cache=no \
+              migrations/Version20261030110000.php migrations/Version20261028223107.php \
+              migrations/Version20261026190000.php migrations/Version20261026100000.php \
+              migrations/Version20261018110000.php migrations/Version20261026200000.php \
+              migrations/Version20261025200000.php migrations/Version20261022110000.php \
+              migrations/Version20261022120000.php migrations/Version20261023100000.php \
+              migrations/Version20261026130000.php migrations/Version20261030050500.php \
+              migrations/Version20261024100000.php migrations/Version20261025120000.php \
+              migrations/Version20261025160000.php migrations/Version20261025170000.php \
+              migrations/Version20261025200000.php \
+              src/Service/MigrationRollbackGuard.php \
+              tests/Migration/VideoMp3UploadConstraintMigrationTest.php \
+              tests/Service/MigrationRollbackGuardTest.php \
+              tests/Service/MigrationRollbackGuardConcurrencyTest.php \
+              tests/Migration/CategoryInlineImageMigrationTest.php \
+              tests/Migration/ContentInlineImageMigrationTest.php
+          elif [[ "$VALIDATION_SCOPE" == 'rollback-guard-migration-lock-audit' ]]; then
+            vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --diff --using-cache=no \
+              migrations tests/Migration tests/Controller/PublicContentTest.php \
+              tests/Service/MigrationRollbackGuardTest.php tests/Service/MigrationRollbackGuardConcurrencyTest.php
+          elif [[ "$VALIDATION_SCOPE" == 'rollback-guard-advertising-assertion-retry' ]]; then
+            vendor/bin/rector process tests/Migration/AdvertisingMigrationRollbackTest.php \
+              --config=rector.php --dry-run --no-progress-bar
+          elif [[ "$VALIDATION_SCOPE" == 'rollback-guard-full-test-retry' ]]; then
+            vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --diff --using-cache=no \
+              migrations/Version20261030230000.php
+          elif [[ "$VALIDATION_SCOPE" == 'rollback-guard-style-followup' ]]; then
+            vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --diff --using-cache=no \
+              migrations/Version20261027130000.php
+          elif [[ "$VALIDATION_SCOPE" == 'rollback-guard-pending-gates' ]]; then
+            vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --diff --using-cache=no \
+              migrations/Version20261006210000.php \
+              migrations/Version20261016130200.php \
+              migrations/Version20261017022700.php \
+              migrations/Version20261018010000.php \
+              migrations/Version20261018023000.php \
+              migrations/Version20261018030000.php \
+              migrations/Version20261018040000.php \
+              migrations/Version20261018050000.php \
+              migrations/Version20261018060000.php \
+              migrations/Version20261027130000.php \
+              migrations/Version20261030230000.php \
+              src/Service/MemberEmailChallengeMigrationGuard.php \
+              src/Service/MigrationRollbackGuard.php \
+              tests/Migration/HistoricalCoreDataMigrationRollbackTest.php \
+              tests/Service/MigrationRollbackGuardTest.php
+          elif [[ "$VALIDATION_SCOPE" == 'historical-rollback-pending-gates' ]]; then
+            vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --diff --using-cache=no \
+              tests/Migration/AdvertisingMigrationRollbackTest.php \
+              tests/Migration/HistoricalPrimaryDataMigrationRollbackTest.php
+          else
+            vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --diff --using-cache=no \
+              migrations/Version20261024100000.php \
+              tests/Migration/AdvertisingMigrationRollbackTest.php \
+              migrations/Version20261030230000.php \
+              tests/Migration/HistoricalPrimaryDataMigrationRollbackTest.php \
+              tests/Migration/HistoricalCoreDataMigrationRollbackTest.php
+          fi
+
+      - name: Rector dry run on the affected migration and regressions
+        working-directory: arcanorum-snapshot
+        run: |
+          if [[ "$VALIDATION_SCOPE" == 'rollback-guard-final-pending-gates' || "$VALIDATION_SCOPE" == 'rollback-guard-migration-lock-audit-followup' || "$VALIDATION_SCOPE" == 'rollback-guard-migration-lock-audit' ]]; then
+            vendor/bin/rector process migrations tests/Migration tests/Controller/PublicContentTest.php \
+              src/Service/MigrationRollbackGuard.php tests/Service/MigrationRollbackGuardTest.php \
+              tests/Service/MigrationRollbackGuardConcurrencyTest.php \
+              --config=rector.php --dry-run --no-progress-bar
+          elif [[ "$VALIDATION_SCOPE" == 'rollback-guard-advertising-assertion-retry' ]]; then
+            vendor/bin/rector process tests/Migration/AdvertisingMigrationRollbackTest.php \
+              --config=rector.php --dry-run --no-progress-bar
+          elif [[ "$VALIDATION_SCOPE" == 'rollback-guard-full-test-retry' ]]; then
+            vendor/bin/rector process migrations/Version20261030230000.php \
+              --config=rector.php --dry-run --no-progress-bar
+          elif [[ "$VALIDATION_SCOPE" == 'rollback-guard-rector-followup' ]]; then
+            vendor/bin/rector process \
+              src/Service/MemberEmailChallengeMigrationGuard.php \
+              tests/Service/MigrationRollbackGuardTest.php \
+              --config=rector.php --dry-run --no-progress-bar
+          elif [[ "$VALIDATION_SCOPE" == 'rollback-guard-style-followup' || "$VALIDATION_SCOPE" == 'rollback-guard-pending-gates' ]]; then
+            vendor/bin/rector process \
+              migrations/Version20261006210000.php \
+              migrations/Version20261016130200.php \
+              migrations/Version20261017022700.php \
+              migrations/Version20261018010000.php \
+              migrations/Version20261018023000.php \
+              migrations/Version20261018030000.php \
+              migrations/Version20261018040000.php \
+              migrations/Version20261018050000.php \
+              migrations/Version20261018060000.php \
+              migrations/Version20261027130000.php \
+              migrations/Version20261030230000.php \
+              src/Service/MemberEmailChallengeMigrationGuard.php \
+              src/Service/MigrationRollbackGuard.php \
+              tests/Migration/HistoricalCoreDataMigrationRollbackTest.php \
+              tests/Service/MigrationRollbackGuardTest.php \
+              --config=rector.php --dry-run --no-progress-bar
+          elif [[ "$VALIDATION_SCOPE" == 'historical-rollback-rector-only' ]]; then
+            vendor/bin/rector process tests/Migration/HistoricalPrimaryDataMigrationRollbackTest.php \
+              --config=rector.php --dry-run --no-progress-bar
+          elif [[ "$VALIDATION_SCOPE" == 'historical-rollback-pending-gates' ]]; then
+            vendor/bin/rector process tests/Migration/AdvertisingMigrationRollbackTest.php \
+              tests/Migration/HistoricalPrimaryDataMigrationRollbackTest.php \
+              --config=rector.php --dry-run --no-progress-bar
+          else
+            vendor/bin/rector process migrations/Version20261024100000.php \
+              tests/Migration/AdvertisingMigrationRollbackTest.php \
+              migrations/Version20261030230000.php \
+              tests/Migration/HistoricalPrimaryDataMigrationRollbackTest.php \
+              tests/Migration/HistoricalCoreDataMigrationRollbackTest.php \
+              --config=rector.php --dry-run --no-progress-bar
+          fi
+
+      - name: Psalm taint analysis on the affected migration and regressions
+        working-directory: arcanorum-snapshot
+        run: |
+          mkdir -p var/test-results
+          if [[ "$VALIDATION_SCOPE" == 'rollback-guard-final-pending-gates' || "$VALIDATION_SCOPE" == 'rollback-guard-migration-lock-audit-followup' || "$VALIDATION_SCOPE" == 'rollback-guard-migration-lock-audit' ]]; then
+            vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm.sarif \
+              migrations src/Service/MigrationRollbackGuard.php tests/Migration tests/Controller/PublicContentTest.php \
+              tests/Service/MigrationRollbackGuardTest.php tests/Service/MigrationRollbackGuardConcurrencyTest.php
+          elif [[ "$VALIDATION_SCOPE" == 'rollback-guard-advertising-assertion-retry' ]]; then
+            vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm.sarif \
+              tests/Migration/AdvertisingMigrationRollbackTest.php
+          elif [[ "$VALIDATION_SCOPE" == 'rollback-guard-full-test-retry' ]]; then
+            vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm.sarif \
+              migrations/Version20261030230000.php \
+              src/Service/MigrationRollbackGuard.php
+          elif [[ "$VALIDATION_SCOPE" == 'rollback-guard-rector-followup' || "$VALIDATION_SCOPE" == 'rollback-guard-style-followup' || "$VALIDATION_SCOPE" == 'rollback-guard-pending-gates' ]]; then
+            vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm.sarif \
+              migrations/Version20261006210000.php \
+              migrations/Version20261016130200.php \
+              migrations/Version20261017022700.php \
+              migrations/Version20261018010000.php \
+              migrations/Version20261018023000.php \
+              migrations/Version20261018030000.php \
+              migrations/Version20261018040000.php \
+              migrations/Version20261018050000.php \
+              migrations/Version20261018060000.php \
+              migrations/Version20261027130000.php \
+              migrations/Version20261030230000.php \
+              src/Service/MemberEmailChallengeMigrationGuard.php \
+              src/Service/MigrationRollbackGuard.php \
+              tests/Migration/HistoricalCoreDataMigrationRollbackTest.php \
+              tests/Service/MigrationRollbackGuardTest.php
+          else
+            vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm.sarif \
+            migrations/Version20261024100000.php \
+            tests/Migration/AdvertisingMigrationRollbackTest.php \
+            migrations/Version20261030230000.php \
+            tests/Migration/HistoricalPrimaryDataMigrationRollbackTest.php \
+            tests/Migration/HistoricalCoreDataMigrationRollbackTest.php
+          fi
+
+      - name: Run the affected PostgreSQL migration rollback regressions
+        working-directory: arcanorum-snapshot
+        run: |
+          mkdir -p var/test-results
+          if [[ "$VALIDATION_SCOPE" == 'rollback-guard-final-pending-gates' || "$VALIDATION_SCOPE" == 'rollback-guard-migration-lock-audit-followup' || "$VALIDATION_SCOPE" == 'rollback-guard-migration-lock-audit' || "$VALIDATION_SCOPE" == 'rollback-guard-full-test-retry' || "$VALIDATION_SCOPE" == 'rollback-guard-rector-followup' || "$VALIDATION_SCOPE" == 'rollback-guard-style-followup' || "$VALIDATION_SCOPE" == 'rollback-guard-pending-gates' ]]; then
+            php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
+              --fail-on-risky --fail-on-warning --fail-on-deprecation \
+              --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
+              --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
+              --coverage-text --coverage-clover=var/test-results/coverage.xml
+          elif [[ "$VALIDATION_SCOPE" == 'rollback-guard-advertising-assertion-retry' ]]; then
+            php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
+              --fail-on-risky --fail-on-warning --fail-on-deprecation \
+              --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
+              --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
+              --coverage-text --coverage-clover=var/test-results/coverage.xml \
+              --filter='testDowngradeFailsClosedWhenRowExistenceCannotBeRead' \
+              tests/Migration/AdvertisingMigrationRollbackTest.php
+          else
+            php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
+            --fail-on-risky --fail-on-warning --fail-on-deprecation \
+            --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
+            --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
+            --filter='testDowngradeRefusesToDiscardStoredAdvertisingData|testDowngradeFailsClosedWhenRowExistenceCannotBeRead|testProviderFailureMigrationRefusesToDiscardFailedCheckState|testProviderFailureMigrationFailsClosedWhenCountCannotBeRead|testInitialContentMigrationRefusesToDropVideos|testInitialContentMigrationRefusesToDropNewsArticles|testPlaylistMigrationRefusesToDiscardPrivatePlaylistsAndItems' \
+            tests/Migration/AdvertisingMigrationRollbackTest.php \
+            tests/Migration/HistoricalPrimaryDataMigrationRollbackTest.php \
+            tests/Migration/HistoricalCoreDataMigrationRollbackTest.php
+          fi
+          python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml

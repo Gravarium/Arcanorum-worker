@@ -1,0 +1,48 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'Kontakt'|trans }} · {{ site_settings().siteName }}{% endblock %}
+
+{% block body %}
+    <header class="public-header">
+        {{ include('partials/public_brand.html.twig') }}
+        <nav class="public-navigation" aria-label="{{ 'Hauptnavigation'|trans }}">
+            <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
+            {% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}
+            {% if module_enabled('pages') %}<a href="{{ path('page_index') }}">{{ 'Seiten'|trans }}</a>{% endif %}
+            {% if module_enabled('contact') %}<a href="{{ path('contact_new') }}" aria-current="page">{{ 'Kontakt'|trans }}</a>{% endif %}
+            {{ include('partials/public_navigation_links.html.twig') }}
+        </nav>
+    </header>
+
+    <main class="public-main">
+        <section class="public-section" aria-labelledby="contact-heading">
+            <p class="eyebrow">{{ 'Wir helfen gern'|trans }}</p>
+            <h1 id="contact-heading">{{ 'Kontakt'|trans }}</h1>
+            <p class="contact-policy-note">{{ 'Deine Nachricht wird zur Bearbeitung in der Verwaltung gespeichert. Bitte sende hier keine sensiblen Daten.'|trans }}</p>
+
+            {% for message in app.flashes('contact_success') %}
+                <p class="flash-message is-success" role="status">{{ message|trans }}</p>
+            {% endfor %}
+            {% for message in app.flashes('contact_error') %}
+                <p class="flash-message is-error" role="alert">{{ message|trans }}</p>
+            {% endfor %}
+
+            <form class="comment-form" action="{{ path('contact_new') }}" method="post">
+                <input type="hidden" name="_token" value="{{ csrf_token('public_contact') }}">
+                <div class="comment-honeypot" aria-hidden="true">
+                    <label for="contact-website">{{ 'Webseite'|trans }}</label>
+                    <input id="contact-website" name="website" type="text" tabindex="-1" autocomplete="off">
+                </div>
+                <label for="contact-name">{{ 'Name'|trans }}</label>
+                <input id="contact-name" name="name" type="text" maxlength="120" required value="{{ values.name }}">
+                <label for="contact-email">{{ 'E-Mail-Adresse'|trans }}</label>
+                <input id="contact-email" name="email" type="email" maxlength="254" required value="{{ values.email }}">
+                <label for="contact-subject">{{ 'Betreff'|trans }}</label>
+                <input id="contact-subject" name="subject" type="text" maxlength="160" required value="{{ values.subject }}">
+                <label for="contact-body">{{ 'Nachricht'|trans }}</label>
+                <textarea id="contact-body" name="body" rows="8" maxlength="5000" required>{{ values.body }}</textarea>
+                <button class="button" type="submit">{{ 'Nachricht senden'|trans }}</button>
+            </form>
+        </section>
+    </main>
+{% endblock %}

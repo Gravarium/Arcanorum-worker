@@ -1,0 +1,80 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Serien verwalten'|trans }}{% endblock %}
+{% block admin_breadcrumb %}{{ 'Serien'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Videokatalog'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ 'Serien'|trans }}</h1>
+            <p class="muted">{{ 'Serien anlegen und veröffentlichte Folgen verwalten.'|trans }}</p>
+        </div>
+        <a class="button" href="{{ path('admin_series_new') }}">{{ 'Neue Serie'|trans }}</a>
+    </div>
+
+    <section class="admin-panel" aria-labelledby="series-list-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="series-list-heading">{{ 'Serienliste'|trans }}</h2>
+                <p class="muted">{{ '%count% Treffer in dieser Ansicht'|trans({'%count%': series|length}) }}</p>
+            </div>
+        </header>
+
+        <form class="admin-filter-form" method="get" action="{{ path('admin_series_index') }}">
+            <label>
+                <span>{{ 'Suchen'|trans }}</span>
+                <input type="search" name="q" value="{{ search }}" maxlength="100" placeholder="{{ 'Titel oder Beschreibung'|trans }}">
+            </label>
+            <label>
+                <span>{{ 'Status'|trans }}</span>
+                <select name="status">
+                    <option value="">{{ 'Alle Serien'|trans }}</option>
+                    <option value="draft" {{ status == 'draft' ? 'selected' : '' }}>{{ 'Entwürfe'|trans }}</option>
+                    <option value="published" {{ status == 'published' ? 'selected' : '' }}>{{ 'Veröffentlicht'|trans }}</option>
+                </select>
+            </label>
+            <button class="button button-secondary" type="submit">{{ 'Filtern'|trans }}</button>
+        </form>
+
+        <div class="table-wrap">
+            <table class="admin-table">
+                <caption class="visually-hidden">{{ 'Serien'|trans }}</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">{{ 'Serie'|trans }}</th>
+                        <th scope="col">{{ 'URL-Name'|trans }}</th>
+                        <th scope="col">{{ 'Status'|trans }}</th>
+                        <th scope="col">{{ 'Folgen'|trans }}</th>
+                        <th scope="col"><span class="visually-hidden">{{ 'Aktionen'|trans }}</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in series %}
+                        {% set episode_count = episode_counts[item.id] ?? 0 %}
+                        <tr>
+                            <th scope="row">{{ item.title }}</th>
+                            <td>{{ item.slug }}</td>
+                            <td><span class="status-pill {{ item.status.cssClass }}">{{ item.status.label|trans }}</span></td>
+                            <td>{{ episode_count }}</td>
+                            <td class="table-actions">
+                                <a class="button button-secondary" href="{{ path('admin_series_edit', {id: item.id}) }}">{{ 'Bearbeiten'|trans }}</a>
+                                <a class="button button-secondary" href="{{ path('admin_episode_index', {series: item.id}) }}">{{ 'Folgen'|trans }}</a>
+                                {% if episode_count == 0 %}
+                                    <form method="post" action="{{ path('admin_series_delete', {id: item.id}) }}">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('admin_series_delete_' ~ item.id) }}">
+                                        <button class="button button-danger" type="submit">{{ 'Löschen'|trans }}</button>
+                                    </form>
+                                {% else %}
+                                    <span class="muted">{{ 'Enthält Folgen'|trans }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="5">{{ 'Noch keine Serien vorhanden.'|trans }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+{% endblock %}

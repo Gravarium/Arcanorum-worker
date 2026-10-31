@@ -1,0 +1,174 @@
+'Arabisch (RTL; Übersetzung teilweise)': 'العربية (من اليمين إلى اليسار؛ ترجمة جزئية)'
+'Startseite': 'الصفحة الرئيسية'
+'Videos': 'الفيديوهات'
+'Player-Farbschema': 'نظام ألوان المشغّل'
+'Maximale Playerbreite für Einbettungen': 'الحد الأقصى لعرض مشغل التضمينات'
+'Maximale Playerbreite auf der Startseite': 'الحد الأقصى لعرض المشغّل في الصفحة الرئيسية'
+'Hervorgehobenes Video': 'الفيديو المميّز'
+'Auf der Startseite': 'في الصفحة الرئيسية'
+'Dieses hervorgehobene Video kann auf der Startseite nicht direkt abgespielt werden.': 'لا يمكن تشغيل هذا الفيديو المميّز مباشرة في الصفحة الرئيسية.'
+'Videodetails öffnen': 'فتح تفاصيل الفيديو'
+'Hervorgehobenes Video auf der Startseite automatisch und stumm starten': 'بدء تشغيل الفيديو المميّز في الصفحة الرئيسية تلقائيًا مع كتم الصوت'
+'Der hervorgehobene Startseitenplayer verwendet seine eigene Breite. Autoplay gilt nur für lokale Dateien und freigegebene Streams und startet immer stumm.': 'يستخدم مشغّل الصفحة الرئيسية المميّز عرضًا مستقلًا. يقتصر التشغيل التلقائي على الملفات المحلية والتدفقات المعتمدة، ويبدأ دائمًا مع كتم الصوت.'
+'Die Einbettungsbreite begrenzt den kopierbaren Playercode responsiv auf die gewählte Maximalbreite.': 'يحافظ عرض التضمين على استجابة شفرة المشغل المنسوخة حتى الحد الأقصى المحدد.'
+'Mitternacht': 'منتصف الليل'
+'Ozean': 'المحيط'
+'Wald': 'الغابة'
+'Glut': 'الجمر'
+'Arcanorum-Wasserzeichen im eigenen Player anzeigen': 'إظهار علامة Arcanorum المائية في المشغّل الخاص'
+'Das Wasserzeichen verwendet den Website-Namen und führt zurück zur Startseite. Die Farbauswahl gilt nur für den Arcanorum-Player.': 'تستخدم العلامة المائية اسم الموقع وتؤدي إلى صفحته الرئيسية. ينطبق اختيار الألوان على مشغّل Arcanorum فقط.'
+'Wasserzeichenbild': 'صورة العلامة المائية'
+'Gespeichertes Player-Wasserzeichen': 'العلامة المائية المحفوظة للمشغّل'
+'JPEG-, PNG- oder WebP-Datei (maximal 2 MiB)': 'صورة JPEG أو PNG أو WebP (بحد أقصى 2 ميبيبايت)'
+'Wasserzeichenbild speichern': 'حفظ صورة العلامة المائية'
+'Wasserzeichenbild entfernen': 'إزالة صورة العلامة المائية'
+'Bitte wähle eine Wasserzeichen-Datei aus.': 'يرجى اختيار ملف للعلامة المائية.'
+'Das Player-Wasserzeichen wurde gespeichert.': 'تم حفظ العلامة المائية للمشغّل.'
+'Das Player-Wasserzeichen wurde entfernt.': 'تمت إزالة العلامة المائية للمشغّل.'
+'News': 'الأخبار'
+'Formatierungen und Bilder werden sicher geprüft. Vorschauen sind privat; verknüpfte Bilder erscheinen auf der öffentlichen Seite.': 'تُفحص التنسيقات والصور بأمان. المعاينات خاصة، وتظهر الصور المرتبطة في الصفحة العامة.'
+'Filteraktion': 'إجراء التصفية'
+'Zur manuellen Prüfung zurückhalten': 'إبقاء التعليق للمراجعة اليدوية'
+'Kommentar automatisch ablehnen': 'رفض التعليق تلقائيًا'
+'Treffer durch *** ersetzen': 'استبدال المطابقات بـ ***'
+'comment_filter_action_review': 'إبقاء التعليق للمراجعة اليدوية'
+'comment_filter_action_reject': 'رفض التعليق تلقائيًا'
+'comment_filter_action_censor': 'استبدال المطابقات بـ ***'
+'Suche': 'بحث'
+'Anmelden': 'تسجيل الدخول'
+'Abmelden': 'تسجيل الخروج'
+'Verwaltung': 'الإدارة'
+'Mitglieder': 'الأعضاء'
+'Profil': 'الملف الشخصي'
+'Speichern': 'حفظ'
+'Abbrechen': 'إلغاء'
+'Spiele die Anzeige, bevor du das Video startest.': 'شغّل الإعلان قبل بدء الفيديو.'
+'Die Anzeige ist beendet. Du kannst jetzt das Video starten.': 'انتهى الإعلان. يمكنك الآن بدء الفيديو.'
+'Die Anzeige ist nicht verfügbar. Du kannst jetzt das Video starten.': 'الإعلان غير متاح. يمكنك الآن بدء الفيديو.'
+'Nach Suchbegriff': 'حسب عبارة البحث'
+'Nach Kanal-ID': 'حسب معرّف القناة'
+'Nach Playlist-ID': 'حسب معرّف قائمة التشغيل'
+'Nach Favoriten': 'حسب المفضلة'
+'Videokategorie (optional)': 'فئة الفيديو (اختياري)'
+'Treffer als Entwürfe importieren': 'استيراد النتائج كمسودات'
+'Deutsch und Englisch sind vollständig übersetzt. Arabisch ist mit Rechts-nach-links-Layout und deutscher Rückfallebene verfügbar.': 'الألمانية والإنجليزية مترجمتان بالكامل. تتوفر العربية بتخطيط من اليمين إلى اليسار مع الرجوع إلى الألمانية.'
+'Videoqualitätsquellen': 'مصادر جودة الفيديو'
+'Ergänze freigegebene MP4-, WebM- oder Ogg-Streamadressen mit fester Qualitätsstufe. Der Server ruft die Adressen nicht ab.': 'أضف عناوين بث MP4 أو WebM أو Ogg المعتمدة مع مستوى جودة ثابت. لا يجلب الخادم هذه العناوين.'
+'Qualitätsstufe': 'مستوى الجودة'
+'Freigegebene HTTPS-Medienadresse': 'عنوان وسائط HTTPS معتمد'
+'Qualitätsquelle speichern': 'حفظ مصدر الجودة'
+'Qualitätsquellen können erst verwendet werden, wenn mindestens ein sicherer Medienhost eingerichtet ist.': 'تتوفر مصادر الجودة بعد إعداد مضيف وسائط موثوق واحد على الأقل.'
+'Qualitätsquellen sind nur für Videodateien und geprüfte Streams verfügbar.': 'تتوفر مصادر الجودة لملفات الفيديو والبث المعتمد فقط.'
+'Medienhost': 'مضيف الوسائط'
+'Qualitätsquelle entfernen': 'إزالة مصدر الجودة'
+'Für dieses Video sind noch keine zusätzlichen Qualitätsquellen gespeichert.': 'لم تُحفظ أي مصادر جودة إضافية لهذا الفيديو بعد.'
+'Wiedergabequalität': 'جودة التشغيل'
+'Originalquelle': 'المصدر الأصلي'
+'Die Videoqualität wurde geändert.': 'تم تغيير جودة الفيديو.'
+'Die Videoqualität konnte nicht geändert werden.': 'تعذر تغيير جودة الفيديو.'
+'Notwendige Cookies unterstützen Anmeldung, Sicherheit und die Ansichtspräferenz in diesem Browser. Derzeit werden keine Analyse- oder Werbecookies gesetzt.': 'تدعم ملفات تعريف الارتباط الضرورية تسجيل الدخول والأمان وتفضيل العرض في هذا المتصفح. لا تُستخدم حاليًا ملفات تعريف ارتباط للتحليلات أو الإعلانات.'
+'Ansicht': 'العرض'
+'Website-Standard': 'الإعداد الافتراضي للموقع'
+'Kompakte Mobilansicht': 'عرض الهاتف المحمول المضغوط'
+'Desktopansicht': 'عرض سطح المكتب'
+'Ansicht wechseln': 'تغيير العرض'
+'Emoji-Hilfe': 'مساعدة الرموز التعبيرية'
+'Emoji einfügen': 'إدراج رمز تعبيري'
+'Emoji suchen': 'البحث عن رموز تعبيرية'
+'Kein Emoji gefunden.': 'لم يتم العثور على رموز تعبيرية.'
+'Das Emoji passt nicht mehr in den Kommentar.': 'سيتجاوز هذا الرمز الحد الأقصى للتعليق.'
+'Durchsuche Emojis nach Kategorien und füge sie mit der Tastatur oder dem Zeiger ein.': 'تصفّح الرموز التعبيرية حسب الفئة وأدرجها باستخدام لوحة المفاتيح أو المؤشر.'
+'Emoji-Auswahl schließen': 'إغلاق محدد الرموز التعبيرية'
+'Emoji werden geladen …': 'جارٍ تحميل الرموز التعبيرية …'
+'Die Emoji konnten nicht geladen werden.': 'تعذر تحميل الرموز التعبيرية.'
+'Menschen': 'الأشخاص'
+'Emoji-Aktivität': 'النشاط'
+'Natur': 'الطبيعة'
+'Essen': 'الطعام'
+'Reisen': 'السفر'
+'Objekte': 'الأشياء'
+'Symbole': 'الرموز'
+'Flaggen': 'الأعلام'
+'Emoji einfügen: %name%': 'إدراج رمز تعبيري: %name%'
+'Zurück zur Website': 'العودة إلى الموقع'
+'Auf der Startseite hervorheben': 'إبراز على الصفحة الرئيسية'
+'Sortierreihenfolge der Startseite': 'ترتيب الصفحة الرئيسية'
+'Hervorhebung speichern': 'حفظ الإبراز'
+'Startseitenhervorhebung für das Seriengenre gespeichert.': 'تم حفظ إبراز نوع المسلسل على الصفحة الرئيسية.'
+'Seriengenre aus der Startseitenhervorhebung entfernt.': 'تمت إزالة نوع المسلسل من إبرازات الصفحة الرئيسية.'
+'Serien aus %genre%': 'مسلسلات من فئة %genre%'
+'Die Beschreibung ist zu groß oder enthält ungültigen Text.': 'الوصف كبير جدًا أو يحتوي على نص غير صالح.'
+'Die Beschreibung ist ungültig.': 'الوصف غير صالح.'
+'Die Beschreibung darf nur Inline-Bilder dieser Kategorie verwenden.': 'يمكن للوصف استخدام الصور المضمنة التابعة لهذه الفئة فقط.'
+'Inline-Bilder können erst eingefügt werden, nachdem die Kategorie gespeichert wurde.': 'احفظ الفئة قبل إدراج الصور المضمنة.'
+'Websiteanalyse': 'تحليلات الموقع'
+'Google-Analytics-4-Mess-ID': 'معرّف قياس Google Analytics 4'
+'Nur eine gültige G-XXXXXXXXXX-Mess-ID wird akzeptiert. Die feste GA4-Einbindung lädt ausschließlich nach gültiger Zustimmung zu optionalen Cookies auf öffentlichen Inhaltsseiten. Suchbegriffe, Seitenpfade, Seitentitel und Referrer werden nicht übertragen; Google erhält bei Einwilligung weiterhin technische Verbindungsdaten.': 'يُقبل معرّف قياس بصيغة G-XXXXXXXXXX فقط. لا يُحمّل تكامل GA4 الثابت إلا بعد الموافقة الصالحة على ملفات تعريف الارتباط الاختيارية وعلى صفحات المحتوى العامة فقط. لا تُرسل عبارات البحث أو مسارات الصفحات أو عناوينها أو المُحيل؛ وتظل بيانات الاتصال التقنية متاحة لـ Google بعد الموافقة.'
+'Notwendige Sicherheits- und Sitzungscookies bleiben aktiv. Optionale externe Dienste wie die konfigurierte Websiteanalyse und externe Kommentare werden nur nach gültiger Einwilligung geladen.': 'تبقى ملفات تعريف الارتباط الضرورية للأمان والجلسة مفعّلة. لا تُحمّل الخدمات الخارجية الاختيارية، ومنها التحليلات والتعليقات الخارجية، إلا بعد موافقة صالحة.'
+'Wir verwenden notwendige Cookies für Anmeldung, Sicherheit und die Ansichtspräferenz in diesem Browser. Optionale Analyse- und Werbedienste werden nur nach Ihrer Zustimmung geladen.': 'نستخدم ملفات تعريف الارتباط الضرورية لتسجيل الدخول والأمان وتفضيل العرض في هذا المتصفح. لا تُحمّل خدمات التحليل والإعلانات الاختيارية إلا بعد موافقتك.'
+'Bitte gib eine gültige GA4-Mess-ID im Format G-XXXXXXXXXX ein oder lasse das Feld leer.': 'أدخل معرّف قياس GA4 صالحًا بصيغة G-XXXXXXXXXX، أو اترك الحقل فارغًا.'
+
+"Mitgliederaktivitäten": "أنشطة الأعضاء"
+"Öffentliche Aktivitäten können aus dem Mitgliederfeed ausgeblendet oder entfernt werden. Videos, Wiedergabelisten und Kommentare bleiben dabei unverändert.": "يمكن إخفاء الأنشطة العامة من موجز الأعضاء أو إزالتها منه. وتظل مقاطع الفيديو وقوائم التشغيل والتعليقات دون تغيير."
+"Mitglied oder Inhalt suchen": "البحث عن عضو أو محتوى"
+"Aktivitätstyp": "نوع النشاط"
+"Alle Aktivitätstypen": "كل أنواع الأنشطة"
+"Videoeinreichung": "إرسال فيديو"
+"Öffentliche Wiedergabeliste": "قائمة تشغيل عامة"
+"Videokommentar": "تعليق على فيديو"
+"News-Kommentar": "تعليق على خبر"
+"Im Feed": "في الموجز"
+"Ausgeblendet": "مخفي"
+"Aus dem Feed entfernt": "أزيل من الموجز"
+"Suchen und filtern": "البحث والتصفية"
+"Keine öffentlichen Aktivitäten gefunden.": "لم يتم العثور على أنشطة عامة."
+"Ausblenden": "إخفاء"
+"Wiederherstellen": "استعادة"
+"Aus dem Feed entfernen": "إزالة من الموجز"
+"Aktivitäten auswählen": "تحديد الأنشطة"
+"Aktivität auswählen: %member% – %content%": "تحديد النشاط: %member% – %content%"
+"Mitgliederaktivitäten aktualisiert. %count% Einträge wurden geändert.": "تم تحديث أنشطة الأعضاء. تغيّر %count% من العناصر."
+"Die ausgewählte Aktivität ist nicht mehr verfügbar. Bitte aktualisiere die Liste.": "النشاط المحدد لم يعد متاحًا. حدّث القائمة."
+"Neueste Videos": "أحدث الفيديوهات"
+"Videos zur Prüfung": "مقاطع فيديو للمراجعة"
+"Videomeldungen": "بلاغات الفيديو"
+"Videoeinreichungen": "طلبات الفيديو"
+"Erstellt am %date% UTC": "أُضيف في %date% UTC"
+"Neueste Artikel": "أحدث المقالات"
+"Neueste Mitglieder": "أحدث الأعضاء"
+"Mitglieder verwalten": "إدارة الأعضاء"
+"Noch keine Mitglieder vorhanden.": "لا يوجد أعضاء بعد."
+"Neueste Kommentare": "أحدث التعليقات"
+"Kommentare verwalten": "إدارة التعليقات"
+"Noch keine Kommentare vorhanden.": "لا توجد تعليقات بعد."
+"Noch keine Artikel vorhanden.": "لا توجد مقالات بعد."
+"Registriert am %date% UTC": "تاريخ التسجيل %date% UTC"
+"Schwelle für automatische Video-Hervorhebung": "حد إبراز الفيديو تلقائيًا"
+"Gezählte öffentliche Aufrufe bis zur einmaligen Hervorhebung; 0 deaktiviert die automatische Hervorhebung.": "عدد المشاهدات العامة المحتسبة قبل إبراز الفيديو مرة واحدة؛ أدخل 0 لتعطيل الإبراز التلقائي."
+"Die Schwelle für die automatische Hervorhebung muss eine ganze Zahl von 0 bis 2147483647 sein.": "يجب أن يكون حد الإبراز التلقائي عددًا صحيحًا من 0 إلى 2147483647."
+'Quellenstatus prüfen': 'التحقق من حالة المصدر'
+'Pro Quellenprüfung können höchstens fünf Videos ausgewählt werden.': 'يمكن اختيار خمسة مقاطع فيديو كحد أقصى في كل عملية تحقق.'
+'Die Quellenprüfung ist nur für eingebettete Videos verfügbar.': 'يتوفر التحقق من المصادر لمقاطع الفيديو المضمنة فقط.'
+'Der gemeinsame Importschutz ist nicht verfügbar. Es wurden keine Videoanbieter angefragt.': 'الحماية المشتركة للاستيراد غير متاحة. لم تتم مطالبة أي مزود فيديو.'
+'Das Limit für Quellenprüfungen ist erreicht. Bitte versuche es später erneut.': 'تم بلوغ حد التحقق من المصادر. حاول مرة أخرى لاحقًا.'
+'Quellenprüfung abgeschlossen: %checked% geprüft, %unavailable% nicht verfügbar, %unsupported% nicht unterstützt und %failed% fehlgeschlagen.': 'اكتمل التحقق من المصدر: تم فحص %checked%، وغير متاح %unavailable%، وغير مدعوم %unsupported%، وفشل %failed%.'
+'Externer Quellenstatus': 'حالة المصدر الخارجي'
+'Noch nicht geprüft': 'لم يتم التحقق بعد'
+'Quelle verfügbar': 'المصدر متاح'
+'Quelle nicht verfügbar': 'المصدر غير متاح'
+'Anbieter nicht unterstützt': 'المزود غير مدعوم'
+'Prüfung fehlgeschlagen': 'فشل التحقق'
+'Zuletzt geprüft: %date%': 'آخر تحقق: %date%'
+'Letzter Prüfversuch: %date%': 'آخر محاولة تحقق: %date%'
+'Letzter bekannter Status: %status%': 'آخر حالة معروفة: %status%'
+'Keine externe Einbettungsquelle': 'لا يوجد مصدر تضمين خارجي'
+'Wähle bis zu 50 Einträge aus. Für eine Quellenprüfung werden höchstens fünf externe Einbettungen abgefragt; Uploads, Streams und direkte URLs werden nicht kontaktiert. Löschen entfernt auch ihre Kommentare.': 'اختر ما يصل إلى 50 عنصرًا. يتصل فحص المصدر بخمسة مزودين مضمّنين كحد أقصى؛ ولا يتصل بالملفات المرفوعة أو التدفقات أو الروابط المباشرة. يؤدي الحذف أيضًا إلى حذف التعليقات.'
+"Teilen-Bereich für Videos, News und Serienfolgen anzeigen": "إظهار قسم المشاركة للفيديوهات والمقالات الإخبارية وحلقات المسلسلات"
+"Diesen Inhalt teilen": "مشاركة هذا المحتوى"
+"Teilen": "المشاركة"
+"Bei Facebook teilen": "المشاركة على Facebook"
+"Bei X teilen": "المشاركة على X"
+"Bei Pinterest teilen": "المشاركة على Pinterest"
+"Öffentlicher Link": "الرابط العام"
+"Externe Teilen-Links erfordern eine konfigurierte öffentliche Website-Adresse.": "تتطلب روابط المشاركة الخارجية إعداد عنوان عام للموقع."
+"Beim Öffnen eines Teilen-Links wird die Seitenadresse an den gewählten Dienst übermittelt. Diese Seite lädt dafür keine externen Skripte.": "عند فتح رابط مشاركة، يُرسل عنوان هذه الصفحة إلى الخدمة المختارة. لا يحمّل هذا الموقع نصوصًا برمجية خارجية للمشاركة."

@@ -1,0 +1,114 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'Suche'|trans }} · {{ site_settings().siteName }}{% endblock %}
+
+{% block body %}
+    <header class="public-header">
+        {{ include('partials/public_brand.html.twig') }}
+        <nav class="public-navigation" aria-label="{{ 'Hauptnavigation'|trans }}">
+            <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
+            {% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}
+            {% if module_enabled('search') %}<a href="{{ path('public_search') }}" aria-current="page">{{ 'Suche'|trans }}</a>{% endif %}
+            {% if module_enabled('pages') %}<a href="{{ path('page_index') }}">{{ 'Seiten'|trans }}</a>{% endif %}
+            <a href="{{ path('content_sitemap') }}">{{ 'Sitemap'|trans }}</a>
+            {{ include('partials/public_navigation_links.html.twig') }}
+        </nav>
+    </header>
+    <main class="public-main">
+        <section class="public-page-heading">
+            <p class="eyebrow">{{ 'Entdecken'|trans }}</p>
+            <h1>{{ 'Suche'|trans }}</h1>
+            <p class="lead">{{ 'Durchsuche die aktuell freigegebenen Inhaltsbereiche.'|trans }}</p>
+        </section>
+
+        <form class="content-search" method="get" action="{{ path('public_search') }}">
+            <label for="site-search">{{ 'Suchbegriff'|trans }}</label>
+            <input
+                id="site-search"
+                type="search"
+                name="q"
+                value="{{ query }}"
+                maxlength="100"
+                required
+                aria-describedby="search-suggestion-status"
+                data-live-search-input
+                data-suggestions-url="{{ path('public_search_suggestions') }}"
+                data-label-video="{{ 'Video'|trans }}"
+                data-label-news="{{ 'News'|trans }}"
+                data-label-series="{{ 'Serie'|trans }}"
+                data-message-empty="{{ 'Keine passenden Vorschläge.'|trans }}"
+                data-message-count="{{ '%count% Suchvorschläge.'|trans({'%count%': '%count%'}) }}"
+                data-message-limited="{{ 'Zu viele Suchanfragen. Bitte warte kurz.'|trans }}"
+                data-message-unavailable="{{ 'Suchvorschläge sind derzeit nicht verfügbar.'|trans }}"
+            >
+            <p id="search-suggestion-status" class="search-suggestion-status" role="status" aria-live="polite" data-live-search-status></p>
+            <ul id="search-suggestions" class="search-suggestions" aria-label="{{ 'Suchvorschläge'|trans }}" data-live-search-results hidden></ul>
+            <button class="button button-secondary" type="submit">{{ 'Suchen'|trans }}</button>
+        </form>
+
+        {% if query %}
+            {% if module_enabled('series') %}<section aria-labelledby="search-series-heading">
+                <h2 id="search-series-heading">{{ 'Serien'|trans }}</h2>
+                <div class="content-grid">
+                    {% for item in series %}
+                        <article class="content-card">
+                            <h3><a href="{{ path('series_show', {slug: item.slug}) }}">{{ item.title }}</a></h3>
+                            <p>{{ item.description|slice(0, 240) }}</p>
+                        </article>
+                    {% else %}
+                        <p class="empty-state">{{ 'Keine Serien gefunden.'|trans }}</p>
+                    {% endfor %}
+                </div>
+            </section>{% endif %}
+
+            {% if module_enabled('news') %}<section aria-labelledby="search-news-heading">
+                <h2 id="search-news-heading">{{ 'News'|trans }}</h2>
+                <div class="content-grid">
+                    {% for article in news %}
+                        <article class="content-card">
+                            {% if article.thumbnailObjectId and not article.membersOnly %}<img class="video-thumbnail" src="{{ path('news_thumbnail', {id: article.id}) }}" alt="{{ 'Vorschaubild für %title%'|trans({'%title%': article.title}) }}" loading="lazy" decoding="async">{% endif %}
+                            <p class="card-kicker">{{ article.category ?? 'News'|trans }}</p>
+                            <h3><a href="{{ path('news_show', {slug: article.slug}) }}">{{ article.title }}</a></h3>
+                            {% if article.summary %}<p>{{ article.summary }}</p>{% elseif article.membersOnly %}<p>{{ 'Der vollständige Beitrag ist Mitgliedern vorbehalten.'|trans }}</p>{% else %}<p>{{ article.body|striptags|slice(0, 240) }}</p>{% endif %}
+                            <time datetime="{{ article.publishedAt|date('c') }}">{{ article.publishedAt|date('d.m.Y') }}</time>
+                        </article>
+                    {% else %}
+                        <p class="empty-state">{{ 'Keine News gefunden.'|trans }}</p>
+                    {% endfor %}
+                </div>
+            </section>{% endif %}
+
+            <section aria-labelledby="search-videos-heading">
+                <h2 id="search-videos-heading">{{ 'Videos'|trans }}</h2>
+                <div class="content-grid">
+                    {% for video in videos %}
+                        <article class="content-card">
+                            {% if video.thumbnailObjectId %}<img class="video-thumbnail" src="{{ path('video_thumbnail', {id: video.id}) }}" alt="{{ 'Vorschaubild für %title%'|trans({'%title%': video.title}) }}" loading="lazy" decoding="async">{% endif %}
+                            <p class="card-kicker">{{ video.category ?? 'Video'|trans }}</p>
+                            <h3><a href="{{ path('video_show', {id: video.id}) }}">{{ video.title }}</a></h3>
+                            <p>{{ video.description|slice(0, 240) }}</p>
+                            <time datetime="{{ video.publishedAt|date('c') }}">{{ video.publishedAt|date('d.m.Y') }}</time>
+                        </article>
+                    {% else %}
+                        <p class="empty-state">{{ 'Keine Videos gefunden.'|trans }}</p>
+                    {% endfor %}
+                </div>
+            </section>
+
+            {% if page > 1 or has_next %}
+                <nav class="pagination" aria-label="{{ 'Suchergebnisseiten'|trans }}">
+                    {% if page > 1 %}<a href="{{ path('public_search', {q: query, page: page - 1}) }}">{{ 'Vorherige Seite'|trans }}</a>{% endif %}
+                    <span>{{ 'Seite %page%'|trans({'%page%': page}) }}</span>
+                    {% if has_next %}<a href="{{ path('public_search', {q: query, page: page + 1}) }}">{{ 'Nächste Seite'|trans }}</a>{% endif %}
+                </nav>
+            {% endif %}
+        {% elseif not query %}
+            <p class="empty-state">{{ 'Gib einen Suchbegriff ein, um veröffentlichte Inhalte zu finden.'|trans }}</p>
+        {% endif %}
+    </main>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="{{ asset('search/live-search-suggestions.js') }}" defer></script>
+{% endblock %}

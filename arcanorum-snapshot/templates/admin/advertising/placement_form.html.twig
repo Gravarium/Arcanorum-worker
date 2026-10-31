@@ -1,0 +1,34 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ (is_edit ? 'Werbeplatz bearbeiten' : 'Werbeplatz anlegen')|trans }}{% endblock %}
+{% block admin_breadcrumb %}<a href="{{ path('admin_advertising_index') }}">{{ 'Werbung'|trans }}</a> / {{ (is_edit ? 'Werbeplatz bearbeiten' : 'Werbeplatz anlegen')|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div><p class="eyebrow">{{ 'Anzeigen'|trans }}</p><h1 id="seitenueberschrift">{{ (is_edit ? 'Werbeplatz bearbeiten' : 'Werbeplatz anlegen')|trans }}</h1></div>
+        <a class="button button-secondary" href="{{ path('admin_advertising_index') }}">{{ 'Zurück zur Übersicht'|trans }}</a>
+    </div>
+    {% if errors is not empty %}<div class="flash-message is-error" role="alert"><strong>{{ 'Bitte prüfe die Eingaben.'|trans }}</strong><ul>{% for error in errors %}<li>{{ error|trans }}</li>{% endfor %}</ul></div>{% endif %}
+    <section class="admin-panel" aria-labelledby="placement-form-heading">
+        <header class="panel-heading"><div><h2 id="placement-form-heading">{{ 'Position und Formate'|trans }}</h2><p class="muted">{{ 'Nur die fünf fest eingebauten Themenpositionen werden auf der Website angezeigt.'|trans }}</p></div></header>
+        <form class="admin-form" method="post">
+            <input type="hidden" name="_token" value="{{ csrf_token('admin_advertising_mutation') }}">
+            {% if is_edit %}
+                <p><strong>{{ 'Position'|trans }}:</strong> <code>{{ placement.id }}</code></p>
+            {% else %}
+                <label><span>{{ 'Position'|trans }}</span><select name="id" data-ad-placement-slot required>{% for id in available_slots %}<option value="{{ id }}" data-formats="{{ standard_slot_formats[id]|join(',') }}"{% if values.id == id %} selected{% endif %}>{{ id }} — {{ standard_slots[id]|trans }}</option>{% endfor %}</select></label>
+                {% if available_slots is empty %}<p class="muted">{{ 'Alle Standardpositionen sind bereits angelegt.'|trans }}</p>{% endif %}
+            {% endif %}
+            <label><span>{{ 'Bezeichnung'|trans }}</span><input name="label" value="{{ values.label }}" maxlength="120" required></label>
+            <fieldset class="form-checks"><legend>{{ 'Erlaubte Anzeigenformate'|trans }}</legend>
+                {% for format in formats %}{% set format_allowed = format.value in allowed_formats %}<label data-ad-placement-format-option{% if not format_allowed %} hidden{% endif %}><input type="checkbox" name="formats[]" value="{{ format.value }}" data-ad-placement-format{% if not format_allowed %} disabled{% endif %}{% if format.value in values.formats %} checked{% endif %}> {{ format.value }}</label>{% endfor %}
+            </fieldset>
+            <div class="form-actions"><button class="button" type="submit"{% if not is_edit and available_slots is empty %} disabled{% endif %}>{{ 'Werbeplatz speichern'|trans }}</button><a class="button button-secondary" href="{{ path('admin_advertising_index') }}">{{ 'Abbrechen'|trans }}</a></div>
+        </form>
+    </section>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {% if not is_edit %}<script src="{{ asset('advertising/placement-formats.js') }}" defer></script>{% endif %}
+{% endblock %}

@@ -1,0 +1,99 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'Mitglieder folgen'|trans }} · {{ site_settings().siteName }}{% endblock %}
+
+{% block body %}
+    <header class="public-header">
+        {{ include('partials/public_brand.html.twig') }}
+        <nav class="public-navigation" aria-label="{{ 'Mitgliedsmenü'|trans }}">
+            <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
+            {% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}
+            <a href="{{ path('member_profile') }}">{{ 'Mein Profil'|trans }}</a>
+            <a href="{{ path('member_playlist_index') }}">{{ 'Wiedergabelisten'|trans }}</a>
+            <a href="{{ path('member_video_library_index') }}">{{ 'Meine Bibliothek'|trans }}</a>
+            <a href="{{ path('member_submission_history') }}">{{ 'Meine Einreichungen'|trans }}</a>
+            <a href="{{ path('member_activity_index') }}">{{ 'Meine Aktivitäten'|trans }}</a>
+            <a href="{{ path('member_follow_index') }}" aria-current="page">{{ 'Mitglieder folgen'|trans }}</a>
+            {% if member.publicProfile %}<a href="{{ path('public_member_profile', {handle: member.handle}) }}">{{ 'Mein Kanal'|trans }}</a>{% endif %}
+            <form action="{{ path('member_logout') }}" method="post">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('member_logout') }}">
+                <button class="logout-button" type="submit">{{ 'Abmelden'|trans }}</button>
+            </form>
+        </nav>
+    </header>
+    <main class="public-main">
+        <section class="public-section" aria-labelledby="member-follows-heading">
+            <p class="eyebrow">{{ 'Mitgliedskonto'|trans }}</p>
+            <h1 id="member-follows-heading">{{ 'Mitglieder folgen und Aktivitäten entdecken'|trans }}</h1>
+            <p class="card-kicker">{{ 'Du folgst %following% öffentlichen Mitgliedern; %followers% öffentliche Mitglieder folgen dir.'|trans({'%following%': following_count, '%followers%': follower_count}) }}</p>
+            {% for message in app.flashes('member_success') %}<p class="flash-message is-success" role="status">{{ message|trans }}</p>{% endfor %}
+            <nav class="public-navigation" aria-label="{{ 'Mitglieder entdecken'|trans }}">
+                <a href="{{ path('member_follow_index', {view: 'feed'}) }}"{% if view == 'feed' %} aria-current="page"{% endif %}>{{ 'Aktivitäten'|trans }}</a>
+                <a href="{{ path('member_follow_index', {view: 'following'}) }}"{% if view == 'following' %} aria-current="page"{% endif %}>{{ 'Folge ich'|trans }}</a>
+                <a href="{{ path('member_follow_index', {view: 'followers'}) }}"{% if view == 'followers' %} aria-current="page"{% endif %}>{{ 'Meine Follower'|trans }}</a>
+                <a href="{{ path('member_follow_index', {view: 'suggestions'}) }}"{% if view == 'suggestions' %} aria-current="page"{% endif %}>{{ 'Vorschläge'|trans }}</a>
+            </nav>
+
+            {% if view == 'feed' %}
+                <h2>{{ 'Aktivitäten von Mitgliedern, denen du folgst'|trans }}</h2>
+                <div class="content-grid">
+                    {% for activity in entries %}
+                        <article class="content-card">
+                            <p class="card-kicker"><a href="{{ path('public_member_profile', {handle: activity.member_handle}) }}">{{ activity.member_name }}</a> · <time datetime="{{ activity.occurred_at|date('c') }}">{{ activity.occurred_at|date('d.m.Y H:i') }}</time></p>
+                            {% if activity.kind == 'video_submission' %}
+                                <p>{{ 'hat ein Video veröffentlicht:'|trans }} <a href="{{ path('video_show', {id: activity.target_id}) }}">{{ activity.target_title }}</a></p>
+                            {% elseif activity.kind == 'playlist' %}
+                                <p>{{ 'hat eine öffentliche Wiedergabeliste aktualisiert:'|trans }} <a href="{{ path('public_playlist_show', {id: activity.target_id}) }}">{{ activity.target_title }}</a></p>
+                            {% elseif activity.kind == 'video_comment' %}
+                                <p>{{ 'hat ein veröffentlichtes Video kommentiert:'|trans }} <a href="{{ path('video_show', {id: activity.target_id, _fragment: 'comments'}) }}">{{ activity.target_title }}</a></p>
+                            {% elseif activity.kind == 'news_comment' %}
+                                <p>{{ 'hat einen veröffentlichten Artikel kommentiert:'|trans }} <a href="{{ path('news_show', {slug: activity.target_slug, _fragment: 'comments'}) }}">{{ activity.target_title }}</a></p>
+                            {% endif %}
+                        </article>
+                    {% else %}
+                        <p class="empty-state">{{ 'Noch keine öffentlichen Aktivitäten. Folge Mitgliedern oder sieh dir Vorschläge an.'|trans }}</p>
+                    {% endfor %}
+                </div>
+            {% else %}
+                {% if view == 'following' %}
+                    <h2>{{ 'Mitglieder, denen du folgst'|trans }}</h2>
+                {% elseif view == 'followers' %}
+                    <h2>{{ 'Mitglieder, die dir folgen'|trans }}</h2>
+                {% else %}
+                    <h2>{{ 'Öffentliche Mitglieder entdecken'|trans }}</h2>
+                {% endif %}
+                <div class="content-grid">
+                    {% for followed_member in entries %}
+                        <article class="content-card">
+                            <p class="card-kicker">@{{ followed_member.handle }}</p>
+                            <h3><a href="{{ path('public_member_profile', {handle: followed_member.handle}) }}">{{ followed_member.displayName }}</a></h3>
+                            {% if view == 'following' or view == 'suggestions' %}
+                                <form action="{{ path('member_follow_action', {handle: followed_member.handle, action: view == 'following' ? 'entfolgen' : 'folgen'}) }}" method="post">
+                                    {% set follow_action = view == 'following' ? 'entfolgen' : 'folgen' %}
+                                    <input type="hidden" name="_token" value="{{ csrf_token('member_follow_' ~ follow_action ~ '_' ~ followed_member.handle) }}">
+                                    <button class="button button-secondary" type="submit">{{ follow_action == 'folgen' ? 'Mitglied folgen'|trans : 'Nicht mehr folgen'|trans }}</button>
+                                </form>
+                            {% endif %}
+                        </article>
+                    {% else %}
+                        {% if view == 'following' %}
+                            <p class="empty-state">{{ 'Du folgst noch keinem öffentlichen Mitglied.'|trans }}</p>
+                        {% elseif view == 'followers' %}
+                            <p class="empty-state">{{ 'Dir folgen noch keine öffentlichen Mitglieder.'|trans }}</p>
+                        {% else %}
+                            <p class="empty-state">{{ 'Zurzeit gibt es keine neuen Mitgliedervorschläge.'|trans }}</p>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {% if page > 1 or has_next %}
+                <nav class="pagination" aria-label="{{ 'Mitgliedsseiten'|trans }}">
+                    {% if page > 1 %}<a href="{{ path('member_follow_index', {view: view, page: page - 1}) }}">{{ 'Vorherige Seite'|trans }}</a>{% endif %}
+                    <span>{{ 'Seite %page%'|trans({'%page%': page}) }}</span>
+                    {% if has_next %}<a href="{{ path('member_follow_index', {view: view, page: page + 1}) }}">{{ 'Nächste Seite'|trans }}</a>{% endif %}
+                </nav>
+            {% endif %}
+        </section>
+    </main>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'Serien'|trans }} · {{ site_settings().siteName }}{% endblock %}
+
+{% block body %}
+    <header class="public-header">
+        {{ include('partials/public_brand.html.twig') }}
+        <nav class="public-navigation" aria-label="{{ 'Hauptnavigation'|trans }}">
+            <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
+            {% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}
+            {% if module_enabled('series') %}<a href="{{ path('series_index') }}" aria-current="page">{{ 'Serien'|trans }}</a>{% endif %}
+            {% if module_enabled('search') %}<a href="{{ path('public_search') }}">{{ 'Suche'|trans }}</a>{% endif %}
+            {% if module_enabled('pages') %}<a href="{{ path('page_index') }}">{{ 'Seiten'|trans }}</a>{% endif %}
+            {{ include('partials/public_navigation_links.html.twig') }}
+        </nav>
+    </header>
+    <main class="public-main">
+        <section class="public-page-heading">
+            <p class="eyebrow">{{ 'Videokatalog'|trans }}</p><h1>{{ 'Serien'|trans }}</h1>
+            <p class="lead">{{ 'Redaktionelle Reihen und ihre Folgen.'|trans }}</p>
+        </section>
+        {% for featured in featured_genres %}
+            <section class="featured-series-group" aria-labelledby="featured-series-genre-{{ loop.index }}">
+                <h2 id="featured-series-genre-{{ loop.index }}">
+                    <a href="{{ path('series_index', {genre: featured.name}) }}">{{ 'Serien aus %genre%'|trans({'%genre%': featured.name}) }}</a>
+                </h2>
+                <div class="content-grid">
+                    {% for item in featured.series %}
+                        <article class="content-card">
+                            {% if item.artworkObjectId is not null %}
+                                <img class="video-thumbnail" src="{{ path('series_artwork', {slug: item.slug}) }}" alt="{{ 'Coverbild: %title%'|trans({'%title%': item.title}) }}" loading="lazy">
+                            {% endif %}
+                            <h3><a href="{{ path('series_show', {slug: item.slug}) }}">{{ item.title }}</a></h3>
+                            <p>{{ item.description|slice(0, 240) }}</p>
+                            <time datetime="{{ item.publishedAt|date('c') }}">{{ item.publishedAt|date('d.m.Y') }}</time>
+                        </article>
+                    {% endfor %}
+                </div>
+            </section>
+        {% endfor %}
+        <form class="public-filter-form" method="get" action="{{ path('series_index') }}">
+            <label for="series-genre">{{ 'Genre'|trans }}</label>
+            <select id="series-genre" name="genre">
+                <option value="">{{ 'Alle Genres'|trans }}</option>
+                {% for option in genres %}
+                    <option value="{{ option }}"{% if option == genre %} selected{% endif %}>{{ option }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit">{{ 'Filtern'|trans }}</button>
+        </form>
+        <div class="content-grid">
+            {% for item in series %}
+                <article class="content-card">
+                    {% if item.artworkObjectId is not null %}
+                        <img class="video-thumbnail" src="{{ path('series_artwork', {slug: item.slug}) }}" alt="{{ 'Coverbild: %title%'|trans({'%title%': item.title}) }}" loading="lazy">
+                    {% endif %}
+                    <h2><a href="{{ path('series_show', {slug: item.slug}) }}">{{ item.title }}</a></h2>
+                    <p>{{ item.description|slice(0, 240) }}</p>
+                    <time datetime="{{ item.publishedAt|date('c') }}">{{ item.publishedAt|date('d.m.Y') }}</time>
+                </article>
+            {% else %}
+                <p class="empty-state">{{ 'Noch keine Serien veröffentlicht.'|trans }}</p>
+            {% endfor %}
+        </div>
+        {% if page > 1 or has_next %}
+            <nav class="pagination" aria-label="{{ 'Serienseiten'|trans }}">
+                {% if page > 1 %}<a href="{{ path('series_index', {page: page - 1, genre: genre}) }}">{{ 'Vorherige Seite'|trans }}</a>{% endif %}
+                <span>{{ 'Seite %page%'|trans({'%page%': page}) }}</span>
+                {% if has_next %}<a href="{{ path('series_index', {page: page + 1, genre: genre}) }}">{{ 'Nächste Seite'|trans }}</a>{% endif %}
+            </nav>
+        {% endif %}
+    </main>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'Videoeinreichung bearbeiten'|trans }} · {{ site_settings().siteName }}{% endblock %}
+
+{% block body %}
+    <header class="public-header">
+        {{ include('partials/public_brand.html.twig') }}
+        <nav class="public-navigation" aria-label="{{ 'Mitgliedsmenü'|trans }}">
+            <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
+            <a href="{{ path('member_profile') }}">{{ 'Mein Profil'|trans }}</a>
+            <a href="{{ path('member_submission_history') }}">{{ 'Meine Einreichungen'|trans }}</a>
+            <form action="{{ path('member_logout') }}" method="post">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('member_logout') }}">
+                <button class="logout-button" type="submit">{{ 'Abmelden'|trans }}</button>
+            </form>
+        </nav>
+    </header>
+    <main class="public-main">
+        <section class="public-page-heading">
+            <p class="eyebrow">{{ 'Mitgliedskonto'|trans }}</p>
+            <h1>{{ 'Videoeinreichung bearbeiten'|trans }}</h1>
+            <p class="lead">{{ 'Die Quelle kann hier nicht geändert werden. Nach dem Speichern wird der Beitrag erneut geprüft und bleibt bis dahin privat.'|trans }}</p>
+        </section>
+        {% for error in errors %}<p class="flash-message is-error" role="alert">{{ error|trans }}</p>{% endfor %}
+        <form class="comment-form video-submission-form" action="{{ path('member_submission_edit', {id: submission.id}) }}" method="post">
+            <input type="hidden" name="_token" value="{{ csrf_token('member_submission_edit_' ~ submission.id) }}">
+            <label for="submission-title">{{ 'Titel'|trans }}</label>
+            <input id="submission-title" name="title" value="{{ values.title }}" maxlength="180" required>
+            <label for="submission-description">{{ 'Beschreibung'|trans }}</label>
+            <textarea id="submission-description" name="description" maxlength="20000" rows="7">{{ values.description }}</textarea>
+            <label for="submission-category">{{ 'Kategorie'|trans }}</label>
+            <select id="submission-category" name="category">
+                <option value="">{{ 'Keine Kategorie'|trans }}</option>
+                {% for category in categories %}
+                    <option value="{{ category.name }}"{% if values.category == category.name %} selected{% endif %}>{{ category.name }}</option>
+                {% endfor %}
+            </select>
+            <p>{{ 'Videoquelle:'|trans }} {{ submission.video.sourceHost }}</p>
+            <button class="button" type="submit">{{ 'Änderungen speichern und erneut prüfen lassen'|trans }}</button>
+            <a class="button button-secondary" href="{{ path('member_submission_history') }}">{{ 'Abbrechen'|trans }}</a>
+        </form>
+    </main>
+{% endblock %}

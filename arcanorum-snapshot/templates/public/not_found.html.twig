@@ -1,0 +1,23 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'Inhalt nicht gefunden'|trans }} · {{ site_settings().siteName }}{% endblock %}
+
+{% block body %}
+    <header class="public-header">
+        {{ include('partials/public_brand.html.twig') }}
+        <nav class="public-navigation" aria-label="Hauptnavigation">
+            <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
+            {% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}
+            {% if module_enabled('pages') %}<a href="{{ path('page_index') }}">{{ 'Seiten'|trans }}</a>{% endif %}
+            {{ include('partials/public_navigation_links.html.twig') }}
+        </nav>
+    </header>
+    <main class="public-main">
+        <section class="public-page-heading">
+            <p class="eyebrow">{{ content_type|trans }}</p>
+            <h1>{{ 'Inhalt nicht gefunden'|trans }}</h1>
+            <p class="lead">{{ 'Dieser Inhalt ist nicht verfügbar oder wurde noch nicht veröffentlicht.'|trans }}</p>
+            <a class="button" href="{{ path('platform_home') }}">{{ 'Zur Startseite'|trans }}</a>
+        </section>
+    </main>
+{% endblock %}

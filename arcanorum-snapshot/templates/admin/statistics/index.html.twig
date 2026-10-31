@@ -1,0 +1,45 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Inhaltsstatistik'|trans }}{% endblock %}
+{% block admin_breadcrumb %}{{ 'Inhaltsstatistik'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="admin-page-heading">
+        <div>
+            <h1 id="seitenueberschrift">{{ 'Inhaltsstatistik'|trans }}</h1>
+            <p>{{ 'Neu erstellte Videos, News, Kommentare und Mitgliedskonten nach UTC-Tag. Es werden keine personenbezogenen Einzelereignisse ausgegeben.'|trans }}</p>
+        </div>
+    </div>
+
+    <nav class="admin-toolbar" aria-label="{{ 'Statistikzeitraum'|trans }}">
+        <a class="button{% if period != 7 %} button-secondary{% endif %}" href="{{ path('admin_statistics_index', {days: 7}) }}">{{ '7 Tage'|trans }}</a>
+        <a class="button{% if period != 30 %} button-secondary{% endif %}" href="{{ path('admin_statistics_index', {days: 30}) }}">{{ '30 Tage'|trans }}</a>
+        <a class="button{% if period != 90 %} button-secondary{% endif %}" href="{{ path('admin_statistics_index', {days: 90}) }}">{{ '90 Tage'|trans }}</a>
+    </nav>
+
+    <p class="admin-result-count">{{ 'Im Zeitraum: %videos% Videos, %news% News, %comments% Kommentare und %members% Mitgliedskonten.'|trans({'%videos%': report.totals.videos, '%news%': report.totals.news, '%comments%': report.totals.comments, '%members%': report.totals.members}) }}</p>
+    <div class="admin-table-wrap">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th scope="col">{{ 'Tag (UTC)'|trans }}</th>
+                    <th scope="col">{{ 'Videos'|trans }}</th>
+                    <th scope="col">{{ 'News'|trans }}</th>
+                    <th scope="col">{{ 'Kommentare'|trans }}</th>
+                    <th scope="col">{{ 'Mitglieder'|trans }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in report.days %}
+                    <tr>
+                        <td>{{ entry.day }}</td>
+                        <td>{{ entry.videos }}</td>
+                        <td>{{ entry.news }}</td>
+                        <td>{{ entry.comments }}</td>
+                        <td>{{ entry.members }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

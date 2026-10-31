@@ -1,0 +1,79 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Videomeldungen'|trans }}{% endblock %}
+{% block admin_breadcrumb %}{{ 'Videomeldungen'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Moderation'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ 'Videomeldungen'|trans }}</h1>
+            <p class="muted">{{ 'Eingehende Meldungen prüfen und Videos bei Bedarf aus der öffentlichen Ausgabe nehmen.'|trans }}</p>
+        </div>
+        <a class="button button-secondary" href="{{ path('admin_video_index') }}">{{ 'Zum Videokatalog'|trans }}</a>
+    </div>
+
+    <section class="admin-panel" aria-labelledby="video-report-list-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="video-report-list-heading">{{ 'Meldungen'|trans }}</h2>
+                <p class="muted">{{ 'Es werden höchstens 100 passende Meldungen angezeigt.'|trans }}</p>
+            </div>
+        </header>
+
+        <form class="admin-filter-form" method="get" action="{{ path('admin_video_report_index') }}">
+            <label>
+                <span>{{ 'Suchen'|trans }}</span>
+                <input type="search" name="q" maxlength="150" value="{{ search }}">
+            </label>
+            <label>
+                <span>{{ 'Status'|trans }}</span>
+                <select name="status">
+                    <option value="">{{ 'Alle Status'|trans }}</option>
+                    {% for status in statuses %}
+                        <option value="{{ status.value }}"{% if selected_status == status.value %} selected{% endif %}>{{ status.label|trans }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <button class="button button-secondary" type="submit">{{ 'Filtern'|trans }}</button>
+        </form>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th scope="col">{{ 'Eingegangen'|trans }}</th>
+                        <th scope="col">{{ 'Video'|trans }}</th>
+                        <th scope="col">{{ 'Grund'|trans }}</th>
+                        <th scope="col">{{ 'Zusatzangaben'|trans }}</th>
+                        <th scope="col">{{ 'Status und Aktion'|trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in reports %}
+                        <tr>
+                            <td><time datetime="{{ report.createdAt|date('c') }}">{{ report.createdAt|date('d.m.Y H:i') }}</time></td>
+                            <td><a href="{{ path('admin_video_edit', {id: report.video.id}) }}">{{ report.video.title }}</a></td>
+                            <td>{{ report.reason.label|trans }}</td>
+                            <td>{{ report.details is empty ? '–' : report.details }}</td>
+                            <td>
+                                <span class="status-badge {{ report.status.value == 'pending' ? 'is-later' : 'is-verified' }}">{{ report.status.label|trans }}</span>
+                                {% if report.status.value == 'pending' %}
+                                    <form class="video-report-actions" action="{{ path('admin_video_report_moderate', {id: report.id}) }}" method="post">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('admin_video_report_' ~ report.id) }}">
+                                        <button class="button button-secondary" type="submit" name="action" value="dismiss">{{ 'Als erledigt markieren'|trans }}</button>
+                                        <button class="button" type="submit" name="action" value="hide">{{ 'Video ausblenden'|trans }}</button>
+                                    </form>
+                                {% elseif report.reviewedAt %}
+                                    <p class="muted">{{ 'Bearbeitet am %date%'|trans({'%date%': report.reviewedAt|date('d.m.Y H:i')}) }}</p>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="5"><p class="empty-state">{{ 'Keine Videomeldungen für diesen Filter.'|trans }}</p></td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+{% endblock %}

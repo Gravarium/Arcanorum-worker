@@ -1,0 +1,3 @@
+{% if site_settings().isVideoPlayerWatermarkEnabled %}
+    <a class="video-player-watermark" data-testid="video-player-watermark" href="{{ path('platform_home') }}">{% if site_settings().videoPlayerWatermarkSha256 is not null %}<img data-testid="video-player-watermark-image" src="{{ path('player_watermark_image', {sha256: site_settings().videoPlayerWatermarkSha256}) }}" alt="{{ site_settings().siteName }}" decoding="async">{% else %}{{ site_settings().siteName }}{% endif %}</a>
+{% endif %}

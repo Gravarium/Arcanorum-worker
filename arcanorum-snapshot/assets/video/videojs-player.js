@@ -1,0 +1,65 @@
+(() => {
+    const playerElements = document.querySelectorAll('video[data-video-player-engine="videojs"]');
+
+    for (const video of playerElements) {
+        const status = video.closest('.video-stage')?.querySelector('[data-video-player-status]');
+        const setStatus = (message) => {
+            if (status && message) {
+                status.textContent = message;
+            }
+        };
+
+        let playlist = null;
+        if (video.dataset.hlsUrl) {
+            try {
+                playlist = new URL(video.dataset.hlsUrl, document.baseURI);
+            } catch {
+                video.hidden = true;
+                setStatus(video.dataset.hlsMessageInvalidUrl || video.dataset.playerMessageError);
+                continue;
+            }
+
+            if ('https:' !== playlist.protocol || playlist.username || playlist.password || playlist.hash) {
+                video.hidden = true;
+                setStatus(video.dataset.hlsMessageInvalidUrl || video.dataset.playerMessageError);
+                continue;
+            }
+            video.crossOrigin = 'anonymous';
+        }
+
+        if ('function' !== typeof window.videojs) {
+            setStatus(video.dataset.playerMessageError);
+            continue;
+        }
+
+        try {
+            const aspectRatios = new Set(['16:9', '4:3', '1:1', '9:16']);
+            const aspectRatio = aspectRatios.has(video.dataset.playerAspectRatio)
+                ? video.dataset.playerAspectRatio
+                : '16:9';
+            const player = window.videojs(video, {
+                controls: !video.hasAttribute('data-video-preroll-locked'),
+                fluid: true,
+                responsive: true,
+                aspectRatio,
+                preload: video.getAttribute('preload') || 'metadata',
+                autoplay: video.hasAttribute('autoplay') ? 'muted' : false,
+                muted: video.hasAttribute('muted'),
+            });
+            video.__arcanorumVideoJsPlayer = player;
+
+            if (playlist) {
+                player.src({ src: playlist.href, type: 'application/vnd.apple.mpegurl' });
+            }
+
+            player.on('loadedmetadata', () => {
+                setStatus(video.dataset.playerMessageReady);
+            });
+            player.on('error', () => {
+                setStatus(video.dataset.playerMessageError);
+            });
+        } catch {
+            setStatus(video.dataset.playerMessageError);
+        }
+    }
+})();

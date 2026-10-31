@@ -1,0 +1,12 @@
+<section
+    data-provider-embed
+    data-testid="video-embed-provider"
+    data-embed-url="{{ embed_url }}"
+    data-embed-title="{{ embed_title }}"
+    data-load-label="{{ 'Externes Video wird geladen.'|trans }}"
+    data-error-label="{{ 'Diese externe Videoquelle ist ungültig.'|trans }}"
+>
+    <p data-provider-embed-status role="status">{{ 'Das externe Video wird erst nach deiner Auswahl beim Anbieter geladen. Dabei erhält der Anbieter deine Verbindungsdaten.'|trans }}</p>
+    <button class="button" type="button" data-provider-embed-load>{{ 'Externes Video laden'|trans }}</button>
+    <noscript><a href="{{ embed_url }}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">{{ 'Video beim Anbieter öffnen'|trans }}</a></noscript>
+</section>

@@ -1,0 +1,154 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Theme und Layout'|trans }}{% endblock %}
+{% block admin_breadcrumb %}{{ 'Theme und Layout'|trans }}{% endblock %}
+
+{% block stylesheets %}
+    {% if preview_token is not null %}<link rel="stylesheet" href="{{ path('admin_design_settings_preview_css', {token: preview_token}) }}">{% endif %}
+{% endblock %}
+
+{% block admin_content %}
+    <header class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Einstellungen · Gestaltung'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ 'Theme und Layout'|trans }}</h1>
+            <p class="muted">{{ 'Wählen Sie ein eingebautes Theme, ein öffentliches Inhaltslayout und kontrastgeprüfte Farben.'|trans }}</p>
+        </div>
+    </header>
+
+    {% if errors.form is defined %}<p class="field-error" role="alert">{{ errors.form|trans }}</p>{% endif %}
+    {% for field, message in errors %}{% if field != 'form' %}<p class="field-error" role="alert">{{ message|trans }}</p>{% endif %}{% endfor %}
+
+    <section class="admin-panel" aria-labelledby="design-settings-heading">
+        <header class="panel-heading"><h2 id="design-settings-heading">{{ 'Öffentliche Gestaltung'|trans }}</h2></header>
+        <form method="post" action="{{ path('admin_design_settings_update') }}" class="admin-form">
+            <input type="hidden" name="_token" value="{{ csrf_token('admin_design_settings') }}">
+            <label for="public-theme">{{ 'Theme'|trans }}</label>
+            <select id="public-theme" name="theme">
+                {% for option in theme_options %}
+                    <option value="{{ option.value }}"{% if option.value == form.theme %} selected{% endif %}>{{ option.label|trans }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="public-layout">{{ 'Inhaltslayout'|trans }}</label>
+            <select id="public-layout" name="layout">
+                {% for option in layout_options %}
+                    <option value="{{ option.value }}"{% if option.value == form.layout %} selected{% endif %}>{{ option.label|trans }}</option>
+                {% endfor %}
+            </select>
+            <p class="muted">{{ 'Das Layout gilt für öffentliche Kartenlisten und Mitgliederseiten. Verwaltungsseiten behalten ihr einheitliches Arbeitslayout.'|trans }}</p>
+
+            <label for="primary-color">{{ 'Hauptfarbe für Links und Schaltflächen'|trans }}</label>
+            <input id="primary-color" name="primary_color" type="color" value="{{ form.primary_color }}" required>
+
+            <label for="accent-color">{{ 'Akzentfarbe für Fokus- und Bereichsmarkierungen'|trans }}</label>
+            <input id="accent-color" name="accent_color" type="color" value="{{ form.accent_color }}" required>
+            <p class="muted">{{ 'Farben werden als feste Hexwerte gespeichert. Eingebettetes CSS und externe Stylesheets werden nicht angenommen. Textfarben müssen den erforderlichen Kontrast zu ihrer gewählten Fläche erreichen.'|trans }}</p>
+
+            <h2>{{ 'Weitere Farben der öffentlichen Website'|trans }}</h2>
+            <p class="muted">{{ 'Legen Sie die Flächen, Überschriften, Links und Navigation einzeln fest. Die Eingabe akzeptiert nur Hexfarben; Text- und Fokusfarben werden auf Kontrast geprüft.'|trans }}</p>
+
+            <label for="heading-color">{{ 'Überschriften'|trans }}</label>
+            <input id="heading-color" name="heading_color" type="color" value="{{ form.heading_color }}" required>
+            <label for="content-background-color">{{ 'Inhaltsfläche und Karten'|trans }}</label>
+            <input id="content-background-color" name="content_background_color" type="color" value="{{ form.content_background_color }}" required>
+            <label for="content-text-color">{{ 'Inhaltstext'|trans }}</label>
+            <input id="content-text-color" name="content_text_color" type="color" value="{{ form.content_text_color }}" required>
+            <label for="body-background-color">{{ 'Seitenhintergrund'|trans }}</label>
+            <input id="body-background-color" name="body_background_color" type="color" value="{{ form.body_background_color }}" required>
+
+            <h3>{{ 'Kopfbereich und Navigation'|trans }}</h3>
+            <label for="header-background-color">{{ 'Hintergrund des Kopfbereichs'|trans }}</label>
+            <input id="header-background-color" name="header_background_color" type="color" value="{{ form.header_background_color }}" required>
+            <label for="header-pane-color">{{ 'Text im Kopfbereich'|trans }}</label>
+            <input id="header-pane-color" name="header_pane_color" type="color" value="{{ form.header_pane_color }}" required>
+            <label for="navigation-background-color">{{ 'Navigationshintergrund'|trans }}</label>
+            <input id="navigation-background-color" name="navigation_background_color" type="color" value="{{ form.navigation_background_color }}" required>
+            <label for="navigation-link-color">{{ 'Navigationslinks'|trans }}</label>
+            <input id="navigation-link-color" name="navigation_link_color" type="color" value="{{ form.navigation_link_color }}" required>
+            <label for="content-link-color">{{ 'Inhaltslinks'|trans }}</label>
+            <input id="content-link-color" name="content_link_color" type="color" value="{{ form.content_link_color }}" required>
+            <label for="video-link-color">{{ 'Video- und Artikeltitel'|trans }}</label>
+            <input id="video-link-color" name="video_link_color" type="color" value="{{ form.video_link_color }}" required>
+            <label for="site-title-color">{{ 'Website-Titel'|trans }}</label>
+            <input id="site-title-color" name="site_title_color" type="color" value="{{ form.site_title_color }}" required>
+
+            <h3>{{ 'Fußbereich und Seitenbreite'|trans }}</h3>
+            <label for="footer-background-color">{{ 'Hintergrund des Fußbereichs'|trans }}</label>
+            <input id="footer-background-color" name="footer_background_color" type="color" value="{{ form.footer_background_color }}" required>
+            <label for="footer-link-color">{{ 'Text und Links im Fußbereich'|trans }}</label>
+            <input id="footer-link-color" name="footer_link_color" type="color" value="{{ form.footer_link_color }}" required>
+            <label for="content-width">{{ 'Maximale Inhaltsbreite in Pixeln'|trans }}</label>
+            <input id="content-width" name="content_width" type="number" min="640" max="1920" step="1" value="{{ form.content_width }}" required>
+
+            <div class="form-actions">
+                <button class="button button-secondary" name="action" value="preview" type="submit">{{ 'Vorschau'|trans }}</button>
+                <button class="button button-primary" name="action" value="save" type="submit">{{ 'Theme und Layout speichern'|trans }}</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="admin-panel" aria-labelledby="theme-store-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="theme-store-heading">{{ 'Weitere Themes'|trans }}</h2>
+                <p>{{ 'Weitere kaufbare Themes, Vorschauen und Kompatibilitätshinweise finden Sie im externen PHPSUGAR Theme Store.'|trans }}</p>
+            </div>
+            <a class="button button-secondary" href="https://www.phpsugar.com/phplegacy_templates.html" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">{{ 'PHPSUGAR Theme Store öffnen'|trans }}</a>
+        </header>
+    </section>
+
+    <section class="admin-panel" aria-labelledby="site-logo-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="site-logo-heading">{{ 'Website-Logo'|trans }}</h2>
+                <p class="muted">{{ 'Laden Sie ein JPEG-, PNG- oder WebP-Bild hoch. Das Bild wird geprüft, auf ein transparentes PNG normalisiert und im Kopfbereich auf höchstens 233 × 80 Pixel begrenzt.'|trans }}</p>
+            </div>
+        </header>
+        {% if settings.siteLogoSha256 is not null %}
+            <p><img class="site-logo-preview" src="{{ path('site_logo_image', {sha256: settings.siteLogoSha256}) }}" alt="{{ 'Aktuelles Website-Logo'|trans }}" width="233" height="80" decoding="async"></p>
+            <form method="post" action="{{ path('admin_design_settings_logo_remove') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('admin_design_logo') }}">
+                <button class="button button-secondary" type="submit">{{ 'Logo entfernen'|trans }}</button>
+            </form>
+        {% else %}
+            <p class="muted">{{ 'Es ist kein eigenes Logo festgelegt.'|trans }}</p>
+        {% endif %}
+        <form method="post" action="{{ path('admin_design_settings_logo_upload') }}" enctype="multipart/form-data" class="admin-form">
+            <input type="hidden" name="_token" value="{{ csrf_token('admin_design_logo') }}">
+            <label for="site-logo-upload">{{ 'Logo auswählen'|trans }}</label>
+            <input id="site-logo-upload" name="logo" type="file" accept="image/jpeg,image/png,image/webp" required>
+            <button class="button button-primary" type="submit">{{ 'Logo hochladen'|trans }}</button>
+        </form>
+    </section>
+
+    <section class="admin-panel" aria-labelledby="design-preview-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="design-preview-heading">{{ 'Vorschau'|trans }}</h2>
+                <p class="muted">{% if preview_token is not null %}{{ 'Temporäre Vorschau für fünf Minuten; noch nicht gespeichert.'|trans }}{% else %}{{ 'Beispielansicht mit den aktuell gespeicherten Einstellungen.'|trans }}{% endif %}</p>
+            </div>
+        </header>
+        <div class="theme-preview" data-preview-theme="{{ preview_settings.publicTheme.value }}" data-preview-layout="{{ preview_settings.publicLayout.value }}">
+            <header class="theme-preview-header">
+                {% if settings.siteLogoSha256 is not null %}
+                    <img class="theme-preview-logo" src="{{ path('site_logo_image', {sha256: settings.siteLogoSha256}) }}" alt="{{ settings.siteName }}" width="233" height="80" decoding="async">
+                {% else %}
+                    <strong>{{ settings.siteName }}</strong>
+                {% endif %}
+                <nav aria-label="{{ 'Vorschau-Navigation'|trans }}"><span>{{ 'Videos'|trans }}</span><span>{{ 'News'|trans }}</span><span>{{ 'Mitglieder'|trans }}</span></nav>
+            </header>
+            <div class="theme-preview-content">
+                <p class="eyebrow">{{ 'Arcanorum · Vorschau'|trans }}</p>
+                <h3>{{ 'Aktuelle Inhalte entdecken'|trans }}</h3>
+                <p>{{ 'So sehen Theme, Farben und Kartenanordnung auf der öffentlichen Website aus.'|trans }}</p>
+                <a class="theme-preview-button" href="#design-preview-heading">{{ 'Beispielschaltfläche'|trans }}</a>
+                <div class="theme-preview-grid" aria-label="{{ 'Beispielkarten'|trans }}">
+                    <article class="theme-preview-card"><strong>{{ 'Neueste Videos'|trans }}</strong><p>{{ 'Eine hervorgehobene Inhaltskarte.'|trans }}</p></article>
+                    <article class="theme-preview-card"><strong>{{ 'Redaktion'|trans }}</strong><p>{{ 'Beiträge bleiben gut lesbar.'|trans }}</p></article>
+                    <article class="theme-preview-card"><strong>{{ 'Community'|trans }}</strong><p>{{ 'Das Layout passt sich dem Gerät an.'|trans }}</p></article>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}

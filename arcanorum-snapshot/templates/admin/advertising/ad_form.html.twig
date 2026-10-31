@@ -1,0 +1,48 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ (is_edit ? 'Anzeige bearbeiten' : 'Anzeige anlegen')|trans }}{% endblock %}
+{% block admin_breadcrumb %}<a href="{{ path('admin_advertising_index') }}">{{ 'Werbung'|trans }}</a> / {{ (is_edit ? 'Anzeige bearbeiten' : 'Anzeige anlegen')|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div><p class="eyebrow">{{ 'Anzeigen'|trans }}</p><h1 id="seitenueberschrift">{{ (is_edit ? 'Anzeige bearbeiten' : 'Anzeige anlegen')|trans }}</h1></div>
+        <a class="button button-secondary" href="{{ path('admin_advertising_index') }}">{{ 'Zurück zur Übersicht'|trans }}</a>
+    </div>
+    {% if errors is not empty %}<div class="flash-message is-error" role="alert"><strong>{{ 'Bitte prüfe die Eingaben.'|trans }}</strong><ul>{% for error in errors %}<li>{{ error|trans }}</li>{% endfor %}</ul></div>{% endif %}
+    <section class="admin-panel" aria-labelledby="advertisement-form-heading">
+        <header class="panel-heading"><div><h2 id="advertisement-form-heading">{{ 'Anzeigendaten'|trans }}</h2><p class="muted">{{ 'Neue Anzeigen werden zuerst als Entwurf gespeichert und erst nach einer ausdrücklichen Aktivierung ausgeliefert.'|trans }}</p></div></header>
+        {% if placements is empty and not is_edit %}<p class="empty-state">{{ 'Lege zuerst einen Werbeplatz an.'|trans }} <a href="{{ path('admin_advertising_placement_new') }}">{{ 'Werbeplatz anlegen'|trans }}</a></p>{% endif %}
+        <form class="admin-form" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="_token" value="{{ csrf_token('admin_advertising_mutation') }}">
+            <label><span>{{ 'Bezeichnung'|trans }}</span><input name="label" value="{{ values.label }}" maxlength="120" required></label>
+            {% if is_edit %}
+                <p><strong>{{ 'Werbeplatz'|trans }}:</strong> <code>{{ advertisement.placementId }}</code><br><strong>{{ 'Format'|trans }}:</strong> {{ advertisement.format.value }}</p>
+            {% else %}
+                <label><span>{{ 'Werbeplatz'|trans }}</span><select name="placement_id" required>{% for placement in placements %}<option value="{{ placement.id }}"{% if values.placement_id == placement.id %} selected{% endif %}>{{ placement.label }} ({{ placement.id }})</option>{% endfor %}</select></label>
+                <label><span>{{ 'Format'|trans }}</span><select name="format" required>{% for format in formats %}<option value="{{ format.value }}"{% if values.format == format.value %} selected{% endif %}>{{ format.value }}</option>{% endfor %}</select></label>
+            {% endif %}
+            <label><span>{{ 'Zieladresse'|trans }}</span><input type="url" name="destination_url" value="{{ values.destination_url }}" maxlength="2048" placeholder="https://…" required><small>{{ 'Nur HTTPS-Ziele ohne Zugangsdaten werden akzeptiert.'|trans }}</small></label>
+            <fieldset>
+                <legend>{{ 'Inhalt des Banners'|trans }}</legend>
+                <label><span>{{ 'HTML-Banner'|trans }}</span><textarea name="html" rows="8" maxlength="50000">{{ values.html }}</textarea><small>{{ 'Erlaubt sind einfache Text- und Struktur-Tags sowie lokale Bilder. Skripte, externe Medien, Links und Ereignisattribute werden entfernt.'|trans }}</small></label>
+                <label><span>{{ 'Sicheres Bannerbild hochladen'|trans }}</span><input type="file" name="banner_image_upload" accept="image/jpeg,image/png,image/webp"><small>{{ 'Nach der Prüfung wird das Bild im Banner ergänzt und erst mit der aktiven Anzeige öffentlich erreichbar.'|trans }}</small></label>
+                <label><span>{{ 'Alternativtext für das hochgeladene Bild'|trans }}</span><input name="banner_image_alt" maxlength="160"></label>
+            </fieldset>
+            <fieldset>
+                <legend>{{ 'Statische Player-Anzeige'|trans }}</legend>
+                <label><span>{{ 'Bildpfad'|trans }}</span><input name="image_path" value="{{ values.image_path }}" maxlength="1024" placeholder="/media/ads/…"><small>{{ 'Verwende einen vorhandenen lokalen Pfad oder lade ein geprüftes Bild hoch. Externe Quellen sind gesperrt.'|trans }}</small></label>
+                <label><span>{{ 'JPEG-, PNG- oder WebP-Bild hochladen'|trans }}</span><input type="file" name="image_upload" accept="image/jpeg,image/png,image/webp"><small>{{ 'Höchstens 4 MiB und 4096 × 4096 Pixel. Die Datei bleibt bis zur aktiven Verwendung im privaten Speicher.'|trans }}</small></label>
+                <label><span>{{ 'Alternativtext'|trans }}</span><input name="alt" value="{{ values.alt }}" maxlength="160"></label>
+            </fieldset>
+            <fieldset>
+                <legend>{{ 'Lokale Videoanzeige'|trans }}</legend>
+                <label><span>{{ 'MP4-Pfad'|trans }}</span><input name="video_path" value="{{ values.video_path }}" maxlength="1024" placeholder="/media/ads/…mp4"><small>{{ 'Nur geprüfte lokale MP4-Dateien werden akzeptiert.'|trans }}</small></label>
+                <label><span>{{ 'MP4-Video hochladen'|trans }}</span><input type="file" name="video_upload" accept="video/mp4"><small>{{ 'Höchstens 32 MiB. Der echte Dateityp und die MP4-Signatur werden geprüft.'|trans }}</small></label>
+                <label><span>{{ 'Vorschaubildpfad'|trans }}</span><input name="poster_path" value="{{ values.poster_path }}" maxlength="1024" placeholder="/media/ads/…jpg"></label>
+                <label><span>{{ 'JPEG-, PNG- oder WebP-Vorschaubild hochladen'|trans }}</span><input type="file" name="poster_upload" accept="image/jpeg,image/png,image/webp"></label>
+            </fieldset>
+            <label><span>{{ 'Bildunterschrift für Player- und Videoanzeigen'|trans }}</span><input name="caption" value="{{ values.caption }}" maxlength="240"></label>
+            <div class="form-actions"><button class="button" type="submit"{% if not is_edit and placements is empty %} disabled{% endif %}>{{ (is_edit ? 'Änderungen speichern' : 'Anzeige als Entwurf speichern')|trans }}</button><a class="button button-secondary" href="{{ path('admin_advertising_index') }}">{{ 'Abbrechen'|trans }}</a></div>
+        </form>
+    </section>
+{% endblock %}

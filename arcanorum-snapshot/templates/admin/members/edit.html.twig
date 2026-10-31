@@ -1,0 +1,221 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Mitgliederprofil bearbeiten'|trans }}{% endblock %}
+{% block admin_breadcrumb %}<a href="{{ path('admin_member_index') }}">{{ 'Nutzer'|trans }}</a> / {{ 'Profil bearbeiten'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Mitglieder'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ 'Profil bearbeiten'|trans }}</h1>
+            <p class="muted">{{ account.handle }} · {{ account.email }}</p>
+        </div>
+        <a class="button button-secondary" href="{{ path('admin_member_index') }}">{{ 'Zurück zur Übersicht'|trans }}</a>
+    </div>
+
+    {% if errors is not empty %}
+        <div class="flash-message is-error" role="alert">
+            <strong>{{ 'Bitte prüfe die Eingaben.'|trans }}</strong>
+            <ul>
+                {% for error in errors %}<li>{{ error }}</li>{% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    {% set invitation_mode = app.flashes('member_invitation_mode')|first|default('setup') %}
+    {% for code in app.flashes('member_invitation') %}
+        <section class="flash-message" role="status" aria-label="{{ (invitation_mode == 'password_reset' ? 'Einmaliger Passwort-Reset-Code' : 'Einmaliger Einrichtungscode')|trans }}">
+            {% if invitation_mode == 'password_reset' %}
+                <strong>{{ 'Einmaliger Passwort-Reset-Code — nur jetzt sichtbar'|trans }}</strong>
+                <p>{{ 'Das Konto bleibt gesperrt, bis das Mitglied hier ein neues Passwort festlegt. Der Code läuft nach 48 Stunden ab. Es wird keine E-Mail versendet.'|trans }}</p>
+            {% else %}
+                <strong>{{ 'Einrichtungscode — nur jetzt sichtbar'|trans }}</strong>
+                <p>{{ 'Teile diesen Code ausschließlich über einen sicheren, vertrauenswürdigen Kanal. Er läuft nach 48 Stunden ab; automatischer E-Mail-Versand ist nicht eingerichtet.'|trans }}</p>
+            {% endif %}
+            <p>{{ 'Das Mitglied öffnet'|trans }} <a href="{{ path('member_setup') }}">{{ 'die Kontoeinrichtung'|trans }}</a> {{ 'und gibt den Code dort ein.'|trans }}</p>
+            <p><code class="member-invitation-code">{{ code }}</code></p>
+        </section>
+    {% endfor %}
+
+    <section class="admin-panel" aria-labelledby="member-invitation-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="member-invitation-heading">{{ 'Kontoeinrichtung'|trans }}</h2>
+                {% if account.isActive %}
+                    <p class="muted">{{ 'Aktive Konten benötigen keinen Einrichtungscode.'|trans }}</p>
+                {% elseif account.invitationExpiresAt %}
+                    <p class="muted">{{ 'Der aktuelle Code läuft am'|trans }} <time datetime="{{ account.invitationExpiresAt|date('c', 'UTC') }}">{{ account.invitationExpiresAt|date(app.request.locale starts with 'en' ? 'Y-m-d H:i' : 'd.m.Y H:i', 'UTC') }}</time> UTC {{ 'ab. Ein neuer Code macht den bisherigen ungültig.'|trans }}</p>
+                {% else %}
+                    <p class="muted">{{ 'Das Konto ist inaktiv und hat noch keinen Einrichtungscode.'|trans }}</p>
+                {% endif %}
+            </div>
+        </header>
+        {% if not account.isActive %}
+            <form class="admin-form" method="post" action="{{ path('admin_member_invitation', {id: account.id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('member_account_invitation_' ~ account.id) }}">
+                <div class="form-actions">
+                    <button class="button" type="submit">{{ (account.invitationExpiresAt ? 'Neuen Einrichtungscode ausstellen' : 'Einrichtungscode ausstellen')|trans }}</button>
+                </div>
+            </form>
+        {% endif %}
+    </section>
+
+    <section class="admin-panel" aria-labelledby="member-status-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="member-status-heading">{{ 'Kontostatus'|trans }}</h2>
+                <p class="muted" id="member-status-description">
+                    {% if account.isActive %}
+                        {{ 'Aktiv. Eine Sperre beendet auch bestehende Anmeldesitzungen.'|trans }}
+                    {% else %}
+                        {{ 'Gesperrt. Das Mitglied kann sich erst nach der Aktivierung wieder anmelden.'|trans }}
+                    {% endif %}
+                </p>
+            </div>
+        </header>
+
+        {% if account.isBanned %}
+            <p class="muted">{{ 'Ein aktives Bannverfahren kann nur über die Bannliste aufgehoben werden.'|trans }}</p>
+        {% else %}
+            <form class="admin-form" method="post" action="{{ path('admin_member_status', {id: account.id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('member_account_status_' ~ account.id ~ '_' ~ (account.isActive ? '0' : '1')) }}">
+                <input type="hidden" name="is_active" value="{{ account.isActive ? '0' : '1' }}">
+                <div class="form-actions">
+                    <button class="button" type="submit">{{ (account.isActive ? 'Konto sperren' : 'Konto aktivieren')|trans }}</button>
+                </div>
+            </form>
+        {% endif %}
+    </section>
+
+    <section class="admin-panel" aria-labelledby="member-ban-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="member-ban-heading">{{ 'Mitglied bannen'|trans }}</h2>
+                <p class="muted">{{ 'Ein Bann beendet bestehende Sitzungen und macht unbenutzte Einrichtungs- oder Reset-Codes ungültig. Die Sperre lässt sich später über die Bannliste aufheben.'|trans }}</p>
+            </div>
+        </header>
+        {% if account.activeBan %}
+            <p><strong>{{ 'Aktiver Bann'|trans }}:</strong> {{ account.activeBan.reason }}</p>
+            <p class="muted">{{ 'Erstellt am'|trans }} <time datetime="{{ account.activeBan.createdAt|date('c', 'UTC') }}">{{ account.activeBan.createdAt|date(app.request.locale starts with 'en' ? 'Y-m-d H:i' : 'd.m.Y H:i', 'UTC') }}</time> UTC</p>
+            <a class="button button-secondary" href="{{ path('admin_member_ban_index') }}">{{ 'Bannliste öffnen'|trans }}</a>
+        {% else %}
+            <form class="admin-form" method="post" action="{{ path('admin_member_ban', {id: account.id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('member_account_ban_' ~ account.id) }}">
+                <label>
+                    <span>{{ 'Begründung'|trans }}</span>
+                    <textarea name="reason" rows="3" maxlength="500" required></textarea>
+                    <small>{{ 'Nur Verwaltungsmitarbeiter sehen diesen Grund. Er bleibt im internen Sperrverlauf gespeichert.'|trans }}</small>
+                </label>
+                <div class="form-actions">
+                    <button class="button" type="submit">{{ 'Mitglied bannen'|trans }}</button>
+                </div>
+            </form>
+        {% endif %}
+    </section>
+
+    <section class="admin-panel" aria-labelledby="member-password-reset-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="member-password-reset-heading">{{ 'Passwort zurücksetzen'|trans }}</h2>
+                <p class="muted">{{ 'Der Reset sperrt das Konto und beendet bestehende Sitzungen sofort. Der einmalige Code wird ohne E-Mail-Versand angezeigt und muss über einen vertrauenswürdigen Kanal weitergegeben werden.'|trans }}</p>
+            </div>
+        </header>
+        {% if account.isActive %}
+            <form class="admin-form" method="post" action="{{ path('admin_member_password_reset', {id: account.id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('member_account_password_reset_' ~ account.id) }}">
+                <div class="form-actions">
+                    <button class="button" type="submit">{{ 'Passwort-Reset-Code ausstellen'|trans }}</button>
+                </div>
+            </form>
+        {% else %}
+            <p class="muted">{{ 'Der Reset ist nur für aktive Konten verfügbar. Aktiviere dieses Konto erst, wenn kein Einrichtungscode mehr offen ist.'|trans }}</p>
+        {% endif %}
+    </section>
+
+    <section class="admin-panel" aria-labelledby="member-identity-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="member-identity-heading">{{ 'Anmeldung und Kanal'|trans }}</h2>
+                <p class="muted">{{ 'Die E-Mail-Adresse ist die Anmeldekennung. Kanalnamen müssen eindeutig sein.'|trans }}</p>
+            </div>
+        </header>
+
+        {% if identity_errors is not empty %}
+            <div class="flash-message is-error" role="alert">
+                <strong>{{ 'Bitte prüfe E-Mail-Adresse und Kanalname.'|trans }}</strong>
+                <ul>
+                    {% for error in identity_errors %}<li>{{ error }}</li>{% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <form class="admin-form" method="post" action="{{ path('admin_member_identity', {id: account.id}) }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('member_account_identity_' ~ account.id) }}">
+
+            <label>
+                <span>{{ 'E-Mail-Adresse'|trans }}</span>
+                <input type="email" name="email" value="{{ identity_values.email }}" maxlength="254" autocomplete="email" required>
+            </label>
+
+            <label>
+                <span>{{ 'Kanalname'|trans }}</span>
+                <input name="handle" value="{{ identity_values.handle }}" minlength="3" maxlength="32" pattern="[a-zA-Z0-9][a-zA-Z0-9_-]{2,31}" autocomplete="off" required>
+            </label>
+
+            <div class="form-actions">
+                <button class="button" type="submit">{{ 'Anmeldung und Kanal speichern'|trans }}</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="admin-panel" aria-labelledby="member-form-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="member-form-heading">{{ 'Profildaten'|trans }}</h2>
+                <p class="muted">{{ 'Öffentliche Profildaten und Profilsichtbarkeit.'|trans }}</p>
+            </div>
+        </header>
+
+        <form class="admin-form" method="post">
+            <input type="hidden" name="_token" value="{{ csrf_token('member_account_edit_' ~ account.id) }}">
+
+            <label>
+                <span>{{ 'Anzeigename'|trans }}</span>
+                <input name="display_name" value="{{ values.display_name }}" maxlength="80" required>
+            </label>
+
+            <label>
+                <span>{{ 'Profilbeschreibung'|trans }}</span>
+                <textarea name="bio" rows="5" maxlength="500">{{ values.bio }}</textarea>
+            </label>
+
+            <div class="form-checks">
+                <label><input type="checkbox" name="public_profile" value="1" {{ values.public_profile ? 'checked' : '' }}> {{ 'Öffentliches Profil'|trans }}</label>
+            </div>
+
+            <div class="form-actions">
+                <button class="button" type="submit">{{ 'Änderungen speichern'|trans }}</button>
+                <a class="button button-secondary" href="{{ path('admin_member_index') }}">{{ 'Abbrechen'|trans }}</a>
+            </div>
+        </form>
+    </section>
+
+    <section class="admin-panel" aria-labelledby="member-delete-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="member-delete-heading">{{ 'Mitgliedskonto löschen'|trans }}</h2>
+                <p class="muted">{{ 'Private Kontodaten, Listen, Bewertungen, Verknüpfungen, Sperrverlauf und unfreigegebene Einreichungen werden gelöscht. Veröffentlichte Videos und freigegebene Kommentare bleiben erhalten; Kommentare werden von Kontodaten und Namen bereinigt.'|trans }}</p>
+                <p class="muted">{{ 'Private Dateien aus unfreigegebenen Einreichungen werden sicher entfernt. Falls der private Speicher vorübergehend nicht erreichbar ist, bleibt nur eine geschützte Wiederholungsaufgabe ohne Kontodaten vorgemerkt.'|trans }}</p>
+            </div>
+        </header>
+        <form class="admin-form" method="post" action="{{ path('admin_member_delete', {id: account.id}) }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('member_account_delete_' ~ account.id) }}">
+            <div class="form-checks">
+                <label><input type="checkbox" name="confirm" value="1" required> {{ 'Ich bestätige die dauerhafte Löschung dieses Mitgliedskontos.'|trans }}</label>
+            </div>
+            <div class="form-actions">
+                <button class="button button-danger" type="submit">{{ 'Mitgliedskonto dauerhaft löschen'|trans }}</button>
+            </div>
+        </form>
+    </section>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% if module_enabled('pages') %}
+    {% for menu_page in public_menu_pages() %}
+        <a href="{{ path('page_show', {slug: menu_page.slug}) }}">{{ menu_page.title }}</a>
+    {% endfor %}
+{% endif %}
+{% if show_member_directory is not defined or show_member_directory %}
+    <a href="{{ path('public_member_index') }}">{{ 'Mitglieder'|trans }}</a>
+{% endif %}
+{% if is_granted('ROLE_MEMBER') %}
+    <a href="{{ path('member_profile') }}">{{ 'Mein Profil'|trans }}</a>
+    <a href="{{ path('member_password') }}">{{ 'Passwort ändern'|trans }}</a>
+    <a href="{{ path('member_playlist_index') }}">{{ 'Wiedergabelisten'|trans }}</a>
+    <a href="{{ path('member_video_library_index') }}">{{ 'Meine Bibliothek'|trans }}</a>
+    <a href="{{ path('member_submission_history') }}">{{ 'Meine Einreichungen'|trans }}</a>
+    <a href="{{ path('member_activity_index') }}">{{ 'Meine Aktivitäten'|trans }}</a>
+    {% if app.user.publicProfile %}
+        <a href="{{ path('public_member_profile', {handle: app.user.handle}) }}">{{ 'Mein Kanal'|trans }}</a>
+    {% endif %}
+    <form action="{{ path('member_logout') }}" method="post">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('member_logout') }}">
+        <button class="logout-button" type="submit">{{ 'Abmelden'|trans }}</button>
+    </form>
+{% else %}
+    <a href="{{ path('member_login') }}">{{ 'Anmelden'|trans }}</a>
+    {% if site_settings().isMemberRegistrationEnabled %}<a href="{{ path('member_register') }}">{{ 'Registrieren'|trans }}</a>{% endif %}
+{% endif %}

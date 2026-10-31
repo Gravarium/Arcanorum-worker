@@ -1,0 +1,137 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ (is_edit ? 'Kategorie bearbeiten' : 'Neue Kategorie')|trans }}{% endblock %}
+{% block admin_breadcrumb %}<a href="{{ path('admin_category_index') }}">{{ 'Kategorien'|trans }}</a> / {{ (is_edit ? 'Bearbeiten' : 'Neue Kategorie')|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Redaktion'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ (is_edit ? 'Kategorie bearbeiten' : 'Neue Kategorie')|trans }}</h1>
+            <p class="muted">{{ 'Eine Kategorie gehört zu News oder Videos. Verwendete Kategorien und Kategorien mit Unterkategorien können nicht gelöscht werden.'|trans }}</p>
+        </div>
+        <a class="button button-secondary" href="{{ path('admin_category_index', values.type ? {type: values.type} : {}) }}">{{ 'Zurück zur Übersicht'|trans }}</a>
+    </div>
+
+    {% if errors is not empty %}
+        <div class="flash-message is-error" role="alert">
+            <strong>{{ 'Bitte prüfe die Eingaben.'|trans }}</strong>
+            <ul>{% for error in errors %}<li>{{ error|trans }}</li>{% endfor %}</ul>
+        </div>
+    {% endif %}
+
+    <section class="admin-panel" aria-labelledby="category-form-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="category-form-heading">{{ 'Kategoriedaten'|trans }}</h2>
+                <p class="muted">{{ 'Beim Umbenennen wird die Änderung auf zugeordnete Inhalte übertragen.'|trans }}</p>
+            </div>
+        </header>
+
+        <form class="admin-form" method="post">
+            <input type="hidden" name="_token" value="{{ csrf_token('admin_category_save') }}">
+
+            <label>
+                <span>{{ 'Name'|trans }}</span>
+                <input name="name" value="{{ values.name }}" maxlength="100" required>
+            </label>
+
+            <label>
+                <span>{{ 'Inhaltsbereich'|trans }}</span>
+                {% if is_edit %}
+                    <input value="{{ type_label }}" disabled>
+                {% else %}
+                    <select name="type" required>
+                        <option value="">{{ 'Bitte wählen'|trans }}</option>
+                        {% for category_type in category_types %}
+                            <option value="{{ category_type.value }}" {{ values.type == category_type.value ? 'selected' : '' }}>{{ category_type.label|trans }}</option>
+                        {% endfor %}
+                    </select>
+                {% endif %}
+            </label>
+
+            <label>
+                <span>{{ 'URL-Slug'|trans }}</span>
+                <input name="slug" value="{{ values.slug }}" maxlength="120" pattern="[a-z0-9]+(?:-[a-z0-9]+)*">
+                <small class="muted">{{ 'Leer lassen, um den Slug beim Anlegen aus dem Namen zu erzeugen. Ein gespeicherter Slug bleibt beim Umbenennen unverändert.'|trans }}</small>
+            </label>
+
+            <label>
+                <span>{{ 'Übergeordnete Kategorie'|trans }}</span>
+                <select name="parent_id">
+                    <option value="">{{ 'Keine — oberste Ebene'|trans }}</option>
+                    {% for parent in parent_categories %}
+                        <option value="{{ parent.id }}" {{ values.parent_id == parent.id ? 'selected' : '' }}>{% if parent.depth > 0 %}{% for level in 1..parent.depth %}— {% endfor %}{% endif %}{{ parent.name }}</option>
+                    {% endfor %}
+                </select>
+                <small class="muted">{{ 'Unterkategorien sind auf acht Ebenen begrenzt und bleiben im selben Inhaltsbereich.'|trans }}</small>
+            </label>
+
+            <label>
+                <span>{{ 'Sortierung'|trans }}</span>
+                <input name="sort_order" type="number" min="0" max="10000" value="{{ values.sort_order }}" required>
+            </label>
+
+            {% if values.type == 'video' %}
+                <label>
+                    <span><input type="checkbox" name="featured" value="1"{% if values.featured == '1' %} checked{% endif %}> {{ 'Auf der Startseite hervorheben'|trans }}</span>
+                    <small class="muted">{{ 'Ausgewählte Videokategorien erscheinen mit ihren neuesten veröffentlichten Videos auf der Startseite.'|trans }}</small>
+                </label>
+            {% endif %}
+
+            {% include 'admin/partials/rich_text_editor.html.twig' with {
+                id: 'category-description',
+                label: 'Beschreibung',
+                value: values.description,
+                rows: 5,
+                field_name: 'description',
+                required: false,
+                maxlength: 2000,
+                image_upload_url: image_upload_type is not null ? path('admin_content_inline_image_upload', {type: image_upload_type, ownerId: category_id}) : '',
+                image_upload_token: image_upload_type is not null ? csrf_token('admin_inline_image_upload_' ~ image_upload_type ~ '_' ~ category_id) : ''
+            } only %}
+
+            <label>
+                <span>{{ 'Meta-Titel'|trans }}</span>
+                <input name="meta_title" value="{{ values.meta_title }}" maxlength="160">
+            </label>
+
+            <label>
+                <span>{{ 'Meta-Beschreibung'|trans }}</span>
+                <textarea name="meta_description" rows="3" maxlength="500">{{ values.meta_description }}</textarea>
+            </label>
+
+            <label>
+                <span>{{ 'Meta-Schlagwörter'|trans }}</span>
+                <input name="meta_keywords" value="{{ values.meta_keywords }}" maxlength="255">
+            </label>
+
+            <div class="form-actions">
+                <button class="button" type="submit">{{ (is_edit ? 'Änderungen speichern' : 'Kategorie anlegen')|trans }}</button>
+                <a class="button button-secondary" href="{{ path('admin_category_index', values.type ? {type: values.type} : {}) }}">{{ 'Abbrechen'|trans }}</a>
+            </div>
+        </form>
+    </section>
+
+    {% if is_edit and values.type == 'video' %}
+        <section class="admin-panel" aria-labelledby="category-artwork-heading">
+            <header class="panel-heading"><div><h2 id="category-artwork-heading">{{ 'Kategorie-Artwork'|trans }}</h2><p class="muted">{{ 'JPEG, PNG oder WebP bis 4 MiB. Das Bild wird geprüft und auf höchstens 320 × 180 Pixel verkleinert.'|trans }}</p></div></header>
+            {% if artwork_exists %}
+                <p><img class="video-thumbnail" src="{{ path('video_category_artwork', {slug: values.slug}) }}" alt="{{ 'Artwork für %category%'|trans({'%category%': values.name}) }}" width="320" height="180" decoding="async"></p>
+            {% endif %}
+            <form class="admin-form" method="post" enctype="multipart/form-data" action="{{ path('admin_category_artwork', {id: category_id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('admin_category_artwork_' ~ category_id) }}">
+                <input type="hidden" name="action" value="upload">
+                <label><span>{{ (artwork_exists ? 'Artwork ersetzen' : 'Artwork hochladen')|trans }}</span><input type="file" name="artwork" accept="image/jpeg,image/png,image/webp" required></label>
+                <div class="form-actions"><button class="button" type="submit">{{ (artwork_exists ? 'Bild ersetzen' : 'Bild speichern')|trans }}</button></div>
+            </form>
+            {% if artwork_exists %}
+                <form method="post" action="{{ path('admin_category_artwork', {id: category_id}) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('admin_category_artwork_' ~ category_id) }}">
+                    <input type="hidden" name="action" value="remove">
+                    <button class="button button-secondary" type="submit">{{ 'Artwork entfernen'|trans }}</button>
+                </form>
+            {% endif %}
+        </section>
+    {% endif %}
+{% endblock %}

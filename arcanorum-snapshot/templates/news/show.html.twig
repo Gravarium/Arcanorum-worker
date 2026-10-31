@@ -1,0 +1,125 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ article.title }} · {{ site_settings().siteName }}{% endblock %}
+
+{% block social_metadata %}{{ include('partials/social_metadata.html.twig', {metadata: social_metadata}) }}{% endblock %}
+
+{% block body %}
+    <header class="public-header">
+        {{ include('partials/public_brand.html.twig') }}
+        <nav class="public-navigation" aria-label="{{ 'Hauptnavigation'|trans }}">
+            <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>{% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}{% if module_enabled('series') %}<a href="{{ path('series_index') }}">{{ 'Serien'|trans }}</a>{% endif %}
+            {% if module_enabled('search') %}<a href="{{ path('public_search') }}">{{ 'Suche'|trans }}</a>{% endif %}{% if module_enabled('pages') %}<a href="{{ path('page_index') }}">{{ 'Seiten'|trans }}</a>{% endif %}
+            {{ include('partials/public_navigation_links.html.twig') }}
+        </nav>
+    </header>
+    <main class="public-main">
+        <article class="public-article">
+            <p class="eyebrow">{{ article.category ?? ('News'|trans) }}</p>
+            <h1>{{ article.title }}</h1>
+            {% if article.summary %}<p class="lead">{{ article.summary }}</p>{% endif %}
+            <p class="byline">{{ 'Von %author%'|trans({'%author%': article.authorName}) }}</p>
+            <time datetime="{{ article.publishedAt|date('c') }}">{{ article.publishedAt|date('d.m.Y') }}</time>
+            {% if article.thumbnailObjectId and can_read_article %}<img class="video-thumbnail video-thumbnail-feature" src="{{ path('news_thumbnail', {id: article.id}) }}" alt="{{ 'Vorschaubild für %title%'|trans({'%title%': article.title}) }}" decoding="async">{% endif %}
+            {% if article.tags is not empty %}
+                <p class="tag-list" aria-label="{{ 'Schlagwörter'|trans }}">
+                    {% for tag in article.tags %}<a href="{{ path('news_index', {tag: tag.name}) }}">{{ tag.name }}</a>{% endfor %}
+                </p>
+            {% endif %}
+            {{ advertising_slot('news-top') }}
+            {% if can_read_article %}
+                <div class="article-body">{{ article.body|rich_text }}</div>
+                {% if article.customFields is not empty %}
+                    <section class="article-custom-fields" aria-labelledby="news-custom-fields-heading">
+                        <h2 id="news-custom-fields-heading">{{ 'Weitere Angaben'|trans }}</h2>
+                        <dl>{% for field in article.customFields %}<div><dt>{{ field.key }}</dt><dd>{{ field.value }}</dd></div>{% endfor %}</dl>
+                    </section>
+                {% endif %}
+            {% else %}
+                <section class="members-only-notice" aria-labelledby="members-only-heading">
+                    <h2 id="members-only-heading">{{ 'Dieser Beitrag ist Mitgliedern vorbehalten.'|trans }}</h2>
+                    <p>{{ 'Melde dich an, um den vollständigen Beitrag zu lesen.'|trans }}</p>
+                    <a class="button" href="{{ path('member_login') }}">{{ 'Anmelden'|trans }}</a>
+                </section>
+            {% endif %}
+            {% if can_read_article and not article.membersOnly and share_widget_enabled %}
+                <section class="comment-section" id="news-share" aria-labelledby="news-share-heading">
+                    <h2 id="news-share-heading">{{ 'Diesen Inhalt teilen'|trans }}</h2>
+                    {{ include('partials/public_share_links.html.twig', {
+                        share_title: social_metadata is not null ? social_metadata.title : article.title,
+                        share_url: social_metadata is not null ? social_metadata.url : null,
+                        fallback_url: path('news_show', {slug: article.slug}),
+                    }) }}
+                </section>
+            {% endif %}
+        </article>
+        {% if can_read_article and module_enabled('comments') %}<section class="comment-section" id="comments" aria-labelledby="comments-heading">
+            <h2 id="comments-heading">{{ 'Kommentare'|trans }}</h2>
+            {% if not article.commentsEnabled %}
+                <p class="muted">{{ 'Kommentare sind für diesen Inhalt deaktiviert.'|trans }}</p>
+            {% elseif site_settings().commentProvider.value != 'native' %}
+                {% if comment_provider_external_allowed() %}
+                    {{ include('partials/external_comments.html.twig', {
+                        provider: site_settings().commentProvider,
+                        settings: site_settings(),
+                        route: 'news_show',
+                        route_parameters: {slug: article.slug},
+                        identifier: article.id,
+                    }) }}
+                {% else %}
+                    <p class="muted">{{ 'Externe Kommentare bleiben gesperrt, bis du optionale Inhalte ausdrücklich erlaubst.'|trans }}</p>
+                    <a href="{{ path('cookie_consent_preferences', {return_to: cookie_consent_return_to()}) }}">{{ 'Cookie-Einstellungen öffnen'|trans }}</a>
+                {% endif %}
+            {% else %}
+                {% for message in app.flashes('public_comment_success') %}
+                    <p class="flash-message is-success" role="status">{{ message|trans }}</p>
+                {% endfor %}
+                {% for message in app.flashes('public_comment_error') %}
+                    <p class="flash-message is-error" role="alert">{{ message|trans }}</p>
+                {% endfor %}
+                <div class="comment-list">
+                    {% for comment in comments %}
+                        {{ include('partials/comment_card.html.twig', {
+                            comment: comment,
+                            comment_rating_summaries: comment_rating_summaries,
+                            muted_comment_ids: muted_comment_ids,
+                            comment_page: comment_page,
+                        }) }}
+                    {% else %}
+                        <p class="empty-state">{{ 'Noch keine freigegebenen Kommentare.'|trans }}</p>
+                    {% endfor %}
+                </div>
+                {{ include('partials/comment_pagination.html.twig', {
+                    current_page: comment_page,
+                    page_count: comment_page_count,
+                    previous_url: comment_page > 1
+                        ? path('news_show', comment_page > 2
+                            ? {slug: article.slug, comment_page: comment_page - 1, _fragment: 'comments'}
+                            : {slug: article.slug, _fragment: 'comments'})
+                        : null,
+                    next_url: comment_page < comment_page_count ? path('news_show', {slug: article.slug, comment_page: comment_page + 1, _fragment: 'comments'}) : null,
+                }) }}
+                {% if app.user is not null or site_settings().guestCommentsEnabled %}<form class="comment-form" action="{{ comment_page > 1 ? path('public_comment_submit', {contentType: 'news', reference: article.slug, comment_page: comment_page}) : path('public_comment_submit', {contentType: 'news', reference: article.slug}) }}" method="post">
+                    <h3>{{ 'Kommentar schreiben'|trans }}</h3>
+                    <input type="hidden" name="_token" value="{{ csrf_token('public_comment_news_' ~ article.id) }}">
+                    <label for="news-comment-name">{{ 'Name'|trans }}</label>
+                    <input id="news-comment-name" name="author_name" type="text" maxlength="80" autocomplete="name" required>
+                    <label for="news-comment-body">{{ 'Kommentar'|trans }}</label>
+                    <textarea id="news-comment-body" name="body" minlength="5" maxlength="3000" rows="5" required></textarea>
+                    {{ include('partials/emoji_picker.html.twig', {target_id: 'news-comment-body'}) }}
+                    <div class="comment-honeypot" aria-hidden="true">
+                        <label for="news-comment-website">{{ 'Dieses Feld leer lassen'|trans }}</label>
+                        <input id="news-comment-website" name="website" type="text" tabindex="-1" autocomplete="off">
+                    </div>
+                    <button class="button" type="submit">{{ 'Kommentar zur Prüfung senden'|trans }}</button>
+                    <p class="muted">{{ 'Kommentare erscheinen erst nach Freigabe.'|trans }}</p>
+                </form>{% else %}<p class="muted">{{ 'Bitte melde dich an, um einen Kommentar zu schreiben.'|trans }} <a href="{{ path('member_login') }}">{{ 'Anmelden'|trans }}</a></p>{% endif %}
+            {% endif %}
+        </section>{% endif %}
+        <p>{% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'Zurück zu allen News'|trans }}</a>{% endif %}</p>
+    </main>
+{% endblock %}
+
+{% block javascripts %}
+    {% if module_enabled('comments') and article.commentsEnabled and site_settings().commentProvider.value == 'native' %}<script src="{{ asset('comments/emoji-picker.js') }}" defer></script>{% endif %}
+{% endblock %}

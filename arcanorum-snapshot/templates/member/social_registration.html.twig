@@ -1,0 +1,34 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'Mitgliedskonto mit externem Anbieter erstellen'|trans }} · {{ site_settings().siteName }}{% endblock %}
+
+{% block body %}
+    <main class="login-page">
+        <section class="login-card" aria-labelledby="member-form-heading">
+            <a class="brand login-brand" href="{{ path('platform_home') }}">
+                <span class="brand-name">{{ site_settings().siteName }}</span>
+                <span class="brand-caption">{{ 'Mitgliedskonto'|trans }}</span>
+            </a>
+            <p class="eyebrow">{{ 'Konto erstellen'|trans }}</p>
+            <h1 id="member-form-heading">{{ 'Registrierung abschließen'|trans }}</h1>
+            <p class="login-intro">{{ 'Bestätige deine E-Mail-Adresse, bevor du dich mit diesem Anbieter anmeldest.'|trans }}</p>
+            {% for error in errors %}<p class="login-error" role="alert">{{ error|trans }}</p>{% endfor %}
+            <form class="login-form" action="{{ path('member_social_register') }}" method="post">
+                <label for="member-email">{{ 'E-Mail-Adresse'|trans }}</label>
+                <input id="member-email" name="email" type="email" value="{{ values.email }}" maxlength="254" autocomplete="email" autocapitalize="none" required>
+                <label for="member-handle">{{ 'Kanalname'|trans }}</label>
+                <input id="member-handle" name="handle" type="text" value="{{ values.handle }}" minlength="3" maxlength="32" pattern="[a-zA-Z0-9][a-zA-Z0-9_-]{2,31}" autocomplete="username" autocapitalize="none" required>
+                <p class="field-hint">{{ '3 bis 32 Zeichen: Buchstaben, Zahlen, Unterstriche oder Bindestriche.'|trans }}</p>
+                <label for="member-display-name">{{ 'Anzeigename'|trans }}</label>
+                <input id="member-display-name" name="display_name" type="text" value="{{ values.display_name }}" maxlength="80" autocomplete="name" required>
+                <div class="comment-honeypot" aria-hidden="true">
+                    <label for="member-website">{{ 'Website'|trans }}</label>
+                    <input id="member-website" name="website" type="text" tabindex="-1" autocomplete="off">
+                </div>
+                <input type="hidden" name="_token" value="{{ csrf_token('member_social_register') }}">
+                <button class="button login-submit" type="submit">{{ 'Registrierung abschließen'|trans }}</button>
+            </form>
+            <p class="login-home"><a href="{{ path('member_login') }}">{{ 'Zur Anmeldung'|trans }}</a></p>
+        </section>
+    </main>
+{% endblock %}

@@ -1,0 +1,234 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}
+    {% if page == 'register' %}{{ 'Mitgliedskonto erstellen'|trans }}{% elseif page == 'login' %}{{ 'Mitglied anmelden'|trans }}{% elseif page == 'profile' %}{{ 'Mein Profil'|trans }}{% elseif page == 'password' %}{{ 'Passwort ändern'|trans }}{% else %}{{ member.displayName }}{% endif %} · {{ site_settings().siteName }}
+{% endblock %}
+
+{% block body %}
+    {% if page in ['register', 'login'] %}
+        <main class="login-page">
+            <section class="login-card" aria-labelledby="member-form-heading">
+                <a class="brand login-brand" href="{{ path('platform_home') }}">
+                    <span class="brand-name">{{ site_settings().siteName }}</span>
+                    <span class="brand-caption">{{ 'Mitgliedskonto'|trans }}</span>
+                </a>
+                {% if page == 'register' %}
+                    <p class="eyebrow">{{ 'Konto erstellen'|trans }}</p>
+                    <h1 id="member-form-heading">{{ 'Registrieren'|trans }}</h1>
+                    <p class="login-intro">{{ 'Dein Kanal bleibt zunächst privat.'|trans }}</p>
+                    {% for error in errors %}<p class="login-error" role="alert">{{ error|trans }}</p>{% endfor %}
+                    <form class="login-form" action="{{ path('member_register') }}" method="post">
+                        <label for="member-email">{{ 'E-Mail-Adresse'|trans }}</label>
+                        <input id="member-email" name="email" type="email" value="{{ values.email }}" maxlength="254" autocomplete="email" autocapitalize="none" required>
+                        <label for="member-handle">{{ 'Kanalname'|trans }}</label>
+                        <input id="member-handle" name="handle" type="text" value="{{ values.handle }}" minlength="3" maxlength="32" pattern="[a-zA-Z0-9][a-zA-Z0-9_-]{2,31}" autocomplete="username" autocapitalize="none" required>
+                        <p class="field-hint">{{ '3 bis 32 Zeichen: Buchstaben, Zahlen, Unterstriche oder Bindestriche.'|trans }}</p>
+                        <label for="member-display-name">{{ 'Anzeigename'|trans }}</label>
+                        <input id="member-display-name" name="display_name" type="text" value="{{ values.display_name }}" maxlength="80" autocomplete="name" required>
+                        <label for="member-password">{{ 'Passwort'|trans }}</label>
+                        <input id="member-password" name="password" type="password" minlength="12" maxlength="4096" autocomplete="new-password" required>
+                        <p class="field-hint">{{ 'Mindestens 12 Zeichen.'|trans }}</p>
+                        <div class="comment-honeypot" aria-hidden="true">
+                            <label for="member-website">{{ 'Website'|trans }}</label>
+                            <input id="member-website" name="website" type="text" tabindex="-1" autocomplete="off">
+                        </div>
+                        <input type="hidden" name="_token" value="{{ csrf_token('member_register') }}">
+                        <button class="button login-submit" type="submit">{{ 'Konto erstellen'|trans }}</button>
+                    </form>
+                    {% if google_social_login_available() %}<p class="login-home"><a class="button button-secondary" href="{{ path('member_google_start') }}">{{ 'Mit Google anmelden oder registrieren'|trans }}</a></p>{% endif %}
+                    {% for provider, label in {facebook: 'Facebook', twitter: 'Twitter'} %}
+                        {% if social_login_available(provider) %}<p class="login-home"><a class="button button-secondary" href="{{ path('member_social_start', {provider: provider}) }}">{{ 'Mit %provider% anmelden oder registrieren'|trans({'%provider%': label}) }}</a></p>{% endif %}
+                    {% endfor %}
+                    <p class="login-home"><a href="{{ path('member_login') }}">{{ 'Ich habe bereits ein Konto'|trans }}</a></p>
+                {% else %}
+                    <p class="eyebrow">{{ 'Mitgliedsbereich'|trans }}</p>
+                    <h1 id="member-form-heading">{{ 'Anmelden'|trans }}</h1>
+                    {% for message in app.flashes('member_success') %}<p class="flash-message" role="status">{{ message|trans }}</p>{% endfor %}
+                    {% for message in app.flashes('member_error') %}<p class="login-error" role="alert">{{ message|trans }}</p>{% endfor %}
+                    {% if login_error %}<p class="login-error" role="alert">{{ 'Die Anmeldung ist fehlgeschlagen. Prüfe deine Angaben und versuche es erneut.'|trans }}</p>{% endif %}
+                    <form class="login-form" action="{{ path('member_login') }}" method="post">
+                        <label for="member-username">{{ 'E-Mail-Adresse'|trans }}</label>
+                        <input id="member-username" name="_username" type="email" value="{{ last_username }}" autocomplete="username" autocapitalize="none" required autofocus>
+                        <label for="member-login-password">{{ 'Passwort'|trans }}</label>
+                        <input id="member-login-password" name="_password" type="password" autocomplete="current-password" required>
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+                        <button class="button login-submit" type="submit">{{ 'Anmelden'|trans }}</button>
+                    </form>
+                    <p class="login-home"><a href="{{ path('member_password_reset_request') }}">{{ 'Passwort vergessen?'|trans }}</a></p>
+                    <p class="login-home"><a href="{{ path('member_email_request') }}">{{ 'Bestätigungs-E-Mail erneut anfordern'|trans }}</a></p>
+                    {% if site_settings().isMemberRegistrationEnabled %}<p class="login-home"><a href="{{ path('member_register') }}">{{ 'Neues Mitgliedskonto erstellen'|trans }}</a></p>{% endif %}
+                    {% if google_social_login_available() %}<p class="login-home"><a class="button button-secondary" href="{{ path('member_google_start') }}">{{ 'Mit Google anmelden oder registrieren'|trans }}</a></p>{% endif %}
+                    {% for provider, label in {facebook: 'Facebook', twitter: 'Twitter'} %}
+                        {% if social_login_available(provider) %}<p class="login-home"><a class="button button-secondary" href="{{ path('member_social_start', {provider: provider}) }}">{{ 'Mit %provider% anmelden oder registrieren'|trans({'%provider%': label}) }}</a></p>{% endif %}
+                    {% endfor %}
+                {% endif %}
+                <p class="login-home"><a href="{{ path('platform_home') }}">{{ 'Zur Plattform'|trans }}</a></p>
+            </section>
+        </main>
+    {% elseif page == 'profile' %}
+        <header class="public-header">
+            {{ include('partials/public_brand.html.twig') }}
+            <nav class="public-navigation" aria-label="{{ 'Mitgliedsmenü'|trans }}">
+                <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
+                {% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}
+                <a href="{{ path('public_member_index') }}">{{ 'Mitglieder'|trans }}</a>
+                <a href="{{ path('member_profile') }}" aria-current="page">{{ 'Mein Profil'|trans }}</a>
+                <a href="{{ path('member_password') }}">{{ 'Passwort ändern'|trans }}</a>
+                <a href="{{ path('member_playlist_index') }}">{{ 'Wiedergabelisten'|trans }}</a>
+                <a href="{{ path('member_video_library_index') }}">{{ 'Meine Bibliothek'|trans }}</a>
+                <a href="{{ path('member_submission_history') }}">{{ 'Meine Einreichungen'|trans }}</a>
+                <a href="{{ path('member_activity_index') }}">{{ 'Meine Aktivitäten'|trans }}</a>
+                <a href="{{ path('member_follow_index') }}">{{ 'Mitglieder folgen'|trans }}</a>
+                {% if member.publicProfile %}<a href="{{ path('public_member_profile', {handle: member.handle}) }}">{{ 'Mein Kanal'|trans }}</a>{% endif %}
+                <form action="{{ path('member_logout') }}" method="post">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('member_logout') }}">
+                    <button class="logout-button" type="submit">{{ 'Abmelden'|trans }}</button>
+                </form>
+            </nav>
+        </header>
+        <main class="public-main">
+            <section class="public-section" aria-labelledby="member-profile-heading">
+                <p class="eyebrow">{{ 'Mitgliedskonto'|trans }}</p>
+                <h1 id="member-profile-heading">{{ 'Mein Profil'|trans }}</h1>
+                {% for message in app.flashes('member_success') %}<p class="flash-message" role="status">{{ message|trans }}</p>{% endfor %}
+                {% for message in app.flashes('member_error') %}<p class="login-error" role="alert">{{ message|trans }}</p>{% endfor %}
+                {% for error in errors %}<p class="login-error" role="alert">{{ error|trans }}</p>{% endfor %}
+                {% if member_google_identity_linked() or google_social_login_available() %}
+                    <section class="member-security-panel" aria-labelledby="google-link-heading">
+                        <h2 id="google-link-heading">{{ 'Google-Anmeldung'|trans }}</h2>
+                        {% if member_google_identity_linked() %}
+                            <p>{{ 'Dein Google-Konto ist verknüpft.'|trans }}</p>
+                            {% if not member.hasUsablePasswordCredential %}<p>{{ 'Lege zuerst ein lokales Passwort über die'|trans }} <a href="{{ path('member_password_reset_request') }}">{{ 'Passwort-Wiederherstellung'|trans }}</a> {{ 'fest, bevor du Google entfernst.'|trans }}</p>{% endif %}
+                            <form method="post" action="{{ path('member_google_unlink') }}">
+                                <input type="hidden" name="_token" value="{{ csrf_token('member_google_unlink') }}">
+                                <button class="button button-secondary" type="submit">{{ 'Google-Verknüpfung entfernen'|trans }}</button>
+                            </form>
+                        {% elseif google_social_login_available() %}
+                            <p>{{ 'Verknüpfe ein bestätigtes Google-Konto, um es für die Anmeldung zu verwenden.'|trans }}</p>
+                            <form method="post" action="{{ path('member_google_link') }}">
+                                <input type="hidden" name="_token" value="{{ csrf_token('member_google_link') }}">
+                                <button class="button button-secondary" type="submit">{{ 'Google-Konto verknüpfen'|trans }}</button>
+                            </form>
+                        {% endif %}
+                    </section>
+                {% endif %}
+                {% for provider, label in {facebook: 'Facebook', twitter: 'Twitter'} %}
+                    {% if member_social_identity_linked(provider) or social_login_available(provider) %}
+                        <section class="member-security-panel" aria-labelledby="{{ provider }}-link-heading">
+                            <h2 id="{{ provider }}-link-heading">{{ '%provider%-Anmeldung'|trans({'%provider%': label}) }}</h2>
+                            {% if member_social_identity_linked(provider) %}
+                                <p>{{ 'Dein externes Konto ist verknüpft.'|trans }}</p>
+                                {% if not member.hasUsablePasswordCredential %}<p>{{ 'Lege zuerst ein lokales Passwort über die'|trans }} <a href="{{ path('member_password_reset_request') }}">{{ 'Passwort-Wiederherstellung'|trans }}</a> {{ 'fest, bevor du deine externe Anmeldung entfernst.'|trans }}</p>{% endif %}
+                                <form method="post" action="{{ path('member_social_unlink', {provider: provider}) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('member_social_unlink_' ~ provider) }}">
+                                    <button class="button button-secondary" type="submit">{{ '%provider%-Verknüpfung entfernen'|trans({'%provider%': label}) }}</button>
+                                </form>
+                            {% elseif social_login_available(provider) %}
+                                <p>{{ 'Verknüpfe diesen Anbieter, um ihn für die Anmeldung zu verwenden.'|trans }}</p>
+                                <form method="post" action="{{ path('member_social_link', {provider: provider}) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('member_social_link_' ~ provider) }}">
+                                    <button class="button button-secondary" type="submit">{{ '%provider%-Konto verknüpfen'|trans({'%provider%': label}) }}</button>
+                                </form>
+                            {% endif %}
+                        </section>
+                    {% endif %}
+                {% endfor %}
+                <form class="comment-form" action="{{ path('member_profile') }}" method="post">
+                    <label for="profile-handle">{{ 'Kanalname'|trans }}</label>
+                    <input id="profile-handle" value="{{ member.handle }}" disabled>
+                    <p class="field-hint">{{ 'Dein Kanalname ist fest mit deiner Profiladresse verbunden.'|trans }}</p>
+                    <label for="profile-display-name">{{ 'Anzeigename'|trans }}</label>
+                    <input id="profile-display-name" name="display_name" value="{{ values.display_name }}" maxlength="80" required>
+                    <label for="profile-bio">{{ 'Beschreibung'|trans }}</label>
+                    <textarea id="profile-bio" name="bio" rows="5" maxlength="500">{{ values.bio }}</textarea>
+                    <label for="profile-visibility">{{ 'Sichtbarkeit des Kanals'|trans }}</label>
+                    <select id="profile-visibility" name="visibility">
+                        <option value="private"{% if values.visibility == 'private' %} selected{% endif %}>{{ 'Privat'|trans }}</option>
+                        <option value="public"{% if values.visibility == 'public' %} selected{% endif %}>{{ 'Öffentlich'|trans }}</option>
+                    </select>
+                    <p class="field-hint">{{ 'Private Kanäle sind für andere Besucher nicht erreichbar. Deine E-Mail-Adresse wird nicht öffentlich angezeigt.'|trans }}</p>
+                    <input type="hidden" name="_token" value="{{ csrf_token('member_profile') }}">
+                    <button class="button" type="submit">{{ 'Profil speichern'|trans }}</button>
+                </form>
+            </section>
+        </main>
+    {% elseif page == 'password' %}
+        <header class="public-header">
+            {{ include('partials/public_brand.html.twig') }}
+            <nav class="public-navigation" aria-label="{{ 'Mitgliedsmenü'|trans }}">
+                <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
+                {% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}
+                <a href="{{ path('public_member_index') }}">{{ 'Mitglieder'|trans }}</a>
+                <a href="{{ path('member_profile') }}">{{ 'Mein Profil'|trans }}</a>
+                <a href="{{ path('member_password') }}" aria-current="page">{{ 'Passwort ändern'|trans }}</a>
+                <a href="{{ path('member_playlist_index') }}">{{ 'Wiedergabelisten'|trans }}</a>
+                <a href="{{ path('member_video_library_index') }}">{{ 'Meine Bibliothek'|trans }}</a>
+                <a href="{{ path('member_submission_history') }}">{{ 'Meine Einreichungen'|trans }}</a>
+                <a href="{{ path('member_activity_index') }}">{{ 'Meine Aktivitäten'|trans }}</a>
+                <a href="{{ path('member_follow_index') }}">{{ 'Mitglieder folgen'|trans }}</a>
+                {% if member.publicProfile %}<a href="{{ path('public_member_profile', {handle: member.handle}) }}">{{ 'Mein Kanal'|trans }}</a>{% endif %}
+                <form action="{{ path('member_logout') }}" method="post">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('member_logout') }}">
+                    <button class="logout-button" type="submit">{{ 'Abmelden'|trans }}</button>
+                </form>
+            </nav>
+        </header>
+        <main class="public-main">
+            <section class="public-section" aria-labelledby="member-password-heading">
+                <p class="eyebrow">{{ 'Mitgliedskonto'|trans }}</p>
+                <h1 id="member-password-heading">{{ 'Passwort ändern'|trans }}</h1>
+                {% for message in app.flashes('member_success') %}<p class="flash-message" role="status">{{ message|trans }}</p>{% endfor %}
+                {% for error in errors %}<p class="login-error" role="alert">{{ error|trans }}</p>{% endfor %}
+                <p>{{ 'Zur Bestätigung brauchst du dein aktuelles Passwort. Nach dem Ändern meldest du dich erneut an.'|trans }}</p>
+                <form class="comment-form" action="{{ path('member_password') }}" method="post">
+                    <label for="member-current-password">{{ 'Aktuelles Passwort'|trans }}</label>
+                    <input id="member-current-password" name="current_password" type="password" maxlength="4096" autocomplete="current-password" required>
+                    <label for="member-new-password">{{ 'Neues Passwort'|trans }}</label>
+                    <input id="member-new-password" name="new_password" type="password" minlength="12" maxlength="4096" autocomplete="new-password" required>
+                    <p class="field-hint">{{ 'Mindestens 12 Zeichen.'|trans }}</p>
+                    <label for="member-password-confirmation">{{ 'Neues Passwort wiederholen'|trans }}</label>
+                    <input id="member-password-confirmation" name="password_confirmation" type="password" minlength="12" maxlength="4096" autocomplete="new-password" required>
+                    <input type="hidden" name="_token" value="{{ csrf_token('member_password') }}">
+                    <button class="button" type="submit">{{ 'Passwort speichern'|trans }}</button>
+                </form>
+                <p class="login-home"><a href="{{ path('member_profile') }}">{{ 'Zurück zum Profil'|trans }}</a></p>
+            </section>
+        </main>
+    {% else %}
+        <header class="public-header">
+            {{ include('partials/public_brand.html.twig') }}
+            <nav class="public-navigation" aria-label="Hauptnavigation">
+                <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
+                {% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}
+                <a href="{{ path('public_member_index') }}">{{ 'Mitglieder'|trans }}</a>
+                <a href="{{ path('member_login') }}">{{ 'Mitgliedskonto'|trans }}</a>
+            </nav>
+        </header>
+        <main class="public-main">
+            <section class="public-hero" aria-labelledby="public-member-heading">
+                {% for message in app.flashes('member_success') %}<p class="flash-message is-success" role="status">{{ message|trans }}</p>{% endfor %}
+                {% for message in app.flashes('member_error') %}<p class="flash-message is-error" role="alert">{{ message|trans }}</p>{% endfor %}
+                <p class="eyebrow">{{ 'Kanal · %handle%'|trans({'%handle%': member.handle}) }}</p>
+                <h1 id="public-member-heading">{{ member.displayName }}</h1>
+                {% if member.bio %}<p class="lead">{{ member.bio }}</p>
+                {% else %}<p class="lead">{{ 'Dieses Mitglied hat noch keine Kanalbeschreibung hinzugefügt.'|trans }}</p>{% endif %}
+                {% if can_follow %}
+                    <form class="comment-form" action="{{ path('member_follow_action', {handle: member.handle, action: follow_action}) }}" method="post">
+                        <input type="hidden" name="_token" value="{{ csrf_token('member_follow_' ~ follow_action ~ '_' ~ member.handle) }}">
+                        <button class="button button-secondary" type="submit">{{ follow_action == 'folgen' ? 'Mitglied folgen'|trans : 'Nicht mehr folgen'|trans }}</button>
+                    </form>
+                {% elseif viewer and viewer.id == member.id %}
+                    <p><a class="button button-secondary" href="{{ path('member_follow_index') }}">{{ 'Meine Follows und Aktivitäten'|trans }}</a></p>
+                {% elseif not viewer %}
+                    <p><a class="button button-secondary" href="{{ path('member_login') }}">{{ 'Anmelden, um diesem Mitglied zu folgen'|trans }}</a></p>
+                {% endif %}
+                {% if public_playlists is not empty %}
+                    <h2>{{ 'Öffentliche Wiedergabelisten'|trans }}</h2>
+                    <ul class="playlist-link-list">
+                        {% for playlist in public_playlists %}<li><a href="{{ path('public_playlist_show', {id: playlist.id}) }}">{{ playlist.name }}</a></li>{% endfor %}
+                    </ul>
+                {% endif %}
+            </section>
+        </main>
+    {% endif %}
+{% endblock %}

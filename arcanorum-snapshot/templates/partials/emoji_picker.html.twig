@@ -1,0 +1,24 @@
+{% set dialog_id = target_id ~ '-emoji-dialog' %}
+{% set title_id = dialog_id ~ '-title' %}
+{% set search_id = dialog_id ~ '-search' %}
+<div class="emoji-picker" data-emoji-picker data-emoji-target="{{ target_id }}" data-emoji-catalog-url="{{ path('public_emoji_catalog') }}" data-emoji-empty-message="{{ 'Kein Emoji gefunden.'|trans }}" data-emoji-limit-message="{{ 'Das Emoji passt nicht mehr in den Kommentar.'|trans }}" data-emoji-loading-message="{{ 'Emoji werden geladen …'|trans }}" data-emoji-load-error-message="{{ 'Die Emoji konnten nicht geladen werden.'|trans }}" data-emoji-insert-label="{{ 'Emoji einfügen: %name%'|trans }}">
+    <button class="button button-secondary" type="button" data-emoji-picker-open aria-haspopup="dialog" aria-controls="{{ dialog_id }}" hidden>{{ 'Emoji einfügen'|trans }}</button>
+    <a href="{{ path('public_emoji_help') }}">{{ 'Emoji-Hilfe'|trans }}</a>
+    <dialog id="{{ dialog_id }}" class="emoji-picker-dialog" data-emoji-picker-dialog aria-labelledby="{{ title_id }}">
+        <header class="emoji-picker-heading">
+            <h2 id="{{ title_id }}">{{ 'Emoji-Hilfe'|trans }}</h2>
+            <button class="button button-secondary" type="button" data-emoji-picker-close aria-label="{{ 'Emoji-Auswahl schließen'|trans }}">×</button>
+        </header>
+        <label for="{{ search_id }}">{{ 'Emoji suchen'|trans }}</label>
+        <input id="{{ search_id }}" type="search" data-emoji-search autocomplete="off" maxlength="80">
+        <p class="emoji-picker-status" data-emoji-status role="status" aria-live="polite"></p>
+        <div class="emoji-picker-categories" data-emoji-picker-categories>
+            {% for category in emoji_catalog_categories() %}
+                <section class="emoji-picker-category" data-emoji-category="{{ category.key }}" aria-labelledby="{{ dialog_id }}-{{ category.key }}">
+                    <h3 id="{{ dialog_id }}-{{ category.key }}">{{ category.label|trans }}</h3>
+                    <div class="emoji-picker-items" data-emoji-items></div>
+                </section>
+            {% endfor %}
+        </div>
+    </dialog>
+</div>

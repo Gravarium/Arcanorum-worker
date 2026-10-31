@@ -1,0 +1,151 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Automatisierte Aufgaben'|trans }}{% endblock %}
+{% block admin_breadcrumb %}{{ 'Automatisierte Aufgaben'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">{{ 'Hintergrundaufgaben'|trans }}</p>
+            <h1 id="seitenueberschrift">{{ 'Automatisierte Aufgaben'|trans }}</h1>
+            <p class="muted">{{ 'Aufgaben werden ausschließlich durch den privaten, signierten CLI-Scheduler ausgeführt. Jeder Providerimport wird als Entwurf gespeichert.'|trans }}</p>
+        </div>
+    </div>
+
+    {% for message in app.flashes('success') %}<p class="notice notice-success" role="status">{{ message|trans }}</p>{% endfor %}
+    {% for message in app.flashes('error') %}<p class="field-error" role="alert">{{ message|trans }}</p>{% endfor %}
+
+    <section class="admin-panel" aria-labelledby="automation-create-heading">
+        <header class="panel-heading"><h2 id="automation-create-heading">{{ 'Aufgabe anlegen'|trans }}</h2></header>
+        <p class="muted">{{ 'Bis zu %limit% Aufträge können eingerichtet werden. Intervalle sind auf 15 Minuten bis sieben Tage begrenzt.'|trans({'%limit%': maxTasks}) }}</p>
+        <form method="post" action="{{ path('admin_automation_create') }}" class="admin-form">
+            <input type="hidden" name="_token" value="{{ csrf_token('admin_automation_create') }}">
+            <input type="hidden" name="type" value="provider_import">
+            <label><span>{{ 'Name'|trans }}</span><input name="name" maxlength="120" minlength="3" required autocomplete="off"></label>
+            <label><span>{{ 'Intervall (Minuten)'|trans }}</span><input type="number" name="interval_minutes" min="15" max="10080" value="60" required inputmode="numeric"></label>
+            <label><span>{{ 'Videoanbieter'|trans }}</span>
+                <select name="provider" required>
+                    <option value="youtube">YouTube</option>
+                    <option value="vimeo">Vimeo</option>
+                    <option value="dailymotion">Dailymotion</option>
+                </select>
+            </label>
+            <label><span>{{ 'Importart'|trans }}</span>
+                <select name="mode" required>
+                    <option value="search">{{ 'Gespeicherte Suche'|trans }}</option>
+                    <option value="channel">{{ 'Kanal oder Nutzerabo'|trans }}</option>
+                </select>
+            </label>
+            <label><span>{{ 'Suchbegriff'|trans }}</span><input name="query" maxlength="100" autocomplete="off"></label>
+            <label><span>{{ 'Kanal- oder Nutzerkennung'|trans }}</span><input name="channel_id" maxlength="64" autocomplete="off"></label>
+            <label><span>{{ 'Zielkategorie'|trans }}</span>
+                <select name="category">
+                    <option value="">{{ 'Keine Kategorie'|trans }}</option>
+                    {% for category in categories %}<option value="{{ category.name }}">{{ category.name }}</option>{% endfor %}
+                </select>
+            </label>
+            <label><span>{{ 'Ausschlussbegriffe (einer pro Zeile)'|trans }}</span><textarea name="exclude_terms" rows="4" maxlength="1600"></textarea></label>
+            <p class="muted">{{ 'Provideraufrufe sind auf feste Adapter, kurze Antwortzeiten und höchstens 25 Treffer pro Lauf begrenzt. Doppelte Videos werden übersprungen.'|trans }}</p>
+            <button class="button button-primary" type="submit">{{ 'Importauftrag anlegen'|trans }}</button>
+        </form>
+
+        <hr>
+        <h3>{{ 'Sitemap-Auftrag anlegen'|trans }}</h3>
+        <p class="muted">{{ 'Der Auftrag erzeugt die reguläre Sitemap und die Video-Sitemap neu. Öffentliche Sitemaps werden zusätzlich spätestens nach zehn Minuten dynamisch erneuert.'|trans }}</p>
+        <form method="post" action="{{ path('admin_automation_create') }}" class="admin-form">
+            <input type="hidden" name="_token" value="{{ csrf_token('admin_automation_create') }}">
+            <input type="hidden" name="type" value="sitemap_refresh">
+            <label><span>{{ 'Name'|trans }}</span><input name="name" value="Öffentliche Sitemaps aktualisieren" maxlength="120" minlength="3" required></label>
+            <label><span>{{ 'Intervall (Minuten)'|trans }}</span><input type="number" name="interval_minutes" min="15" max="10080" value="60" required inputmode="numeric"></label>
+            <button class="button button-secondary" type="submit">{{ 'Sitemap-Auftrag anlegen'|trans }}</button>
+        </form>
+    </section>
+
+    <section aria-labelledby="automation-list-heading">
+        <header class="panel-heading"><h2 id="automation-list-heading">{{ 'Aufgaben verwalten'|trans }}</h2></header>
+        {% for task in tasks %}
+            <article class="admin-panel" aria-labelledby="automation-{{ task.id }}-heading">
+                <header class="panel-heading">
+                    <h3 id="automation-{{ task.id }}-heading">{{ task.name }}</h3>
+                    {% if task.systemTask %}<span class="status-label">{{ 'Fester Systemauftrag'|trans }}</span>{% endif %}
+                </header>
+                <p class="muted">{{ task.type.label|trans }} · {{ task.enabled ? 'Aktiviert'|trans : 'Pausiert'|trans }} · {{ 'Nächster Lauf'|trans }}: {{ task.nextRunAt|date('Y-m-d H:i', 'UTC') }} UTC{% if task.lastRunAt %} · {{ 'Letzter Lauf'|trans }}: {{ task.lastRunAt|date('Y-m-d H:i', 'UTC') }} UTC{% endif %}</p>
+
+                <form method="post" action="{{ path('admin_automation_update', {id: task.id}) }}" class="admin-form">
+                    <input type="hidden" name="_token" value="{{ csrf_token('admin_automation_update_' ~ task.id) }}">
+                    {% if not task.systemTask %}<input type="hidden" name="type" value="{{ task.type.value }}">
+                        <label><span>{{ 'Name'|trans }}</span><input name="name" value="{{ task.name }}" maxlength="120" minlength="3" required></label>
+                    {% endif %}
+                    <label><span>{{ 'Intervall (Minuten)'|trans }}</span><input type="number" name="interval_minutes" value="{{ task.intervalMinutes }}" min="15" max="10080" required inputmode="numeric"></label>
+                    {% if task.type.value == 'provider_import' %}
+                        <label><span>{{ 'Videoanbieter'|trans }}</span>
+                            <select name="provider" required>
+                                {% for provider in ['youtube', 'vimeo', 'dailymotion'] %}<option value="{{ provider }}"{% if task.configuration.provider == provider %} selected{% endif %}>{{ provider|capitalize }}</option>{% endfor %}
+                            </select>
+                        </label>
+                        <label><span>{{ 'Importart'|trans }}</span>
+                            <select name="mode" required>
+                                <option value="search"{% if task.configuration.mode == 'search' %} selected{% endif %}>{{ 'Gespeicherte Suche'|trans }}</option>
+                                <option value="channel"{% if task.configuration.mode == 'channel' %} selected{% endif %}>{{ 'Kanal oder Nutzerabo'|trans }}</option>
+                            </select>
+                        </label>
+                        <label><span>{{ 'Suchbegriff'|trans }}</span><input name="query" value="{{ task.configuration.query }}" maxlength="100"></label>
+                        <label><span>{{ 'Kanal- oder Nutzerkennung'|trans }}</span><input name="channel_id" value="{{ task.configuration.channel_id }}" maxlength="64"></label>
+                        <label><span>{{ 'Zielkategorie'|trans }}</span><select name="category"><option value="">{{ 'Keine Kategorie'|trans }}</option>{% for category in categories %}<option value="{{ category.name }}"{% if task.configuration.category == category.name %} selected{% endif %}>{{ category.name }}</option>{% endfor %}</select></label>
+                        <label><span>{{ 'Ausschlussbegriffe (einer pro Zeile)'|trans }}</span><textarea name="exclude_terms" rows="3" maxlength="1600">{{ task.configuration.exclude_terms|default([])|join('\n') }}</textarea></label>
+                    {% endif %}
+                    <button class="button button-secondary" type="submit">{{ 'Speichern'|trans }}</button>
+                </form>
+
+                <div class="admin-actions">
+                    <form method="post" action="{{ path('admin_automation_toggle', {id: task.id}) }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('admin_automation_toggle_' ~ task.id) }}">
+                        <input type="hidden" name="enabled" value="{{ task.enabled ? '0' : '1' }}">
+                        <button class="button button-secondary" type="submit">{{ task.enabled ? 'Pausieren'|trans : 'Aktivieren'|trans }}</button>
+                    </form>
+                    {% if not task.systemTask %}
+                        <form method="post" action="{{ path('admin_automation_delete', {id: task.id}) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('admin_automation_delete_' ~ task.id) }}">
+                            <button class="button button-danger" type="submit">{{ 'Aufgabe löschen'|trans }}</button>
+                        </form>
+                    {% else %}
+                        <p class="muted">{{ 'Der feste Videoquellenprüfer kann pausiert, aber nicht gelöscht oder umkonfiguriert werden.'|trans }}</p>
+                    {% endif %}
+                </div>
+            </article>
+        {% else %}
+            <p class="muted">{{ 'Es sind keine Aufgaben eingerichtet.'|trans }}</p>
+        {% endfor %}
+    </section>
+
+    <section class="admin-panel" aria-labelledby="source-health-heading">
+        <header class="panel-heading"><h2 id="source-health-heading">{{ 'Nicht verfügbare Videoquellen'|trans }}</h2></header>
+        <p class="muted">{{ 'Der Systemauftrag meldet bestätigte Providerantworten zur Moderation. Videos werden niemals automatisch entfernt oder entveröffentlicht.'|trans }}</p>
+        {% if unavailableVideos is empty %}
+            <p class="muted">{{ 'Keine nicht verfügbaren externen Quellen gemeldet.'|trans }}</p>
+        {% else %}
+            <ul>{% for video in unavailableVideos %}<li>{{ video.title }} <span class="muted">({{ video.id }})</span></li>{% endfor %}</ul>
+        {% endif %}
+    </section>
+
+    <section class="admin-panel" aria-labelledby="automation-runs-heading">
+        <header class="panel-heading"><h2 id="automation-runs-heading">{{ 'Letzte Ausführungen'|trans }}</h2></header>
+        {% if runs is empty %}
+            <p class="muted">{{ 'Für diese Aufgaben liegen noch keine Ausführungen vor.'|trans }}</p>
+        {% else %}
+            <div class="table-scroll"><table>
+                <thead><tr><th>{{ 'Aufgabe'|trans }}</th><th>{{ 'Gestartet'|trans }}</th><th>{{ 'Status'|trans }}</th><th>{{ 'Versuche'|trans }}</th><th>{{ 'Nächster Versuch / Lease-Ende'|trans }}</th><th>{{ 'Scheduler'|trans }}</th><th>{{ 'Ergebnis'|trans }}</th></tr></thead>
+                <tbody>{% for run in runs %}<tr>
+                    <td>{{ run.taskName }}</td>
+                    <td>{{ run.startedAt|date('Y-m-d H:i:s', 'UTC') }} UTC</td>
+                    <td>{{ run.status.value|trans }}</td>
+                    <td>{{ run.attemptCount }}/10</td>
+                    <td>{% if run.retryAfter %}{{ run.retryAfter|date('Y-m-d H:i:s', 'UTC') }} UTC{% elseif run.status.value == 'running' and run.leaseExpiresAt %}{{ 'Lease bis'|trans }} {{ run.leaseExpiresAt|date('Y-m-d H:i:s', 'UTC') }} UTC{% else %}—{% endif %}</td>
+                    <td>{{ run.schedulerIdentity }}</td>
+                    <td>{{ run.resultSummary|default('Lauf läuft.'|trans) }}</td>
+                </tr>{% endfor %}</tbody>
+            </table></div>
+            <p class="muted">{{ 'Pro Aufgabe bleiben höchstens 200 Ausführungsprotokolle erhalten. Fehlerdetails und Geheimnisse werden nicht aufgezeichnet.'|trans }}</p>
+        {% endif %}
+    </section>
+{% endblock %}
