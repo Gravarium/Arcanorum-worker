@@ -51,7 +51,7 @@ final class AdminDesignSettingsControllerTest extends WebTestCase
             self::assertSame('noindex, nofollow', $client->getResponse()->headers->get('X-Robots-Tag'));
             self::assertSelectorExists('a[href="/admin/settings/design"]');
             self::assertSelectorExists('.theme-preview[data-preview-theme="arcanorum"]');
-            $themeStoreLink = $client->getCrawler()->filter('a[href="https://www.phpsugar.com/phplegacy_templates.html"]');
+            $themeStoreLink = $client->getCrawler()->filter('a[href="https://www.phpsugar.com/"]');
             self::assertCount(1, $themeStoreLink);
             self::assertSame('_blank', $themeStoreLink->attr('target'));
             self::assertSame('noopener noreferrer', $themeStoreLink->attr('rel'));

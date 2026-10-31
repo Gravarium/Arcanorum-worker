@@ -25,6 +25,7 @@ on:
           - public-share-widget-followup
           - public-share-widget-testfix-followup
           - video-report-heading-testfix-followup
+          - admin-design-settings-followup
           - manual-video-source-check-followup
           - historical-core-data-rollback-testfix
           - historical-rollback-pending-gates
@@ -37,9 +38,6 @@ on:
           - rollback-guard-migration-lock-audit-followup
           - rollback-guard-final-pending-gates
           - rollback-guard-advertising-assertion-retry
-  push:
-    branches:
-      - codex/arcanorum-snapshot-validation-sync-20261029
 
 permissions:
   contents: read
@@ -918,7 +916,7 @@ jobs:
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
 
   validate-member-activity-focused:
-    if: github.event_name == 'workflow_dispatch' && (inputs.validation_scope == 'member-activity-focused' || inputs.validation_scope == 'member-activity-followup' || inputs.validation_scope == 'dashboard-latest-content' || inputs.validation_scope == 'dashboard-latest-content-followup' || inputs.validation_scope == 'admin-password-change-followup' || inputs.validation_scope == 'video-provider-player-followup' || inputs.validation_scope == 'auto-feature-threshold-followup' || inputs.validation_scope == 'public-share-widget-followup' || inputs.validation_scope == 'public-share-widget-testfix-followup' || inputs.validation_scope == 'video-report-heading-testfix-followup')
+    if: github.event_name == 'workflow_dispatch' && (inputs.validation_scope == 'member-activity-focused' || inputs.validation_scope == 'member-activity-followup' || inputs.validation_scope == 'dashboard-latest-content' || inputs.validation_scope == 'dashboard-latest-content-followup' || inputs.validation_scope == 'admin-password-change-followup' || inputs.validation_scope == 'video-provider-player-followup' || inputs.validation_scope == 'auto-feature-threshold-followup' || inputs.validation_scope == 'public-share-widget-followup' || inputs.validation_scope == 'public-share-widget-testfix-followup' || inputs.validation_scope == 'video-report-heading-testfix-followup' || inputs.validation_scope == 'admin-design-settings-followup')
     name: Focused regression checks
     runs-on: ubuntu-26.04
     timeout-minutes: 45
@@ -1019,7 +1017,7 @@ jobs:
           ini-values: memory_limit=1G
 
       - name: Validate and install locked Composer dependencies
-        if: inputs.validation_scope == 'member-activity-focused' || inputs.validation_scope == 'admin-password-change-followup' || inputs.validation_scope == 'video-provider-player-followup' || inputs.validation_scope == 'auto-feature-threshold-followup'
+        if: inputs.validation_scope == 'member-activity-focused' || inputs.validation_scope == 'admin-password-change-followup' || inputs.validation_scope == 'video-provider-player-followup' || inputs.validation_scope == 'auto-feature-threshold-followup' || inputs.validation_scope == 'admin-design-settings-followup'
         run: |
           touch .env
           composer validate --strict --no-interaction
@@ -1668,6 +1666,24 @@ jobs:
             --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
             --filter='testSourceDeletionCascadesAndDowngradePreservesModerationState' \
             tests/Migration/MemberActivityModerationMigrationTest.php
+          python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
+
+      - name: Focused admin design settings link validation
+        if: inputs.validation_scope == 'admin-design-settings-followup'
+        run: |
+          set -euo pipefail
+          php -l tests/Controller/AdminDesignSettingsControllerTest.php
+          php bin/console lint:twig templates/admin/settings/design.html.twig
+          vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --no-progress --error-format=github --memory-limit=1G tests/Controller/AdminDesignSettingsControllerTest.php
+          vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --diff --using-cache=no tests/Controller/AdminDesignSettingsControllerTest.php
+          vendor/bin/rector process tests/Controller/AdminDesignSettingsControllerTest.php --config=rector.php --dry-run --no-progress-bar
+          mkdir -p var/test-results
+          vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm.sarif tests/Controller/AdminDesignSettingsControllerTest.php
+          php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
+            --fail-on-risky --fail-on-warning --fail-on-deprecation \
+            --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
+            --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
+            tests/Controller/AdminDesignSettingsControllerTest.php
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
 
   validate-manual-video-source-check:
