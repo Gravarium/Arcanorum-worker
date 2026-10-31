@@ -49,7 +49,7 @@ final class AdvertisingAssetControllerTest extends TestCase
             'size' => strlen($contents),
         ]);
         $storage = $this->createMock(PrivateObjectStorageInterface::class);
-        $storage->expects(self::once())->method('read')->with(str_repeat('b', 64), strlen($contents))->willReturn($contents);
+        $storage->expects(self::once())->method('read')->with(str_repeat('b', 64))->willReturn($contents);
         $controller = new AdvertisingAssetController($connection, $storage, new NullLogger());
 
         $response = $controller->show(str_repeat('a', 32), 'png', Request::create('/media/ads/'.str_repeat('a', 32).'.png'));

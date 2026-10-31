@@ -48,14 +48,7 @@ final class AdminVideoQualitySourceController extends AbstractController
 
             return $this->redirectToRoute('admin_video_edit', ['id' => $video->getId()]);
         }
-        $currentStream = VideoSourceType::Stream === $video->getSourceType()
-            ? $streamResolver->resolve($video->getSourceUrl())
-            : null;
-        if (!in_array($video->getSourceType(), [VideoSourceType::File, VideoSourceType::Stream], true)
-            || $video->isAudio()
-            || (VideoSourceType::Stream === $video->getSourceType()
-                && (null === $currentStream || $currentStream->isAudio() || $currentStream->isHls()))
-        ) {
+        if (!in_array($video->getSourceType(), [VideoSourceType::File, VideoSourceType::Stream], true)) {
             $this->addFlash('error', 'Qualitätsquellen sind nur für Videodateien und geprüfte Streams verfügbar.');
 
             return $this->redirectToRoute('admin_video_edit', ['id' => $video->getId()]);
@@ -68,7 +61,6 @@ final class AdminVideoQualitySourceController extends AbstractController
             || !VideoQualitySource::isValidSourceUrl($sourceUrl)
             || null === $resolvedSource
             || $resolvedSource->isHls()
-            || $resolvedSource->isAudio()
         ) {
             $this->addFlash('error', 'Bitte wähle eine feste Qualitätsstufe und eine HTTPS-MP4-, WebM- oder Ogg-Quelle von einem freigegebenen Medienhost.');
 

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
-use App\Service\MigrationRollbackGuard;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -27,8 +26,6 @@ final class Version20261022195000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
-        $rollbackGuard = new MigrationRollbackGuard($this->connection);
-        $rollbackGuard->lockTables('site_settings');
         $customizedModules = $this->connection->fetchOne(
             'SELECT COUNT(*) FROM site_settings WHERE module_news_enabled IS NOT TRUE OR module_series_enabled IS NOT TRUE OR module_comments_enabled IS NOT TRUE OR module_contact_enabled IS NOT TRUE OR module_pages_enabled IS NOT TRUE OR module_search_enabled IS NOT TRUE',
         );

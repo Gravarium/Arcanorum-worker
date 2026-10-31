@@ -29,24 +29,6 @@ final class VideoReportRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
     }
 
-    /** @return list<VideoReport> */
-    public function findPendingForDashboard(int $limit = 5): array
-    {
-        /** @var list<VideoReport> $reports */
-        $reports = $this->createQueryBuilder('report')
-            ->innerJoin('report.video', 'video')
-            ->addSelect('video')
-            ->andWhere('report.status = :status')
-            ->setParameter('status', VideoReportStatus::Pending)
-            ->orderBy('report.createdAt', \SortDirection::Descending)
-            ->addOrderBy('report.id', \SortDirection::Descending)
-            ->setMaxResults(max(1, min(5, $limit)))
-            ->getQuery()
-            ->getResult();
-
-        return $reports;
-    }
-
     /**
      * @return list<VideoReport>
      */

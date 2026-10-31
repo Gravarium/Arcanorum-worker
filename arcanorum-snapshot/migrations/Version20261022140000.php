@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
-use App\Service\MigrationRollbackGuard;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -32,8 +31,6 @@ final class Version20261022140000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
-        $rollbackGuard = new MigrationRollbackGuard($this->connection);
-        $rollbackGuard->lockTables('site_settings');
         $customSettings = $this->connection->fetchOne(
             "SELECT COUNT(*) FROM site_settings WHERE seo_description <> '' OR search_indexing_enabled IS NOT TRUE OR maintenance_mode_enabled IS NOT FALSE OR maintenance_message <> '".self::DEFAULT_MAINTENANCE_MESSAGE."' OR cookie_consent_enabled IS NOT TRUE OR cookie_consent_message <> '".self::DEFAULT_COOKIE_CONSENT_MESSAGE."'",
         );

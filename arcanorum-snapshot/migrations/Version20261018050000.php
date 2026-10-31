@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
-use App\Service\MigrationRollbackGuard;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -34,15 +33,6 @@ final class Version20261018050000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
-        $guard = new MigrationRollbackGuard($this->connection);
-        $guard->lockTables('content_tags', 'news_article_tags', 'video_tags');
-        $tags = $guard->countRows('SELECT COUNT(*) FROM content_tags');
-        $newsAssignments = $guard->countRows('SELECT COUNT(*) FROM news_article_tags');
-        $videoAssignments = $guard->countRows('SELECT COUNT(*) FROM video_tags');
-        if ($tags > 0 || $newsAssignments > 0 || $videoAssignments > 0) {
-            throw new \RuntimeException('Schlagwörter und ihre News-/Videozuordnungen müssen vor dem Migrationsrückbau erhalten oder exportiert werden.');
-        }
-
         $this->addSql('DROP TABLE video_tags');
         $this->addSql('DROP TABLE news_article_tags');
         $this->addSql('DROP TABLE content_tags');

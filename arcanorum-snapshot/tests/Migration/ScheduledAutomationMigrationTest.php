@@ -15,7 +15,6 @@ use App\Repository\VideoRepository;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\ORM\EntityManagerInterface;
 use DoctrineMigrations\Version20261028223107;
-use DoctrineMigrations\Version20261029170500;
 use Psr\Log\NullLogger;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
@@ -82,24 +81,11 @@ final class ScheduledAutomationMigrationTest extends KernelTestCase
         $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
         $task = ScheduledTask::create(ScheduledTaskType::SitemapRefresh, 'Automation migration test', 60, [], $now);
         $run = new ScheduledTaskRun($task, $task->getNextRunAt(), $now, 'migration-test');
-        $leaseToken = $run->takeLeaseToken();
 
         try {
             $entityManager->persist($task);
             $entityManager->persist($run);
             $entityManager->flush();
-
-            $persistedRun = $connection->fetchAssociative(
-                'SELECT attempt_count, last_attempt_at, lease_token_digest, lease_expires_at, retry_after, version FROM scheduled_task_runs WHERE id = :id',
-                ['id' => $run->getId()],
-            );
-            self::assertIsArray($persistedRun);
-            self::assertContains($persistedRun['attempt_count'], [1, '1']);
-            self::assertSame(hash('sha256', $leaseToken), $persistedRun['lease_token_digest']);
-            self::assertNotSame($leaseToken, $persistedRun['lease_token_digest']);
-            self::assertNotNull($persistedRun['lease_expires_at']);
-            self::assertNull($persistedRun['retry_after']);
-            self::assertContains($persistedRun['version'], [1, '1']);
 
             self::assertSame($task->getId(), $connection->fetchOne(
                 'SELECT task_id FROM scheduled_task_runs WHERE id = :id',
@@ -123,14 +109,6 @@ final class ScheduledAutomationMigrationTest extends KernelTestCase
                 self::fail('A downgrade must preserve automation run history.');
             } catch (\RuntimeException $exception) {
                 self::assertSame('Automatisierungsaufträge, Laufprotokolle und noch gültige Scheduler-Nonces dürfen durch den Migrationsrückbau nicht verloren gehen.', $exception->getMessage());
-            }
-
-            $retryMigration = new Version20261029170500($connection, new NullLogger());
-            try {
-                $retryMigration->down(new Schema());
-                self::fail('A downgrade must preserve bounded retry and lease history.');
-            } catch (\RuntimeException $exception) {
-                self::assertSame('Aufgabenlauf- und Wiederholungsnachweise dürfen durch den Migrationsrückbau nicht verloren gehen.', $exception->getMessage());
             }
         } finally {
             if ($connection->isTransactionActive()) {

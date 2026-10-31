@@ -38,19 +38,6 @@ final class VideoStreamSourceResolverTest extends TestCase
         }
     }
 
-    public function testResolvesMp3OnlyAsAnAudioSourceOnAnApprovedHost(): void
-    {
-        $resolver = new VideoStreamSourceResolver(['media.example.org']);
-
-        $source = $resolver->resolve('https://media.example.org/audio/program.mp3?signature=public-test');
-
-        self::assertInstanceOf(VideoStreamSource::class, $source);
-        self::assertSame('audio/mpeg', $source->mimeType);
-        self::assertTrue($source->isAudio());
-        self::assertFalse($source->isHls());
-        self::assertNull($resolver->resolve('https://unapproved.example.org/audio/program.mp3'));
-    }
-
     public function testResolvesHlsLivePlaylists(): void
     {
         $resolver = new VideoStreamSourceResolver(['live.example.org', 'media.example.org']);

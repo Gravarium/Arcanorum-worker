@@ -15,11 +15,6 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 final readonly class VideoThumbnailController
 {
-    private const int MAX_FILE_BYTES = 4194304;
-
-    /** @var list<string> */
-    private const array ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-
     public function __construct(
         private PrivateObjectStorageInterface $storage,
         private VideoSocialPreviewGenerator $socialPreviews,
@@ -93,19 +88,12 @@ final readonly class VideoThumbnailController
         $objectId = $video->getThumbnailObjectId();
         $expectedMimeType = $video->getThumbnailMimeType();
         $expectedSize = $video->getThumbnailSize();
-        if (null === $objectId
-            || 1 !== preg_match('/\A[a-f0-9]{64}\z/', $objectId)
-            || null === $expectedMimeType
-            || null === $expectedSize
-            || !in_array($expectedMimeType, self::ALLOWED_MIME_TYPES, true)
-            || $expectedSize < 1
-            || $expectedSize > self::MAX_FILE_BYTES
-        ) {
+        if (null === $objectId || null === $expectedMimeType || null === $expectedSize) {
             return new Response('', Response::HTTP_NOT_FOUND, ['Cache-Control' => 'no-store']);
         }
 
         try {
-            $contents = $this->storage->read($objectId, $expectedSize);
+            $contents = $this->storage->read($objectId);
         } catch (PrivateStorageOperationFailed) {
             return new Response('', Response::HTTP_SERVICE_UNAVAILABLE, ['Cache-Control' => 'no-store']);
         }
@@ -114,6 +102,7 @@ final readonly class VideoThumbnailController
         if (strlen($contents) !== $expectedSize
             || !is_string($detectedMimeType)
             || $detectedMimeType !== $expectedMimeType
+            || !in_array($detectedMimeType, ['image/jpeg', 'image/png', 'image/webp'], true)
         ) {
             return new Response('', Response::HTTP_SERVICE_UNAVAILABLE, ['Cache-Control' => 'no-store']);
         }

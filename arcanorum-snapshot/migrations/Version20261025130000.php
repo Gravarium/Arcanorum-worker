@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
-use App\Service\MigrationRollbackGuard;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -28,8 +27,6 @@ final class Version20261025130000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
-        $rollbackGuard = new MigrationRollbackGuard($this->connection);
-        $rollbackGuard->lockTables('site_settings');
         $configured = $this->connection->fetchOne("SELECT COUNT(*) FROM site_settings WHERE comment_provider <> 'native' OR facebook_comments_app_id <> '' OR disqus_comments_shortname <> ''");
         if (!in_array($configured, [0, '0'], true)) {
             throw new \RuntimeException('Konfigurierte externe Kommentar-Anbieter müssen vor dem Migrationsrückbau deaktiviert werden.');

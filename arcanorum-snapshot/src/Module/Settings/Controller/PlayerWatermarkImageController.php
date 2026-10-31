@@ -71,7 +71,7 @@ final class PlayerWatermarkImageController extends AbstractController
         }
 
         try {
-            $contents = $this->storage->read($objectId, $size);
+            $contents = $this->storage->read($objectId);
         } catch (PrivateStorageOperationFailed $exception) {
             $this->logger->error('Privates Player-Wasserzeichen ist nicht verfügbar.', ['failure_type' => $exception::class]);
 

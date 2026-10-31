@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
-use App\Service\MigrationRollbackGuard;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -22,13 +21,6 @@ final class Version20261020010000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
-        $rollbackGuard = new MigrationRollbackGuard($this->connection);
-        $rollbackGuard->lockTables('member_accounts');
-        $accounts = $this->connection->fetchOne('SELECT COUNT(*) FROM member_accounts');
-        if (!in_array($accounts, [0, '0'], true)) {
-            throw new \RuntimeException('Mitgliedskonten und ihre personenbezogenen Daten müssen vor dem Migrationsrückbau erhalten oder exportiert werden.');
-        }
-
         $this->addSql('DROP TABLE member_accounts');
     }
 }

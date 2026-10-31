@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
-use App\Service\MigrationRollbackGuard;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -24,7 +23,7 @@ final class Version20261018110000 extends AbstractMigration
             'CREATE UNIQUE INDEX uniq_content_series_artwork_object_id ON content_series (artwork_object_id)',
         );
         $this->addSql(
-            'ALTER TABLE content_series ADD CONSTRAINT chk_content_series_artwork_metadata CHECK ('.
+            "ALTER TABLE content_series ADD CONSTRAINT chk_content_series_artwork_metadata CHECK (".
             '(artwork_object_id IS NULL AND artwork_mime_type IS NULL AND artwork_size IS NULL) OR '.
             '(artwork_object_id IS NOT NULL AND artwork_mime_type IS NOT NULL AND artwork_size IS NOT NULL '.
             "AND artwork_object_id ~ '^[a-f0-9]{64}$' ".
@@ -35,15 +34,6 @@ final class Version20261018110000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
-        $rollbackGuard = new MigrationRollbackGuard($this->connection);
-        $rollbackGuard->lockTables('content_series');
-        $artworkMetadata = $this->connection->fetchOne(
-            'SELECT COUNT(*) FROM content_series WHERE artwork_object_id IS NOT NULL OR artwork_mime_type IS NOT NULL OR artwork_size IS NOT NULL',
-        );
-        if (!in_array($artworkMetadata, [0, '0'], true)) {
-            throw new \RuntimeException('Gespeicherte Seriencover müssen vor dem Migrationsrückbau erhalten oder exportiert werden.');
-        }
-
         $this->addSql('ALTER TABLE content_series DROP CONSTRAINT chk_content_series_artwork_metadata');
         $this->addSql('DROP INDEX uniq_content_series_artwork_object_id');
         $this->addSql('ALTER TABLE content_series DROP artwork_size');

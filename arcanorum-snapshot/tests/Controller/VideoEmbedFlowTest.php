@@ -105,7 +105,7 @@ final class VideoEmbedFlowTest extends WebTestCase
             $policy = (string) $client->getResponse()->headers->get('Content-Security-Policy');
             self::assertStringContainsString("frame-ancestors 'self' https://publisher.example.org", $policy);
             self::assertStringNotContainsString('attacker.example.net', $policy);
-            self::assertStringContainsString("frame-src 'self' https://www.youtube-nocookie.com https://player.vimeo.com https://geo.dailymotion.com https://www.facebook.com https://drive.google.com https://rutube.ru https://vk.com https://player.youku.com", $policy);
+            self::assertStringContainsString("frame-src 'self' https://www.youtube-nocookie.com https://player.vimeo.com https://geo.dailymotion.com", $policy);
 
             $client->request('GET', '/embed/video/'.$enabled->getId(), [], [], [
                 'HTTP_ORIGIN' => 'https://publisher.example.org.evil.test',
@@ -179,126 +179,6 @@ final class VideoEmbedFlowTest extends WebTestCase
                 'https://geo.dailymotion.com',
                 (string) $client->getResponse()->headers->get('Content-Security-Policy'),
             );
-        } finally {
-            $entityManager->getConnection()->executeStatement(
-                'DELETE FROM videos WHERE id = :id',
-                ['id' => $video->getId()],
-                ['id' => \Doctrine\DBAL\ParameterType::STRING],
-            );
-        }
-    }
-
-    public function testAdditionalVideoProvidersUseCanonicalConsentGatedEmbeds(): void
-    {
-        $client = static::createClient();
-        $client->disableReboot();
-        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
-        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
-
-        $providers = [
-            [
-                'source' => 'https://www.facebook.com/watch/?v=20531316728&ref=share',
-                'embed' => 'https://www.facebook.com/video/embed?video_id=20531316728',
-                'origin' => 'https://www.facebook.com',
-            ],
-            [
-                'source' => 'https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view?usp=sharing',
-                'embed' => 'https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/preview',
-                'origin' => 'https://drive.google.com',
-            ],
-            [
-                'source' => 'https://rutube.ru/video/852e974534e3527f16810a7a19c418b0/',
-                'embed' => 'https://rutube.ru/play/embed/852e974534e3527f16810a7a19c418b0',
-                'origin' => 'https://rutube.ru',
-            ],
-            [
-                'source' => 'https://vkvideo.ru/video-123456_456239017?list=shared-list',
-                'embed' => 'https://vk.com/video_ext.php?oid=-123456&id=456239017',
-                'origin' => 'https://vk.com',
-            ],
-            [
-                'source' => 'https://v.youku.com/v_show/id_XNDI0MDAwMDAwMA==.html',
-                'embed' => 'https://player.youku.com/embed/XNDI0MDAwMDAwMA==',
-                'origin' => 'https://player.youku.com',
-            ],
-        ];
-        $videos = [];
-
-        try {
-            foreach ($providers as $provider) {
-                $video = new Video(
-                    'Consent-gated provider '.bin2hex(random_bytes(8)),
-                    'The provider URL is canonicalized and loaded only after explicit visitor action.',
-                    null,
-                    VideoSourceType::Embed,
-                    $provider['source'],
-                    PublishingStatus::Published,
-                    false,
-                    false,
-                );
-                $videos[] = [$video, $provider];
-                $entityManager->persist($video);
-            }
-            $entityManager->flush();
-
-            foreach ($videos as [$video, $provider]) {
-                $client->request('GET', '/videos/'.$video->getId());
-
-                self::assertResponseIsSuccessful();
-                self::assertSame($provider['embed'], $client->getCrawler()->filter('[data-testid="video-embed-provider"]')->attr('data-embed-url'));
-                self::assertSelectorExists('[data-provider-embed] button[data-provider-embed-load]');
-                self::assertSelectorNotExists('iframe[data-testid="video-embed-provider"]');
-                self::assertStringContainsString(
-                    $provider['origin'],
-                    (string) $client->getResponse()->headers->get('Content-Security-Policy-Report-Only'),
-                );
-            }
-        } finally {
-            foreach ($videos as [$video]) {
-                $entityManager->getConnection()->executeStatement(
-                    'DELETE FROM videos WHERE id = :id',
-                    ['id' => $video->getId()],
-                    ['id' => \Doctrine\DBAL\ParameterType::STRING],
-                );
-            }
-        }
-    }
-
-    public function testLegacyVideoProviderRemainsAnExternalLinkWithoutExecutingItsEmbed(): void
-    {
-        $client = static::createClient();
-        $client->disableReboot();
-        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
-        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
-
-        $video = new Video(
-            'Legacy provider reference '.bin2hex(random_bytes(8)),
-            'Legacy providers remain available as external references without executing old embed markup.',
-            null,
-            VideoSourceType::Url,
-            'https://www.metacafe.com/watch/123/video-title/',
-            PublishingStatus::Published,
-            false,
-            false,
-        );
-
-        try {
-            $entityManager->persist($video);
-            $entityManager->flush();
-
-            $client->request('GET', '/videos/'.$video->getId());
-
-            self::assertResponseIsSuccessful();
-            self::assertSame(
-                'https://www.metacafe.com/watch/123/video-title/',
-                $client->getCrawler()->filter('[data-testid="video-source"]')->attr('href'),
-            );
-            self::assertSame('_blank', $client->getCrawler()->filter('[data-testid="video-source"]')->attr('target'));
-            self::assertSame('noopener noreferrer', $client->getCrawler()->filter('[data-testid="video-source"]')->attr('rel'));
-            self::assertSame('no-referrer', $client->getCrawler()->filter('[data-testid="video-source"]')->attr('referrerpolicy'));
-            self::assertSelectorNotExists('iframe');
-            self::assertSelectorNotExists('[data-provider-embed-load]');
-            self::assertStringNotContainsString('provider-embed-consent.js', (string) $client->getResponse()->getContent());
         } finally {
             $entityManager->getConnection()->executeStatement(
                 'DELETE FROM videos WHERE id = :id',
@@ -434,58 +314,6 @@ final class VideoEmbedFlowTest extends WebTestCase
             }
             $entityManager->flush();
             $entityManager->getConnection()->executeStatement('DELETE FROM videos WHERE id = :id', ['id' => $video->getId()]);
-        }
-    }
-
-    public function testProviderEmbedsIgnoreSiteWideVideoJsEngineAndRemainConsentGated(): void
-    {
-        $client = static::createClient();
-        $client->disableReboot();
-        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
-        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
-        $manager = $client->getContainer()->get(SiteSettingsManager::class);
-        $provider = $client->getContainer()->get(SiteSettingsProvider::class);
-        self::assertInstanceOf(SiteSettingsManager::class, $manager);
-        self::assertInstanceOf(SiteSettingsProvider::class, $provider);
-        $originalEngine = $provider->current()->getVideoPlayerEngine()->value;
-        $video = new Video(
-            'Provider embed with Video.js selected '.bin2hex(random_bytes(6)),
-            'Provider embeds keep their fixed consent-gated adapter when the site-wide player is Video.js.',
-            null,
-            VideoSourceType::Embed,
-            'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-            PublishingStatus::Published,
-            false,
-            false,
-        );
-
-        try {
-            self::assertSame([], $manager->updateContentOptions(['video_player_engine' => 'videojs']));
-            $entityManager->persist($video);
-            $entityManager->flush();
-
-            $client->request('GET', '/videos/'.$video->getId());
-            self::assertResponseIsSuccessful();
-            self::assertSame(
-                'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ',
-                $client->getCrawler()->filter('[data-testid="video-embed-provider"]')->attr('data-embed-url'),
-            );
-            self::assertSelectorExists('[data-testid="video-embed-provider"] button[data-provider-embed-load]');
-            self::assertSelectorNotExists('iframe[data-testid="video-embed-provider"]');
-            self::assertSelectorNotExists('[data-video-player-engine="videojs"]');
-            self::assertSelectorNotExists('link[rel="stylesheet"][href*="video-js.min"]');
-            self::assertSelectorNotExists('script[src*="videojs-player"]');
-            self::assertSelectorExists('script[src*="provider-embed-consent.js"]');
-        } finally {
-            try {
-                $manager->updateContentOptions(['video_player_engine' => $originalEngine]);
-            } finally {
-                $entityManager->getConnection()->executeStatement(
-                    'DELETE FROM videos WHERE id = :id',
-                    ['id' => $video->getId()],
-                    ['id' => \Doctrine\DBAL\ParameterType::STRING],
-                );
-            }
         }
     }
 

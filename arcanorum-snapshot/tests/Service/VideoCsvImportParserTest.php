@@ -81,7 +81,7 @@ final class VideoCsvImportParserTest extends TestCase
         $result = new VideoCsvImportParser()->parse("https://video.example.test/a.mp4,Title,Description,Tags,https://images.example.test/a.png\n");
 
         self::assertSame([], $result['rows']);
-        self::assertSame(['Die Datei muss Arcanorums Kopfzeilenformat oder Legacys sechs Spalten ohne Kopfzeile verwenden.'], $result['errors']);
+        self::assertSame(['Die Datei muss entweder das Arcanorum-Kopfzeilenformat oder das sechsspaltenige Legacy-Format ohne Kopfzeile verwenden.'], $result['errors']);
     }
 
     public function testRejectsInvalidUtf8WithoutReturningUnsafeRows(): void

@@ -10,8 +10,6 @@ use App\Entity\ContentCategoryType;
 use App\Entity\ContentComment;
 use App\Entity\MemberAccount;
 use App\Entity\NewsArticle;
-use App\Module\Comment\CommentPagination;
-use App\Module\Feed\Service\CanonicalPublicUrlGenerator;
 use App\Module\News\Service\NewsArticleAccessPolicy;
 use App\Repository\ContentCategoryRepository;
 use App\Repository\ContentCommentRepository;
@@ -30,36 +28,14 @@ final class NewsPublicController extends AbstractController
     private const int PAGE_SIZE = 24;
 
     #[Route('', name: 'index', methods: ['GET'])]
-    #[Route(
-        '/category/{slug}',
-        name: 'category',
-        requirements: ['slug' => '[a-z0-9]+(?:-[a-z0-9]+)*'],
-        methods: ['GET'],
-    )]
     public function index(
         Request $request,
         NewsArticleRepository $articles,
         ContentCategoryRepository $categories,
         NewsArticleAccessPolicy $articleAccess,
-        CanonicalPublicUrlGenerator $publicUrls,
-        ?string $slug = null,
     ): Response {
-        $categoryPage = null;
-        if (null !== $slug) {
-            $categoryPage = $categories->findForTypeAndSlug(ContentCategoryType::News, $slug);
-            if (null === $categoryPage) {
-                return $this->render('public/not_found.html.twig', [
-                    'content_type' => 'News-Kategorie',
-                ], new Response(status: Response::HTTP_NOT_FOUND));
-            }
-        }
-
         $search = mb_substr(trim($request->query->getString('q')), 0, 100);
-        $categoryName = $categoryPage?->getName();
-        $category = $categoryName ?? mb_substr(trim($request->query->getString('category')), 0, 100);
-        $categoryCanonicalUrl = null !== $categoryPage && $publicUrls->isConfigured()
-            ? $publicUrls->generate('news_category', ['slug' => $categoryPage->getSlug()])
-            : null;
+        $category = mb_substr(trim($request->query->getString('category')), 0, 100);
         $tag = mb_substr(trim($request->query->getString('tag')), 0, 100);
         $page = self::pageNumber($request);
         $items = $articles->findPublished(
@@ -75,9 +51,6 @@ final class NewsPublicController extends AbstractController
             'articles' => array_slice($items, 0, self::PAGE_SIZE),
             'search' => $search,
             'category' => $category,
-            'category_page' => $categoryPage,
-            'child_categories' => null !== $categoryPage ? $categories->findNewsChildren($categoryPage) : [],
-            'category_canonical_url' => $categoryCanonicalUrl,
             'tag' => $tag,
             'categories' => $categories->findForAdmin(ContentCategoryType::News),
             'page' => $page,
@@ -93,7 +66,6 @@ final class NewsPublicController extends AbstractController
     )]
     public function show(
         string $slug,
-        Request $request,
         NewsArticleRepository $articles,
         ContentCommentRepository $comments,
         ContentRatingRepository $ratings,
@@ -109,40 +81,21 @@ final class NewsPublicController extends AbstractController
         }
 
         $member = $this->getUser();
-        $settings = $siteSettings->current();
         $canReadArticle = $articleAccess->canRead($article, $member);
         $memberId = $member instanceof MemberAccount ? $member->getId() : null;
-        $commentsAvailable = $canReadArticle && CommentProvider::Native === $settings->getCommentProvider();
-        $commentCount = $commentsAvailable
-            ? $comments->countApprovedForContent(CommentContentType::News, $article->getId())
-            : 0;
-        $commentsPerPage = $settings->getCommentsPerPage();
-        $commentPageCount = CommentPagination::pageCount($commentCount, $commentsPerPage);
-        $commentPage = CommentPagination::selectedPage($request, $commentPageCount);
-        $approvedComments = $commentsAvailable
-            ? $comments->findApprovedForContent(
-                CommentContentType::News,
-                $article->getId(),
-                $settings->getCommentDefaultSort(),
-                $commentsPerPage,
-                ($commentPage - 1) * $commentsPerPage,
-            )
+        $approvedComments = $canReadArticle && CommentProvider::Native === $siteSettings->current()->getCommentProvider()
+            ? $comments->findApprovedForContent(CommentContentType::News, $article->getId())
             : [];
-        $commentRatingSummaries = $ratings->summariesForComments(
-            array_map(static fn (ContentComment $comment): string => $comment->getId(), $approvedComments),
-            $memberId,
-        );
 
         $response = $this->render('news/show.html.twig', [
             'article' => $article,
             'can_read_article' => $canReadArticle,
             'comments' => $approvedComments,
-            'comment_page' => $commentPage,
-            'comment_page_count' => $commentPageCount,
-            'comment_rating_summaries' => $commentRatingSummaries,
-            'muted_comment_ids' => self::mutedCommentIds($commentRatingSummaries, $settings->getCommentRatingHideThreshold()),
+            'comment_rating_summaries' => $ratings->summariesForComments(
+                array_map(static fn (ContentComment $comment): string => $comment->getId(), $approvedComments),
+                $memberId,
+            ),
             'social_metadata' => $shareMetadata->forNewsArticle($article),
-            'share_widget_enabled' => $settings->isVideoShareWidgetEnabled(),
         ]);
         $response->headers->set('Cache-Control', 'private, no-store');
 
@@ -155,26 +108,5 @@ final class NewsPublicController extends AbstractController
         $page = ctype_digit($value) ? (int) $value : 1;
 
         return max(1, min(5000, $page));
-    }
-
-    /**
-     * @param array<string, array{like_count: int, dislike_count: int, member_value: ?string}> $summaries
-     *
-     * @return array<string, true>
-     */
-    private static function mutedCommentIds(array $summaries, int $threshold): array
-    {
-        if (0 === $threshold) {
-            return [];
-        }
-
-        $muted = [];
-        foreach ($summaries as $commentId => $summary) {
-            if ($summary['dislike_count'] >= $threshold && $summary['dislike_count'] > $summary['like_count']) {
-                $muted[$commentId] = true;
-            }
-        }
-
-        return $muted;
     }
 }

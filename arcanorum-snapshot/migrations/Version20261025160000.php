@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
-use App\Service\MigrationRollbackGuard;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -31,14 +30,8 @@ final class Version20261025160000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
-        $rollbackGuard = new MigrationRollbackGuard($this->connection);
-        $rollbackGuard->lockTables('news_article_revisions', 'news_articles');
-        $customAuthors = $this->connection->fetchOne("SELECT COUNT(*) FROM news_articles WHERE author_name <> 'Redaktion'");
-        if (!in_array($customAuthors, [0, '0'], true)) {
-            throw new \RuntimeException('Konfigurierte News-Autoren dürfen durch den Migrationsrückbau nicht verloren gehen.');
-        }
-
-        if ($rollbackGuard->hasRows('SELECT EXISTS (SELECT 1 FROM news_article_revisions LIMIT 1)')) {
+        $containsHistory = $this->connection->fetchOne('SELECT EXISTS (SELECT 1 FROM news_article_revisions LIMIT 1)');
+        if (in_array($containsHistory, [true, 1, '1', 't', 'true'], true)) {
             throw new \RuntimeException('Der News-Änderungsverlauf muss vor dem Migrationsrückbau gesichert oder entfernt werden.');
         }
 

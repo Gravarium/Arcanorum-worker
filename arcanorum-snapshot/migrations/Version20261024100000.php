@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
-use App\Service\MigrationRollbackGuard;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -70,8 +69,6 @@ final class Version20261024100000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
-        $rollbackGuard = new MigrationRollbackGuard($this->connection);
-        $rollbackGuard->lockTables('cms_advertising_ad', 'cms_advertising_asset', 'cms_advertising_click_dedupe', 'cms_advertising_click_window', 'cms_advertising_daily_stats', 'cms_advertising_placement');
         foreach ([
             'cms_advertising_placement',
             'cms_advertising_ad',
@@ -80,7 +77,8 @@ final class Version20261024100000 extends AbstractMigration
             'cms_advertising_click_window',
             'cms_advertising_asset',
         ] as $table) {
-            if ($rollbackGuard->hasRows(sprintf('SELECT EXISTS (SELECT 1 FROM %s LIMIT 1)', $table))) {
+            $containsRows = $this->connection->fetchOne(sprintf('SELECT EXISTS (SELECT 1 FROM %s LIMIT 1)', $table));
+            if (in_array($containsRows, [true, 1, '1', 't', 'true'], true)) {
                 throw new \RuntimeException('Anzeigen- und Statistikdaten müssen vor dem Migrationsrückbau gesichert oder entfernt werden.');
             }
         }

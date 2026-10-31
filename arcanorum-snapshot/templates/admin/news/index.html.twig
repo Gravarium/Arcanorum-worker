@@ -81,16 +81,16 @@
                         <option value="draft">{{ 'Als Entwurf speichern'|trans }}</option>
                         <option value="feature">{{ 'Hervorheben'|trans }}</option>
                         <option value="unfeature">{{ 'Hervorhebung entfernen'|trans }}</option>
-                        {% if is_granted('ROLE_ADMIN') %}<option value="delete">{{ 'Ausgewählte löschen'|trans }}</option>{% endif %}
+                        <option value="delete">{{ 'Ausgewählte löschen'|trans }}</option>
                     </select>
                 </label>
-                {% if is_granted('ROLE_ADMIN') %}<label class="form-check-label">
+                <label class="form-check-label">
                     <span>{{ 'Löschen bestätigen'|trans }}</span>
                     <span><input type="checkbox" name="confirm_delete" value="1"> {{ 'Ich bestätige das Löschen'|trans }}</span>
-                </label>{% endif %}
+                </label>
                 <button class="button button-secondary" type="submit">{{ 'Auf Auswahl anwenden'|trans }}</button>
             </div>
-            <p class="muted">{{ 'Wähle bis zu 50 Einträge aus.'|trans }}{% if is_granted('ROLE_ADMIN') %} {{ 'Löschen entfernt auch ihre Kommentare.'|trans }}{% endif %}</p>
+            <p class="muted">{{ 'Wähle bis zu 50 Einträge aus. Löschen entfernt auch ihre Kommentare.'|trans }}</p>
 
         <div class="table-wrap">
             <table class="admin-table">

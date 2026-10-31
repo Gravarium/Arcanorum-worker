@@ -20,13 +20,11 @@ final class VideoExternalSourceStatusTest extends TestCase
 
         self::assertSame(ExternalVideoSourceStatus::Unavailable, $video->getExternalSourceStatus());
         self::assertSame($checkedAt, $video->getExternalSourceCheckedAt());
-        $video->markExternalSourceCheckFailed($checkedAt->modify('+1 hour'));
 
         $video->revise('Titel', '', null, VideoSourceType::Embed, 'https://youtu.be/abcdefghijk', PublishingStatus::Draft, false, true);
 
         self::assertNull($video->getExternalSourceStatus());
         self::assertNull($video->getExternalSourceCheckedAt());
-        self::assertFalse($video->isExternalSourceCheckFailed());
     }
 
     public function testSourceHealthCannotBeAppliedToUploadedVideo(): void
@@ -37,7 +35,7 @@ final class VideoExternalSourceStatusTest extends TestCase
         $video->markExternalSourceStatus(ExternalVideoSourceStatus::Available, new \DateTimeImmutable());
     }
 
-    public function testFailedCheckIsRecordedWithoutDiscardingTheLastKnownStatus(): void
+    public function testFailedCheckAdvancesRetryTimeWithoutChangingTheLastKnownStatus(): void
     {
         $video = new Video('Titel', '', null, VideoSourceType::Embed, 'https://youtu.be/dQw4w9WgXcQ', PublishingStatus::Draft, false, true);
         $previousCheck = new \DateTimeImmutable('2026-10-27T12:00:00+00:00');
@@ -48,13 +46,5 @@ final class VideoExternalSourceStatusTest extends TestCase
 
         self::assertSame(ExternalVideoSourceStatus::Unavailable, $video->getExternalSourceStatus());
         self::assertSame($failedAttempt, $video->getExternalSourceCheckedAt());
-        self::assertTrue($video->isExternalSourceCheckFailed());
-
-        $nextCheck = $failedAttempt->modify('+1 hour');
-        $video->markExternalSourceStatus(ExternalVideoSourceStatus::Available, $nextCheck);
-
-        self::assertSame(ExternalVideoSourceStatus::Available, $video->getExternalSourceStatus());
-        self::assertSame($nextCheck, $video->getExternalSourceCheckedAt());
-        self::assertFalse($video->isExternalSourceCheckFailed());
     }
 }

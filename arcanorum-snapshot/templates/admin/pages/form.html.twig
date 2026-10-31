@@ -77,14 +77,7 @@
                 <label><input type="checkbox" name="show_in_menu" value="1" {{ values.show_in_menu ? 'checked' : '' }}> {{ 'Seite im öffentlichen Menü anzeigen'|trans }}</label>
             </div>
 
-            {{ include('admin/partials/rich_text_editor.html.twig', {
-                id: 'page-body',
-                label: 'Inhalt',
-                value: values.body,
-                rows: 16,
-                image_upload_url: image_upload_url,
-                image_upload_token: page_id ? csrf_token('admin_inline_image_upload_page_' ~ page_id) : ''
-            }) }}
+            {{ include('admin/partials/rich_text_editor.html.twig', {id: 'page-body', label: 'Inhalt', value: values.body, rows: 16}) }}
 
             <div class="form-actions">
                 <button class="button" type="submit">{{ is_edit ? 'Änderungen speichern'|trans : 'Seite speichern'|trans }}</button>

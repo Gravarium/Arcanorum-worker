@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
-use App\Service\MigrationRollbackGuard;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -29,14 +28,6 @@ final class Version20261020080000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
-        $rollbackGuard = new MigrationRollbackGuard($this->connection);
-        $rollbackGuard->lockTables('member_playlists', 'playlist_items');
-        $playlists = $this->connection->fetchOne('SELECT COUNT(*) FROM member_playlists');
-        $playlistItems = $this->connection->fetchOne('SELECT COUNT(*) FROM playlist_items');
-        if (!in_array($playlists, [0, '0'], true) || !in_array($playlistItems, [0, '0'], true)) {
-            throw new \RuntimeException('Private Wiedergabelisten und ihre Videozuordnungen müssen vor dem Migrationsrückbau erhalten oder exportiert werden.');
-        }
-
         $this->addSql('DROP TABLE playlist_items');
         $this->addSql('DROP TABLE member_playlists');
     }

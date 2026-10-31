@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
-use App\Service\MigrationRollbackGuard;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -24,8 +23,6 @@ final class Version20261026170000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
-        $rollbackGuard = new MigrationRollbackGuard($this->connection);
-        $rollbackGuard->lockTables('site_settings');
         $customizedSettings = $this->connection->fetchOne(
             "SELECT COUNT(*) FROM site_settings WHERE video_player_color_scheme <> 'midnight' OR video_player_watermark_enabled = TRUE",
         );

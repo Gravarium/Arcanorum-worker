@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
-use App\Content\CustomFieldSet;
 use App\Repository\VideoRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -73,10 +72,6 @@ final class Video
     #[ORM\Column(name: 'embed_allowed_origins', type: Types::JSON, options: ['default' => '[]'])]
     private array $embedAllowedOrigins = [];
 
-    /** @var list<array{key: string, value: string}> */
-    #[ORM\Column(name: 'custom_fields', type: Types::JSON, options: ['default' => '[]'])]
-    private array $customFields = [];
-
     #[ORM\Column(name: 'view_count', type: Types::INTEGER, options: ['default' => 0])]
     private int $viewCount = 0;
 
@@ -85,9 +80,6 @@ final class Video
 
     #[ORM\Column(name: 'external_source_status', length: 16, enumType: ExternalVideoSourceStatus::class, nullable: true)]
     private ?ExternalVideoSourceStatus $externalSourceStatus = null;
-
-    #[ORM\Column(name: 'external_source_check_failed', type: Types::BOOLEAN, options: ['default' => false])]
-    private bool $externalSourceCheckFailed = false;
 
     #[ORM\Column(name: 'external_source_checked_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $externalSourceCheckedAt = null;
@@ -157,7 +149,6 @@ final class Video
         if ($sourceChanged) {
             $this->externalSourceStatus = null;
             $this->externalSourceCheckedAt = null;
-            $this->externalSourceCheckFailed = false;
         }
 
         if (PublishingStatus::Published === $status) {
@@ -214,24 +205,6 @@ final class Video
         return $this->description;
     }
 
-    /** @return list<array{key: string, value: string}> */
-    public function getCustomFields(): array
-    {
-        return CustomFieldSet::normalize($this->customFields) ?? [];
-    }
-
-    /** @param list<array{key: string, value: string}> $fields */
-    public function replaceCustomFields(array $fields): void
-    {
-        $normalized = CustomFieldSet::normalize($fields);
-        if (null === $normalized) {
-            throw new \InvalidArgumentException('Die benutzerdefinierten Videofelder sind ungültig.');
-        }
-
-        $this->customFields = $normalized;
-        $this->updatedAt = new \DateTimeImmutable();
-    }
-
     public function getCategory(): ?string
     {
         return $this->category;
@@ -255,7 +228,6 @@ final class Video
 
         $this->externalSourceStatus = $status;
         $this->externalSourceCheckedAt = $checkedAt;
-        $this->externalSourceCheckFailed = false;
     }
 
     public function markExternalSourceCheckFailed(\DateTimeImmutable $attemptedAt): void
@@ -265,7 +237,6 @@ final class Video
         }
 
         $this->externalSourceCheckedAt = $attemptedAt;
-        $this->externalSourceCheckFailed = true;
     }
 
     public function getExternalSourceStatus(): ?ExternalVideoSourceStatus
@@ -276,11 +247,6 @@ final class Video
     public function getExternalSourceCheckedAt(): ?\DateTimeImmutable
     {
         return $this->externalSourceCheckedAt;
-    }
-
-    public function isExternalSourceCheckFailed(): bool
-    {
-        return $this->externalSourceCheckFailed;
     }
 
     public function getUploadedObjectId(): ?string
@@ -298,20 +264,15 @@ final class Video
         return $this->uploadedSize;
     }
 
-    public function isAudio(): bool
-    {
-        return VideoSourceType::File === $this->sourceType && 'audio/mpeg' === $this->uploadedMimeType;
-    }
-
     public function attachUploadedMedia(string $objectId, string $mimeType, int $size): void
     {
         if (VideoSourceType::File !== $this->sourceType
             || 1 !== preg_match('/\A[a-f0-9]{64}\z/', $objectId)
-            || !in_array($mimeType, ['video/mp4', 'video/webm', 'video/ogg', 'audio/mpeg'], true)
+            || !in_array($mimeType, ['video/mp4', 'video/webm', 'video/ogg'], true)
             || $size < 1
             || $size > 33554432
         ) {
-            throw new \InvalidArgumentException('Die private Medien-Datei ist ungültig.');
+            throw new \InvalidArgumentException('Die private Videodatei ist ungültig.');
         }
 
         $this->uploadedObjectId = $objectId;
@@ -343,7 +304,7 @@ final class Video
     public function setDurationSeconds(?int $durationSeconds): void
     {
         if (null !== $durationSeconds && ($durationSeconds < 0 || $durationSeconds > 2147483647)) {
-            throw new \InvalidArgumentException('Die Medienlaufzeit muss zwischen 0 und 2.147.483.647 Sekunden liegen.');
+            throw new \InvalidArgumentException('Die Videolaufzeit muss zwischen 0 und 2.147.483.647 Sekunden liegen.');
         }
 
         $this->durationSeconds = $durationSeconds;

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
-use App\Service\MigrationRollbackGuard;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -26,14 +25,6 @@ final class Version20261018010000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
-        $guard = new MigrationRollbackGuard($this->connection);
-        $guard->lockTables('news_articles', 'videos');
-        $videos = $guard->countRows('SELECT COUNT(*) FROM videos');
-        $newsArticles = $guard->countRows('SELECT COUNT(*) FROM news_articles');
-        if ($videos > 0 || $newsArticles > 0) {
-            throw new \RuntimeException('News und Videos müssen vor dem Migrationsrückbau erhalten oder exportiert werden.');
-        }
-
         $this->addSql('DROP TABLE videos');
         $this->addSql('DROP TABLE news_articles');
     }

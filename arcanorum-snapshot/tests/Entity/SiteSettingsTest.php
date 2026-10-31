@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Tests\Entity;
 
 use App\Entity\CommentProvider;
-use App\Entity\CommentSortOrder;
 use App\Entity\SiteSettings;
 use App\Entity\VideoPlayerAspectRatio;
 use App\Entity\VideoPlayerColorScheme;
@@ -13,7 +12,6 @@ use App\Entity\VideoPlayerEngine;
 use App\Entity\VideoPlayerMaxWidth;
 use App\Entity\VideoPopularitySort;
 use App\Entity\VideoPreloadMode;
-use App\Entity\VideoThumbnailResolution;
 use PHPUnit\Framework\TestCase;
 
 final class SiteSettingsTest extends TestCase
@@ -35,13 +33,11 @@ final class SiteSettingsTest extends TestCase
         self::assertTrue($settings->isSearchIndexingEnabled());
         self::assertFalse($settings->isMaintenanceModeEnabled());
         self::assertTrue($settings->isCookieConsentEnabled());
-        self::assertSame('', $settings->getGoogleAnalyticsMeasurementId());
         self::assertSame(CommentProvider::Native, $settings->getCommentProvider());
         self::assertSame('', $settings->getFacebookCommentsAppId());
         self::assertSame('', $settings->getDisqusCommentsShortname());
         self::assertFalse($settings->isPlayerAutoplayEnabled());
         self::assertSame(VideoPlayerEngine::Native, $settings->getVideoPlayerEngine());
-        self::assertSame(VideoThumbnailResolution::Medium, $settings->getProviderThumbnailResolution());
         self::assertSame(VideoPlayerColorScheme::Midnight, $settings->getVideoPlayerColorScheme());
         self::assertFalse($settings->isVideoPlayerWatermarkEnabled());
         self::assertSame(VideoPreloadMode::Metadata, $settings->getVideoPreloadMode());
@@ -215,159 +211,41 @@ final class SiteSettingsTest extends TestCase
         self::assertSame('Notwendige Cookies bleiben aktiv.', $settings->getCookieConsentMessage());
     }
 
-    public function testGoogleAnalyticsMeasurementIdAcceptsOnlyTheExactGa4FormatAtomically(): void
-    {
-        $settings = new SiteSettings();
-        $baseInput = [
-            'site_name' => 'Arcanorum',
-            'tagline' => '',
-            'locale' => 'de',
-            'timezone' => 'UTC',
-        ];
-
-        self::assertSame([], $settings->updateFromInput($baseInput + [
-            'google_analytics_measurement_id' => 'G-ABC1234567',
-        ]));
-        self::assertSame('G-ABC1234567', $settings->getGoogleAnalyticsMeasurementId());
-
-        foreach (['G-abc1234567', 'G-ABC123456', 'G-ABC12345678', '<script>alert(1)</script>', []] as $invalid) {
-            $errors = $settings->updateFromInput(array_replace($baseInput, [
-                'google_analytics_measurement_id' => $invalid,
-                'tagline' => 'must not be saved',
-            ]));
-
-            self::assertArrayHasKey('google_analytics_measurement_id', $errors);
-            self::assertSame('G-ABC1234567', $settings->getGoogleAnalyticsMeasurementId());
-            self::assertSame('', $settings->getTagline());
-        }
-
-        self::assertSame([], $settings->updateFromInput($baseInput + ['google_analytics_measurement_id' => '']));
-        self::assertSame('', $settings->getGoogleAnalyticsMeasurementId());
-    }
-
     public function testContentOptionsRequireMutedAutoplayAndRejectUnknownValuesAtomically(): void
     {
         $settings = new SiteSettings();
-        self::assertTrue($settings->isGuestCommentsEnabled());
         self::assertSame([], $settings->updateContentOptions([
             'player_autoplay_enabled' => '1',
             'player_autoplay_muted' => '1',
             'default_comments_enabled' => '0',
-            'guest_comments_enabled' => '0',
             'public_video_submissions_enabled' => '0',
         ]));
         self::assertTrue($settings->isPlayerAutoplayEnabled());
         self::assertTrue($settings->isPlayerAutoplayMuted());
         self::assertFalse($settings->isDefaultCommentsEnabled());
-        self::assertFalse($settings->isGuestCommentsEnabled());
         self::assertFalse($settings->isPublicVideoSubmissionsEnabled());
 
         $errors = $settings->updateContentOptions([
             'player_autoplay_enabled' => '1',
             'player_autoplay_muted' => '0',
             'default_comments_enabled' => '1',
-            'guest_comments_enabled' => '1',
             'public_video_submissions_enabled' => '1',
         ]);
         self::assertArrayHasKey('player_autoplay_muted', $errors);
         self::assertTrue($settings->isPlayerAutoplayEnabled());
         self::assertFalse($settings->isDefaultCommentsEnabled());
-        self::assertFalse($settings->isGuestCommentsEnabled());
         self::assertFalse($settings->isPublicVideoSubmissionsEnabled());
 
         $errors = $settings->updateContentOptions([
             'player_autoplay_enabled' => '0',
             'player_autoplay_muted' => '1',
             'default_comments_enabled' => '1',
-            'guest_comments_enabled' => '1',
             'public_video_submissions_enabled' => '1',
             'player_controls_enabled' => '0',
         ]);
         self::assertArrayHasKey('form', $errors);
         self::assertTrue($settings->isPlayerAutoplayEnabled());
         self::assertFalse($settings->isDefaultCommentsEnabled());
-        self::assertFalse($settings->isGuestCommentsEnabled());
-    }
-
-    public function testGuestCommentSettingRejectsInvalidValuesWithoutPartialUpdates(): void
-    {
-        $settings = new SiteSettings();
-
-        $errors = $settings->updateContentOptions(['guest_comments_enabled' => ['1']]);
-
-        self::assertArrayHasKey('guest_comments_enabled', $errors);
-        self::assertTrue($settings->isGuestCommentsEnabled());
-
-        $errors = $settings->updateContentOptions(['guest_comments_enabled' => 'false']);
-
-        self::assertArrayHasKey('guest_comments_enabled', $errors);
-        self::assertTrue($settings->isGuestCommentsEnabled());
-    }
-
-    public function testCommentDisplayOptionsAreAllowlistedBoundedAndAtomic(): void
-    {
-        $settings = new SiteSettings();
-        self::assertSame(CommentSortOrder::Added, $settings->getCommentDefaultSort());
-        self::assertSame(0, $settings->getCommentRatingHideThreshold());
-        self::assertSame(10, $settings->getCommentsPerPage());
-
-        self::assertSame([], $settings->updateContentOptions([
-            'comment_default_sort' => 'score',
-            'comment_rating_hide_threshold' => '5',
-            'comments_per_page' => '2',
-        ]));
-        self::assertSame(CommentSortOrder::Score, $settings->getCommentDefaultSort());
-        self::assertSame(5, $settings->getCommentRatingHideThreshold());
-        self::assertSame(2, $settings->getCommentsPerPage());
-
-        self::assertSame([], $settings->updateContentOptions(['comments_per_page' => '100']));
-        self::assertSame(100, $settings->getCommentsPerPage());
-
-        self::assertSame([], $settings->updateContentOptions(['comment_rating_hide_threshold' => '1000']));
-        self::assertSame(1000, $settings->getCommentRatingHideThreshold());
-
-        $errors = $settings->updateContentOptions([
-            'comment_default_sort' => ['score'],
-            'comment_rating_hide_threshold' => '1001',
-            'comments_per_page' => '101',
-        ]);
-        self::assertArrayHasKey('comment_default_sort', $errors);
-        self::assertArrayHasKey('comment_rating_hide_threshold', $errors);
-        self::assertArrayHasKey('comments_per_page', $errors);
-        self::assertSame(CommentSortOrder::Score, $settings->getCommentDefaultSort());
-        self::assertSame(1000, $settings->getCommentRatingHideThreshold());
-        self::assertSame(100, $settings->getCommentsPerPage());
-
-        $errors = $settings->updateContentOptions(['comment_rating_hide_threshold' => -1]);
-        self::assertArrayHasKey('comment_rating_hide_threshold', $errors);
-        self::assertSame(1000, $settings->getCommentRatingHideThreshold());
-        self::assertArrayHasKey('comments_per_page', $settings->updateContentOptions(['comments_per_page' => '0']));
-        self::assertSame(100, $settings->getCommentsPerPage());
-    }
-
-    public function testAutomaticVideoFeatureThresholdIsStrictlyBoundedAndAtomic(): void
-    {
-        $settings = new SiteSettings();
-        self::assertSame(0, $settings->getAutoFeatureViewThreshold());
-
-        self::assertSame([], $settings->updateContentOptions(['auto_feature_view_threshold' => '1']));
-        self::assertSame(1, $settings->getAutoFeatureViewThreshold());
-        self::assertSame([], $settings->updateContentOptions(['auto_feature_view_threshold' => '2147483647']));
-        self::assertSame(2147483647, $settings->getAutoFeatureViewThreshold());
-
-        foreach (['2147483648', '-1', '01', '+1', '', ['1'], 1.5, true, null] as $invalid) {
-            $errors = $settings->updateContentOptions(['auto_feature_view_threshold' => $invalid]);
-            self::assertArrayHasKey('auto_feature_view_threshold', $errors);
-            self::assertSame(2147483647, $settings->getAutoFeatureViewThreshold());
-        }
-
-        $errors = $settings->updateContentOptions([
-            'auto_feature_view_threshold' => '10',
-            'video_player_engine' => 'unsupported',
-        ]);
-        self::assertArrayHasKey('video_player_engine', $errors);
-        self::assertSame(2147483647, $settings->getAutoFeatureViewThreshold());
-        self::assertArrayHasKey('form', $settings->updateContentOptions(['unrecognized_option' => '1']));
     }
 
     public function testExternalCommentProvidersRequireValidConfigurationAndConsentAtomically(): void
@@ -464,27 +342,6 @@ final class SiteSettingsTest extends TestCase
         ]);
         self::assertArrayHasKey('default_comments_enabled', $errors);
         self::assertSame(VideoPreloadMode::Auto, $settings->getVideoPreloadMode());
-    }
-
-    public function testProviderThumbnailResolutionIsAllowlistedAndUpdatedAtomically(): void
-    {
-        $settings = new SiteSettings();
-
-        self::assertSame([], $settings->updateContentOptions([
-            'provider_thumbnail_resolution' => VideoThumbnailResolution::ExtraLarge->value,
-        ]));
-        self::assertSame(VideoThumbnailResolution::ExtraLarge, $settings->getProviderThumbnailResolution());
-
-        foreach (['remote', ['original'], null] as $invalid) {
-            $errors = $settings->updateContentOptions(['provider_thumbnail_resolution' => $invalid]);
-            self::assertArrayHasKey('provider_thumbnail_resolution', $errors);
-            self::assertSame(VideoThumbnailResolution::ExtraLarge, $settings->getProviderThumbnailResolution());
-        }
-
-        self::assertSame([], $settings->updateContentOptions([
-            'provider_thumbnail_resolution' => VideoThumbnailResolution::Original->value,
-        ]));
-        self::assertSame(VideoThumbnailResolution::Original, $settings->getProviderThumbnailResolution());
     }
 
     public function testPlayerDimensionsAndPublicEmbeddingSwitchAreAllowlistedAndAtomic(): void

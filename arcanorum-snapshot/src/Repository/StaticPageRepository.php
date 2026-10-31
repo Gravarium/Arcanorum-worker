@@ -7,7 +7,6 @@ namespace App\Repository;
 use App\Entity\PublishingStatus;
 use App\Entity\StaticPage;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\DBAL\LockMode;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -42,14 +41,6 @@ final class StaticPageRepository extends ServiceEntityRepository
             ->getResult();
 
         return $pages;
-    }
-
-    public function countForAdmin(): int
-    {
-        return (int) $this->createQueryBuilder('page')
-            ->select('COUNT(page.id)')
-            ->getQuery()
-            ->getSingleScalarResult();
     }
 
     /** @return list<StaticPage> */
@@ -102,18 +93,6 @@ final class StaticPageRepository extends ServiceEntityRepository
     public function findOneBySlug(string $slug): ?StaticPage
     {
         $page = $this->findOneBy(['slug' => $slug]);
-
-        return $page instanceof StaticPage ? $page : null;
-    }
-
-    public function findByIdForUpdate(string $id): ?StaticPage
-    {
-        $page = $this->createQueryBuilder('page')
-            ->andWhere('page.id = :id')
-            ->setParameter('id', $id)
-            ->getQuery()
-            ->setLockMode(LockMode::PESSIMISTIC_WRITE)
-            ->getOneOrNullResult();
 
         return $page instanceof StaticPage ? $page : null;
     }

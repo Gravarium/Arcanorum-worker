@@ -39,6 +39,11 @@ final readonly class MemberEmailChallengeMigrationGuard
     /** @param array<string, string> $parameters */
     private function count(string $query, array $parameters = []): int
     {
-        return new MigrationRollbackGuard($this->connection)->countRows($query, $parameters);
+        $count = $this->connection->fetchOne($query, $parameters);
+        if (!is_numeric($count)) {
+            throw new \RuntimeException('Eine Schutzprüfung für den Migrationsrückbau konnte nicht ausgewertet werden.');
+        }
+
+        return (int) $count;
     }
 }

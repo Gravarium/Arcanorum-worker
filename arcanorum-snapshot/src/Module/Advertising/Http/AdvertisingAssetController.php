@@ -95,7 +95,7 @@ final class AdvertisingAssetController extends AbstractController
         }
 
         try {
-            $contents = $this->storage->read($objectId, $size);
+            $contents = $this->storage->read($objectId);
         } catch (PrivateStorageOperationFailed) {
             return $this->unavailable();
         }

@@ -8,7 +8,7 @@ use App\Entity\ScheduledTask;
 use App\Entity\ScheduledTaskRun;
 use App\Module\Automation\Application\ScheduledTaskRunStore;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\DBAL\LockMode;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -37,17 +37,7 @@ final class ScheduledTaskRunRepository extends ServiceEntityRepository implement
 
     public function findExistingForDueTime(ScheduledTask $task, \DateTimeImmutable $scheduledFor): ?ScheduledTaskRun
     {
-        $run = $this->createQueryBuilder('run')
-            ->andWhere('run.task = :task')
-            ->andWhere('run.scheduledFor = :scheduled_for')
-            ->setParameter('task', $task)
-            ->setParameter('scheduled_for', $scheduledFor)
-            ->setMaxResults(1)
-            ->getQuery()
-            ->setLockMode(LockMode::PESSIMISTIC_WRITE)
-            ->getOneOrNullResult();
-
-        return $run instanceof ScheduledTaskRun ? $run : null;
+        return $this->findOneBy(['task' => $task, 'scheduledFor' => $scheduledFor]);
     }
 
     public function findRunById(string $id): ?ScheduledTaskRun
@@ -77,6 +67,15 @@ final class ScheduledTaskRunRepository extends ServiceEntityRepository implement
         }
 
         return $deleted;
+    }
+
+    public function markStaleRunning(\DateTimeImmutable $cutoff, \DateTimeImmutable $now): int
+    {
+        return (int) $this->getEntityManager()->getConnection()->executeStatement(
+            "UPDATE scheduled_task_runs SET status = 'failed', result_summary = 'Der Prozess wurde unterbrochen; der Auftrag wird im nächsten Intervall erneut geprüft.', finished_at = :now WHERE status = 'running' AND started_at < :cutoff",
+            ['now' => $now, 'cutoff' => $cutoff],
+            ['now' => Types::DATETIME_IMMUTABLE, 'cutoff' => Types::DATETIME_IMMUTABLE],
+        );
     }
 
     public function pruneHistory(int $maximumPerTask): int

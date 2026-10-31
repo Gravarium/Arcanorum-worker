@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
-use App\Service\MigrationRollbackGuard;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -26,19 +25,6 @@ final class Version20261018090000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
-        $rollbackGuard = new MigrationRollbackGuard($this->connection);
-        $rollbackGuard->lockTables('comment_filter_terms', 'content_comments');
-        $filterData = $this->connection->fetchOne(<<<'SQL'
-            SELECT COUNT(*) FROM (
-                SELECT 1 FROM comment_filter_terms
-                UNION ALL
-                SELECT 1 FROM content_comments WHERE filtered_by_term IS NOT NULL
-            ) AS comment_filter_data
-            SQL);
-        if (!in_array($filterData, [0, '0'], true)) {
-            throw new \RuntimeException('Kommentar-Filterregeln und dokumentierte Treffer müssen vor dem Migrationsrückbau erhalten oder exportiert werden.');
-        }
-
         $this->addSql('ALTER TABLE content_comments DROP CONSTRAINT chk_content_comments_filtered_by_term');
         $this->addSql('ALTER TABLE content_comments DROP filtered_by_term');
         $this->addSql('DROP INDEX idx_comment_filter_terms_created');

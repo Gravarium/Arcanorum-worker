@@ -17,7 +17,6 @@ use App\Service\ContentTagManager;
 use App\Service\ExternalVideoEmbedResolver;
 use App\Service\VideoCsvImportParser;
 use App\Service\VideoSourceUrlLock;
-use App\Service\VideoThumbnailImportBudget;
 use App\Service\VideoThumbnailImportService;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
@@ -110,7 +109,7 @@ final class VideoCsvImportController extends AbstractController
                             } elseif (!Video::isSafeHttpsSource($row['source_url'])) {
                                 $errors[] = sprintf('Datensatz %d: Die Videoquelle ist keine gültige HTTPS-Adresse.', $record);
                             } elseif (VideoSourceType::Embed === $sourceType && null === $embedResolver->resolve($row['source_url'])) {
-                                $errors[] = sprintf('Datensatz %d: Für die Einbettung ist nur eine gültige Video-URL eines unterstützten Providers zulässig.', $record);
+                                $errors[] = sprintf('Datensatz %d: Für die Einbettung ist nur eine gültige Video-URL von YouTube, Dailymotion oder Vimeo zulässig.', $record);
                             }
                             if (null !== $sourceType) {
                                 $row['source_type'] = $sourceType->value;
@@ -164,16 +163,12 @@ final class VideoCsvImportController extends AbstractController
                             $thumbnailsByRecord = [];
                             $thumbnailObjectIds = [];
                             $thumbnailBytes = 0;
-                            $thumbnailBudget = new VideoThumbnailImportBudget(
-                                self::MAX_THUMBNAIL_BYTES_PER_IMPORT,
-                                VideoThumbnailImportBudget::MAX_SECONDS,
-                            );
                             foreach ($rows as $row) {
                                 if ('' === $row['thumbnail_url']) {
                                     continue;
                                 }
                                 try {
-                                    $thumbnail = $this->thumbnailImports->storeFromUrl($row['thumbnail_url'], $thumbnailBudget);
+                                    $thumbnail = $this->thumbnailImports->storeFromUrl($row['thumbnail_url']);
                                     $thumbnailObjectIds[] = $thumbnail['object_id'];
                                     $thumbnailBytes += $thumbnail['size'];
                                     if ($thumbnailBytes > self::MAX_THUMBNAIL_BYTES_PER_IMPORT) {

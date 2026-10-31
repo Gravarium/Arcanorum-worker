@@ -77,11 +77,6 @@ framework:
             limit: 3
             interval: '1 hour'
             cache_pool: cache.app
-        admin_password_change:
-            policy: sliding_window
-            limit: 5
-            interval: '15 minutes'
-            cache_pool: cache.app
 
 security:
     session_fixation_strategy: migrate
@@ -91,14 +86,12 @@ security:
             - ROLE_MODERATOR
             - ROLE_MODERATOR_VIDEO
             - ROLE_MODERATOR_COMMENTS
-            - ROLE_CONTENT_EDITOR
         ROLE_MODERATOR:
             - ROLE_ADMIN_STAFF
             - ROLE_MODERATOR_VIDEO
             - ROLE_MODERATOR_COMMENTS
         ROLE_MODERATOR_VIDEO: ROLE_ADMIN_STAFF
         ROLE_MODERATOR_COMMENTS: ROLE_ADMIN_STAFF
-        ROLE_CONTENT_EDITOR: ROLE_ADMIN_STAFF
     password_hashers:
         App\Entity\AdminUser:
             algorithm: auto
@@ -170,5 +163,4 @@ security:
         - { request_matcher: App\Module\Admin\Security\AdminEntryRequestMatcher, roles: ROLE_ADMIN_STAFF }
         - { request_matcher: App\Module\Admin\Security\VideoModerationRequestMatcher, roles: ROLE_MODERATOR_VIDEO }
         - { request_matcher: App\Module\Admin\Security\CommentModerationRequestMatcher, roles: ROLE_MODERATOR_COMMENTS }
-        - { request_matcher: App\Module\Admin\Security\EditorialContentRequestMatcher, roles: ROLE_CONTENT_EDITOR }
         - { request_matcher: App\Platform\Security\DecodedAdminAreaRequestMatcher, roles: ROLE_ADMIN }

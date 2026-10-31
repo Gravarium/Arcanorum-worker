@@ -15,7 +15,7 @@ use Symfony\Component\HttpKernel\HttpKernelInterface;
 
 final class VideoStreamContentSecurityPolicySubscriberTest extends TestCase
 {
-    private const string VIDEO_POLICY = "default-src 'self'; connect-src 'self'; media-src 'self'; frame-src 'self' https://www.youtube-nocookie.com https://player.vimeo.com https://geo.dailymotion.com https://www.facebook.com https://drive.google.com https://rutube.ru https://vk.com https://player.youku.com";
+    private const string VIDEO_POLICY = "default-src 'self'; connect-src 'self'; media-src 'self'; frame-src 'self' https://www.youtube-nocookie.com https://player.vimeo.com https://geo.dailymotion.com";
 
     public function testApprovedStreamAddsNarrowReportOnlyMediaPolicyWithoutEnforcement(): void
     {
@@ -37,7 +37,7 @@ final class VideoStreamContentSecurityPolicySubscriberTest extends TestCase
         $reportOnlyPolicy = $response->headers->get('Content-Security-Policy-Report-Only');
         self::assertSame($expectedPolicy, $reportOnlyPolicy);
         self::assertFalse($response->headers->has('Content-Security-Policy'));
-        self::assertStringContainsString("frame-src 'self' https://www.youtube-nocookie.com https://player.vimeo.com https://geo.dailymotion.com https://www.facebook.com https://drive.google.com https://rutube.ru https://vk.com https://player.youku.com", $reportOnlyPolicy);
+        self::assertStringContainsString("frame-src 'self' https://www.youtube-nocookie.com https://player.vimeo.com https://geo.dailymotion.com", $reportOnlyPolicy);
         self::assertStringNotContainsString('*', $reportOnlyPolicy);
     }
 

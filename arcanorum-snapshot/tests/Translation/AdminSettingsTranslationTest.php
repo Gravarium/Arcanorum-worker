@@ -26,46 +26,10 @@ final class AdminSettingsTranslationTest extends KernelTestCase
             'Neu veröffentlichte News und Artikel.' => 'Recently published news and articles.',
             'Neu veröffentlichte Videos.' => 'Recently published videos.',
             'Video und Wiedergabe' => 'Video and playback',
-            'Auflösung importierter Provider-Vorschaubilder' => 'Resolution for imported provider thumbnails',
-            'Klein (bis etwa 320 px)' => 'Small (up to about 320 px)',
-            'Mittel (bis etwa 640 px)' => 'Medium (up to about 640 px)',
-            'Groß (bis etwa 1280 px)' => 'Large (up to about 1280 px)',
-            'Extra groß (bis etwa 1920 px)' => 'Extra large (up to about 1920 px)',
-            'Größte verfügbare Auflösung' => 'Largest available resolution',
-            'Provider-Vorschaubilder werden beim Import geprüft und privat gespeichert. Besucher laden sie anschließend nur von dieser Website.' => 'Provider thumbnails are checked during import and stored privately. Visitors then load them only from this website.',
             'Seitenverhältnis des Players' => 'Player aspect ratio',
             'Maximale Playerbreite' => 'Maximum player width',
             'Fließend und responsiv' => 'Fluid and responsive',
             'Theme und Layout' => 'Theme and layout',
-            'Weitere Farben der öffentlichen Website' => 'More public website colors',
-            'Legen Sie die Flächen, Überschriften, Links und Navigation einzeln fest. Die Eingabe akzeptiert nur Hexfarben; Text- und Fokusfarben werden auf Kontrast geprüft.' => 'Set the surfaces, headings, links, and navigation individually. Only hexadecimal colors are accepted; text and focus colors are checked for contrast.',
-            'Überschriften' => 'Headings',
-            'Inhaltsfläche und Karten' => 'Content surfaces and cards',
-            'Inhaltstext' => 'Content text',
-            'Seitenhintergrund' => 'Page background',
-            'Kopfbereich und Navigation' => 'Header and navigation',
-            'Hintergrund des Kopfbereichs' => 'Header background',
-            'Text im Kopfbereich' => 'Header text',
-            'Navigationshintergrund' => 'Navigation background',
-            'Navigationslinks' => 'Navigation links',
-            'Inhaltslinks' => 'Content links',
-            'Video- und Artikeltitel' => 'Video and article titles',
-            'Website-Titel' => 'Site title',
-            'Fußbereich und Seitenbreite' => 'Footer and content width',
-            'Hintergrund des Fußbereichs' => 'Footer background',
-            'Text und Links im Fußbereich' => 'Footer text and links',
-            'Maximale Inhaltsbreite in Pixeln' => 'Maximum content width in pixels',
-            'Farben werden als feste Hexwerte gespeichert. Eingebettetes CSS und externe Stylesheets werden nicht angenommen. Textfarben müssen den erforderlichen Kontrast zu ihrer gewählten Fläche erreichen.' => 'Colors are stored as fixed hexadecimal values. Embedded CSS and external stylesheets are rejected. Text colors must meet the required contrast against their selected surfaces.',
-            'Website-Logo' => 'Website logo',
-            'Laden Sie ein JPEG-, PNG- oder WebP-Bild hoch. Das Bild wird geprüft, auf ein transparentes PNG normalisiert und im Kopfbereich auf höchstens 233 × 80 Pixel begrenzt.' => 'Upload a JPEG, PNG, or WebP image. It is validated, normalized to a transparent PNG, and limited to 233 × 80 pixels in the header.',
-            'Aktuelles Website-Logo' => 'Current website logo',
-            'Es ist kein eigenes Logo festgelegt.' => 'No custom logo is set.',
-            'Logo auswählen' => 'Choose logo',
-            'Logo hochladen' => 'Upload logo',
-            'Logo entfernen' => 'Remove logo',
-            'Das Website-Logo wurde gespeichert.' => 'The website logo was saved.',
-            'Das Website-Logo wurde entfernt.' => 'The website logo was removed.',
-            'Bitte wählen Sie ein Logo aus.' => 'Choose a logo.',
             'E-Mail-Einstellungen' => 'Email settings',
             'Mitglieder und Anmeldung' => 'Members and sign-in',
             'Besucherkommentare und deren Moderation.' => 'Visitor comments and their moderation.',
@@ -287,7 +251,6 @@ final class AdminSettingsTranslationTest extends KernelTestCase
             'Mitgliedskonten suchen, Profile bearbeiten und ihren Kontostatus verwalten.' => 'Search member accounts, edit profiles, and manage account status.',
             'Mitglied anlegen' => 'Create member',
             'CSV exportieren' => 'Export CSV',
-            'Kontaktliste exportieren' => 'Export contact list',
             'E-Mail, Kanalname oder Anzeigename' => 'Email, channel name, or display name',
             'Kontostatus' => 'Account status',
             'Alle Konten' => 'All accounts',
@@ -734,9 +697,6 @@ final class AdminSettingsTranslationTest extends KernelTestCase
             'Wir führen Wartungsarbeiten durch' => 'We are performing maintenance',
             'Inhalt nicht gefunden' => 'Content not found',
             'Dieser Inhalt ist nicht verfügbar oder wurde noch nicht veröffentlicht.' => 'This content is unavailable or has not been published yet.',
-            'Kommentare von Gästen ohne Mitgliedskonto erlauben' => 'Allow guests without member accounts to comment',
-            'Wenn Gästekommentare deaktiviert sind, dürfen angemeldete Konten weiterhin kommentieren. Änderungen gelten nur für neue Kommentare.' => 'When guest comments are disabled, signed-in accounts can still comment. Changes apply only to new comments.',
-            'Bitte melde dich an, um einen Kommentar zu schreiben.' => 'Sign in to write a comment.',
         ];
 
         foreach ($messages as $source => $expected) {
@@ -958,15 +918,11 @@ final class AdminSettingsTranslationTest extends KernelTestCase
             'Noch keine Serien veröffentlicht.' => 'No series have been published yet.',
             'Für diese Serie sind noch keine veröffentlichten Folgen vorhanden.' => 'This series does not have any published episodes yet.',
             'Dein Browser kann dieses Video nicht abspielen.' => 'Your browser cannot play this video.',
-            'Dein Browser kann diese Audiodatei nicht abspielen.' => 'Your browser cannot play this audio file.',
-            'Dein Browser kann diesen Audiostream nicht abspielen.' => 'Your browser cannot play this audio stream.',
             'Videodetails' => 'Video details',
-            'Eingereichte Video- und Audiobeiträge bleiben privat, bis ein Administrator sie geprüft und freigegeben hat. Du kannst eine Video- oder MP3-Datei hochladen oder eine sichere Videoquelle eines unterstützten Providers vorschlagen.' => 'Submitted video and audio contributions remain private until an administrator has reviewed and approved them. You can upload a video or MP3 file, or suggest a safe video source from a supported provider.',
-            'Video-URL eines unterstützten Providers' => 'Video URL from a supported provider',
-            'Video- oder MP3-Datei (MP4, WebM, Ogg oder MP3, höchstens 32 MiB)' => 'Video or MP3 file (MP4, WebM, Ogg, or MP3, up to 32 MiB)',
-            'Alternativ kannst du eine Video- oder MP3-Datei hochladen. Verwende nur eine der beiden Quellen.' => 'Alternatively, you can upload a video or MP3 file. Use only one of the two sources.',
+            'Eingereichte Videos bleiben privat, bis ein Administrator sie geprüft und freigegeben hat.' => 'Submitted videos remain private until an administrator has reviewed and approved them.',
+            'Videodatei (MP4, WebM oder Ogg, höchstens 32 MiB)' => 'Video file (MP4, WebM, or Ogg, up to 32 MiB)',
             'Zur Prüfung einreichen' => 'Submit for review',
-            'Hochgeladene Video- und Audiodateien werden privat gespeichert. Ein Beitrag erscheint erst nach der redaktionellen Freigabe.' => 'Uploaded video and audio files are stored privately. A submission appears only after editorial approval.',
+            'Dateien werden privat gespeichert. Das Video erscheint erst nach einer redaktionellen Freigabe.' => 'Files are stored privately. The video will appear only after editorial approval.',
         ];
 
         foreach ($messages as $source => $expected) {
@@ -1358,37 +1314,19 @@ final class AdminSettingsTranslationTest extends KernelTestCase
         $messages = [
             'Video bearbeiten' => 'Edit video',
             'Hinzufügen' => 'Add',
-            'Geprüfte HTTPS-Quelle oder private Medien-Datei mit Metadaten speichern.' => 'Save media metadata with a verified HTTPS source or private media file.',
+            'Geprüfte HTTPS-Quelle oder private Videodatei mit Metadaten speichern.' => 'Save video metadata with a verified HTTPS source or a private video file.',
             'Videodaten' => 'Video details',
-            'Dateien werden außerhalb des öffentlichen Webpfads gespeichert; MP4, WebM, Ogg und MP3 bis 32 MiB sind zugelassen.' => 'Files are stored outside the public web path. MP4, WebM, Ogg, and MP3 files up to 32 MiB are accepted.',
+            'Dateien werden außerhalb des öffentlichen Webpfads gespeichert; nur MP4, WebM und Ogg bis 32 MiB sind zugelassen.' => 'Files are stored outside the public web path. Only MP4, WebM, and Ogg files up to 32 MiB are accepted.',
             'Quellart' => 'Source type',
             'Einbettungs-URL' => 'Embed URL',
-            'Private Medien-Datei' => 'Private media file',
+            'Private Videodatei' => 'Private video file',
             'Quell-URL' => 'Source URL',
-            'Für Einbettungen sind nur geprüfte YouTube-, Vimeo-, Dailymotion-, Facebook-, Google-Drive-, Rutube-, VK- und Youku-Video-URLs zugelassen; fremder HTML-Code wird nicht ausgeführt.' => 'Embeds accept verified YouTube, Vimeo, Dailymotion, Facebook, Google Drive, Rutube, VK, and Youku video URLs only. Third-party HTML is never executed.',
-            'Provider-Metadaten übernehmen' => 'Import provider metadata',
-            'Provider-Metadaten konnten nicht abgerufen werden.' => 'Provider metadata could not be retrieved.',
-            'Provider-Metadaten wurden übernommen.' => 'Provider metadata was imported.',
-            'Provider-Metadaten werden abgerufen.' => 'Retrieving provider metadata.',
-            'Die Metadatenanfrage ist ungültig.' => 'The metadata request is invalid.',
-            'Bitte gib eine gültige Provider-Video-URL ein.' => 'Enter a valid provider video URL.',
-            'Das Importlimit wurde erreicht. Bitte warte kurz und versuche es erneut.' => 'The import limit was reached. Wait a moment and try again.',
-            'Der Videoanbieter konnte keine sicheren Metadaten bereitstellen. Bitte prüfe die Providerkonfiguration und versuche es erneut.' => 'The video provider could not provide safe metadata. Check the provider configuration and try again.',
-            'Für diese URL sind keine unterstützten und einbettbaren Provider-Metadaten verfügbar.' => 'No supported embeddable provider metadata is available for this URL.',
-            'Für eine Einbettung ist nur eine gültige Video-URL von YouTube, Vimeo, Dailymotion, Facebook, Google Drive, Rutube, VK oder Youku zulässig.' => 'Embeds accept a valid video URL from YouTube, Vimeo, Dailymotion, Facebook, Google Drive, Rutube, VK, or Youku only.',
-            'Es werden nur sichere, einbettbare Videos von unterstützten Providern angenommen.' => 'Only secure, embeddable videos from supported providers are accepted.',
-            'Wähle eine Video- oder MP3-Datei oder gib eine gültige unterstützte Provider-URL ein.' => 'Choose a video or MP3 file, or enter a valid supported provider URL.',
-            'Bitte gib eine gültige Videoquelle von YouTube, Vimeo, Dailymotion, Facebook, Google Drive, Rutube, VK oder Youku ein.' => 'Enter a valid video source from YouTube, Vimeo, Dailymotion, Facebook, Google Drive, Rutube, VK, or Youku.',
-            'Für die Einbettung ist nur eine gültige Video-URL eines unterstützten Providers zulässig.' => 'Embeds accept valid video URLs from supported providers only.',
-            'Unterstützt werden direkte MP4-, M4V-, WebM-, Ogg- und MP3-Dateien sowie HLS-Live-Playlists (M3U8) auf freigegebenen HTTPS-Hosts. HLS-Segmente und Schlüssel müssen ebenfalls von freigegebenen Hosts kommen; der Server ruft die Stream-Adresse nicht ab.' => 'Direct MP4, M4V, WebM, Ogg, and MP3 files are supported, along with HLS live playlists (M3U8) on approved HTTPS hosts. HLS segments and keys must also come from approved hosts; the server does not fetch the stream URL.',
+            'Für Einbettungen sind nur geprüfte YouTube-, Dailymotion- und Vimeo-Video-URLs zugelassen; fremder HTML-Code wird nicht ausgeführt.' => 'Embeds accept verified YouTube, Dailymotion, and Vimeo video URLs only. Third-party HTML is never executed.',
+            'Unterstützt werden direkte MP4-, M4V-, WebM- und Ogg-Dateien sowie HLS-Live-Playlists (M3U8) auf freigegebenen HTTPS-Hosts. HLS-Segmente und Schlüssel müssen ebenfalls von freigegebenen Hosts kommen; der Server ruft die Stream-Adresse nicht ab.' => 'Direct MP4, M4V, WebM, and Ogg files are supported, along with HLS live playlists (M3U8) on approved HTTPS hosts. HLS segments and keys must also come from approved hosts; the server does not fetch the stream URL.',
             'Die vollständige Adresse einschließlich Abfrageparametern wird öffentlich ausgegeben. Bitte keine Zugangsdaten oder geheimen Tokens verwenden.' => 'The complete address, including query parameters, is shown publicly. Do not include credentials or secret tokens.',
             'Streamhosts sind derzeit nicht freigegeben; bitte die Hostingverwaltung um Einrichtung bitten.' => 'Stream hosts are not approved yet. Ask an administrator to configure them in hosting settings.',
-            'Video- oder MP3-Datei' => 'Video or MP3 file',
-            'Bei Quellart „Private Medien-Datei“ erforderlich; beim Bearbeiten optional, wenn die vorhandene Datei bleiben soll.' => 'Required for the private media file source type. When editing, leave this empty to keep the existing file.',
-            'Medienlaufzeit in Sekunden' => 'Media duration in seconds',
-            'Videolaufzeit: %duration%' => 'Video duration: %duration%',
-            'Audiodauer: %duration%' => 'Audio duration: %duration%',
-            'Untertitelspuren können für private Medien-Dateien und geprüfte Video- oder Audiostreams hochgeladen werden.' => 'Subtitle tracks can be uploaded for private media files and approved video or audio streams.',
+            'Videodatei' => 'Video file',
+            'Bei Quellart „Private Videodatei“ erforderlich; beim Bearbeiten optional, wenn die vorhandene Datei bleiben soll.' => 'Required for the private video file source type. When editing, leave this empty to keep the existing file.',
             'z. B. Kultur, Interviews, Neuigkeiten' => 'e.g. culture, interviews, news',
             'Bis zu zehn Schlagwörter, getrennt durch Komma oder Zeilenumbruch.' => 'Enter up to ten tags, separated by commas or line breaks.',
             'Auf der Startseite hervorheben' => 'Feature on the home page',
@@ -1398,16 +1336,6 @@ final class AdminSettingsTranslationTest extends KernelTestCase
             'Bilddatei' => 'Image file',
             'Vorschaubild hochladen' => 'Upload thumbnail',
             'Vorschaubild entfernen' => 'Remove thumbnail',
-            'Das Vorschaubild wird über die feste Provider-API ausgewählt, sicher geprüft und privat gespeichert.' => 'The thumbnail is selected through the fixed provider API, securely validated, and stored privately.',
-            'Provider-Vorschaubild übernehmen' => 'Import provider thumbnail',
-            'Die Provider-Vorschaubildanfrage enthält nicht erlaubte Felder.' => 'The provider thumbnail request contains fields that are not allowed.',
-            'Der gemeinsame Importschutz ist nicht verfügbar. Das Provider-Vorschaubild wurde nicht abgerufen.' => 'The shared import protection is unavailable. The provider thumbnail was not retrieved.',
-            'Der Videoanbieter konnte kein sicheres Vorschaubild bereitstellen.' => 'The video provider could not provide a safe thumbnail.',
-            'Für diese Videoquelle ist kein sicheres Provider-Vorschaubild verfügbar.' => 'No safe provider thumbnail is available for this video source.',
-            'Das Provider-Vorschaubild konnte nicht sicher übernommen werden.' => 'The provider thumbnail could not be imported safely.',
-            'Das neue Provider-Vorschaubild konnte nach dem Speicherfehler nicht bereinigt werden.' => 'The new provider thumbnail could not be cleaned up after the storage error.',
-            'Das frühere private Vorschaubild konnte nicht bereinigt werden.' => 'The previous private thumbnail could not be cleaned up.',
-            'Provider-Vorschaubild wurde sicher übernommen.' => 'The provider thumbnail was imported safely.',
             'Video-CSV-Import' => 'Video CSV import',
             'Video-Metadaten importieren' => 'Import video metadata',
             'Die CSV wird nur im temporären Uploadbereich gelesen und nach dem Request verworfen. Externe URLs werden nicht abgerufen.' => 'The CSV is read only from temporary upload storage and discarded after the request. External URLs are not fetched.',
@@ -1520,47 +1448,5 @@ final class AdminSettingsTranslationTest extends KernelTestCase
         foreach ($messages as $source => $expected) {
             self::assertSame($expected, $translator->trans($source, [], 'messages', 'en'), $source);
         }
-    }
-
-    public function testCommentPaginationMessagesHaveEnglishTranslations(): void
-    {
-        self::bootKernel();
-        $translator = static::getContainer()->get(TranslatorInterface::class);
-        self::assertInstanceOf(TranslatorInterface::class, $translator);
-
-        $messages = [
-            'Kommentare pro Seite' => 'Comments per page',
-            'Lege fest, wie viele freigegebene Kommentare pro Seite erscheinen. Der Seitenwechsel funktioniert auch ohne JavaScript.' => 'Choose how many approved comments appear on each page. Page navigation works without JavaScript.',
-            'Die Zahl der Kommentare pro Seite muss zwischen 1 und 100 liegen.' => 'The number of comments per page must be between 1 and 100.',
-            'Kommentarseiten' => 'Comment pages',
-            'Vorherige Kommentarseite' => 'Previous comment page',
-            'Nächste Kommentarseite' => 'Next comment page',
-        ];
-
-        foreach ($messages as $source => $expected) {
-            self::assertSame($expected, $translator->trans($source, [], 'messages', 'en'), $source);
-        }
-
-        self::assertSame(
-            'Page 2 of 5',
-            $translator->trans('Seite %page% von %pages%', ['%page%' => 2, '%pages%' => 5], 'messages', 'en'),
-        );
-    }
-
-    public function testAutomaticVideoFeatureThresholdMessagesHaveEnglishTranslations(): void
-    {
-        self::bootKernel();
-        $translator = static::getContainer()->get(TranslatorInterface::class);
-        self::assertInstanceOf(TranslatorInterface::class, $translator);
-
-        self::assertSame('Automatic video highlight threshold', $translator->trans('Schwelle für automatische Video-Hervorhebung', [], 'messages', 'en'));
-        self::assertSame(
-            'Counted public views before a video is highlighted once; 0 disables automatic highlighting.',
-            $translator->trans('Gezählte öffentliche Aufrufe bis zur einmaligen Hervorhebung; 0 deaktiviert die automatische Hervorhebung.', [], 'messages', 'en'),
-        );
-        self::assertSame(
-            'The automatic highlight threshold must be a whole number from 0 to 2147483647.',
-            $translator->trans('Die Schwelle für die automatische Hervorhebung muss eine ganze Zahl von 0 bis 2147483647 sein.', [], 'messages', 'en'),
-        );
     }
 }

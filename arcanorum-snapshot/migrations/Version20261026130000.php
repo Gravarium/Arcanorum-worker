@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
-use App\Service\MigrationRollbackGuard;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -23,10 +22,8 @@ final class Version20261026130000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
-        $rollbackGuard = new MigrationRollbackGuard($this->connection);
-        $rollbackGuard->lockTables('site_settings');
-        $arabicSettings = $rollbackGuard->countRows("SELECT COUNT(*) FROM site_settings WHERE default_locale = 'ar'");
-        if ($arabicSettings > 0) {
+        $arabicSettings = $this->connection->fetchOne("SELECT COUNT(*) FROM site_settings WHERE default_locale = 'ar'");
+        if (!in_array($arabicSettings, [0, '0'], true)) {
             throw new \RuntimeException('Die arabische Website-Sprache muss vor dem Migrationsrückbau geändert werden.');
         }
 

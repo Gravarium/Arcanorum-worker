@@ -30,7 +30,6 @@ final class AdminGeneralSettingsController extends AbstractController
         'maintenance_message',
         'cookie_consent_enabled',
         'cookie_consent_message',
-        'google_analytics_measurement_id',
         'member_registration_enabled',
         'social_google_enabled',
         'social_facebook_enabled',
@@ -69,7 +68,6 @@ final class AdminGeneralSettingsController extends AbstractController
             'maintenance_message' => $current->getMaintenanceMessage(),
             'cookie_consent_enabled' => $current->isCookieConsentEnabled() ? '1' : '0',
             'cookie_consent_message' => $current->getCookieConsentMessage(),
-            'google_analytics_measurement_id' => $current->getGoogleAnalyticsMeasurementId(),
             'member_registration_enabled' => $current->isMemberRegistrationEnabled() ? '1' : '0',
             'social_google_enabled' => $current->isGoogleSocialLoginEnabled() ? '1' : '0',
             'social_facebook_enabled' => $current->isFacebookSocialLoginEnabled() ? '1' : '0',
@@ -157,10 +155,6 @@ final class AdminGeneralSettingsController extends AbstractController
             'maintenance_message' => self::safeString($input['maintenance_message'] ?? null, $fallback->getMaintenanceMessage(), 320),
             'cookie_consent_enabled' => self::safeBoolean($input['cookie_consent_enabled'] ?? null, $fallback->isCookieConsentEnabled()),
             'cookie_consent_message' => self::safeString($input['cookie_consent_message'] ?? null, $fallback->getCookieConsentMessage(), 320),
-            'google_analytics_measurement_id' => self::safeGoogleAnalyticsMeasurementId(
-                $input['google_analytics_measurement_id'] ?? null,
-                $fallback->getGoogleAnalyticsMeasurementId(),
-            ),
             'member_registration_enabled' => self::safeBoolean($input['member_registration_enabled'] ?? null, $fallback->isMemberRegistrationEnabled()),
             'social_google_enabled' => self::safeBoolean($input['social_google_enabled'] ?? null, $fallback->isGoogleSocialLoginEnabled()),
             'social_facebook_enabled' => self::safeBoolean($input['social_facebook_enabled'] ?? null, $fallback->isFacebookSocialLoginEnabled()),
@@ -191,17 +185,6 @@ final class AdminGeneralSettingsController extends AbstractController
         }
 
         return mb_substr($value, 0, $maxLength, 'UTF-8');
-    }
-
-    private static function safeGoogleAnalyticsMeasurementId(mixed $value, string $fallback): string
-    {
-        if (!is_string($value)
-            || ('' !== $value && 1 !== preg_match('/\AG-[A-Z0-9]{10}\z/D', $value))
-        ) {
-            return $fallback;
-        }
-
-        return $value;
     }
 
     private function privateResponse(Response $response): Response

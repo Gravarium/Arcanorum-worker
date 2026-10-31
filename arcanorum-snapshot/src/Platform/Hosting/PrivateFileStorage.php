@@ -111,12 +111,8 @@ final readonly class PrivateFileStorage implements PrivateObjectStorageInterface
         }
     }
 
-    public function read(string $objectId, int $maximumBytes): string
+    public function read(string $objectId): string
     {
-        if ($maximumBytes < 1 || $maximumBytes > $this->maximumObjectBytes) {
-            throw new PrivateStorageOperationFailed();
-        }
-
         $this->requirePrivateStorageCapability();
 
         $root = $this->privateRoot();
@@ -149,16 +145,16 @@ final readonly class PrivateFileStorage implements PrivateObjectStorageInterface
                 throw new PrivateStorageOperationFailed();
             }
 
-            if ($openedStat['size'] > $maximumBytes) {
+            if ($openedStat['size'] > $this->maximumObjectBytes) {
                 throw new PrivateStorageOperationFailed();
             }
 
-            $contents = @stream_get_contents($handle, $maximumBytes + 1);
+            $contents = @stream_get_contents($handle, $this->maximumObjectBytes + 1);
             if (false === $contents) {
                 throw new PrivateStorageOperationFailed();
             }
 
-            if (strlen($contents) > $maximumBytes) {
+            if (strlen($contents) > $this->maximumObjectBytes) {
                 throw new PrivateStorageOperationFailed();
             }
 

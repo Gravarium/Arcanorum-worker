@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
-use App\Service\MigrationRollbackGuard;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -28,33 +27,6 @@ final class Version20261026233000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
-        $rollbackGuard = new MigrationRollbackGuard($this->connection);
-        $rollbackGuard->lockTables('news_article_revisions', 'news_articles', 'static_pages');
-        $dataAtRisk = $this->connection->fetchOne(<<<'SQL'
-            SELECT COUNT(*) FROM (
-                SELECT 1 FROM news_articles
-                WHERE members_only IS TRUE
-                    OR thumbnail_object_id IS NOT NULL
-                    OR thumbnail_mime_type IS NOT NULL
-                    OR thumbnail_size IS NOT NULL
-                UNION ALL
-                SELECT 1 FROM news_article_revisions
-                WHERE members_only IS TRUE
-                    OR thumbnail_object_id IS NOT NULL
-                    OR thumbnail_mime_type IS NOT NULL
-                    OR thumbnail_size IS NOT NULL
-                UNION ALL
-                SELECT 1 FROM static_pages
-                WHERE meta_keywords IS NOT NULL
-                    OR meta_description IS NOT NULL
-                    OR author_name <> 'Redaktion'
-                    OR show_in_menu IS TRUE
-            ) AS migration_data_at_risk
-            SQL);
-        if (!in_array($dataAtRisk, [0, '0'], true)) {
-            throw new \RuntimeException('Mitgliederbeschränkte News, Vorschaubilder und Seitenmetadaten müssen vor dem Migrationsrückbau erhalten oder exportiert werden.');
-        }
-
         $this->addSql('ALTER TABLE static_pages DROP show_in_menu, DROP author_name, DROP meta_description, DROP meta_keywords');
         $this->addSql('ALTER TABLE news_article_revisions DROP CONSTRAINT chk_news_article_revisions_thumbnail_metadata');
         $this->addSql('ALTER TABLE news_article_revisions DROP thumbnail_size, DROP thumbnail_mime_type, DROP thumbnail_object_id');

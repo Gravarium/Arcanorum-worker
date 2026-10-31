@@ -13,7 +13,6 @@ enum AdminRole: string
     case Moderator = 'ROLE_MODERATOR';
     case VideoModerator = 'ROLE_MODERATOR_VIDEO';
     case CommentModerator = 'ROLE_MODERATOR_COMMENTS';
-    case ContentEditor = 'ROLE_CONTENT_EDITOR';
 
     public static function supports(string $role): bool
     {
@@ -25,7 +24,8 @@ enum AdminRole: string
     {
         $policy = new ModeratorAccessPolicy();
 
-        return $policy->hasStaffAccess($roles);
+        return $policy->allows($roles, ModeratorPermission::ModerateVideos)
+            || $policy->allows($roles, ModeratorPermission::ModerateComments);
     }
 
     /** @param list<string> $roles */

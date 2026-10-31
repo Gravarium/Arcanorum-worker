@@ -648,44 +648,6 @@ final class MemberAccountAdminController extends AbstractController
         return $response;
     }
 
-    #[Route('/export-contacts', name: 'export_contacts', methods: ['GET'])]
-    public function exportContacts(
-        Request $request,
-        MemberAccountRepository $members,
-        EntityManagerInterface $entityManager,
-        MemberAccountCsvWriter $csvWriter,
-    ): Response {
-        $search = mb_substr(trim($request->query->getString('q')), 0, 100, 'UTF-8');
-        $status = $request->query->getString('status');
-        if (!in_array($status, ['active', 'suspended', 'banned'], true)) {
-            $status = 'all';
-        }
-        $active = 'active' === $status ? true : ('suspended' === $status ? false : null);
-        $banned = 'banned' === $status ? true : (in_array($status, ['active', 'suspended'], true) ? false : null);
-        $total = $members->countForAdmin($search, $active, $banned);
-
-        $response = new StreamedResponse(function () use ($members, $entityManager, $csvWriter, $search, $active, $banned, $total): void {
-            $output = fopen('php://output', 'wb');
-            if (false === $output) {
-                return;
-            }
-
-            $csvWriter->writeOutlookContacts(
-                $this->exportAccounts($members, $entityManager, $search, $total, $active, $banned),
-                $output,
-            );
-            fclose($output);
-        });
-
-        $response->headers->set('Content-Type', 'text/csv; charset=UTF-8');
-        $response->headers->set('Content-Disposition', 'attachment; filename="arcanorum-mitglieder-kontakte.csv"');
-        $response->headers->set('Cache-Control', 'no-store, private');
-        $response->headers->set('X-Content-Type-Options', 'nosniff');
-        $response->headers->set('X-Robots-Tag', 'noindex, nofollow');
-
-        return $response;
-    }
-
     #[Route('', name: 'index', methods: ['GET'])]
     public function index(Request $request, MemberAccountRepository $members): Response
     {

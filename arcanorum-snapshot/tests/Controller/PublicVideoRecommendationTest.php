@@ -84,22 +84,6 @@ final class PublicVideoRecommendationTest extends WebTestCase
             self::assertStringNotContainsString('Hidden future '.$suffix, $html);
             self::assertStringNotContainsString($memberOne->getEmail(), $html);
             self::assertStringNotContainsString($memberTwo->getEmail(), $html);
-
-            self::assertSame([], $settingsManager->updatePublicDisplayOptions(['video_share_widget_enabled' => '1']));
-            $client->request('GET', '/videos/'.$source->getId(), server: ['HTTP_HOST' => 'attacker.example.test']);
-            self::assertResponseIsSuccessful();
-            self::assertSelectorTextContains('#video-share-heading', 'Diesen Inhalt teilen');
-            $facebookHref = $client->getCrawler()->filter('#video-share [data-testid="share-facebook"]')->attr('href');
-            self::assertIsString($facebookHref);
-            $facebookQuery = [];
-            parse_str((string) parse_url($facebookHref, PHP_URL_QUERY), $facebookQuery);
-            self::assertSame('https://arcanorum.example.test/videos/'.$source->getId(), $facebookQuery['u'] ?? null);
-            self::assertSelectorExists('#video-share a[data-testid="share-x"][target="_blank"][rel="nofollow noopener noreferrer"][referrerpolicy="no-referrer"]');
-            self::assertSelectorExists('#video-share a[data-testid="share-pinterest"][target="_blank"][rel="nofollow noopener noreferrer"][referrerpolicy="no-referrer"]');
-            self::assertSelectorExists('#video-share a[data-testid="public-share-url"]');
-            self::assertStringNotContainsString('attacker.example.test', (string) $client->getResponse()->getContent());
-            self::assertSame([], $settingsManager->updatePublicDisplayOptions(['video_share_widget_enabled' => '0']));
-
             $topRatedSection = [];
             $relatedSection = [];
             self::assertSame(1, preg_match('~<section class="public-section" aria-labelledby="related-videos-heading".*?</section>~s', $html, $relatedSection));

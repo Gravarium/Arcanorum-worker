@@ -34,8 +34,6 @@ final class ModeratorAccessPolicyTest extends TestCase
         yield 'comment moderator moderates comments' => [['ROLE_MODERATOR_COMMENTS'], ModeratorPermission::ModerateComments, true];
         yield 'member has no video rights' => [['ROLE_USER'], ModeratorPermission::ModerateVideos, false];
         yield 'member has no comment rights' => [['ROLE_USER'], ModeratorPermission::ModerateComments, false];
-        yield 'content editor has no video rights' => [['ROLE_CONTENT_EDITOR', 'ROLE_USER'], ModeratorPermission::ModerateVideos, false];
-        yield 'content editor has no comment rights' => [['ROLE_CONTENT_EDITOR', 'ROLE_USER'], ModeratorPermission::ModerateComments, false];
         yield 'empty role list denies access' => [[], ModeratorPermission::ModerateVideos, false];
     }
 
@@ -58,15 +56,5 @@ final class ModeratorAccessPolicyTest extends TestCase
         self::assertTrue($policy->isAdministrator(['ROLE_ADMIN', 'ROLE_USER']));
         self::assertFalse($policy->isAdministrator(['ROLE_MODERATOR']));
         self::assertFalse($policy->isAdministrator(['ROLE_ADMIN', 'ROLE_SUPERUSER']));
-    }
-
-    public function testContentEditorCountsAsStaffWithoutReceivingModerationOrAdministrationRights(): void
-    {
-        $policy = new ModeratorAccessPolicy();
-
-        self::assertTrue($policy->hasStaffAccess(['ROLE_CONTENT_EDITOR', 'ROLE_USER']));
-        self::assertFalse($policy->isAdministrator(['ROLE_CONTENT_EDITOR', 'ROLE_USER']));
-        self::assertFalse($policy->hasStaffAccess(['ROLE_CONTENT_EDITOR', 'ROLE_MODERATOR_VIDEO']));
-        self::assertFalse($policy->hasStaffAccess(['ROLE_CONTENT_EDITOR', 'ROLE_UNKNOWN']));
     }
 }

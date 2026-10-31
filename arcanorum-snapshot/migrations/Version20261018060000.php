@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
-use App\Service\MigrationRollbackGuard;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -31,14 +30,6 @@ final class Version20261018060000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
-        $guard = new MigrationRollbackGuard($this->connection);
-        $guard->lockTables('content_series', 'series_episodes');
-        $episodes = $guard->countRows('SELECT COUNT(*) FROM series_episodes');
-        $series = $guard->countRows('SELECT COUNT(*) FROM content_series');
-        if ($episodes > 0 || $series > 0) {
-            throw new \RuntimeException('Redaktionelle Serien und Episodenzuordnungen müssen vor dem Migrationsrückbau erhalten oder exportiert werden.');
-        }
-
         $this->addSql('DROP TABLE series_episodes');
         $this->addSql('DROP TABLE content_series');
     }

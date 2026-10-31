@@ -103,22 +103,7 @@
                 <label for="cookie_consent_message">{{ 'Hinweistext'|trans }}</label>
                 <textarea id="cookie_consent_message" name="cookie_consent_message" maxlength="320" required form="general-settings-form">{{ form.cookie_consent_message }}</textarea>
                 {% if errors.cookie_consent_message is defined %}<p class="field-error" role="alert">{{ errors.cookie_consent_message|trans }}</p>{% endif %}
-                <p class="muted">{{ 'Notwendige Sicherheits- und Sitzungscookies bleiben aktiv. Optionale externe Dienste wie die konfigurierte Websiteanalyse und externe Kommentare werden nur nach gültiger Einwilligung geladen.'|trans }}</p>
-            </div>
-        </div>
-        <div class="form-actions">
-            <button class="button button-primary" type="submit" form="general-settings-form">{{ 'Einstellungen speichern'|trans }}</button>
-        </div>
-    </section>
-
-    <section class="admin-panel" aria-labelledby="analytics-settings-heading">
-        <header class="panel-heading"><h2 id="analytics-settings-heading">{{ 'Websiteanalyse'|trans }}</h2></header>
-        <div class="admin-form">
-            <div class="form-field">
-                <label for="google_analytics_measurement_id">{{ 'Google-Analytics-4-Mess-ID'|trans }}</label>
-                <input id="google_analytics_measurement_id" name="google_analytics_measurement_id" type="text" inputmode="text" pattern="G-[A-Z0-9]{10}" maxlength="12" autocomplete="off" value="{{ form.google_analytics_measurement_id }}" form="general-settings-form" aria-describedby="google-analytics-help">
-                {% if errors.google_analytics_measurement_id is defined %}<p class="field-error" role="alert">{{ errors.google_analytics_measurement_id|trans }}</p>{% endif %}
-                <p class="muted" id="google-analytics-help">{{ 'Nur eine gültige G-XXXXXXXXXX-Mess-ID wird akzeptiert. Die feste GA4-Einbindung lädt ausschließlich nach gültiger Zustimmung zu optionalen Cookies auf öffentlichen Inhaltsseiten. Suchbegriffe, Seitenpfade, Seitentitel und Referrer werden nicht übertragen; Google erhält bei Einwilligung weiterhin technische Verbindungsdaten.'|trans }}</p>
+                <p class="muted">{{ 'Notwendige Sicherheits- und Sitzungscookies bleiben aktiv. Derzeit werden keine Analyse- oder Werbecookies eingesetzt; die Auswahl wird für spätere optionale Kategorien gespeichert.'|trans }}</p>
             </div>
         </div>
         <div class="form-actions">

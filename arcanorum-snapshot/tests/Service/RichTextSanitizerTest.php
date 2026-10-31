@@ -42,40 +42,6 @@ final class RichTextSanitizerTest extends TestCase
         self::assertStringNotContainsString('target=', $clean);
     }
 
-    public function testAllowsOnlyLocalOwnedInlineImageRoutesAndReturnsUniqueImageIds(): void
-    {
-        $firstId = str_repeat('a', 64);
-        $secondId = str_repeat('b', 64);
-        $sanitizer = new RichTextSanitizer();
-        $html = '<p>Text</p>'
-            .'<img src="/content-inline-images/'.$firstId.'" alt="First &amp; safe" onerror="alert(1)">'
-            .'<img src="/content-inline-images/'.$secondId.'" alt="Second">'
-            .'<img src="https://remote.example.test/image.png" alt="Remote">'
-            .'<img src="//remote.example.test/image.png" alt="Protocol relative">'
-            .'<img src="data:image/png;base64,AAAA" alt="Data">';
-
-        $clean = $sanitizer->sanitize($html);
-
-        self::assertStringContainsString('<img src="/content-inline-images/'.$firstId.'" alt="First &amp; safe">', $clean);
-        self::assertStringContainsString('<img src="/content-inline-images/'.$secondId.'" alt="Second">', $clean);
-        self::assertStringNotContainsString('remote.example.test', $clean);
-        self::assertStringNotContainsString('data:image', $clean);
-        self::assertStringNotContainsString('onerror', $clean);
-        self::assertSame([$firstId, $secondId], $sanitizer->inlineImageIds($html));
-    }
-
-    public function testDropsMalformedOrNonLocalImagePaths(): void
-    {
-        $clean = new RichTextSanitizer()->sanitize(
-            '<img src="/content-inline-images/not-an-id" alt="Bad">'
-            .'<img src="/other/'.str_repeat('c', 64).'" alt="Wrong route">'
-            .'<img src="/content-inline-images/'.str_repeat('d', 64).'?download=1" alt="Query">',
-        );
-
-        self::assertStringNotContainsString('<img', $clean);
-        self::assertSame([], new RichTextSanitizer()->inlineImageIds($clean));
-    }
-
     public function testRejectsInvalidUtf8(): void
     {
         $this->expectException(\InvalidArgumentException::class);

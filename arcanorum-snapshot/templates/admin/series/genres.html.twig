@@ -30,7 +30,6 @@
                     <tr>
                         <th scope="col">{{ 'Genre'|trans }}</th>
                         <th scope="col">{{ 'Serien'|trans }}</th>
-                        <th scope="col">{{ 'Startseite'|trans }}</th>
                         <th scope="col">{{ 'Umbenennen'|trans }}</th>
                         <th scope="col">{{ 'Entfernen'|trans }}</th>
                     </tr>
@@ -40,18 +39,6 @@
                         <tr>
                             <th scope="row">{{ entry.name }}</th>
                             <td>{{ entry.count }}</td>
-                            <td>
-                                <form method="post" action="{{ path('admin_series_genre_feature') }}">
-                                    <input type="hidden" name="genre_id" value="{{ entry.id }}">
-                                    <input type="hidden" name="_token" value="{{ csrf_token('series_genre_feature_' ~ entry.id) }}">
-                                    <label><input type="checkbox" name="featured" value="1"{% if entry.is_featured %} checked{% endif %}> {{ 'Auf der Startseite hervorheben'|trans }}</label>
-                                    <label>
-                                        <span class="visually-hidden">{{ 'Sortierreihenfolge der Startseite'|trans }}</span>
-                                        <input type="number" name="sort_order" min="0" max="10000" value="{{ entry.featured_sort_order }}" required>
-                                    </label>
-                                    <button class="button button-secondary" type="submit">{{ 'Hervorhebung speichern'|trans }}</button>
-                                </form>
-                            </td>
                             <td>
                                 <form method="post" action="{{ path('admin_series_genre_rename') }}">
                                     <input type="hidden" name="genre" value="{{ entry.name }}">

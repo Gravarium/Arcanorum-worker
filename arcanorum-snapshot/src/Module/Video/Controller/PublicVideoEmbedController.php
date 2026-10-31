@@ -62,7 +62,7 @@ final class PublicVideoEmbedController extends AbstractController
             $size = $video->getUploadedSize();
             if (null === $objectId
                 || 1 !== preg_match('/\A[a-f0-9]{64}\z/D', $objectId)
-                || !in_array($mimeType, ['video/mp4', 'video/webm', 'video/ogg', 'audio/mpeg'], true)
+                || !in_array($mimeType, ['video/mp4', 'video/webm', 'video/ogg'], true)
                 || null === $size
                 || $size < 1
                 || $size > 33554432

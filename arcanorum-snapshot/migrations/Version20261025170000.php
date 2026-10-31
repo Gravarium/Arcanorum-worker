@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
-use App\Service\MigrationRollbackGuard;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -26,9 +25,8 @@ final class Version20261025170000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
-        $rollbackGuard = new MigrationRollbackGuard($this->connection);
-        $rollbackGuard->lockTables('member_follows');
-        if ($rollbackGuard->hasRows('SELECT EXISTS (SELECT 1 FROM member_follows LIMIT 1)')) {
+        $containsFollows = $this->connection->fetchOne('SELECT EXISTS (SELECT 1 FROM member_follows LIMIT 1)');
+        if (in_array($containsFollows, [true, 1, '1', 't', 'true'], true)) {
             throw new \RuntimeException('Mitgliedsbeziehungen müssen vor dem Migrationsrückbau exportiert oder entfernt werden.');
         }
 

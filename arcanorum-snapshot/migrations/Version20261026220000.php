@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
-use App\Service\MigrationRollbackGuard;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -25,8 +24,6 @@ final class Version20261026220000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
-        $rollbackGuard = new MigrationRollbackGuard($this->connection);
-        $rollbackGuard->lockTables('comment_filter_terms');
         $nonReviewCount = $this->connection->fetchOne("SELECT COUNT(*) FROM comment_filter_terms WHERE action <> 'review'");
         $duplicateTermCount = $this->connection->fetchOne(
             'SELECT COUNT(*) FROM (SELECT normalized_term FROM comment_filter_terms GROUP BY normalized_term HAVING COUNT(*) > 1) AS duplicate_terms',

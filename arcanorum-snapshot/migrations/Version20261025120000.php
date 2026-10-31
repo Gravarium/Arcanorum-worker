@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
-use App\Service\MigrationRollbackGuard;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -33,9 +32,8 @@ final class Version20261025120000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
-        $rollbackGuard = new MigrationRollbackGuard($this->connection);
-        $rollbackGuard->lockTables('video_subtitle_tracks');
-        if ($rollbackGuard->hasRows('SELECT EXISTS (SELECT 1 FROM video_subtitle_tracks LIMIT 1)')) {
+        $containsRows = $this->connection->fetchOne('SELECT EXISTS (SELECT 1 FROM video_subtitle_tracks LIMIT 1)');
+        if (in_array($containsRows, [true, 1, '1', 't', 'true'], true)) {
             throw new \RuntimeException('Untertitelspuren müssen vor dem Migrationsrückbau gesichert oder entfernt werden.');
         }
 

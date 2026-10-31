@@ -89,7 +89,7 @@ final class VideoCsvImportParser
             if (!$hasHeader && count($firstRecord) !== count(self::LEGACY_COLUMNS)) {
                 return [
                     'rows' => [],
-                    'errors' => ['Die Datei muss Arcanorums Kopfzeilenformat oder Legacys sechs Spalten ohne Kopfzeile verwenden.'],
+                    'errors' => ['Die Datei muss entweder das Arcanorum-Kopfzeilenformat oder das sechsspaltenige Legacy-Format ohne Kopfzeile verwenden.'],
                 ];
             }
 

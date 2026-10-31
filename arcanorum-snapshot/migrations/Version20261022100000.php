@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
-use App\Service\MigrationRollbackGuard;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -57,8 +56,6 @@ final class Version20261022100000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
-        $rollbackGuard = new MigrationRollbackGuard($this->connection);
-        $rollbackGuard->lockTables('content_series_genres', 'series_genres');
         $standalone = $this->connection->fetchOne('SELECT genre.id FROM series_genres genre LEFT JOIN content_series_genres assignment ON assignment.genre_id = genre.id WHERE assignment.genre_id IS NULL LIMIT 1');
         if (false !== $standalone) {
             throw new \RuntimeException('Der Rückbau würde eigenständige Seriengenres verlieren. Diese zuerst sichern oder zuordnen.');

@@ -7,7 +7,6 @@ namespace App\Module\Series\Controller;
 use App\Entity\ContentSeries;
 use App\Entity\PublishingStatus;
 use App\Entity\VideoSourceType;
-use App\Module\Feed\Service\CanonicalPublicUrlGenerator;
 use App\Module\Video\Service\VideoQualitySourceResolver;
 use App\Module\Video\Service\VideoStreamSource;
 use App\Module\Video\Service\VideoStreamSourceResolver;
@@ -16,7 +15,6 @@ use App\Repository\SeriesEpisodeRepository;
 use App\Repository\VideoSubtitleTrackRepository;
 use App\Service\ExternalVideoEmbedResolver;
 use App\Service\SeriesGenreManager;
-use App\Service\SiteSettingsProvider;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -46,18 +44,6 @@ final class PublicSeriesController extends AbstractController
         $items = '' === $genre
             ? $series->findPublished(limit: self::SERIES_PAGE_SIZE + 1, offset: ($page - 1) * self::SERIES_PAGE_SIZE)
             : $series->findPublishedByGenre($genre, self::SERIES_PAGE_SIZE + 1, ($page - 1) * self::SERIES_PAGE_SIZE);
-        $featuredGenres = [];
-        if (1 === $page && '' === $genre) {
-            foreach ($genres->featuredForPublic() as $featuredGenre) {
-                $featuredSeries = $series->findPublishedByGenre($featuredGenre, 10);
-                if ([] !== $featuredSeries) {
-                    $featuredGenres[] = [
-                        'name' => $featuredGenre,
-                        'series' => $featuredSeries,
-                    ];
-                }
-            }
-        }
 
         return $this->render('series/index.html.twig', [
             'series' => array_slice($items, 0, self::SERIES_PAGE_SIZE),
@@ -65,7 +51,6 @@ final class PublicSeriesController extends AbstractController
             'has_next' => count($items) > self::SERIES_PAGE_SIZE,
             'genre' => $genre,
             'genres' => $genres->listForPublic(),
-            'featured_genres' => $featuredGenres,
         ]);
     }
 
@@ -123,8 +108,6 @@ final class PublicSeriesController extends AbstractController
         VideoStreamSourceResolver $streamResolver,
         VideoSubtitleTrackRepository $subtitleTracks,
         VideoQualitySourceResolver $qualitySourceResolver,
-        SiteSettingsProvider $siteSettings,
-        CanonicalPublicUrlGenerator $publicUrls,
     ): Response {
         $item = $series->findPublishedBySlug($slug);
         if (!$item instanceof ContentSeries || !ctype_digit($seasonNumber) || !ctype_digit($episodeNumber)) {
@@ -151,13 +134,6 @@ final class PublicSeriesController extends AbstractController
             }
         }
         $qualitySources = $qualitySourceResolver->resolveForPublishedVideo($video, $request);
-        $shareUrl = $publicUrls->isConfigured()
-            ? $publicUrls->generate('series_episode_show', [
-                'slug' => $item->getSlug(),
-                'seasonNumber' => $episode->getSeasonNumber(),
-                'episodeNumber' => $episode->getEpisodeNumber(),
-            ])
-            : null;
 
         $response = $this->render('series/episode.html.twig', [
             'series' => $item,
@@ -167,11 +143,6 @@ final class PublicSeriesController extends AbstractController
             'embed_url' => VideoSourceType::Embed === $video->getSourceType() ? $embedResolver->resolve($video->getSourceUrl()) : null,
             'subtitle_tracks' => $subtitleTracks->findForVideo($video),
             'quality_sources' => $qualitySources,
-            'share_widget_enabled' => $siteSettings->current()->isVideoShareWidgetEnabled(),
-            'share_metadata' => null === $shareUrl ? null : [
-                'title' => $episode->getTitle(),
-                'url' => $shareUrl,
-            ],
         ]);
         if (null !== $streamSource || [] !== $qualitySources) {
             $response->headers->set('Cache-Control', 'private, no-store');

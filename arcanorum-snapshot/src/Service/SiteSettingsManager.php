@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Service;
 
-use App\Entity\PrivateObjectDeletionJob;
 use App\Entity\SiteSettings;
 use App\Repository\SiteSettingsRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -153,39 +152,5 @@ final readonly class SiteSettingsManager
         $this->entityManager->flush();
 
         return [];
-    }
-
-    public function replaceSiteLogo(string $objectId, string $mimeType, int $size, string $sha256): void
-    {
-        $settings = $this->settings->findCurrent();
-        $isNew = null === $settings;
-        $settings ??= new SiteSettings();
-        $previousObjectId = $settings->getSiteLogoObjectId();
-        $settings->attachSiteLogo($objectId, $mimeType, $size, $sha256);
-
-        if ($isNew) {
-            $this->entityManager->persist($settings);
-        }
-        if (null !== $previousObjectId && !hash_equals($previousObjectId, $objectId)) {
-            $this->entityManager->persist(new PrivateObjectDeletionJob($previousObjectId));
-        }
-
-        $this->entityManager->flush();
-    }
-
-    public function removeSiteLogo(): void
-    {
-        $settings = $this->settings->findCurrent();
-        if (null === $settings) {
-            return;
-        }
-
-        $previousObjectId = $settings->removeSiteLogo();
-        if (null === $previousObjectId) {
-            return;
-        }
-
-        $this->entityManager->persist(new PrivateObjectDeletionJob($previousObjectId));
-        $this->entityManager->flush();
     }
 }

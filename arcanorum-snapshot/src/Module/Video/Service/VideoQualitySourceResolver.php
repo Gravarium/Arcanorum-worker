@@ -25,7 +25,6 @@ final readonly class VideoQualitySourceResolver
     {
         if (PublishingStatus::Published !== $video->getStatus()
             || !in_array($video->getSourceType(), [VideoSourceType::File, VideoSourceType::Stream], true)
-            || $video->isAudio()
         ) {
             return [];
         }
@@ -45,7 +44,7 @@ final readonly class VideoQualitySourceResolver
             }
         } else {
             $primaryStream = $this->streamResolver->resolve($video->getSourceUrl());
-            if (null === $primaryStream || $primaryStream->isHls() || $primaryStream->isAudio()) {
+            if (null === $primaryStream || $primaryStream->isHls()) {
                 return [];
             }
         }
@@ -54,7 +53,7 @@ final readonly class VideoQualitySourceResolver
         $origins = [];
         foreach ($this->sources->findForVideo($video) as $source) {
             $resolved = $this->streamResolver->resolve($source->getSourceUrl());
-            if (null === $resolved || $resolved->isHls() || $resolved->isAudio()) {
+            if (null === $resolved || $resolved->isHls()) {
                 continue;
             }
 

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
-use App\Service\MigrationRollbackGuard;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -24,13 +23,6 @@ final class Version20261018023000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
-        $guard = new MigrationRollbackGuard($this->connection);
-        $guard->lockTables('static_pages');
-        $pages = $guard->countRows('SELECT COUNT(*) FROM static_pages');
-        if ($pages > 0) {
-            throw new \RuntimeException('Statische Inhaltsseiten müssen vor dem Migrationsrückbau erhalten oder exportiert werden.');
-        }
-
         $this->addSql('DROP TABLE static_pages');
     }
 }

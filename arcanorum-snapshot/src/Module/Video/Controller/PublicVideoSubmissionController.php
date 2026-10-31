@@ -119,7 +119,7 @@ final class PublicVideoSubmissionController extends AbstractController
                 || ('' !== $values['source_url'] && 1 !== preg_match('//u', $values['source_url']))
                 || ('' !== $values['source_url'] && 1 === preg_match('/[\x00-\x20\x7f]/', $values['source_url']))
             ) {
-                $errors[] = 'Bitte gib eine gültige Videoquelle von YouTube, Vimeo, Dailymotion, Facebook, Google Drive, Rutube, VK oder Youku ein.';
+                $errors[] = 'Bitte gib eine gültige YouTube-, Dailymotion- oder Vimeo-Videoquelle ein.';
             }
 
             $files = $request->files->all();
@@ -132,14 +132,14 @@ final class PublicVideoSubmissionController extends AbstractController
             }
             $upload = $uploadedField instanceof UploadedFile ? $uploadedField : null;
             if (null === $upload && '' === $values['source_url']) {
-                $errors[] = 'Wähle eine Video- oder MP3-Datei oder gib eine gültige unterstützte Provider-URL ein.';
+                $errors[] = 'Wähle eine Videodatei oder gib eine YouTube-, Dailymotion- oder Vimeo-URL ein.';
             } elseif (null !== $upload && '' !== $values['source_url']) {
-                $errors[] = 'Reiche entweder eine Video-/MP3-Datei oder eine externe Video-URL ein, nicht beides.';
+                $errors[] = 'Reiche entweder eine Videodatei oder eine externe Video-URL ein, nicht beides.';
             }
 
             $canonicalSourceUrl = '' === $values['source_url'] ? null : $embedResolver->resolve($values['source_url']);
             if ('' !== $values['source_url'] && null === $canonicalSourceUrl) {
-                $errors[] = 'Es werden nur sichere, einbettbare Videos von unterstützten Providern angenommen.';
+                $errors[] = 'Es werden nur sichere, einbettbare YouTube-, Dailymotion- und Vimeo-Videos unterstützt.';
             }
 
             if ([] !== $errors) {

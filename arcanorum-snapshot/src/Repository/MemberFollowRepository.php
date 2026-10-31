@@ -221,7 +221,6 @@ final class MemberFollowRepository extends ServiceEntityRepository
                 INNER JOIN member_follows follow ON follow.followed_id = member.id AND follow.follower_id = :viewer_video_submission
                 WHERE submission.status = 'approved' AND video.status = 'published' AND video.published_at IS NOT NULL
                   AND member.is_active = TRUE AND member.email_verified = TRUE AND member.public_profile = TRUE
-                  AND NOT EXISTS (SELECT 1 FROM member_activity_moderations moderation WHERE moderation.activity_type = 'video_submission' AND moderation.video_submission_id = submission.id AND moderation.status IN ('hidden', 'removed'))
                 UNION ALL
                 SELECT 'playlist' AS kind, playlist.updated_at AS occurred_at,
                        member.handle AS member_handle, member.display_name AS member_name,
@@ -232,7 +231,6 @@ final class MemberFollowRepository extends ServiceEntityRepository
                 INNER JOIN member_follows follow ON follow.followed_id = member.id AND follow.follower_id = :viewer_playlist
                 WHERE playlist.is_public = TRUE
                   AND member.is_active = TRUE AND member.email_verified = TRUE AND member.public_profile = TRUE
-                  AND NOT EXISTS (SELECT 1 FROM member_activity_moderations moderation WHERE moderation.activity_type = 'playlist' AND moderation.playlist_id = playlist.id AND moderation.status IN ('hidden', 'removed'))
                 UNION ALL
                 SELECT 'video_comment' AS kind, comment.created_at AS occurred_at,
                        member.handle AS member_handle, member.display_name AS member_name,
@@ -244,7 +242,6 @@ final class MemberFollowRepository extends ServiceEntityRepository
                 INNER JOIN member_follows follow ON follow.followed_id = member.id AND follow.follower_id = :viewer_video_comment
                 WHERE comment.status = 'approved' AND video.status = 'published' AND video.published_at IS NOT NULL AND video.comments_enabled = TRUE
                   AND member.is_active = TRUE AND member.email_verified = TRUE AND member.public_profile = TRUE
-                  AND NOT EXISTS (SELECT 1 FROM member_activity_moderations moderation WHERE moderation.activity_type = 'video_comment' AND moderation.comment_id = comment.id AND moderation.status IN ('hidden', 'removed'))
                 UNION ALL
                 SELECT 'news_comment' AS kind, comment.created_at AS occurred_at,
                        member.handle AS member_handle, member.display_name AS member_name,
@@ -256,7 +253,6 @@ final class MemberFollowRepository extends ServiceEntityRepository
                 INNER JOIN member_follows follow ON follow.followed_id = member.id AND follow.follower_id = :viewer_news_comment
                 WHERE comment.status = 'approved' AND article.status = 'published' AND article.published_at IS NOT NULL AND article.comments_enabled = TRUE
                   AND member.is_active = TRUE AND member.email_verified = TRUE AND member.public_profile = TRUE
-                  AND NOT EXISTS (SELECT 1 FROM member_activity_moderations moderation WHERE moderation.activity_type = 'news_comment' AND moderation.comment_id = comment.id AND moderation.status IN ('hidden', 'removed'))
             ) activity
             ORDER BY activity.occurred_at DESC, activity.event_id ASC, activity.kind ASC
             LIMIT :limit OFFSET :offset

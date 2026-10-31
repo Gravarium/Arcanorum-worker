@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
-use App\Content\CustomFieldSet;
 use App\Repository\NewsArticleRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -61,10 +60,6 @@ final class NewsArticle
 
     #[ORM\Column(name: 'thumbnail_size', type: Types::INTEGER, nullable: true)]
     private ?int $thumbnailSize = null;
-
-    /** @var list<array{key: string, value: string}> */
-    #[ORM\Column(name: 'custom_fields', type: Types::JSON, options: ['default' => '[]'])]
-    private array $customFields = [];
 
     /** @var Collection<int, ContentTag> */
     #[ORM\ManyToMany(targetEntity: ContentTag::class)]
@@ -185,24 +180,6 @@ final class NewsArticle
     public function getBody(): string
     {
         return $this->body;
-    }
-
-    /** @return list<array{key: string, value: string}> */
-    public function getCustomFields(): array
-    {
-        return CustomFieldSet::normalize($this->customFields) ?? [];
-    }
-
-    /** @param list<array{key: string, value: string}> $fields */
-    public function replaceCustomFields(array $fields): void
-    {
-        $normalized = CustomFieldSet::normalize($fields);
-        if (null === $normalized) {
-            throw new \InvalidArgumentException('Die benutzerdefinierten News-Felder sind ungültig.');
-        }
-
-        $this->customFields = $normalized;
-        $this->updatedAt = new \DateTimeImmutable();
     }
 
     public function getAuthorName(): string

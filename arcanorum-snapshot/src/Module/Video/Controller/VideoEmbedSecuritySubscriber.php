@@ -8,7 +8,6 @@ use App\Module\Video\Service\VideoEmbedOriginPolicy;
 use App\Module\Video\Service\VideoStreamSource;
 use App\Module\Video\Service\VideoStreamSourceResolver;
 use App\Platform\Security\ContentSecurityPolicyReportOnlySubscriber;
-use App\Service\ExternalVideoEmbedResolver;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
@@ -25,7 +24,6 @@ final readonly class VideoEmbedSecuritySubscriber implements EventSubscriberInte
     public function __construct(
         private VideoEmbedOriginPolicy $originPolicy,
         private VideoStreamSourceResolver $streamResolver,
-        private ExternalVideoEmbedResolver $externalEmbedResolver,
     ) {
     }
 
@@ -80,7 +78,6 @@ final readonly class VideoEmbedSecuritySubscriber implements EventSubscriberInte
         $mediaOrigins = array_values(array_unique($mediaOrigins));
 
         $frameAncestors = implode(' ', array_merge(["'self'"], $origins));
-        $frameSources = implode(' ', array_merge(["'self'"], $this->externalEmbedResolver->allowedFrameOrigins()));
         $mediaSources = array_merge(["'self'"], $mediaOrigins);
         $connectSources = ["'self'"];
         $workerDirective = '';
@@ -93,11 +90,10 @@ final readonly class VideoEmbedSecuritySubscriber implements EventSubscriberInte
         }
 
         $policy = sprintf(
-            "default-src 'none'; base-uri 'none'; object-src 'none'; form-action 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src %s; media-src %s%s; frame-src %s; frame-ancestors %s",
+            "default-src 'none'; base-uri 'none'; object-src 'none'; form-action 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src %s; media-src %s%s; frame-src 'self' https://www.youtube-nocookie.com https://player.vimeo.com https://geo.dailymotion.com; frame-ancestors %s",
             implode(' ', $connectSources),
             implode(' ', $mediaSources),
             $workerDirective,
-            $frameSources,
             $frameAncestors,
         );
 

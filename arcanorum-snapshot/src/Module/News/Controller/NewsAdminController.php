@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Module\News\Controller;
 
-use App\Content\CustomFieldSet;
 use App\Entity\AdminUser;
 use App\Entity\CommentContentType;
 use App\Entity\ContentCategoryType;
@@ -15,12 +14,10 @@ use App\Module\News\Service\NewsArticleRevisionManager;
 use App\Platform\Hosting\PrivateStorageOperationFailed;
 use App\Repository\ContentCategoryRepository;
 use App\Repository\ContentCommentRepository;
-use App\Repository\ContentInlineImageRepository;
 use App\Repository\ContentTagRepository;
 use App\Repository\NewsArticleRepository;
 use App\Repository\NewsArticleRevisionRepository;
 use App\Repository\PrivateObjectDeletionJobRepository;
-use App\Service\ContentInlineImageManager;
 use App\Service\ContentTagManager;
 use App\Service\RichTextSanitizer;
 use App\Service\SiteSettingsProvider;
@@ -39,7 +36,7 @@ use Symfony\Component\String\Slugger\AsciiSlugger;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 #[Route('/admin/news', name: 'admin_news_')]
-#[IsGranted('ROLE_CONTENT_EDITOR')]
+#[IsGranted('ROLE_ADMIN')]
 final class NewsAdminController extends AbstractController
 {
     private const int ADMIN_PAGE_SIZE = 25;
@@ -96,7 +93,7 @@ final class NewsAdminController extends AbstractController
             'category' => $category,
             'categories' => $categories->findForAdmin(ContentCategoryType::News),
             'tag' => $tag,
-            'tags' => $this->isGranted('ROLE_ADMIN') ? $tags->findForAdmin() : $tags->findForNewsAdmin(),
+            'tags' => $tags->findForAdmin(),
             'sort' => $sort,
             'direction' => $direction,
             'page' => $page,
@@ -115,7 +112,6 @@ final class NewsAdminController extends AbstractController
         NewsArticleRevisionManager $revisions,
         NewsArticleRevisionRepository $articleRevisions,
         PrivateObjectDeletionJobRepository $deletionJobs,
-        ContentInlineImageRepository $inlineImages,
         EntityManagerInterface $entityManager,
         TranslatorInterface $translator,
     ): Response {
@@ -165,9 +161,6 @@ final class NewsAdminController extends AbstractController
 
             return $this->redirectToRoute('admin_news_index');
         }
-        if ('delete' === $action && !$this->isGranted('ROLE_ADMIN')) {
-            throw $this->createAccessDeniedException();
-        }
         if ('delete' === $action && '1' !== self::input($request->request, 'confirm_delete')) {
             $this->addFlash('error', 'Bestätige das Löschen der ausgewählten Inhalte.');
 
@@ -179,22 +172,21 @@ final class NewsAdminController extends AbstractController
             throw $this->createAccessDeniedException();
         }
 
-        $itemsFound = $entityManager->getConnection()->transactional(function () use ($ids, $articles, $action, $comments, $entityManager, $revisions, $articleRevisions, $deletionJobs, $inlineImages, $editor): bool {
+        $itemsFound = $entityManager->getConnection()->transactional(function () use ($ids, $articles, $action, $comments, $entityManager, $revisions, $articleRevisions, $deletionJobs, $editor): bool {
             $items = $articles->findByIdsForUpdate($ids);
             if (count($items) !== count($ids)) {
                 return false;
             }
 
             if ('delete' === $action) {
-                $objectIds = $articleRevisions->findThumbnailObjectIdsForArticles($ids);
-                $objectIds = array_merge($objectIds, $inlineImages->findIdsForNewsArticles($ids));
+                $thumbnailIds = $articleRevisions->findThumbnailObjectIdsForArticles($ids);
                 foreach ($items as $item) {
                     $thumbnailId = $item->getThumbnailObjectId();
                     if (null !== $thumbnailId) {
-                        $objectIds[] = $thumbnailId;
+                        $thumbnailIds[] = $thumbnailId;
                     }
                 }
-                self::queuePrivateObjectDeletions($objectIds, $entityManager, $deletionJobs);
+                self::queuePrivateObjectDeletions($thumbnailIds, $entityManager, $deletionJobs);
             }
 
             foreach ($items as $item) {
@@ -254,10 +246,8 @@ final class NewsAdminController extends AbstractController
         SiteSettingsProvider $siteSettings,
         NewsArticleRevisionManager $revisions,
         RichTextSanitizer $richText,
-        ContentInlineImageRepository $inlineImages,
-        ContentInlineImageManager $inlineImageManager,
     ): Response {
-        return $this->editForm($request, null, $articles, $categories, $tagManager, $entityManager, $siteSettings, $revisions, $richText, $inlineImages, $inlineImageManager);
+        return $this->editForm($request, null, $articles, $categories, $tagManager, $entityManager, $siteSettings, $revisions, $richText);
     }
 
     #[Route(
@@ -276,15 +266,13 @@ final class NewsAdminController extends AbstractController
         SiteSettingsProvider $siteSettings,
         NewsArticleRevisionManager $revisions,
         RichTextSanitizer $richText,
-        ContentInlineImageRepository $inlineImages,
-        ContentInlineImageManager $inlineImageManager,
     ): Response {
         $article = $articles->find($id);
         if (!$article instanceof NewsArticle) {
             throw $this->createNotFoundException('News-Beitrag wurde nicht gefunden.');
         }
 
-        return $this->editForm($request, $article, $articles, $categories, $tagManager, $entityManager, $siteSettings, $revisions, $richText, $inlineImages, $inlineImageManager);
+        return $this->editForm($request, $article, $articles, $categories, $tagManager, $entityManager, $siteSettings, $revisions, $richText);
     }
 
     #[Route(
@@ -333,8 +321,6 @@ final class NewsAdminController extends AbstractController
         SiteSettingsProvider $siteSettings,
         NewsArticleRevisionManager $revisions,
         RichTextSanitizer $richText,
-        ContentInlineImageRepository $inlineImages,
-        ContentInlineImageManager $inlineImageManager,
     ): Response {
         $siteTimezone = new \DateTimeZone($siteSettings->current()->getTimezone());
         $existingPublicationAt = $article?->getPublishedAt();
@@ -351,11 +337,9 @@ final class NewsAdminController extends AbstractController
             'featured' => $article?->isFeatured() ?? false,
             'comments_enabled' => $article?->isCommentsEnabled() ?? $siteSettings->current()->isDefaultCommentsEnabled(),
             'members_only' => $article?->isMembersOnly() ?? false,
-            'custom_fields' => $article?->getCustomFields() ?? [],
         ];
         $errors = [];
         $tagNames = [];
-        $inlineImageIds = [];
         $thumbnailUpload = null;
         $removeThumbnail = false;
 
@@ -369,7 +353,6 @@ final class NewsAdminController extends AbstractController
             $allowedFields = [
                 '_token', 'title', 'slug', 'author_name', 'category', 'tags', 'summary', 'body', 'status',
                 'publish_at', 'featured', 'comments_enabled', 'members_only', 'remove_thumbnail',
-                'custom_fields_present', 'custom_fields',
             ];
             if ([] !== array_diff(array_keys($payload), $allowedFields)) {
                 $errors[] = 'Die Anfrage enthält unerwartete Eingabefelder.';
@@ -382,21 +365,6 @@ final class NewsAdminController extends AbstractController
             foreach (['featured', 'comments_enabled', 'members_only', 'remove_thumbnail'] as $field) {
                 if (isset($payload[$field]) && '1' !== $payload[$field]) {
                     $errors[] = 'Die Eingabe enthält einen ungültigen Wert.';
-                }
-            }
-            if (array_key_exists('custom_fields', $payload) && !array_key_exists('custom_fields_present', $payload)) {
-                $errors[] = 'Die benutzerdefinierten Felder benötigen eine gültige Formularmarkierung.';
-            }
-            if (array_key_exists('custom_fields_present', $payload) && '1' !== $payload['custom_fields_present']) {
-                $errors[] = 'Die benutzerdefinierten Felder benötigen eine gültige Formularmarkierung.';
-            }
-            $customFields = $article?->getCustomFields() ?? [];
-            if ('1' === ($payload['custom_fields_present'] ?? null)) {
-                $normalizedCustomFields = CustomFieldSet::normalize($payload['custom_fields'] ?? []);
-                if (null === $normalizedCustomFields) {
-                    $errors[] = 'Die benutzerdefinierten News-Felder sind ungültig oder überschreiten die zulässigen Grenzen.';
-                } else {
-                    $customFields = $normalizedCustomFields;
                 }
             }
 
@@ -431,22 +399,13 @@ final class NewsAdminController extends AbstractController
                 'featured' => $request->request->has('featured'),
                 'comments_enabled' => $request->request->has('comments_enabled'),
                 'members_only' => $request->request->has('members_only'),
-                'custom_fields' => $customFields,
             ];
 
             try {
                 $values['body'] = $richText->sanitize($values['body']);
-                $inlineImageIds = $richText->inlineImageIds($values['body']);
             } catch (\InvalidArgumentException) {
                 $values['body'] = '';
                 $errors[] = 'Der Inhalt ist zu groß oder enthält ungültiges UTF-8.';
-            }
-            if (count($inlineImageIds) > 20) {
-                $errors[] = 'Pro News-Beitrag sind höchstens 20 Inline-Bilder zulässig.';
-            } elseif ([] !== $inlineImageIds
-                && (null === $article || !$inlineImages->allBelongToNewsArticle($article->getId(), $inlineImageIds))
-            ) {
-                $errors[] = 'Der Inhalt enthält ein Bild, das nicht zu diesem News-Beitrag gehört.';
             }
 
             $status = PublishingStatus::tryFrom($values['status']);
@@ -485,7 +444,7 @@ final class NewsAdminController extends AbstractController
                 $errors[] = 'Der Vorspann darf höchstens 500 Zeichen lang sein.';
             }
             $plainBody = trim(html_entity_decode(strip_tags($values['body']), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
-            if (('' === $plainBody && [] === $inlineImageIds) || mb_strlen($values['body']) > 100000) {
+            if ('' === $plainBody || mb_strlen($values['body']) > 100000) {
                 $errors[] = 'Der Inhalt ist erforderlich und darf höchstens 100.000 Zeichen lang sein.';
             }
             if (false === preg_match('//u', $values['author_name'])
@@ -531,7 +490,7 @@ final class NewsAdminController extends AbstractController
                 }
 
                 try {
-                    $entityManager->getConnection()->transactional(function () use ($entityManager, &$article, $articles, $tagManager, $tagNames, $values, $slug, $status, $publicationAt, $revisions, $editor, $storedThumbnail, $removeThumbnail, $inlineImageIds, $inlineImageManager): void {
+                    $entityManager->getConnection()->transactional(function () use ($entityManager, &$article, $articles, $tagManager, $tagNames, $values, $slug, $status, $publicationAt, $revisions, $editor, $storedThumbnail, $removeThumbnail): void {
                         if (null !== $article) {
                             $lockedArticle = $articles->findByIdForUpdate($article->getId());
                             if (!$lockedArticle instanceof NewsArticle) {
@@ -569,7 +528,6 @@ final class NewsAdminController extends AbstractController
                             );
                         }
 
-                        $article->replaceCustomFields($values['custom_fields']);
                         if (null !== $storedThumbnail) {
                             $article->attachThumbnail($storedThumbnail['object_id'], $storedThumbnail['mime_type'], $storedThumbnail['size']);
                         } elseif ($removeThumbnail) {
@@ -581,8 +539,6 @@ final class NewsAdminController extends AbstractController
                         $entityManager->persist($article);
                         $entityManager->flush();
                         $revisions->recordCurrent($article, $editor);
-                        $entityManager->flush();
-                        $inlineImageManager->removeUnusedNewsImages($article, $inlineImageIds);
                         $entityManager->flush();
                     });
                 } catch (\Throwable $exception) {
@@ -604,7 +560,6 @@ final class NewsAdminController extends AbstractController
             'categories' => $categories->findForAdmin(ContentCategoryType::News),
             'is_edit' => null !== $article,
             'article_id' => $article?->getId(),
-            'image_upload_url' => null === $article ? null : $this->generateUrl('admin_content_inline_image_upload', ['type' => 'news', 'ownerId' => $article->getId()]),
             'has_thumbnail' => null !== $article?->getThumbnailObjectId(),
             'site_timezone' => $siteTimezone->getName(),
         ], new Response(status: [] === $errors ? Response::HTTP_OK : Response::HTTP_UNPROCESSABLE_ENTITY));
@@ -618,7 +573,7 @@ final class NewsAdminController extends AbstractController
     ): void {
         foreach (array_unique($objectIds) as $objectId) {
             if (1 !== preg_match('/\A[a-f0-9]{64}\z/D', $objectId)) {
-                throw new \LogicException('Die Kennung eines privaten News-Bildobjekts ist ungültig.');
+                throw new \LogicException('Die Kennung eines News-Vorschaubilds ist ungültig.');
             }
             if (!$jobs->hasObject($objectId)) {
                 $entityManager->persist(new PrivateObjectDeletionJob($objectId));

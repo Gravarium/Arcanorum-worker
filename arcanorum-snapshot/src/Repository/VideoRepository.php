@@ -6,7 +6,6 @@ namespace App\Repository;
 
 use App\Entity\ExternalVideoSourceStatus;
 use App\Entity\PublishingStatus;
-use App\Entity\SiteSettings;
 use App\Entity\Video;
 use App\Entity\VideoPopularitySort;
 use App\Entity\VideoSourceType;
@@ -139,35 +138,8 @@ final class VideoRepository extends ServiceEntityRepository implements ExternalV
         /** @var list<Video> $videos */
         $videos = $queryBuilder
             ->orderBy('video.publishedAt', \SortDirection::Descending)
-            ->addOrderBy('video.id', \SortDirection::Ascending)
             ->setFirstResult(max(0, $offset))
             ->setMaxResults(max(1, min(1000, $limit)))
-            ->getQuery()
-            ->getResult();
-
-        return $videos;
-    }
-
-    /** @return list<Video> */
-    public function findPublishedForCategory(string $category, int $limit = 10): array
-    {
-        $normalizedCategory = mb_strtolower(trim($category));
-        if ('' === $normalizedCategory) {
-            return [];
-        }
-
-        /** @var list<Video> $videos */
-        $videos = $this->createQueryBuilder('video')
-            ->andWhere('video.status = :status')
-            ->andWhere('video.publishedAt IS NOT NULL')
-            ->andWhere('video.publishedAt <= :now')
-            ->andWhere('LOWER(TRIM(video.category)) = :category')
-            ->setParameter('status', PublishingStatus::Published)
-            ->setParameter('now', new \DateTimeImmutable('now', new \DateTimeZone('UTC')))
-            ->setParameter('category', $normalizedCategory)
-            ->orderBy('video.publishedAt', \SortDirection::Descending)
-            ->addOrderBy('video.id', \SortDirection::Ascending)
-            ->setMaxResults(max(1, min(10, $limit)))
             ->getQuery()
             ->getResult();
 
@@ -427,21 +399,13 @@ final class VideoRepository extends ServiceEntityRepository implements ExternalV
         return $ordered;
     }
 
-    public function recordPublicView(string $id, int $autoFeatureViewThreshold = 0): void
+    public function recordPublicView(string $id): void
     {
-        if ($autoFeatureViewThreshold < 0 || $autoFeatureViewThreshold > SiteSettings::MAX_AUTO_FEATURE_VIEW_THRESHOLD) {
-            throw new \InvalidArgumentException('Die Schwelle für automatische Video-Hervorhebung liegt außerhalb des gültigen Ganzzahlbereichs.');
-        }
-
         $connection = $this->getEntityManager()->getConnection();
-        $connection->transactional(function () use ($connection, $id, $autoFeatureViewThreshold): void {
+        $connection->transactional(function () use ($connection, $id): void {
             $updated = $connection->executeStatement(
-                'UPDATE videos SET view_count = CASE WHEN view_count < 2147483647 THEN view_count + 1 ELSE 2147483647 END, featured = CASE WHEN view_count = :auto_feature_view_threshold - 1 THEN TRUE ELSE featured END, last_viewed_at = CURRENT_TIMESTAMP WHERE id = :id AND status = :status AND published_at IS NOT NULL AND published_at <= CURRENT_TIMESTAMP',
-                [
-                    'id' => $id,
-                    'status' => PublishingStatus::Published->value,
-                    'auto_feature_view_threshold' => $autoFeatureViewThreshold,
-                ],
+                'UPDATE videos SET view_count = CASE WHEN view_count < 2147483647 THEN view_count + 1 ELSE 2147483647 END, last_viewed_at = CURRENT_TIMESTAMP WHERE id = :id AND status = :status AND published_at IS NOT NULL AND published_at <= CURRENT_TIMESTAMP',
+                ['id' => $id, 'status' => PublishingStatus::Published->value],
             );
             if (1 !== $updated) {
                 return;

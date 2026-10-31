@@ -32,28 +32,6 @@ final class ContentTagRepository extends ServiceEntityRepository
         return $tags;
     }
 
-    /** @return list<ContentTag> */
-    public function findForNewsAdmin(): array
-    {
-        $tagIds = $this->getEntityManager()->getConnection()->fetchFirstColumn(
-            'SELECT DISTINCT tag_id FROM news_article_tags ORDER BY tag_id ASC',
-        );
-        if ([] === $tagIds) {
-            return [];
-        }
-
-        /** @var list<ContentTag> $tags */
-        $tags = $this->createQueryBuilder('tag')
-            ->andWhere('tag.id IN (:ids)')
-            ->setParameter('ids', $tagIds)
-            ->orderBy('tag.name', \SortDirection::Ascending)
-            ->addOrderBy('tag.id', \SortDirection::Ascending)
-            ->getQuery()
-            ->getResult();
-
-        return $tags;
-    }
-
     /** @return list<array{name: string, usage_count: int}> */
     public function findPublicVideoCloud(int $limit, bool $shuffle = false): array
     {

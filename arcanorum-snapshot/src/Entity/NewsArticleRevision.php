@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
-use App\Content\CustomFieldSet;
 use App\Repository\NewsArticleRevisionRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -63,10 +62,6 @@ final class NewsArticleRevision
     #[ORM\Column(name: 'tag_names', type: Types::TEXT)]
     private string $tagNames;
 
-    /** @var list<array{key: string, value: string}> */
-    #[ORM\Column(name: 'custom_fields', type: Types::JSON, options: ['default' => '[]'])]
-    private array $customFields;
-
     #[ORM\Column(name: 'published_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $publishedAt;
 
@@ -105,7 +100,6 @@ final class NewsArticleRevision
         $this->thumbnailSize = $article->getThumbnailSize();
         $this->authorName = $article->getAuthorName();
         $this->tagNames = self::canonicalTagNames($article);
-        $this->customFields = $article->getCustomFields();
         $this->publishedAt = $article->getPublishedAt();
         $this->createdAt = $article->getUpdatedAt();
     }
@@ -126,7 +120,6 @@ final class NewsArticleRevision
             && $this->thumbnailSize === $article->getThumbnailSize()
             && $this->authorName === $article->getAuthorName()
             && $this->tagNames === self::canonicalTagNames($article)
-            && $this->customFields === $article->getCustomFields()
             && ($this->publishedAt?->format('Y-m-d H:i:s.u') ?? null)
                 === ($article->getPublishedAt()?->format('Y-m-d H:i:s.u') ?? null);
     }
@@ -214,12 +207,6 @@ final class NewsArticleRevision
     public function getTagNames(): string
     {
         return $this->tagNames;
-    }
-
-    /** @return list<array{key: string, value: string}> */
-    public function getCustomFields(): array
-    {
-        return CustomFieldSet::normalize($this->customFields) ?? [];
     }
 
     public function getPublishedAt(): ?\DateTimeImmutable

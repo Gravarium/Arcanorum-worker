@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
-use App\Service\MigrationRollbackGuard;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -31,26 +30,6 @@ final class Version20261018080000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
-        $normalizedGenresTable = $this->connection->fetchOne(
-            "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'content_series_genres'",
-        );
-        $tablesToLock = ['content_series', 'series_episodes'];
-        if (!in_array($normalizedGenresTable, [0, '0'], true)) {
-            $tablesToLock[] = 'content_series_genres';
-        }
-        $rollbackGuard = new MigrationRollbackGuard($this->connection);
-        $rollbackGuard->lockTables(...$tablesToLock);
-
-        $customEpisodes = $this->connection->fetchOne(
-            "SELECT COUNT(*) FROM series_episodes WHERE status <> 'published' OR title_override IS NOT NULL OR description_override IS NOT NULL",
-        );
-        $storedGenres = $this->connection->fetchOne(in_array($normalizedGenresTable, [0, '0'], true)
-            ? 'SELECT COUNT(*) FROM content_series WHERE json_array_length(genres) > 0'
-            : 'SELECT COUNT(*) FROM content_series_genres');
-        if (!in_array($customEpisodes, [0, '0'], true) || !in_array($storedGenres, [0, '0'], true)) {
-            throw new \RuntimeException('Seriengenres, Episodenentwürfe und eigene Episodenmetadaten müssen vor dem Migrationsrückbau erhalten oder exportiert werden.');
-        }
-
         $this->addSql('DROP INDEX idx_series_episodes_visibility_order');
         $this->addSql('ALTER TABLE series_episodes DROP CONSTRAINT chk_series_episodes_description_override');
         $this->addSql('ALTER TABLE series_episodes DROP CONSTRAINT chk_series_episodes_title_override');

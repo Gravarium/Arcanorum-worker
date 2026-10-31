@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
-use App\Service\MigrationRollbackGuard;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -38,8 +37,8 @@ final class Version20261028223107 extends AbstractMigration
             ));
         }
 
-        $this->addSql('ALTER TABLE videos ADD external_source_status VARCHAR(16) DEFAULT NULL');
-        $this->addSql('ALTER TABLE videos ADD external_source_checked_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL');
+        $this->addSql("ALTER TABLE videos ADD external_source_status VARCHAR(16) DEFAULT NULL");
+        $this->addSql("ALTER TABLE videos ADD external_source_checked_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL");
         $this->addSql("ALTER TABLE videos ADD CONSTRAINT chk_video_external_source_status CHECK (external_source_status IS NULL OR external_source_status IN ('available', 'unavailable', 'unsupported'))");
         $this->addSql('CREATE INDEX idx_videos_external_source_check ON videos (source_type, external_source_checked_at)');
 
@@ -84,13 +83,13 @@ final class Version20261028223107 extends AbstractMigration
         $this->addSql('CREATE INDEX idx_scheduled_task_runs_recent ON scheduled_task_runs (started_at)');
         $this->addSql('CREATE INDEX idx_scheduled_task_runs_task_recent ON scheduled_task_runs (task_key, started_at)');
 
-        $this->addSql('CREATE TABLE scheduler_invocations (
+        $this->addSql("CREATE TABLE scheduler_invocations (
             nonce_digest CHAR(64) NOT NULL,
             scheduler_identity VARCHAR(64) NOT NULL,
             created_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL,
             expires_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL,
             CONSTRAINT pk_scheduler_invocations PRIMARY KEY (nonce_digest)
-        )');
+        )");
         $this->addSql('CREATE INDEX idx_scheduler_invocations_expiry ON scheduler_invocations (expires_at)');
 
         $this->addSql("INSERT INTO scheduled_tasks (
@@ -113,8 +112,6 @@ final class Version20261028223107 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
-        $rollbackGuard = new MigrationRollbackGuard($this->connection);
-        $rollbackGuard->lockTables('scheduled_task_runs', 'scheduled_tasks', 'scheduler_invocations', 'sitemap_content_revision', 'videos');
         $configuredTasks = $this->connection->fetchOne("SELECT COUNT(*) FROM scheduled_tasks WHERE task_key <> 'video-source-health-check'");
         $recordedRuns = $this->connection->fetchOne('SELECT COUNT(*) FROM scheduled_task_runs');
         $unexpiredInvocations = $this->connection->fetchOne('SELECT COUNT(*) FROM scheduler_invocations WHERE expires_at > CURRENT_TIMESTAMP');

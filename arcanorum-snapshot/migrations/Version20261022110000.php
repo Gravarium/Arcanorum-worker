@@ -24,7 +24,7 @@ final class Version20261022110000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
-        new MemberCommentMigrationGuard($this->connection)->assertNoAttributedComments();
+        (new MemberCommentMigrationGuard($this->connection))->assertNoAttributedComments();
 
         $this->addSql('ALTER TABLE content_comments DROP CONSTRAINT fk_content_comments_member');
         $this->addSql('DROP INDEX idx_content_comments_member_created');

@@ -8,7 +8,7 @@
 
 {% block body %}
     <header class="public-header">
-        {{ include('partials/public_brand.html.twig') }}
+        <a class="public-brand" href="{{ path('platform_home') }}">{{ site_settings().siteName }}</a>
         <nav class="public-navigation" aria-label="{{ 'Hauptnavigation'|trans }}">
             <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
             {% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}
@@ -43,39 +43,23 @@
                     {% if featured_player_available %}
                         <div class="video-stage" data-player-color-scheme="{{ site_settings().videoPlayerColorScheme.value }}">
                             {% if featured_video.sourceType.value == 'file' %}
-                                {% if featured_video.isAudio %}
-                                    <audio id="audio-player-{{ featured_video.id }}" class="audio-player" data-testid="home-featured-audio-file" controls preload="{{ site_settings().videoPreloadMode.value }}" aria-label="{{ featured_video.title }}">
-                                        <source src="{{ path('video_media', {id: featured_video.id}) }}" type="{{ featured_video.uploadedMimeType }}">
-                                        {% for subtitle in featured_subtitle_tracks %}<track kind="subtitles" src="{{ path('video_subtitle_track', {videoId: featured_video.id, trackId: subtitle.id}) }}" srclang="{{ subtitle.languageCode }}" label="{{ subtitle.label }}"{% if loop.first %} default{% endif %}>{% endfor %}
-                                        {{ 'Dein Browser kann diese Audiodatei nicht abspielen.'|trans }}
-                                    </audio>
-                                {% else %}
-                                    <video id="video-player-{{ featured_video.id }}" data-testid="home-featured-video" data-player-aspect-ratio="{{ site_settings().videoPlayerAspectRatio.value }}" data-player-max-width="{{ site_settings().videoPlayerHomeMaxWidth.value }}" controls preload="{{ site_settings().videoPreloadMode.value }}" playsinline aria-label="{{ featured_video.title }}"{% if featured_uses_videojs %} class="video-js vjs-default-skin" data-video-player-engine="videojs" data-player-message-ready="{{ 'Video ist bereit.'|trans }}" data-player-message-error="{{ 'Die Video-Wiedergabe ist derzeit nicht verfügbar.'|trans }}"{% endif %}{% if featured_autoplay %} autoplay muted{% endif %}>
-                                        <source src="{{ path('video_media', {id: featured_video.id}) }}" type="{{ featured_video.uploadedMimeType }}">
-                                        {% for subtitle in featured_subtitle_tracks %}<track kind="subtitles" src="{{ path('video_subtitle_track', {videoId: featured_video.id, trackId: subtitle.id}) }}" srclang="{{ subtitle.languageCode }}" label="{{ subtitle.label }}"{% if loop.first %} default{% endif %}>{% endfor %}
-                                        {{ 'Dein Browser kann dieses Video nicht abspielen.'|trans }}
-                                    </video>
-                                    {{ include('partials/video_quality_selector.html.twig', {player_id: 'video-player-' ~ featured_video.id, base_source_url: path('video_media', {id: featured_video.id}), base_source_mime: featured_video.uploadedMimeType, quality_sources: featured_quality_sources}) }}
-                                    {% if featured_uses_videojs %}<p data-video-player-status role="status">{{ 'Video-Player wird vorbereitet.'|trans }}</p>{% endif %}
-                                {% endif %}
+                                <video id="video-player-{{ featured_video.id }}" data-testid="home-featured-video" data-player-aspect-ratio="{{ site_settings().videoPlayerAspectRatio.value }}" data-player-max-width="{{ site_settings().videoPlayerHomeMaxWidth.value }}" controls preload="{{ site_settings().videoPreloadMode.value }}" playsinline aria-label="{{ featured_video.title }}"{% if featured_uses_videojs %} class="video-js vjs-default-skin" data-video-player-engine="videojs" data-player-message-ready="{{ 'Video ist bereit.'|trans }}" data-player-message-error="{{ 'Die Video-Wiedergabe ist derzeit nicht verfügbar.'|trans }}"{% endif %}{% if featured_autoplay %} autoplay muted{% endif %}>
+                                    <source src="{{ path('video_media', {id: featured_video.id}) }}" type="{{ featured_video.uploadedMimeType }}">
+                                    {% for subtitle in featured_subtitle_tracks %}<track kind="subtitles" src="{{ path('video_subtitle_track', {videoId: featured_video.id, trackId: subtitle.id}) }}" srclang="{{ subtitle.languageCode }}" label="{{ subtitle.label }}"{% if loop.first %} default{% endif %}>{% endfor %}
+                                    {{ 'Dein Browser kann dieses Video nicht abspielen.'|trans }}
+                                </video>
+                                {{ include('partials/video_quality_selector.html.twig', {player_id: 'video-player-' ~ featured_video.id, base_source_url: path('video_media', {id: featured_video.id}), base_source_mime: featured_video.uploadedMimeType, quality_sources: featured_quality_sources}) }}
+                                {% if featured_uses_videojs %}<p data-video-player-status role="status">{{ 'Video-Player wird vorbereitet.'|trans }}</p>{% endif %}
                             {% elseif featured_video.sourceType.value == 'stream' and featured_stream_source %}
-                                {% if featured_stream_source.isAudio %}
-                                    <audio id="audio-player-{{ featured_video.id }}" class="audio-player" data-testid="home-featured-audio-stream" controls preload="{{ site_settings().videoPreloadMode.value }}" referrerpolicy="no-referrer" aria-label="{{ featured_video.title }}">
-                                        <source src="{{ featured_stream_source.url }}" type="{{ featured_stream_source.mimeType }}">
-                                        {% for subtitle in featured_subtitle_tracks %}<track kind="subtitles" src="{{ path('video_subtitle_track', {videoId: featured_video.id, trackId: subtitle.id}) }}" srclang="{{ subtitle.languageCode }}" label="{{ subtitle.label }}"{% if loop.first %} default{% endif %}>{% endfor %}
-                                        {{ 'Dein Browser kann diesen Audiostream nicht abspielen.'|trans }}
-                                    </audio>
-                                {% else %}
-                                    <video id="video-player-{{ featured_video.id }}" data-testid="home-featured-video" data-player-aspect-ratio="{{ site_settings().videoPlayerAspectRatio.value }}" data-player-max-width="{{ site_settings().videoPlayerHomeMaxWidth.value }}" controls preload="{{ site_settings().videoPreloadMode.value }}" playsinline referrerpolicy="no-referrer" aria-label="{{ featured_video.title }}"{% if featured_uses_videojs %} class="video-js vjs-default-skin" data-video-player-engine="videojs" data-player-message-ready="{{ 'Video ist bereit.'|trans }}" data-player-message-error="{{ 'Die Video-Wiedergabe ist derzeit nicht verfügbar.'|trans }}"{% endif %}{% if featured_autoplay %} autoplay muted{% endif %}{% if featured_uses_hls %} data-hls-url="{{ featured_stream_source.url }}" data-hls-message-invalid-url="{{ 'Dieser Live-Stream ist nicht verfügbar.'|trans }}" data-hls-message-error="{{ 'Der Live-Stream ist derzeit nicht verfügbar. Bitte versuche es später erneut.'|trans }}" data-hls-message-ready="{{ 'Live-Stream bereit. Drücke Wiedergabe.'|trans }}" data-hls-message-unsupported="{{ 'Dieser Browser unterstützt die Live-Wiedergabe nicht. Nutze den Link zum Stream.'|trans }}"{% endif %}>
-                                        {% if not featured_uses_hls %}<source src="{{ featured_stream_source.url }}" type="{{ featured_stream_source.mimeType }}">{% endif %}
-                                        {% for subtitle in featured_subtitle_tracks %}<track kind="subtitles" src="{{ path('video_subtitle_track', {videoId: featured_video.id, trackId: subtitle.id}) }}" srclang="{{ subtitle.languageCode }}" label="{{ subtitle.label }}"{% if loop.first %} default{% endif %}>{% endfor %}
-                                        {{ 'Dein Browser kann diesen Stream nicht abspielen.'|trans }}
-                                    </video>
-                                    {{ include('partials/video_quality_selector.html.twig', {player_id: 'video-player-' ~ featured_video.id, base_source_url: featured_stream_source.url, base_source_mime: featured_stream_source.mimeType, quality_sources: featured_quality_sources}) }}
-                                    {% if featured_uses_videojs %}<p data-video-player-status role="status">{{ 'Video-Player wird vorbereitet.'|trans }}</p>{% elseif featured_uses_hls %}<p data-hls-status role="status">{{ 'Live-Stream wird vorbereitet.'|trans }}</p>{% endif %}
-                                {% endif %}
+                                <video id="video-player-{{ featured_video.id }}" data-testid="home-featured-video" data-player-aspect-ratio="{{ site_settings().videoPlayerAspectRatio.value }}" data-player-max-width="{{ site_settings().videoPlayerHomeMaxWidth.value }}" controls preload="{{ site_settings().videoPreloadMode.value }}" playsinline referrerpolicy="no-referrer" aria-label="{{ featured_video.title }}"{% if featured_uses_videojs %} class="video-js vjs-default-skin" data-video-player-engine="videojs" data-player-message-ready="{{ 'Video ist bereit.'|trans }}" data-player-message-error="{{ 'Die Video-Wiedergabe ist derzeit nicht verfügbar.'|trans }}"{% endif %}{% if featured_autoplay %} autoplay muted{% endif %}{% if featured_uses_hls %} data-hls-url="{{ featured_stream_source.url }}" data-hls-message-invalid-url="{{ 'Dieser Live-Stream ist nicht verfügbar.'|trans }}" data-hls-message-error="{{ 'Der Live-Stream ist derzeit nicht verfügbar. Bitte versuche es später erneut.'|trans }}" data-hls-message-ready="{{ 'Live-Stream bereit. Drücke Wiedergabe.'|trans }}" data-hls-message-unsupported="{{ 'Dieser Browser unterstützt die Live-Wiedergabe nicht. Nutze den Link zum Stream.'|trans }}"{% endif %}>
+                                    {% if not featured_uses_hls %}<source src="{{ featured_stream_source.url }}" type="{{ featured_stream_source.mimeType }}">{% endif %}
+                                    {% for subtitle in featured_subtitle_tracks %}<track kind="subtitles" src="{{ path('video_subtitle_track', {videoId: featured_video.id, trackId: subtitle.id}) }}" srclang="{{ subtitle.languageCode }}" label="{{ subtitle.label }}"{% if loop.first %} default{% endif %}>{% endfor %}
+                                    {{ 'Dein Browser kann diesen Stream nicht abspielen.'|trans }}
+                                </video>
+                                {{ include('partials/video_quality_selector.html.twig', {player_id: 'video-player-' ~ featured_video.id, base_source_url: featured_stream_source.url, base_source_mime: featured_stream_source.mimeType, quality_sources: featured_quality_sources}) }}
+                                {% if featured_uses_videojs %}<p data-video-player-status role="status">{{ 'Video-Player wird vorbereitet.'|trans }}</p>{% elseif featured_uses_hls %}<p data-hls-status role="status">{{ 'Live-Stream wird vorbereitet.'|trans }}</p>{% endif %}
                             {% endif %}
-                            {% if site_settings().isVideoPlayerWatermarkEnabled and featured_video.sourceType.value in ['file', 'stream'] and not featured_video.isAudio and (featured_stream_source is null or not featured_stream_source.isAudio) %}{{ include('partials/video_player_watermark.html.twig') }}{% endif %}
+                            {% if site_settings().isVideoPlayerWatermarkEnabled and featured_video.sourceType.value in ['file', 'stream'] %}{{ include('partials/video_player_watermark.html.twig') }}{% endif %}
                         </div>
                     {% else %}
                         <p class="muted">{{ 'Dieses hervorgehobene Video kann auf der Startseite nicht direkt abgespielt werden.'|trans }}</p>
@@ -118,25 +102,6 @@
                 {% endfor %}
             </div>
         </section>{% endif %}
-
-        {% for section in featured_video_category_sections %}
-            <section class="public-section" aria-labelledby="home-category-{{ section.category.id }}">
-                <div class="public-section-heading">
-                    <div><p class="eyebrow">{{ 'Videokategorie'|trans }}</p><h2 id="home-category-{{ section.category.id }}">{{ section.category.name }}</h2></div>
-                    <a href="{{ path('video_category', {slug: section.category.slug}) }}">{{ 'Alle Videos dieser Kategorie'|trans }}</a>
-                </div>
-                <div class="content-grid">
-                    {% for video in section.videos %}
-                        <article class="content-card">
-                            {% if video.thumbnailObjectId %}<img class="video-thumbnail" src="{{ path('video_thumbnail', {id: video.id}) }}" alt="{{ 'Vorschaubild für %title%'|trans({'%title%': video.title}) }}" loading="lazy" decoding="async">{% endif %}
-                            <h3><a href="{{ path('video_show', {id: video.id}) }}">{{ video.title }}</a></h3>
-                            <p>{{ video.description|slice(0, 180) }}</p>
-                            <time datetime="{{ video.publishedAt|date('c') }}">{{ video.publishedAt|date('d.m.Y') }}</time>
-                        </article>
-                    {% endfor %}
-                </div>
-            </section>
-        {% endfor %}
 
         {% if currently_watching_videos is not empty %}<section class="public-section" aria-labelledby="currently-watching-heading">
             <div class="public-section-heading"><div><p class="eyebrow">{{ 'Gerade aktiv'|trans }}</p><h2 id="currently-watching-heading">{{ 'Kürzlich angesehen'|trans }}</h2></div></div>

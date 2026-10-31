@@ -17,8 +17,6 @@ use Symfony\Component\Routing\Attribute\Route;
 
 final readonly class VideoSubtitleController
 {
-    private const int MAX_FILE_BYTES = 1048576;
-
     public function __construct(
         private PrivateObjectStorageInterface $storage,
         private LoggerInterface $logger,
@@ -49,27 +47,16 @@ final readonly class VideoSubtitleController
             return self::notFound();
         }
 
-        $objectId = $track->getStorageObjectId();
-        $size = $track->getSize();
-        $sha256 = $track->getSha256();
-        if (1 !== preg_match('/\A[a-f0-9]{64}\z/', $objectId)
-            || $size < 1
-            || $size > self::MAX_FILE_BYTES
-            || 1 !== preg_match('/\A[a-f0-9]{64}\z/', $sha256)
-        ) {
-            return self::notFound();
-        }
-
         try {
-            $contents = $this->storage->read($objectId, $size);
+            $contents = $this->storage->read($track->getStorageObjectId());
         } catch (PrivateStorageOperationFailed) {
             $this->logger->error('Die private Untertiteldatei konnte nicht gelesen werden.', ['track_id' => $track->getId()]);
 
             return self::unavailable();
         }
 
-        if (strlen($contents) !== $size
-            || !hash_equals($sha256, hash('sha256', $contents))
+        if (strlen($contents) !== $track->getSize()
+            || !hash_equals($track->getSha256(), hash('sha256', $contents))
             || 1 !== preg_match('/\AWEBVTT(?:[ \t][^\r\n]{0,120})?\n/', $contents)
         ) {
             $this->logger->error('Die private Untertiteldatei stimmt nicht mit den gespeicherten Metadaten überein.', ['track_id' => $track->getId()]);

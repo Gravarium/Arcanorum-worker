@@ -39,15 +39,9 @@
                                 <a href="{{ path('admin_video_edit', {id: submission.video.id}) }}">{{ submission.video.title }}</a>
                                 <p class="muted">{{ submission.video.category ?? ('Ohne Kategorie'|trans) }}</p>
                                 {% if submission.video.sourceType.value == 'file' %}
-                                    {% if submission.video.isAudio %}
-                                        <audio controls preload="metadata" aria-label="{{ 'Audiovorschau für %title%'|trans({'%title%': submission.video.title}) }}" data-testid="audio-submission-preview">
-                                            <source src="{{ path('admin_video_submission_preview', {id: submission.id}) }}" type="{{ submission.video.uploadedMimeType }}">
-                                        </audio>
-                                    {% else %}
-                                        <video controls preload="metadata" aria-label="{{ 'Vorschau für %title%'|trans({'%title%': submission.video.title}) }}" data-testid="video-submission-preview">
-                                            <source src="{{ path('admin_video_submission_preview', {id: submission.id}) }}" type="{{ submission.video.uploadedMimeType }}">
-                                        </video>
-                                    {% endif %}
+                                    <video controls preload="metadata" aria-label="{{ 'Vorschau für %title%'|trans({'%title%': submission.video.title}) }}" data-testid="video-submission-preview">
+                                        <source src="{{ path('admin_video_submission_preview', {id: submission.id}) }}" type="{{ submission.video.uploadedMimeType }}">
+                                    </video>
                                 {% elseif submission.video.sourceType.value == 'embed' and safe_embed_urls[submission.id] is defined %}
                                     <a href="{{ safe_embed_urls[submission.id] }}" target="_blank" rel="noopener noreferrer">{{ 'Sichere externe Vorschau in neuem Tab prüfen'|trans }}</a>
                                 {% else %}
