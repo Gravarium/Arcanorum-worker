@@ -14,6 +14,17 @@ use Symfony\Component\HttpClient\Response\MockResponse;
 final class VideoProviderImportServiceTest extends TestCase
 {
     private const string API_KEY = 'test-provider-api-key';
+    private const array DAILYMOTION_SEARCH_FIELDS = [
+        'id', 'title', 'description', 'url', 'allow_embed', 'thumbnail_url', 'thumbnail_120_url',
+        'thumbnail_180_url', 'thumbnail_240_url', 'thumbnail_360_url', 'thumbnail_480_url',
+        'thumbnail_720_url', 'thumbnail_1080_url',
+    ];
+    private const array DAILYMOTION_CHANNEL_FIELDS = [
+        'video_id', 'title', 'description', 'video_url', 'visibility', 'embedding.enable_embed',
+        'thumbnail_url', 'thumbnail_120_url', 'thumbnail_180_url', 'thumbnail_240_url',
+        'thumbnail_360_url', 'thumbnail_480_url', 'thumbnail_720_url', 'thumbnail_1080_url',
+    ];
+    private const array VIMEO_VIDEO_FIELDS = ['uri', 'name', 'description', 'link', 'privacy.view', 'pictures.sizes'];
 
     public function testSearchUsesFixedEndpointSafeHeadersAndReturnsCanonicalVideoSources(): void
     {
@@ -26,6 +37,8 @@ final class VideoProviderImportServiceTest extends TestCase
             self::assertSame('/youtube/v3/search', $urlParts['path'] ?? null);
             self::assertStringNotContainsString(self::API_KEY, $url);
             self::assertSame(0, $options['max_redirects'] ?? null);
+            self::assertSame(5.0, $options['timeout'] ?? null);
+            self::assertSame(10.0, $options['max_duration'] ?? null);
 
             $headers = $options['headers'] ?? null;
             self::assertIsArray($headers);
@@ -52,6 +65,10 @@ final class VideoProviderImportServiceTest extends TestCase
                     'snippet' => [
                         'title' => '  Beispielvideo  ',
                         'description' => "Beschreibung\x00 mit Zeilenumbruch\n.",
+                        'thumbnails' => [
+                            'medium' => ['url' => 'https://i.ytimg.com/vi/dQw4w9WgXcQ/mqdefault.jpg', 'width' => 320, 'height' => 180],
+                            'high' => ['url' => 'https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg', 'width' => 480, 'height' => 360],
+                        ],
                     ],
                 ]],
             ], JSON_THROW_ON_ERROR), ['http_code' => 200]);
@@ -64,7 +81,139 @@ final class VideoProviderImportServiceTest extends TestCase
             'title' => 'Beispielvideo',
             'description' => "Beschreibung mit Zeilenumbruch\n.",
             'source_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            'thumbnail_url' => 'https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg',
         ]], $items);
+    }
+
+    public function testMetadataLookupUsesFixedApiAndValidatesEmbeddabilityBeforeReturningFields(): void
+    {
+        $client = new MockHttpClient(static function (string $method, string $url, array $options): MockResponse {
+            self::assertSame('GET', $method);
+            $parts = parse_url($url);
+            self::assertIsArray($parts);
+            self::assertSame('www.googleapis.com', $parts['host'] ?? null);
+            self::assertSame('/youtube/v3/videos', $parts['path'] ?? null);
+            self::assertSame(0, $options['max_redirects'] ?? null);
+            self::assertSame(5.0, $options['timeout'] ?? null);
+            self::assertSame(10.0, $options['max_duration'] ?? null);
+            self::assertSame([
+                'part' => 'snippet,contentDetails,status',
+                'id' => 'dQw4w9WgXcQ',
+                'maxResults' => 1,
+            ], $options['query'] ?? null);
+            $headers = $options['headers'] ?? null;
+            self::assertIsArray($headers);
+            self::assertContains('X-Goog-Api-Key: '.self::API_KEY, array_values($headers));
+
+            return new MockResponse(json_encode([
+                'items' => [[
+                    'id' => 'dQw4w9WgXcQ',
+                    'snippet' => [
+                        'title' => '  Example title  ',
+                        'description' => "A description\x00 with safe text.",
+                        'thumbnails' => [
+                            'medium' => ['url' => 'https://i.ytimg.com/vi/dQw4w9WgXcQ/mqdefault.jpg', 'width' => 320, 'height' => 180],
+                        ],
+                    ],
+                    'contentDetails' => ['duration' => 'PT1H2M3S'],
+                    'status' => ['privacyStatus' => 'public', 'embeddable' => true],
+                ]],
+            ], JSON_THROW_ON_ERROR), ['http_code' => 200]);
+        });
+
+        $service = new VideoProviderImportService($client, new ExternalVideoEmbedResolver(), self::API_KEY);
+
+        self::assertSame([
+            'provider' => 'youtube',
+            'source_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            'title' => 'Example title',
+            'description' => 'A description with safe text.',
+            'duration_seconds' => 3723,
+            'thumbnail_url' => 'https://i.ytimg.com/vi/dQw4w9WgXcQ/mqdefault.jpg',
+        ], $service->metadataForSourceUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ&feature=share'));
+    }
+
+    public function testMetadataLookupRejectsUnknownHostsBeforeAnyNetworkRequest(): void
+    {
+        $client = new MockHttpClient(static function (): MockResponse {
+            throw new \RuntimeException('Direct URLs and unknown providers must never be fetched.');
+        });
+        $service = new VideoProviderImportService($client, new ExternalVideoEmbedResolver(), self::API_KEY);
+
+        self::assertNull($service->metadataForSourceUrl('https://media.example.test/video.mp4'));
+        self::assertNull($service->metadataForSourceUrl('https://www.youtube.com/watch?v=not-a-valid-id'));
+    }
+
+    public function testEmbedProvidersWithoutVerifiedMetadataApisRemainManualAndAreNeverFetched(): void
+    {
+        $client = new MockHttpClient(static function (): MockResponse {
+            throw new \RuntimeException('Providers without a verified fixed metadata API must never be queried.');
+        });
+        $service = new VideoProviderImportService($client, new ExternalVideoEmbedResolver('x8lr5'), self::API_KEY);
+        $sources = [
+            'https://www.facebook.com/watch/?v=20531316728',
+            'https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view',
+            'https://rutube.ru/video/852e974534e3527f16810a7a19c418b0',
+            'https://vkvideo.ru/video-123456_456239017',
+            'https://v.youku.com/v_show/id_XNDI0MDAwMDAwMA==.html',
+        ];
+
+        foreach ($sources as $source) {
+            self::assertNull($service->metadataForSourceUrl($source), $source);
+            self::assertNull($service->checkSourceAvailability($source), $source);
+        }
+
+        self::assertSame(0, $client->getRequestsCount());
+    }
+
+    public function testMetadataLookupPreservesVimeoPrivacyHashAndRequiresPublicDailymotionEmbeds(): void
+    {
+        $vimeo = new VideoProviderImportService(
+            new MockHttpClient([new MockResponse(json_encode([
+                'uri' => '/videos/123456789',
+                'name' => 'Vimeo metadata',
+                'description' => 'Private-link video.',
+                'link' => 'https://vimeo.com/123456789?h=privacy789',
+                'duration' => 125,
+                'privacy' => ['view' => 'unlisted'],
+            ], JSON_THROW_ON_ERROR), ['http_code' => 200])]),
+            new ExternalVideoEmbedResolver(),
+            self::API_KEY,
+            'vimeo-test-access-token_123',
+        );
+        self::assertSame([
+            'provider' => 'vimeo',
+            'source_url' => 'https://vimeo.com/123456789?h=privacy789',
+            'title' => 'Vimeo metadata',
+            'description' => 'Private-link video.',
+            'duration_seconds' => 125,
+        ], $vimeo->metadataForSourceUrl('https://vimeo.com/123456789?h=privacy789'));
+
+        $dailymotionResponse = [
+            'id' => 'x84sh87',
+            'title' => 'Dailymotion metadata',
+            'description' => 'Public Dailymotion video.',
+            'duration' => 99,
+            'allow_embed' => true,
+            'status' => 'published',
+            'url' => 'https://www.dailymotion.com/video/x84sh87',
+        ];
+        $dailymotion = new VideoProviderImportService(
+            new MockHttpClient([
+                new MockResponse(json_encode($dailymotionResponse, JSON_THROW_ON_ERROR), ['http_code' => 200]),
+                new MockResponse(json_encode(array_replace($dailymotionResponse, ['allow_embed' => false]), JSON_THROW_ON_ERROR), ['http_code' => 200]),
+            ]),
+            new ExternalVideoEmbedResolver('x8lr5'),
+            self::API_KEY,
+        );
+        self::assertSame([
+            'provider' => 'dailymotion',
+            'source_url' => 'https://www.dailymotion.com/video/x84sh87',
+            'title' => 'Dailymotion metadata',
+            'description' => 'Public Dailymotion video.',
+            'duration_seconds' => 99,
+        ], $dailymotion->metadataForSourceUrl('https://www.dailymotion.com/video/x84sh87'));
+        self::assertNull($dailymotion->metadataForSourceUrl('https://www.dailymotion.com/video/x84sh87'));
     }
 
     public function testChannelImportUsesOnlyAValidatedChannelId(): void
@@ -212,6 +361,10 @@ final class VideoProviderImportServiceTest extends TestCase
                         'name' => '  Vimeo-Beispiel  ',
                         'description' => null,
                         'link' => 'https://vimeo.com/123456789?h=abc123&share=copy',
+                        'pictures' => ['sizes' => [
+                            ['width' => 640, 'link' => 'https://i.vimeocdn.com/video/123456789_640x360.jpg'],
+                            ['width' => 1280, 'link' => 'https://i.vimeocdn.com/video/123456789_1280x720.jpg'],
+                        ]],
                     ],
                     [
                         'uri' => '/videos/123456789',
@@ -229,6 +382,7 @@ final class VideoProviderImportServiceTest extends TestCase
             'title' => 'Vimeo-Beispiel',
             'description' => '',
             'source_url' => 'https://vimeo.com/123456789?h=abc123',
+            'thumbnail_url' => 'https://i.vimeocdn.com/video/123456789_640x360.jpg',
         ]], $service->search('vimeo', ' nature films '));
     }
 
@@ -293,7 +447,7 @@ final class VideoProviderImportServiceTest extends TestCase
             self::assertIsArray($query);
             self::assertSame('gaming news', $query['search'] ?? null);
             self::assertSame(25, $query['limit'] ?? null);
-            self::assertSame('id,title,description,url,allow_embed', $query['fields'] ?? null);
+            self::assertSame(implode(',', self::DAILYMOTION_SEARCH_FIELDS), $query['fields'] ?? null);
             self::assertStringNotContainsString('client_secret', $url);
 
             return new MockResponse(json_encode([
@@ -387,7 +541,7 @@ final class VideoProviderImportServiceTest extends TestCase
             self::assertIsArray($query);
             self::assertSame(1, $query['page'] ?? null);
             self::assertSame(25, $query['page_size'] ?? null);
-            self::assertSame('video_id,title,description,video_url,visibility,embedding.enable_embed', $query['fields'] ?? null);
+            self::assertSame(implode(',', self::DAILYMOTION_CHANNEL_FIELDS), $query['fields'] ?? null);
 
             return new MockResponse(json_encode([
                 'data' => [
@@ -641,7 +795,7 @@ final class VideoProviderImportServiceTest extends TestCase
             self::assertIsArray($query);
             self::assertSame(25, $query['per_page'] ?? null);
             self::assertSame('embeddable', $query['filter'] ?? null);
-            self::assertSame('uri,name,description,link,privacy.view', $query['fields'] ?? null);
+            self::assertSame(implode(',', self::VIMEO_VIDEO_FIELDS), $query['fields'] ?? null);
 
             return new MockResponse(json_encode([
                 'data' => [
@@ -727,7 +881,7 @@ final class VideoProviderImportServiceTest extends TestCase
             self::assertIsArray($query);
             self::assertSame(1, $query['page'] ?? null);
             self::assertSame(25, $query['page_size'] ?? null);
-            self::assertSame('video_id,title,description,video_url,visibility,embedding.enable_embed', $query['fields'] ?? null);
+            self::assertSame(implode(',', self::DAILYMOTION_CHANNEL_FIELDS), $query['fields'] ?? null);
 
             return new MockResponse(json_encode([
                 'data' => [
@@ -935,7 +1089,7 @@ final class VideoProviderImportServiceTest extends TestCase
             $query = $options['query'] ?? null;
             self::assertIsArray($query);
             self::assertSame(25, $query['limit'] ?? null);
-            self::assertSame('id,title,description,url,allow_embed', $query['fields'] ?? null);
+            self::assertSame(implode(',', self::DAILYMOTION_SEARCH_FIELDS), $query['fields'] ?? null);
 
             return new MockResponse(json_encode([
                 'list' => [

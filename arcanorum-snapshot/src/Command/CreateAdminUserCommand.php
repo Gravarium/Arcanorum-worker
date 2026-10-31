@@ -25,7 +25,7 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 #[AsCommand(
     name: 'app:admin:create',
-    description: 'Legt interaktiv ein Administrator- oder Moderationskonto mit MFA an.',
+    description: 'Legt interaktiv ein Administrator-, Moderations- oder Redaktionskonto mit MFA an.',
 )]
 final class CreateAdminUserCommand extends Command
 {
@@ -55,7 +55,7 @@ final class CreateAdminUserCommand extends Command
             'role',
             null,
             InputOption::VALUE_REQUIRED,
-            'Kontorolle (ROLE_ADMIN, ROLE_MODERATOR, ROLE_MODERATOR_VIDEO oder ROLE_MODERATOR_COMMENTS).',
+            'Kontorolle (ROLE_ADMIN, ROLE_MODERATOR, ROLE_MODERATOR_VIDEO, ROLE_MODERATOR_COMMENTS oder ROLE_CONTENT_EDITOR).',
             AdminRole::Administrator->value,
         );
     }
@@ -130,7 +130,12 @@ final class CreateAdminUserCommand extends Command
             return Command::FAILURE;
         }
 
-        $io->success('Administratorkonto wurde angelegt und MFA aktiviert.');
+        $accountLabel = match ($role) {
+            AdminRole::Administrator => 'Administratorkonto',
+            AdminRole::ContentEditor => 'Redaktionskonto',
+            default => 'Moderationskonto',
+        };
+        $io->success($accountLabel.' wurde angelegt und MFA aktiviert.');
         $this->displayOneTimeSetup($io, $mfaSetup);
 
         return Command::SUCCESS;

@@ -19,13 +19,14 @@ final readonly class SeriesGenreManager
     ) {
     }
 
-    /** @return list<array{name: string, count: int}> */
+    /** @return list<array{id: string, name: string, count: int, is_featured: bool, featured_sort_order: int}> */
     public function listForAdmin(int $limit, int $offset): array
     {
         $rows = $this->connection->fetchAllAssociative(
-            'SELECT genre.name, COUNT(assignment.series_id) AS series_count FROM series_genres genre '
+            'SELECT genre.id, genre.name, genre.is_featured, genre.featured_sort_order, COUNT(assignment.series_id) AS series_count FROM series_genres genre '
             .'LEFT JOIN content_series_genres assignment ON assignment.genre_id = genre.id '
-            .'GROUP BY genre.id, genre.name ORDER BY genre.name ASC LIMIT :limit OFFSET :offset',
+            .'GROUP BY genre.id, genre.name, genre.is_featured, genre.featured_sort_order '
+            .'ORDER BY genre.name ASC, genre.id ASC LIMIT :limit OFFSET :offset',
             ['limit' => max(1, min(100, $limit)), 'offset' => max(0, $offset)],
             ['limit' => \Doctrine\DBAL\ParameterType::INTEGER, 'offset' => \Doctrine\DBAL\ParameterType::INTEGER],
         );
@@ -33,10 +34,31 @@ final readonly class SeriesGenreManager
         foreach ($rows as $row) {
             $name = $row['name'] ?? null;
             $count = $row['series_count'] ?? null;
-            if (!is_string($name) || !(is_int($count) || is_string($count) && ctype_digit($count))) {
+            $id = $row['id'] ?? null;
+            $featuredValue = $row['is_featured'] ?? null;
+            $sortOrder = $row['featured_sort_order'] ?? null;
+            $isFeatured = match ($featuredValue) {
+                true, 1, '1', 't', 'true' => true,
+                false, 0, '0', 'f', 'false' => false,
+                default => null,
+            };
+            if (!is_string($id) || 1 !== preg_match('/^[a-f0-9]{32}$/D', $id)
+                || !is_string($name)
+                || !(is_int($count) || is_string($count) && ctype_digit($count))
+                || null === $isFeatured
+                || !(is_int($sortOrder) || is_string($sortOrder) && ctype_digit($sortOrder))
+                || (int) $sortOrder < 0
+                || (int) $sortOrder > 10_000
+            ) {
                 throw new \RuntimeException('Die Seriengenres konnten nicht gelesen werden.');
             }
-            $result[] = ['name' => $name, 'count' => (int) $count];
+            $result[] = [
+                'id' => $id,
+                'name' => $name,
+                'count' => (int) $count,
+                'is_featured' => $isFeatured,
+                'featured_sort_order' => (int) $sortOrder,
+            ];
         }
 
         return $result;
@@ -70,6 +92,57 @@ final readonly class SeriesGenreManager
         }
 
         return $names;
+    }
+
+    /** @return list<string> */
+    public function featuredForPublic(): array
+    {
+        $rows = $this->connection->fetchFirstColumn(<<<'SQL'
+            SELECT genre.name
+            FROM series_genres genre
+            WHERE genre.is_featured IS TRUE
+              AND EXISTS (
+                  SELECT 1
+                  FROM content_series_genres assignment
+                  INNER JOIN content_series series ON series.id = assignment.series_id
+                  WHERE assignment.genre_id = genre.id
+                    AND series.status = :status
+                    AND series.published_at IS NOT NULL
+              )
+            ORDER BY genre.featured_sort_order ASC, genre.name ASC, genre.id ASC
+            LIMIT :limit
+            SQL, [
+            'status' => PublishingStatus::Published->value,
+            'limit' => 10,
+        ], [
+            'limit' => \Doctrine\DBAL\ParameterType::INTEGER,
+        ]);
+
+        $names = [];
+        foreach ($rows as $name) {
+            if (!is_string($name)) {
+                throw new \RuntimeException('Die hervorgehobenen Seriengenres konnten nicht gelesen werden.');
+            }
+            $names[] = $name;
+        }
+
+        return $names;
+    }
+
+    public function setFeatured(string $id, bool $featured, int $sortOrder): bool
+    {
+        if (1 !== preg_match('/^[a-f0-9]{32}$/D', $id)) {
+            throw new \InvalidArgumentException('Die Genrekennung ist ungültig.');
+        }
+
+        $genre = $this->genres->find($id);
+        if (!$genre instanceof SeriesGenre) {
+            return false;
+        }
+        $genre->setFeatured($featured, $sortOrder);
+        $this->entityManager->flush();
+
+        return true;
     }
 
     public function create(string $name): void

@@ -1,0 +1,92 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Mitgliederaktivitäten'|trans }}{% endblock %}
+{% block admin_breadcrumb %}{{ 'Mitgliederaktivitäten'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="admin-page-heading">
+        <div>
+            <h1 id="seitenueberschrift">{{ 'Mitgliederaktivitäten'|trans }}</h1>
+            <p>{{ 'Öffentliche Aktivitäten können aus dem Mitgliederfeed ausgeblendet oder entfernt werden. Videos, Wiedergabelisten und Kommentare bleiben dabei unverändert.'|trans }}</p>
+        </div>
+    </div>
+
+    <form class="admin-filter-form" method="get" action="{{ path('admin_member_activity_index') }}">
+        <label for="member-activity-search">{{ 'Mitglied oder Inhalt suchen'|trans }}</label>
+        <input id="member-activity-search" type="search" name="q" value="{{ search }}" maxlength="120">
+
+        <label for="member-activity-type">{{ 'Aktivitätstyp'|trans }}</label>
+        <select id="member-activity-type" name="type">
+            <option value="all"{% if type_filter == 'all' %} selected{% endif %}>{{ 'Alle Aktivitätstypen'|trans }}</option>
+            {% for type in activity_types %}
+                <option value="{{ type.value }}"{% if type_filter == type.value %} selected{% endif %}>{{ type.label|trans }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="member-activity-status">{{ 'Sichtbarkeit'|trans }}</label>
+        <select id="member-activity-status" name="status">
+            <option value="all"{% if status_filter == 'all' %} selected{% endif %}>{{ 'Alle Status'|trans }}</option>
+            {% for status in moderation_statuses %}
+                <option value="{{ status.value }}"{% if status_filter == status.value %} selected{% endif %}>{{ status.label|trans }}</option>
+            {% endfor %}
+        </select>
+
+        <button class="button" type="submit">{{ 'Suchen und filtern'|trans }}</button>
+    </form>
+
+    {% if activities is empty %}
+        <p class="empty-state">{{ 'Keine öffentlichen Aktivitäten gefunden.'|trans }}</p>
+    {% else %}
+        <form method="post" action="{{ path('admin_member_activity_moderate') }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('admin_member_activity_moderate') }}">
+            <input type="hidden" name="q" value="{{ search }}">
+            <input type="hidden" name="type" value="{{ type_filter }}">
+            <input type="hidden" name="status" value="{{ status_filter }}">
+            <input type="hidden" name="page" value="{{ page }}">
+
+            <div class="admin-toolbar">
+                <p class="admin-result-count">{{ '%count% Einträge'|trans({'%count%': total}) }}</p>
+                <div class="admin-actions">
+                    <button class="button button-secondary" type="submit" name="action" value="hide">{{ 'Ausblenden'|trans }}</button>
+                    <button class="button button-secondary" type="submit" name="action" value="restore">{{ 'Wiederherstellen'|trans }}</button>
+                    <button class="button button-danger" type="submit" name="action" value="remove">{{ 'Aus dem Feed entfernen'|trans }}</button>
+                </div>
+            </div>
+
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th scope="col"><span class="visually-hidden">{{ 'Aktivitäten auswählen'|trans }}</span></th>
+                            <th scope="col">{{ 'Zeit'|trans }}</th>
+                            <th scope="col">{{ 'Mitglied'|trans }}</th>
+                            <th scope="col">{{ 'Aktivität'|trans }}</th>
+                            <th scope="col">{{ 'Inhalt'|trans }}</th>
+                            <th scope="col">{{ 'Sichtbarkeit'|trans }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for activity in activities %}
+                            <tr>
+                                <td><input type="checkbox" name="activities[]" value="{{ activity.type.value }}:{{ activity.event_id }}" aria-label="{{ 'Aktivität auswählen: %member% – %content%'|trans({'%member%': activity.member_name, '%content%': activity.target_title}) }}"></td>
+                                <td><time datetime="{{ activity.occurred_at|date('c') }}">{{ activity.occurred_at|date('d.m.Y H:i') }}</time></td>
+                                <td>{{ activity.member_name }} <span class="muted">@{{ activity.member_handle }}</span></td>
+                                <td>{{ activity.type.label|trans }}</td>
+                                <td>{{ activity.target_title }}</td>
+                                <td>{{ activity.status.label|trans }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </form>
+
+        {% if page_count > 1 %}
+            <nav class="admin-pagination" aria-label="{{ 'Seitenwechsel'|trans }}">
+                {% if page > 1 %}<a class="button button-secondary" href="{{ path('admin_member_activity_index', {q: search, type: type_filter, status: status_filter, page: page - 1}) }}">{{ 'Vorherige Seite'|trans }}</a>{% endif %}
+                <span>{{ 'Seite %page% von %total%'|trans({'%page%': page, '%total%': page_count}) }}</span>
+                {% if page < page_count %}<a class="button button-secondary" href="{{ path('admin_member_activity_index', {q: search, type: type_filter, status: status_filter, page: page + 1}) }}">{{ 'Nächste Seite'|trans }}</a>{% endif %}
+            </nav>
+        {% endif %}
+    {% endif %}
+{% endblock %}

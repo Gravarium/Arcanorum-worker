@@ -21,7 +21,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 final class AdminVideoSubmissionPreviewController extends AbstractController
 {
     /** @var list<string> */
-    private const array ALLOWED_MIME_TYPES = ['video/mp4', 'video/webm', 'video/ogg'];
+    private const array ALLOWED_MIME_TYPES = ['video/mp4', 'video/webm', 'video/ogg', 'audio/mpeg'];
 
     #[Route(
         '/{id}/preview',
@@ -73,7 +73,7 @@ final class AdminVideoSubmissionPreviewController extends AbstractController
         }
 
         try {
-            $contents = $storage->read($objectId);
+            $contents = $storage->read($objectId, $size);
         } catch (PrivateStorageOperationFailed) {
             return new Response('', Response::HTTP_SERVICE_UNAVAILABLE, [
                 'Cache-Control' => 'private, no-store',

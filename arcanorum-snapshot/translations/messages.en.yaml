@@ -1,6 +1,8 @@
 'Zum Inhalt springen': 'Skip to content'
 'Verwaltung': 'Administration'
 'Übersicht': 'Dashboard'
+'Redakteur': 'Editor'
+'Redakteure verwalten News und News-Kategorien, aber keine Videos, Seiten, Kommentare oder Verwaltungsrollen.': 'Editors can manage news and news categories, but not videos, pages, comments, or staff roles.'
 'Abmelden': 'Sign out'
 'Menü': 'Menu'
 'Fortress': 'Fortress'
@@ -249,6 +251,15 @@ Einbettungen: Embeds
 'Die Einbettungsbreite begrenzt den kopierbaren Playercode responsiv auf die gewählte Maximalbreite.': 'The embed width keeps the copied player code responsive up to the selected maximum width.'
 'Fließend und responsiv': 'Fluid and responsive'
 'Player-Farbschema': 'Player color scheme'
+'Auflösung importierter Provider-Vorschaubilder': 'Resolution for imported provider thumbnails'
+'Klein (bis etwa 320 px)': 'Small (up to about 320 px)'
+'Mittel (bis etwa 640 px)': 'Medium (up to about 640 px)'
+'Groß (bis etwa 1280 px)': 'Large (up to about 1280 px)'
+'Extra groß (bis etwa 1920 px)': 'Extra large (up to about 1920 px)'
+'Größte verfügbare Auflösung': 'Largest available resolution'
+'Provider-Vorschaubilder werden beim Import geprüft und privat gespeichert. Besucher laden sie anschließend nur von dieser Website.': 'Provider thumbnails are checked during import and stored privately. Visitors then load them only from this website.'
+'Bitte wähle eine unterstützte Vorschaubild-Auflösung.': 'Choose a supported thumbnail resolution.'
+'Für %count% Videos konnte kein Vorschaubild übernommen werden.': 'A thumbnail could not be imported for %count% videos.'
 'Mitternacht': 'Midnight'
 'Ozean': 'Ocean'
 'Wald': 'Forest'
@@ -310,12 +321,52 @@ Einbettungen: Embeds
 'Einstellungen · Gestaltung': 'Settings · design'
 'Wählen Sie ein eingebautes Theme, ein öffentliches Inhaltslayout und kontrastgeprüfte Farben.': 'Choose a built-in theme, a public content layout, and contrast-checked colors.'
 'Öffentliche Gestaltung': 'Public appearance'
+'Weitere Themes': 'More themes'
+'Weitere kaufbare Themes, Vorschauen und Kompatibilitätshinweise finden Sie im externen PHPSUGAR Theme Store.': 'Find additional themes for purchase, previews, and compatibility details in the external PHPSUGAR Theme Store.'
+'PHPSUGAR Theme Store öffnen': 'Open the PHPSUGAR theme store'
 'Theme': 'Theme'
 'Inhaltslayout': 'Content layout'
 'Das Layout gilt für öffentliche Kartenlisten und Mitgliederseiten. Verwaltungsseiten behalten ihr einheitliches Arbeitslayout.': 'The layout applies to public card lists and member pages. Admin pages keep their consistent workspace layout.'
 'Hauptfarbe für Links und Schaltflächen': 'Primary color for links and buttons'
 'Akzentfarbe für Fokus- und Bereichsmarkierungen': 'Accent color for focus and section highlights'
-'Farben werden als feste Hexwerte gespeichert. Eingebettetes CSS, externe Stylesheets und Uploads werden nicht angenommen. Die Hauptfarbe benötigt 4,5:1 Kontrast zu Weiß; die Akzentfarbe mindestens 3:1.': 'Colors are stored as fixed hexadecimal values. Embedded CSS, external stylesheets, and uploads are rejected. The primary color needs a 4.5:1 contrast ratio against white; the accent color needs at least 3:1.'
+'Farben werden als feste Hexwerte gespeichert. Eingebettetes CSS und externe Stylesheets werden nicht angenommen. Textfarben müssen den erforderlichen Kontrast zu ihrer gewählten Fläche erreichen.': 'Colors are stored as fixed hexadecimal values. Embedded CSS and external stylesheets are rejected. Text colors must meet the required contrast against their selected surfaces.'
+'Website-Logo': 'Website logo'
+'Laden Sie ein JPEG-, PNG- oder WebP-Bild hoch. Das Bild wird geprüft, auf ein transparentes PNG normalisiert und im Kopfbereich auf höchstens 233 × 80 Pixel begrenzt.': 'Upload a JPEG, PNG, or WebP image. It is validated, normalized to a transparent PNG, and limited to 233 × 80 pixels in the header.'
+'Aktuelles Website-Logo': 'Current website logo'
+'Es ist kein eigenes Logo festgelegt.': 'No custom logo is set.'
+'Logo auswählen': 'Choose logo'
+'Logo hochladen': 'Upload logo'
+'Logo entfernen': 'Remove logo'
+'Das Website-Logo wurde gespeichert.': 'The website logo was saved.'
+'Das Website-Logo wurde entfernt.': 'The website logo was removed.'
+'Bitte wählen Sie ein Logo aus.': 'Choose a logo.'
+'Das Logo konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.': 'The logo could not be saved. Please try again.'
+'Das Logo konnte nicht entfernt werden. Bitte versuchen Sie es erneut.': 'The logo could not be removed. Please try again.'
+'Das Logo konnte nicht sicher gelesen werden.': 'The logo could not be read safely.'
+'Das Logo muss zwischen 1 Byte und 4 MiB groß sein.': 'The logo must be between 1 byte and 4 MiB.'
+'Das Logo ist leer, zu groß oder wurde während der Prüfung verändert.': 'The logo is empty, too large, or changed while being checked.'
+'Erlaubt sind ausschließlich JPEG-, PNG- und WebP-Logos.': 'Only JPEG, PNG, and WebP logos are accepted.'
+'Das Logoformat oder seine Abmessungen sind ungültig.': 'The logo format or dimensions are invalid.'
+'Das Logo kann nicht sicher verarbeitet werden.': 'The logo could not be processed safely.'
+'Das normalisierte Logo ist ungültig oder zu groß.': 'The normalized logo is invalid or too large.'
+'Weitere Farben der öffentlichen Website': 'More public website colors'
+'Legen Sie die Flächen, Überschriften, Links und Navigation einzeln fest. Die Eingabe akzeptiert nur Hexfarben; Text- und Fokusfarben werden auf Kontrast geprüft.': 'Set the surfaces, headings, links, and navigation individually. Only hexadecimal colors are accepted; text and focus colors are checked for contrast.'
+'Überschriften': 'Headings'
+'Inhaltsfläche und Karten': 'Content surfaces and cards'
+'Inhaltstext': 'Content text'
+'Seitenhintergrund': 'Page background'
+'Kopfbereich und Navigation': 'Header and navigation'
+'Hintergrund des Kopfbereichs': 'Header background'
+'Text im Kopfbereich': 'Header text'
+'Navigationshintergrund': 'Navigation background'
+'Navigationslinks': 'Navigation links'
+'Inhaltslinks': 'Content links'
+'Video- und Artikeltitel': 'Video and article titles'
+'Website-Titel': 'Site title'
+'Fußbereich und Seitenbreite': 'Footer and content width'
+'Hintergrund des Fußbereichs': 'Footer background'
+'Text und Links im Fußbereich': 'Footer text and links'
+'Maximale Inhaltsbreite in Pixeln': 'Maximum content width in pixels'
 'Vorschau': 'Preview'
 'Theme und Layout speichern': 'Save theme and layout'
 'Temporäre Vorschau für fünf Minuten; noch nicht gespeichert.': 'Temporary preview for five minutes; not saved.'
@@ -419,7 +470,6 @@ Einbettungen: Embeds
 'Die Anfrage enthält eine unbekannte Moduleinstellung.': 'The request contains an unknown module setting.'
 'Die Moduleinstellungen konnten nicht gespeichert werden. Bitte versuchen Sie es erneut.': 'Module settings could not be saved. Please try again.'
 'Die Moduleinstellungen wurden gespeichert. Deaktivierte Module behalten ihre Inhalte.': 'Module settings have been saved. Disabled modules retain their content.'
-
 # Public visitor and member-navigation messages.
 News und Videos: News and videos
 Gaming-News und Videos: Gaming news and videos
@@ -676,6 +726,9 @@ Admin: Administration
 'Kommentar zur Prüfung senden': 'Submit comment for review'
 'Kommentare erscheinen erst nach Freigabe.': 'Comments appear after approval.'
 'Kommentare sind für diesen Inhalt deaktiviert.': 'Comments are disabled for this content.'
+'Kommentare von Gästen ohne Mitgliedskonto erlauben': 'Allow guests without member accounts to comment'
+'Wenn Gästekommentare deaktiviert sind, dürfen angemeldete Konten weiterhin kommentieren. Änderungen gelten nur für neue Kommentare.': 'When guest comments are disabled, signed-in accounts can still comment. Changes apply only to new comments.'
+'Bitte melde dich an, um einen Kommentar zu schreiben.': 'Sign in to write a comment.'
 'Zurück zu allen News': 'Back to all news'
 'Videoquelle: %source%': 'Video source: %source%'
 'Dein Browser kann dieses Video nicht abspielen.': 'Your browser cannot play this video.'
@@ -765,12 +818,16 @@ Admin: Administration
 'Videoquelle: %host%': 'Video source: %host%'
 'Kommentare und Videodetails': 'Comments and video details'
 'Videodetails': 'Video details'
-'Eingereichte Videos bleiben privat, bis ein Administrator sie geprüft und freigegeben hat.': 'Submitted videos remain private until an administrator has reviewed and approved them.'
+'Eingereichte Video- und Audiobeiträge bleiben privat, bis ein Administrator sie geprüft und freigegeben hat. Du kannst eine Video- oder MP3-Datei hochladen oder eine sichere Videoquelle eines unterstützten Providers vorschlagen.': 'Submitted video and audio contributions remain private until an administrator has reviewed and approved them. You can upload a video or MP3 file, or suggest a safe video source from a supported provider.'
 'Titel': 'Title'
 'Keine Kategorie': 'No category'
-'Videodatei (MP4, WebM oder Ogg, höchstens 32 MiB)': 'Video file (MP4, WebM, or Ogg, up to 32 MiB)'
+'Video- oder MP3-Datei (MP4, WebM, Ogg oder MP3, höchstens 32 MiB)': 'Video or MP3 file (MP4, WebM, Ogg, or MP3, up to 32 MiB)'
+'Alternativ kannst du eine Video- oder MP3-Datei hochladen. Verwende nur eine der beiden Quellen.': 'Alternatively, you can upload a video or MP3 file. Use only one of the two sources.'
+'Dein Browser kann diese Audiodatei nicht abspielen.': 'Your browser cannot play this audio file.'
+'Dein Browser kann diesen Audiostream nicht abspielen.': 'Your browser cannot play this audio stream.'
+'Audiovorschau für %title%': 'Audio preview for %title%'
 'Zur Prüfung einreichen': 'Submit for review'
-'Dateien werden privat gespeichert. Das Video erscheint erst nach einer redaktionellen Freigabe.': 'Files are stored privately. The video will appear only after editorial approval.'
+'Hochgeladene Video- und Audiodateien werden privat gespeichert. Ein Beitrag erscheint erst nach der redaktionellen Freigabe.': 'Uploaded video and audio files are stored privately. A submission appears only after editorial approval.'
 
 # Administration dashboard, activity, category, and sign-in messages.
 "CMS-Verwaltung": "CMS administration"
@@ -848,6 +905,10 @@ Admin: Administration
 "Diese Kategorie gibt es in diesem Inhaltsbereich bereits.": "This category already exists in this content area."
 "Kategorie wurde angelegt.": "The category was created."
 "Kategorie wurde gespeichert.": "The category was saved."
+"Die Beschreibung ist zu groß oder enthält ungültigen Text.": "The description is too large or contains invalid text."
+"Die Beschreibung ist ungültig.": "The description is invalid."
+"Die Beschreibung darf nur Inline-Bilder dieser Kategorie verwenden.": "The description may only use inline images owned by this category."
+"Inline-Bilder können erst eingefügt werden, nachdem die Kategorie gespeichert wurde.": "Save the category before inserting inline images."
 "Kategorie wurde nicht gefunden.": "The category could not be found."
 "Die Kategorie wird noch verwendet und kann nicht gelöscht werden.": "This category is still in use and cannot be deleted."
 "Kategorie wurde gelöscht.": "The category was deleted."
@@ -953,7 +1014,8 @@ Admin: Administration
 "Löschen bestätigen": "Confirm deletion"
 "Ich bestätige das Löschen": "I confirm the deletion"
 "Auf Auswahl anwenden": "Apply to selection"
-"Wähle bis zu 50 Einträge aus. Löschen entfernt auch ihre Kommentare.": "Select up to 50 entries. Deleting an entry also deletes its comments."
+'Wähle bis zu 50 Einträge aus.': 'Select up to 50 entries.'
+'Löschen entfernt auch ihre Kommentare.': 'Deleting selected entries also deletes their comments.'
 "Auswahl": "Selection"
 "Quelle": "Source"
 "Zuletzt geändert": "Last modified"
@@ -961,6 +1023,23 @@ Admin: Administration
 "Noch keine Videos. Füge die erste Videoquelle hinzu.": "There are no videos yet. Add the first video source."
 "Verwaltungsseiten": "Administration pages"
 "Seite %page% von %page_count%": "Page %page% of %page_count%"
+'Quellenstatus prüfen': 'Check source status'
+'Pro Quellenprüfung können höchstens fünf Videos ausgewählt werden.': 'Select no more than five videos per source check.'
+'Die Quellenprüfung ist nur für eingebettete Videos verfügbar.': 'Source checks are available only for embedded videos.'
+'Der gemeinsame Importschutz ist nicht verfügbar. Es wurden keine Videoanbieter angefragt.': 'The shared import protection is unavailable. No video providers were contacted.'
+'Das Limit für Quellenprüfungen ist erreicht. Bitte versuche es später erneut.': 'The source-check limit has been reached. Please try again later.'
+'Quellenprüfung abgeschlossen: %checked% geprüft, %unavailable% nicht verfügbar, %unsupported% nicht unterstützt und %failed% fehlgeschlagen.': 'Source check complete: %checked% checked, %unavailable% unavailable, %unsupported% unsupported, and %failed% failed.'
+'Externer Quellenstatus': 'External source status'
+'Noch nicht geprüft': 'Not checked yet'
+'Quelle verfügbar': 'Source available'
+'Quelle nicht verfügbar': 'Source unavailable'
+'Anbieter nicht unterstützt': 'Provider unsupported'
+'Prüfung fehlgeschlagen': 'Check failed'
+'Zuletzt geprüft: %date%': 'Last checked: %date%'
+'Letzter Prüfversuch: %date%': 'Last check attempt: %date%'
+'Letzter bekannter Status: %status%': 'Last known status: %status%'
+'Keine externe Einbettungsquelle': 'No external embed source'
+'Wähle bis zu 50 Einträge aus. Für eine Quellenprüfung werden höchstens fünf externe Einbettungen abgefragt; Uploads, Streams und direkte URLs werden nicht kontaktiert. Löschen entfernt auch ihre Kommentare.': 'Select up to 50 entries. A source check contacts no more than five embedded providers; uploads, streams, and direct URLs are never contacted. Deleting an entry also deletes its comments.'
 "Eingehende Meldungen prüfen und Videos bei Bedarf aus der öffentlichen Ausgabe nehmen.": "Review incoming reports and remove videos from public pages when needed."
 "Zum Videokatalog": "Back to the video catalogue"
 "Meldungen": "Reports"
@@ -989,16 +1068,16 @@ Admin: Administration
 # Administration video forms and safe import messages.
 "Video bearbeiten": "Edit video"
 "Hinzufügen": "Add"
-"Geprüfte HTTPS-Quelle oder private Videodatei mit Metadaten speichern.": "Save video metadata with a verified HTTPS source or a private video file."
+"Geprüfte HTTPS-Quelle oder private Medien-Datei mit Metadaten speichern.": "Save media metadata with a verified HTTPS source or private media file."
 "Videodaten": "Video details"
-"Dateien werden außerhalb des öffentlichen Webpfads gespeichert; nur MP4, WebM und Ogg bis 32 MiB sind zugelassen.": "Files are stored outside the public web path. Only MP4, WebM, and Ogg files up to 32 MiB are accepted."
+"Dateien werden außerhalb des öffentlichen Webpfads gespeichert; MP4, WebM, Ogg und MP3 bis 32 MiB sind zugelassen.": "Files are stored outside the public web path. MP4, WebM, Ogg, and MP3 files up to 32 MiB are accepted."
 "Quellart": "Source type"
 "Einbettungs-URL": "Embed URL"
 "Erlaubte Einbettungsseiten": "Allowed embedding sites"
 "Ein HTTPS-Ursprung pro Zeile, ohne Pfad. Nur Administratoren können diese Freigabe ändern. Entwürfe und widerrufene Videos lassen sich nicht einbetten.": "Enter one HTTPS origin per line, without a path. Only administrators can change this grant. Draft and revoked videos cannot be embedded."
 "Die Freigabeliste für Videoeinbettungen muss aus Text bestehen.": "The video embedding allowlist must be plain text."
 "Die Freigabeliste darf höchstens 20 gültige HTTPS-Ursprünge ohne Pfad enthalten.": "The allowlist can contain at most 20 valid HTTPS origins without paths."
-"Nur veröffentlichte Datei-Uploads, freigegebene Streams und geprüfte YouTube-, Dailymotion- oder Vimeo-Einbettungen können extern freigegeben werden.": "Only published file uploads, approved streams, and verified YouTube, Dailymotion, or Vimeo embeds can be shared externally."
+"Nur veröffentlichte Datei-Uploads, freigegebene Streams und geprüfte Provider-Einbettungen können extern freigegeben werden.": "Only published file uploads, approved streams, and verified provider embeds can be shared externally."
 "Einbettungscode": "Embed code"
 "Der Player funktioniert nur auf den oben freigegebenen HTTPS-Ursprüngen.": "The player only works on the HTTPS origins approved above."
 "HTML-Code zum Kopieren": "HTML code to copy"
@@ -1007,14 +1086,14 @@ Admin: Administration
 "Externes Video wird geladen.": "Loading external video."
 "Diese externe Videoquelle ist ungültig.": "This external video source is invalid."
 "Video beim Anbieter öffnen": "Open video at provider"
-"Private Videodatei": "Private video file"
+"Private Medien-Datei": "Private media file"
 "Quell-URL": "Source URL"
-"Für Einbettungen sind nur geprüfte YouTube-, Dailymotion- und Vimeo-Video-URLs zugelassen; fremder HTML-Code wird nicht ausgeführt.": "Embeds accept verified YouTube, Dailymotion, and Vimeo video URLs only. Third-party HTML is never executed."
-"Unterstützt werden direkte MP4-, M4V-, WebM- und Ogg-Dateien sowie HLS-Live-Playlists (M3U8) auf freigegebenen HTTPS-Hosts. HLS-Segmente und Schlüssel müssen ebenfalls von freigegebenen Hosts kommen; der Server ruft die Stream-Adresse nicht ab.": "Direct MP4, M4V, WebM, and Ogg files are supported, along with HLS live playlists (M3U8) on approved HTTPS hosts. HLS segments and keys must also come from approved hosts; the server does not fetch the stream URL."
+"Für Einbettungen sind nur geprüfte YouTube-, Vimeo-, Dailymotion-, Facebook-, Google-Drive-, Rutube-, VK- und Youku-Video-URLs zugelassen; fremder HTML-Code wird nicht ausgeführt.": "Embeds accept verified YouTube, Vimeo, Dailymotion, Facebook, Google Drive, Rutube, VK, and Youku video URLs only. Third-party HTML is never executed."
+"Unterstützt werden direkte MP4-, M4V-, WebM-, Ogg- und MP3-Dateien sowie HLS-Live-Playlists (M3U8) auf freigegebenen HTTPS-Hosts. HLS-Segmente und Schlüssel müssen ebenfalls von freigegebenen Hosts kommen; der Server ruft die Stream-Adresse nicht ab.": "Direct MP4, M4V, WebM, Ogg, and MP3 files are supported, along with HLS live playlists (M3U8) on approved HTTPS hosts. HLS segments and keys must also come from approved hosts; the server does not fetch the stream URL."
 "Die vollständige Adresse einschließlich Abfrageparametern wird öffentlich ausgegeben. Bitte keine Zugangsdaten oder geheimen Tokens verwenden.": "The complete address, including query parameters, is shown publicly. Do not include credentials or secret tokens."
 "Streamhosts sind derzeit nicht freigegeben; bitte die Hostingverwaltung um Einrichtung bitten.": "Stream hosts are not approved yet. Ask an administrator to configure them in hosting settings."
-"Videodatei": "Video file"
-"Bei Quellart „Private Videodatei“ erforderlich; beim Bearbeiten optional, wenn die vorhandene Datei bleiben soll.": "Required for the private video file source type. When editing, leave this empty to keep the existing file."
+"Video- oder MP3-Datei": "Video or MP3 file"
+"Bei Quellart „Private Medien-Datei“ erforderlich; beim Bearbeiten optional, wenn die vorhandene Datei bleiben soll.": "Required for the private media file source type. When editing, leave this empty to keep the existing file."
 "Aktuelle private Datei: %media_type%.": "Current private file: %media_type%."
 "z. B. Kultur, Interviews, Neuigkeiten": "e.g. culture, interviews, news"
 "Bis zu zehn Schlagwörter, getrennt durch Komma oder Zeilenumbruch.": "Enter up to ten tags, separated by commas or line breaks."
@@ -1026,6 +1105,16 @@ Admin: Administration
 "Bilddatei": "Image file"
 "Vorschaubild hochladen": "Upload thumbnail"
 "Vorschaubild entfernen": "Remove thumbnail"
+'Das Vorschaubild wird über die feste Provider-API ausgewählt, sicher geprüft und privat gespeichert.': 'The thumbnail is selected through the fixed provider API, securely validated, and stored privately.'
+'Provider-Vorschaubild übernehmen': 'Import provider thumbnail'
+'Die Provider-Vorschaubildanfrage enthält nicht erlaubte Felder.': 'The provider thumbnail request contains fields that are not allowed.'
+'Der gemeinsame Importschutz ist nicht verfügbar. Das Provider-Vorschaubild wurde nicht abgerufen.': 'The shared import protection is unavailable. The provider thumbnail was not retrieved.'
+'Der Videoanbieter konnte kein sicheres Vorschaubild bereitstellen.': 'The video provider could not provide a safe thumbnail.'
+'Für diese Videoquelle ist kein sicheres Provider-Vorschaubild verfügbar.': 'No safe provider thumbnail is available for this video source.'
+'Das Provider-Vorschaubild konnte nicht sicher übernommen werden.': 'The provider thumbnail could not be imported safely.'
+'Das neue Provider-Vorschaubild konnte nach dem Speicherfehler nicht bereinigt werden.': 'The new provider thumbnail could not be cleaned up after the storage error.'
+'Das frühere private Vorschaubild konnte nicht bereinigt werden.': 'The previous private thumbnail could not be cleaned up.'
+'Provider-Vorschaubild wurde sicher übernommen.': 'The provider thumbnail was imported safely.'
 "Permalink": "Permalink"
 "Leer lassen, um den Permalink aus dem Titel zu bilden. Erlaubt sind Kleinbuchstaben, Ziffern und Bindestriche.": "Leave blank to build the permalink from the title. Lowercase letters, digits, and hyphens are allowed."
 "Veröffentlichte Beiträge können geplant, hervorgehoben und auf Mitglieder beschränkt werden.": "Published articles can be scheduled, featured, and restricted to members."
@@ -1081,11 +1170,7 @@ Admin: Administration
 "Nur die YouTube-Kanal-ID im Format UC… wird akzeptiert.": "Only YouTube channel IDs in the UC… format are accepted."
 "Nur eine numerische Vimeo-Nutzer-ID wird akzeptiert; importiert werden die öffentlich einbettbaren Videos dieses Nutzerkanals.": "Only numeric Vimeo user IDs are accepted. Publicly embeddable videos from that user's channel are imported."
 "Nur eine Dailymotion-Profil-ID wird akzeptiert; importiert werden ausschließlich öffentliche Videos, die Einbettungen erlauben.": "Only a Dailymotion profile ID is accepted. Only public videos that allow embedding are imported."
-"Eingereichte Videos bleiben privat, bis ein Administrator sie geprüft und freigegeben hat. Du kannst eine Videodatei hochladen oder eine sichere YouTube-, Dailymotion- oder Vimeo-Quelle vorschlagen.": "Submitted videos remain private until an administrator has reviewed and approved them. You can upload a video file or suggest a safe YouTube, Dailymotion, or Vimeo source."
-"YouTube-, Dailymotion- oder Vimeo-URL": "YouTube, Dailymotion, or Vimeo URL"
-"Bitte gib eine gültige YouTube-, Dailymotion- oder Vimeo-Videoquelle ein.": "Enter a valid YouTube, Dailymotion, or Vimeo video source."
-"Wähle eine Videodatei oder gib eine YouTube-, Dailymotion- oder Vimeo-URL ein.": "Choose a video file or enter a YouTube, Dailymotion, or Vimeo URL."
-"Es werden nur sichere, einbettbare YouTube-, Dailymotion- und Vimeo-Videos unterstützt.": "Only safe, embeddable YouTube, Dailymotion, and Vimeo videos are supported."
+'Video-URL eines unterstützten Providers': 'Video URL from a supported provider'
 "Videokategorie (optional)": "Video category (optional)"
 "Suchbegriffe sowie Kanal- und Playlist-IDs werden nur an die feste API des ausgewählten Anbieters gesendet. Bestehende Videos und wiederholte Treffer werden übersprungen.": "Search terms, channel IDs, and playlist IDs are sent only to the selected provider's fixed API. Existing videos and duplicate results are skipped."
 "Es werden nur öffentliche Favoriten importiert, die Dailymotion-Einbettungen erlauben.": "Only public favorites that permit Dailymotion embedding are imported."
@@ -1409,6 +1494,7 @@ Admin: Administration
 'Mitgliedskonten suchen, Profile bearbeiten und ihren Kontostatus verwalten.': 'Search member accounts, edit profiles, and manage account status.'
 'Mitglied anlegen': 'Create member'
 'CSV exportieren': 'Export CSV'
+'Kontaktliste exportieren': 'Export contact list'
 'E-Mail, Kanalname oder Anzeigename': 'Email, channel name, or display name'
 'Kontostatus': 'Account status'
 'Alle Konten': 'All accounts'
@@ -1503,7 +1589,7 @@ Admin: Administration
 'Beschriftung im Player': 'Player label'
 'WebVTT-Datei': 'WebVTT file'
 'Untertitel speichern oder aktualisieren': 'Save or update subtitles'
-'Untertitelspuren können nur für Videodateien und geprüfte Streams hochgeladen werden.': 'Subtitle tracks can only be uploaded for video files and approved streams.'
+'Untertitelspuren können für private Medien-Dateien und geprüfte Video- oder Audiostreams hochgeladen werden.': 'Subtitle tracks can be uploaded for private media files and approved video or audio streams.'
 'Beschriftung': 'Label'
 'Dateigröße': 'File size'
 '%size% Byte': '%size% bytes'
@@ -1638,9 +1724,10 @@ Admin: Administration
 'Originalquelle': 'Original source'
 'Die Videoqualität wurde geändert.': 'Video quality changed.'
 'Die Videoqualität konnte nicht geändert werden.': 'Video quality could not be changed.'
-'Videolaufzeit in Sekunden': 'Video duration in seconds'
+'Medienlaufzeit in Sekunden': 'Media duration in seconds'
 'Optional, zum Beispiel 120 Sekunden für zwei Minuten.': 'Optional, for example 120 seconds for two minutes.'
 'Videolaufzeit: %duration%': 'Video duration: %duration%'
+'Audiodauer: %duration%': 'Audio duration: %duration%'
 'Die CSV wird nur im temporären Uploadbereich gelesen und nach dem Request verworfen. Video-Quell-URLs werden nicht abgerufen. Optionale Vorschaubilder werden sicher geprüft und privat gespeichert.': 'The CSV is read only in temporary upload storage and discarded after the request. Video source URLs are never fetched. Optional thumbnails are validated securely and stored privately.'
 'Maximal 2 MiB und 500 Videos. Höchstens 50 Vorschaubilder und insgesamt 32 MiB Bilddaten je Import. Alle importierten Videos werden als Entwürfe angelegt.': 'Maximum 2 MiB and 500 videos. Up to 50 thumbnails and 32 MiB of image data per import. Imported videos are saved as drafts.'
 'Arcanorum-Format:': 'Arcanorum format:'
@@ -1737,6 +1824,9 @@ Admin: Administration
 'Glühbirne': 'Light bulb'
 'Geschenk': 'Gift'
 'Schlüssel': 'Key'
+'Benutzerdefinierte Felder': 'Custom fields'
+'Füge bis zu 30 eigene Textfelder hinzu. Alle Werte werden öffentlich als Text ausgegeben. Leere Schlüssel-Wert-Zeilen werden ignoriert.': 'Add up to 30 custom text fields. All values are displayed publicly as text. Rows with empty keys and values are ignored.'
+'Weitere Angaben': 'Additional details'
 'Rotes Herz': 'Red heart'
 'Stern': 'Star'
 'Funkeln': 'Sparkles'
@@ -1776,7 +1866,15 @@ Admin: Administration
 "Schlagwörter täglich gemischt anzeigen": "Shuffle tags daily"
 "Ähnliche Videos auf der Videoseite": "Related videos on video pages"
 "Am besten bewertete Videos auf der Videoseite": "Top-rated videos on video pages"
-"Teilen-Bereich auf Videoseiten anzeigen": "Show the share section on video pages"
+"Teilen-Bereich für Videos, News und Serienfolgen anzeigen": "Show the share section for videos, news articles, and series episodes"
+"Diesen Inhalt teilen": "Share this content"
+"Teilen": "Sharing"
+"Bei Facebook teilen": "Share on Facebook"
+"Bei X teilen": "Share on X"
+"Bei Pinterest teilen": "Share on Pinterest"
+"Öffentlicher Link": "Public link"
+"Externe Teilen-Links erfordern eine konfigurierte öffentliche Website-Adresse.": "External sharing links require a configured public website address."
+"Beim Öffnen eines Teilen-Links wird die Seitenadresse an den gewählten Dienst übermittelt. Diese Seite lädt dafür keine externen Skripte.": "Opening a sharing link sends this page's address to the selected service. This page does not load third-party scripts for sharing."
 "Empfehlungen und Schlagwörter enthalten nur veröffentlichte öffentliche Inhalte. Bewertungen werden ausschließlich als Gesamtwert ausgegeben.": "Recommendations and tags include only published public content. Ratings are shown only as aggregate totals."
 "Weitere hervorgehobene Videos": "More featured videos"
 "Hervorgehobene Videos": "Featured videos"
@@ -1830,6 +1928,9 @@ Admin: Administration
 'Der Systemauftrag meldet bestätigte Providerantworten zur Moderation. Videos werden niemals automatisch entfernt oder entveröffentlicht.': 'The system task reports confirmed provider responses for moderation. Videos are never automatically deleted or unpublished.'
 'Keine nicht verfügbaren externen Quellen gemeldet.': 'No unavailable external sources have been reported.'
 'Letzte Ausführungen': 'Recent runs'
+'Versuche': 'Attempts'
+'Nächster Versuch / Lease-Ende': 'Next retry / lease expiry'
+'Lease bis': 'Lease until'
 'Für diese Aufgaben liegen noch keine Ausführungen vor.': 'These tasks have not run yet.'
 'Aufgabe': 'Task'
 'Gestartet': 'Started'
@@ -1849,6 +1950,164 @@ Admin: Administration
 'Die Signatur wird nur über die Standardeingabe gelesen und erscheint dadurch nicht in Prozessargumenten.': 'The signature is read only from standard input, so it does not appear in process arguments.'
 'Ersetze im Beispiel den Projektpfad durch das private Arcanorum-Verzeichnis. Zeitstempel, Nonce und Signatur werden direkt vor jedem Lauf neu erzeugt. AUTOMATION_SCHEDULER_KEY muss bereits als private Laufzeitvariable gesetzt sein. Schlüssel und Signatur erscheinen weder in Prozessargumenten noch in einer HTTP-Anfrage; die Signatur wird nur über die Standardeingabe an den CLI-Befehl geleitet.': 'Replace the project path in the example with the private Arcanorum directory. A timestamp, nonce, and signature are generated immediately before each run. AUTOMATION_SCHEDULER_KEY must already be set as a private runtime variable. The key and signature appear neither in process arguments nor in an HTTP request; the signature is piped to the CLI command through standard input only.'
 'Zurück zu Aufgaben': 'Back to tasks'
+'Bild einfügen': 'Insert image'
+'Formatierungen und Bilder werden sicher geprüft. Vorschauen sind privat; verknüpfte Bilder erscheinen auf der öffentlichen Seite.': 'Formatting and images are validated safely. Previews are private; linked images appear on the public page.'
+'Provider-Metadaten übernehmen': 'Import provider metadata'
+'Provider-Metadaten konnten nicht abgerufen werden.': 'Provider metadata could not be retrieved.'
+'Provider-Metadaten wurden übernommen.': 'Provider metadata was imported.'
+'Provider-Metadaten werden abgerufen.': 'Retrieving provider metadata.'
+'Die Metadatenanfrage ist ungültig.': 'The metadata request is invalid.'
+'Bitte gib eine gültige Provider-Video-URL ein.': 'Enter a valid provider video URL.'
+'Das Importlimit wurde erreicht. Bitte warte kurz und versuche es erneut.': 'The import limit was reached. Wait a moment and try again.'
+'Der Videoanbieter konnte keine sicheren Metadaten bereitstellen. Bitte prüfe die Providerkonfiguration und versuche es erneut.': 'The video provider could not provide safe metadata. Check the provider configuration and try again.'
+'Für diese URL sind keine unterstützten und einbettbaren Provider-Metadaten verfügbar.': 'No supported embeddable provider metadata is available for this URL.'
+'Für eine Einbettung ist nur eine gültige Video-URL von YouTube, Vimeo, Dailymotion, Facebook, Google Drive, Rutube, VK oder Youku zulässig.': 'Embeds accept a valid video URL from YouTube, Vimeo, Dailymotion, Facebook, Google Drive, Rutube, VK, or Youku only.'
+'Es werden nur sichere, einbettbare Videos von unterstützten Providern angenommen.': 'Only secure, embeddable videos from supported providers are accepted.'
+'Wähle eine Video- oder MP3-Datei oder gib eine gültige unterstützte Provider-URL ein.': 'Choose a video or MP3 file, or enter a valid supported provider URL.'
+'Reiche entweder eine Video-/MP3-Datei oder eine externe Video-URL ein, nicht beides.': 'Submit either a video/MP3 file or an external video URL, not both.'
+'Die Medienlaufzeit muss eine ganze Zahl sein.': 'The media duration must be a whole number.'
+'Die Medienlaufzeit muss eine ganze Zahl von 0 bis 2.147.483.647 Sekunden sein.': 'The media duration must be a whole number from 0 to 2,147,483,647 seconds.'
+'Bitte wähle genau eine gültige Mediendatei aus.': 'Choose exactly one valid media file.'
+'Für einen neuen Datei-Upload ist eine geprüfte Medien-Datei erforderlich.': 'A validated media file is required for a new file upload.'
+'Die frühere private Medien-Datei konnte nicht bereinigt werden.': 'The previous private media file could not be removed.'
+'Die private Medien-Datei ist ungültig.': 'The private media file is invalid.'
+'Die Mediendatei konnte nicht sicher gelesen werden.': 'The media file could not be read safely.'
+'Mediendateien müssen zwischen 1 Byte und 32 MiB groß sein.': 'Media files must be between 1 byte and 32 MiB.'
+'Die Mediendatei ist leer, zu groß oder wurde während der Prüfung verändert.': 'The media file is empty, too large, or changed while being checked.'
+'Erlaubt sind MP4-, WebM-, Ogg-Videodateien und MP3-Audiodateien.': 'MP4, WebM, and Ogg video files and MP3 audio files are accepted.'
+'Bitte gib eine gültige Videoquelle von YouTube, Vimeo, Dailymotion, Facebook, Google Drive, Rutube, VK oder Youku ein.': 'Enter a valid video source from YouTube, Vimeo, Dailymotion, Facebook, Google Drive, Rutube, VK, or Youku.'
+'Für die Einbettung ist nur eine gültige Video-URL eines unterstützten Providers zulässig.': 'Embeds accept valid video URLs from supported providers only.'
+'Speichere den Inhalt zuerst, bevor du Bilder hochlädst.': 'Save the content before uploading images.'
+'Standardreihenfolge der Kommentare': 'Default comment order'
+'Neueste Kommentare zuerst': 'Newest comments first'
+'Am besten bewertete Kommentare zuerst': 'Highest rated comments first'
+'Kommentar einklappen ab dieser Zahl von Ablehnungen': 'Collapse comments at this number of dislikes'
+'Der Wert 0 schaltet das Einklappen aus. Ein Kommentar wird erst eingeklappt, wenn die Ablehnungen den Schwellenwert erreichen und die Ablehnungen die Zustimmungen übersteigen. Der Text bleibt über eine tastaturbedienbare Aufklappsteuerung erreichbar.': 'A value of 0 disables collapsing. A comment is collapsed only when dislikes reach the threshold and outnumber likes. The text remains available through a keyboard-operable disclosure control.'
+'Dieser Kommentar wurde wegen negativer Bewertungen eingeklappt.': 'This comment was collapsed because of negative ratings.'
+'Bitte wähle eine unterstützte Kommentarsortierung.': 'Choose a supported comment order.'
+'Die Schwelle muss eine ganze Zahl von 0 bis 1000 sein.': 'The threshold must be a whole number from 0 to 1000.'
+'Kommentare pro Seite': 'Comments per page'
+'Lege fest, wie viele freigegebene Kommentare pro Seite erscheinen. Der Seitenwechsel funktioniert auch ohne JavaScript.': 'Choose how many approved comments appear on each page. Page navigation works without JavaScript.'
+'Die Zahl der Kommentare pro Seite muss zwischen 1 und 100 liegen.': 'The number of comments per page must be between 1 and 100.'
+'Vorherige Kommentarseite': 'Previous comment page'
+'Nächste Kommentarseite': 'Next comment page'
+'Seite %page% von %pages%': 'Page %page% of %pages%'
 'run': 'Running'
 'succeeded': 'Succeeded'
 'failed': 'Failed'
+'Administratorpasswort ändern': 'Change administrator password'
+'Kontosicherheit': 'Account security'
+'Bestätige dein aktuelles Passwort. Nach der Änderung wirst du abgemeldet und musst dich mit deinem neuen Passwort und MFA erneut anmelden.': 'Confirm your current password. After the change, you will be signed out and must sign in again with your new password and MFA.'
+'Eigenes Passwort': 'Your password'
+'Das Passwort muss mindestens 16 Zeichen lang sein. Nach fünf Änderungsversuchen innerhalb von 15 Minuten ist eine kurze Wartezeit erforderlich.': 'The password must be at least 16 characters long. After five change attempts within 15 minutes, a short wait is required.'
+'Die Anfrage enthält unbekannte Passwortfelder.': 'The request contains unknown password fields.'
+'Bitte gib gültige Passwörter innerhalb der zulässigen Länge ein.': 'Enter valid passwords within the allowed length.'
+'Das neue Passwort muss gültiges UTF-8 enthalten und mindestens 16 Zeichen lang sein.': 'The new password must contain valid UTF-8 and be at least 16 characters long.'
+'Das neue Passwort muss sich vom aktuellen Passwort unterscheiden.': 'The new password must differ from the current password.'
+'Das Administratorpasswort wurde geändert. Bitte melde dich mit deinem neuen Passwort und MFA erneut an.': 'The administrator password was changed. Sign in again with your new password and MFA.'
+'Das Administratorpasswort ist derzeit nicht verfügbar. Bitte versuche es später erneut.': 'The administrator password is currently unavailable. Please try again later.'
+'Eigenes Administratorpasswort geändert': 'Administrator changed their password'
+'Eine Kategorie gehört zu News oder Videos. Verwendete Kategorien und Kategorien mit Unterkategorien können nicht gelöscht werden.': 'Categories belong to News or videos. Categories in use or with child categories cannot be deleted.'
+'URL-Slug': 'URL slug'
+'Leer lassen, um den Slug beim Anlegen aus dem Namen zu erzeugen. Ein gespeicherter Slug bleibt beim Umbenennen unverändert.': 'Leave blank to generate a slug from the name when creating a category. A saved slug stays unchanged when the name changes.'
+'Übergeordnete Kategorie': 'Parent category'
+'Keine — oberste Ebene': 'None — top level'
+'Unterkategorien sind auf acht Ebenen begrenzt und bleiben im selben Inhaltsbereich.': 'Categories are limited to eight levels and must stay within the same content area.'
+'Meta-Titel': 'Meta title'
+'Unterkategorien': 'Child categories'
+'News-Kategorien': 'News categories'
+'Die Kategorien-Metadaten sind ungültig.': 'The category metadata is invalid.'
+'Der Kategorien-Slug darf nur Kleinbuchstaben, Zahlen und Bindestriche enthalten.': 'The category slug may contain only lowercase letters, numbers, and hyphens.'
+'Dieser Kategorien-Slug wird in diesem Inhaltsbereich bereits verwendet.': 'This category slug is already used in this content area.'
+'Die übergeordnete Kategorie ist ungültig.': 'The parent category is invalid.'
+'Die Beschreibung darf höchstens 2000 Zeichen lang sein.': 'The description must be no longer than 2,000 characters.'
+'Der Meta-Titel darf höchstens 160 Zeichen lang sein.': 'The meta title must be no longer than 160 characters.'
+'Die Meta-Beschreibung darf höchstens 500 Zeichen lang sein.': 'The meta description must be no longer than 500 characters.'
+'Die Meta-Schlagwörter dürfen höchstens 255 Zeichen lang sein.': 'The meta keywords must be no longer than 255 characters.'
+'Die Sortierung muss eine Zahl zwischen 0 und 10000 sein.': 'The sort order must be a number from 0 to 10,000.'
+'Die Kategorie wird noch verwendet oder enthält Unterkategorien und kann nicht gelöscht werden.': 'This category is still in use or has child categories and cannot be deleted.'
+'Wähle bis zu 50 Einträge aus. Löschen entfernt auch ihre Kommentare.': 'Select up to 50 entries. Deleting an entry also deletes its comments.'
+'Enthält Unterkategorien': 'Contains child categories'
+'Ausgewählte Videokategorien erscheinen mit ihren neuesten veröffentlichten Videos auf der Startseite.': 'Selected video categories appear on the homepage with their latest published videos.'
+'Nur Videokategorien können auf der Startseite hervorgehoben werden.': 'Only video categories can be featured on the homepage.'
+'Der Startseitenstatus der Kategorie ist ungültig.': 'The category homepage status is invalid.'
+'Kategorie-Artwork': 'Category artwork'
+'JPEG, PNG oder WebP bis 4 MiB. Das Bild wird geprüft und auf höchstens 320 × 180 Pixel verkleinert.': 'JPEG, PNG, or WebP up to 4 MiB. The image is checked and resized to no more than 320 × 180 pixels.'
+'Artwork ersetzen': 'Replace artwork'
+'Artwork hochladen': 'Upload artwork'
+'Bild ersetzen': 'Replace image'
+'Bild speichern': 'Save image'
+'Artwork entfernen': 'Remove artwork'
+'Kategorie-Artwork wurde gespeichert.': 'Category artwork was saved.'
+'Kategorie-Artwork wurde entfernt.': 'Category artwork was removed.'
+'Bitte wähle eine gültige Artwork-Aktion aus.': 'Choose a valid artwork action.'
+'Der sichere private Dateispeicher ist nicht verfügbar; das Artwork wurde nicht gespeichert.': 'The private file storage is unavailable; the artwork was not saved.'
+'Das Kategorie-Artwork konnte nicht sicher gelesen werden.': 'The category artwork could not be read safely.'
+'Kategorie-Artworks dürfen höchstens 4 MiB groß sein.': 'Category artwork must not exceed 4 MiB.'
+'Das Kategorie-Artwork ist leer, zu groß oder wurde während der Prüfung verändert.': 'The category artwork is empty, too large, or changed while it was being checked.'
+'Bildformat oder Bildabmessungen des Kategorie-Artworks sind ungültig.': 'The category artwork format or dimensions are invalid.'
+'Das Kategorie-Artwork ist kein lesbares Rasterbild.': 'The category artwork is not a readable raster image.'
+'Das Kategorie-Artwork konnte nicht verarbeitet werden.': 'The category artwork could not be processed.'
+'Das Kategorie-Artwork konnte nicht verkleinert werden.': 'The category artwork could not be resized.'
+'Das verkleinerte Kategorie-Artwork überschreitet die Speichergrenze.': 'The resized category artwork exceeds the storage limit.'
+'Das Kategorie-Artwork konnte nicht sicher neu kodiert werden.': 'The category artwork could not be safely re-encoded.'
+'Die Daten des Kategorie-Artworks sind ungültig.': 'The category artwork metadata is invalid.'
+'Die Kennung des privaten Kategorie-Artworks ist ungültig.': 'The private category artwork identifier is invalid.'
+'Ein nicht zugeordnetes Videokategorie-Artwork konnte nicht bereinigt oder zur Bereinigung vorgemerkt werden.': 'An unassigned video category artwork object could not be removed or queued for cleanup.'
+'Ein Videokategorie-Artwork konnte weder gelöscht noch zur Bereinigung vorgemerkt werden.': 'A video category artwork object could not be deleted or queued for cleanup.'
+'Das frühere Kategorie-Artwork konnte nicht sicher bereinigt werden.': 'The previous category artwork could not be safely cleaned up.'
+'Durchsuche die Themenbereiche des Videokatalogs.': 'Browse the video catalog by topic.'
+'Alle Videos ansehen': 'View all videos'
+'Kategorie %category% öffnen': 'Open the %category% category'
+'Noch keine Videokategorien vorhanden.': 'No video categories have been created yet.'
+'Videokategorie': 'Video category'
+'Alle Videos dieser Kategorie': 'All videos in this category'
+'Videokategorien durchsuchen': 'Browse video categories'
+'Artwork für %category%': 'Artwork for %category%'
+'Sortierreihenfolge der Startseite': 'Homepage sort order'
+'Hervorhebung speichern': 'Save featured setting'
+'Startseitenhervorhebung für das Seriengenre gespeichert.': 'Featured series genre settings were saved.'
+'Seriengenre aus der Startseitenhervorhebung entfernt.': 'The series genre was removed from homepage features.'
+'Websiteanalyse': 'Website analytics'
+'Google-Analytics-4-Mess-ID': 'Google Analytics 4 measurement ID'
+'Nur eine gültige G-XXXXXXXXXX-Mess-ID wird akzeptiert. Die feste GA4-Einbindung lädt ausschließlich nach gültiger Zustimmung zu optionalen Cookies auf öffentlichen Inhaltsseiten. Suchbegriffe, Seitenpfade, Seitentitel und Referrer werden nicht übertragen; Google erhält bei Einwilligung weiterhin technische Verbindungsdaten.': 'Enter a valid G-XXXXXXXXXX measurement ID. The fixed GA4 integration loads only after valid consent to optional cookies and only on public content pages. Search terms, page paths, page titles, and referrers are not sent; Google still receives technical connection data after consent.'
+'Notwendige Sicherheits- und Sitzungscookies bleiben aktiv. Optionale externe Dienste wie die konfigurierte Websiteanalyse und externe Kommentare werden nur nach gültiger Einwilligung geladen.': 'Necessary security and session cookies remain active. Optional external services, including configured analytics and external comments, load only after valid consent.'
+'Wir verwenden notwendige Cookies für Anmeldung, Sicherheit und die Ansichtspräferenz in diesem Browser. Optionale Analyse- und Werbedienste werden nur nach Ihrer Zustimmung geladen.': 'We use necessary cookies for sign-in, security, and this browser’s view preference. Optional analytics and advertising services load only after you consent.'
+'Bitte gib eine gültige GA4-Mess-ID im Format G-XXXXXXXXXX ein oder lasse das Feld leer.': 'Enter a valid GA4 measurement ID in the format G-XXXXXXXXXX, or leave this field empty.'
+'Serien aus %genre%': 'Series in %genre%'
+
+"Mitgliederaktivitäten": "Member activities"
+"Öffentliche Aktivitäten können aus dem Mitgliederfeed ausgeblendet oder entfernt werden. Videos, Wiedergabelisten und Kommentare bleiben dabei unverändert.": "Public activities can be hidden or removed from the member feed. Videos, playlists, and comments remain unchanged."
+"Mitglied oder Inhalt suchen": "Search member or content"
+"Aktivitätstyp": "Activity type"
+"Alle Aktivitätstypen": "All activity types"
+"Videoeinreichung": "Video submission"
+"Öffentliche Wiedergabeliste": "Public playlist"
+"Videokommentar": "Video comment"
+"News-Kommentar": "News comment"
+"Im Feed": "In feed"
+"Ausgeblendet": "Hidden"
+"Aus dem Feed entfernt": "Removed from feed"
+"Suchen und filtern": "Search and filter"
+"Keine öffentlichen Aktivitäten gefunden.": "No public activities found."
+"Ausblenden": "Hide"
+"Wiederherstellen": "Restore"
+"Aus dem Feed entfernen": "Remove from feed"
+"Aktivitäten auswählen": "Select activities"
+"Aktivität auswählen: %member% – %content%": "Select activity: %member% – %content%"
+"Mitgliederaktivitäten aktualisiert. %count% Einträge wurden geändert.": "Member activities updated. %count% entries were changed."
+"Die ausgewählte Aktivität ist nicht mehr verfügbar. Bitte aktualisiere die Liste.": "The selected activity is no longer available. Refresh the list."
+"Erstellt am %date% UTC": "Added %date% UTC"
+"Videos zur Prüfung": "Videos for review"
+"Neueste Artikel": "Latest articles"
+"Neueste Mitglieder": "Newest members"
+"Mitglieder verwalten": "Manage members"
+"Noch keine Mitglieder vorhanden.": "No members yet."
+"Neueste Kommentare": "Newest comments"
+"Kommentare verwalten": "Manage comments"
+"Noch keine Kommentare vorhanden.": "No comments yet."
+"Noch keine Artikel vorhanden.": "No articles yet."
+"Registriert am %date% UTC": "Registered %date% UTC"
+"Schwelle für automatische Video-Hervorhebung": "Automatic video highlight threshold"
+"Gezählte öffentliche Aufrufe bis zur einmaligen Hervorhebung; 0 deaktiviert die automatische Hervorhebung.": "Counted public views before a video is highlighted once; 0 disables automatic highlighting."
+"Die Schwelle für die automatische Hervorhebung muss eine ganze Zahl von 0 bis 2147483647 sein.": "The automatic highlight threshold must be a whole number from 0 to 2147483647."

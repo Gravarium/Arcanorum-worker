@@ -29,11 +29,27 @@
             {{ advertising_slot('news-top') }}
             {% if can_read_article %}
                 <div class="article-body">{{ article.body|rich_text }}</div>
+                {% if article.customFields is not empty %}
+                    <section class="article-custom-fields" aria-labelledby="news-custom-fields-heading">
+                        <h2 id="news-custom-fields-heading">{{ 'Weitere Angaben'|trans }}</h2>
+                        <dl>{% for field in article.customFields %}<div><dt>{{ field.key }}</dt><dd>{{ field.value }}</dd></div>{% endfor %}</dl>
+                    </section>
+                {% endif %}
             {% else %}
                 <section class="members-only-notice" aria-labelledby="members-only-heading">
                     <h2 id="members-only-heading">{{ 'Dieser Beitrag ist Mitgliedern vorbehalten.'|trans }}</h2>
                     <p>{{ 'Melde dich an, um den vollständigen Beitrag zu lesen.'|trans }}</p>
                     <a class="button" href="{{ path('member_login') }}">{{ 'Anmelden'|trans }}</a>
+                </section>
+            {% endif %}
+            {% if can_read_article and not article.membersOnly and share_widget_enabled %}
+                <section class="comment-section" id="news-share" aria-labelledby="news-share-heading">
+                    <h2 id="news-share-heading">{{ 'Diesen Inhalt teilen'|trans }}</h2>
+                    {{ include('partials/public_share_links.html.twig', {
+                        share_title: social_metadata is not null ? social_metadata.title : article.title,
+                        share_url: social_metadata is not null ? social_metadata.url : null,
+                        fallback_url: path('news_show', {slug: article.slug}),
+                    }) }}
                 </section>
             {% endif %}
         </article>
@@ -63,25 +79,27 @@
                 {% endfor %}
                 <div class="comment-list">
                     {% for comment in comments %}
-                        <article class="comment-card">
-                            <header><strong>{{ comment.authorName }}</strong> · <time datetime="{{ comment.createdAt|date('c') }}">{{ comment.createdAt|date('d.m.Y H:i') }}</time></header>
-                            <p class="comment-body">{{ comment.body }}</p>
-                            {{ include('partials/content_rating.html.twig', {
-                                action: path('public_rating_comment', {id: comment.id}),
-                                csrf_id: 'content_rating_comment_' ~ comment.id,
-                                label: 'Kommentar bewerten',
-                                rating_summary: comment_rating_summaries[comment.id],
-                            }) }}
-                            <form action="{{ path('public_comment_report', {id: comment.id}) }}" method="post">
-                                <input type="hidden" name="_token" value="{{ csrf_token('public_comment_report_' ~ comment.id) }}">
-                                <button class="button button-secondary" type="submit">{{ 'Kommentar melden'|trans }}</button>
-                            </form>
-                        </article>
+                        {{ include('partials/comment_card.html.twig', {
+                            comment: comment,
+                            comment_rating_summaries: comment_rating_summaries,
+                            muted_comment_ids: muted_comment_ids,
+                            comment_page: comment_page,
+                        }) }}
                     {% else %}
                         <p class="empty-state">{{ 'Noch keine freigegebenen Kommentare.'|trans }}</p>
                     {% endfor %}
                 </div>
-                <form class="comment-form" action="{{ path('public_comment_submit', {contentType: 'news', reference: article.slug}) }}" method="post">
+                {{ include('partials/comment_pagination.html.twig', {
+                    current_page: comment_page,
+                    page_count: comment_page_count,
+                    previous_url: comment_page > 1
+                        ? path('news_show', comment_page > 2
+                            ? {slug: article.slug, comment_page: comment_page - 1, _fragment: 'comments'}
+                            : {slug: article.slug, _fragment: 'comments'})
+                        : null,
+                    next_url: comment_page < comment_page_count ? path('news_show', {slug: article.slug, comment_page: comment_page + 1, _fragment: 'comments'}) : null,
+                }) }}
+                {% if app.user is not null or site_settings().guestCommentsEnabled %}<form class="comment-form" action="{{ comment_page > 1 ? path('public_comment_submit', {contentType: 'news', reference: article.slug, comment_page: comment_page}) : path('public_comment_submit', {contentType: 'news', reference: article.slug}) }}" method="post">
                     <h3>{{ 'Kommentar schreiben'|trans }}</h3>
                     <input type="hidden" name="_token" value="{{ csrf_token('public_comment_news_' ~ article.id) }}">
                     <label for="news-comment-name">{{ 'Name'|trans }}</label>
@@ -95,7 +113,7 @@
                     </div>
                     <button class="button" type="submit">{{ 'Kommentar zur Prüfung senden'|trans }}</button>
                     <p class="muted">{{ 'Kommentare erscheinen erst nach Freigabe.'|trans }}</p>
-                </form>
+                </form>{% else %}<p class="muted">{{ 'Bitte melde dich an, um einen Kommentar zu schreiben.'|trans }} <a href="{{ path('member_login') }}">{{ 'Anmelden'|trans }}</a></p>{% endif %}
             {% endif %}
         </section>{% endif %}
         <p>{% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'Zurück zu allen News'|trans }}</a>{% endif %}</p>

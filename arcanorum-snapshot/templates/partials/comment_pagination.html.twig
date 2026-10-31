@@ -1,0 +1,7 @@
+{% if page_count > 1 %}
+    <nav class="pagination comment-pagination" aria-label="{{ 'Kommentarseiten'|trans }}">
+        {% if previous_url is not null %}<a rel="prev" href="{{ previous_url }}">{{ 'Vorherige Kommentarseite'|trans }}</a>{% endif %}
+        <span>{{ 'Seite %page% von %pages%'|trans({'%page%': current_page, '%pages%': page_count}) }}</span>
+        {% if next_url is not null %}<a rel="next" href="{{ next_url }}">{{ 'Nächste Kommentarseite'|trans }}</a>{% endif %}
+    </nav>
+{% endif %}

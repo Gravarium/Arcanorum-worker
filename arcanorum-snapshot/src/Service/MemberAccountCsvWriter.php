@@ -60,6 +60,31 @@ final readonly class MemberAccountCsvWriter
         }
     }
 
+    /**
+     * @param iterable<MemberAccount> $members
+     * @param resource                $output
+     */
+    public function writeOutlookContacts(iterable $members, mixed $output): void
+    {
+        if (!is_resource($output)) {
+            throw new \InvalidArgumentException('Das CSV-Ausgabeziel muss ein Stream sein.');
+        }
+
+        fwrite($output, "\xEF\xBB\xBF");
+        fputcsv($output, ['Name', 'E-mail Address', 'E-mail Address Type'], ',', '"', '', "\r\n");
+
+        foreach ($members as $member) {
+            fputcsv(
+                $output,
+                [self::safeCell($member->getDisplayName()), self::safeCell($member->getEmail()), 'SMTP'],
+                ',',
+                '"',
+                '',
+                "\r\n",
+            );
+        }
+    }
+
     private static function safeCell(string $value): string
     {
         if (1 === preg_match('/\\A[\\x00-\\x20\\p{Z}\\x{FEFF}]*[=+\\-@]/u', $value)) {

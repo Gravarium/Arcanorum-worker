@@ -18,6 +18,12 @@ final readonly class ModuleAvailability
 {
     private const string REQUEST_ATTRIBUTE = '_arcanorum_module_availability';
 
+    /** @var list<class-string> */
+    private const array OWNER_SCOPED_CONTROLLERS = [
+        \App\Module\Content\Controller\AdminContentInlineImageController::class,
+        \App\Module\Content\Controller\ContentInlineImageController::class,
+    ];
+
     public function __construct(
         private BuiltInModuleCatalog $catalog,
         private HostingProfileDetector $hostingProfile,
@@ -60,6 +66,11 @@ final readonly class ModuleAvailability
         $separator = strpos($controller, '::');
         $controllerClass = false === $separator ? $controller : substr($controller, 0, $separator);
         if (!$this->catalog->isModuleNamespace($controllerClass)) {
+            return true;
+        }
+
+        // These shared media routes enforce the owning news/pages module inside their actions.
+        if (in_array($controllerClass, self::OWNER_SCOPED_CONTROLLERS, true)) {
             return true;
         }
 

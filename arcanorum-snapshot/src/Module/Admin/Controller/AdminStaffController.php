@@ -165,6 +165,7 @@ final class AdminStaffController extends AbstractController
             ['value' => AdminRole::Moderator->value, 'label' => 'Moderator für Videos und Kommentare'],
             ['value' => AdminRole::VideoModerator->value, 'label' => 'Videomoderation'],
             ['value' => AdminRole::CommentModerator->value, 'label' => 'Kommentarmoderation'],
+            ['value' => AdminRole::ContentEditor->value, 'label' => 'Redakteur'],
         ];
     }
 
@@ -173,6 +174,9 @@ final class AdminStaffController extends AbstractController
         $roles = $account->getRoles();
         if (in_array(AdminRole::Administrator->value, $roles, true)) {
             return AdminRole::Administrator->value;
+        }
+        if (in_array(AdminRole::ContentEditor->value, $roles, true)) {
+            return AdminRole::ContentEditor->value;
         }
         if (in_array(AdminRole::Moderator->value, $roles, true)
             || (in_array(AdminRole::VideoModerator->value, $roles, true)

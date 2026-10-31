@@ -33,6 +33,19 @@ final class ModeratorAccessPolicy
     }
 
     /**
+     * @param mixed $roles roles from the authenticated identity; malformed or unknown values deny access
+     */
+    public function hasStaffAccess(mixed $roles): bool
+    {
+        $knownRoles = self::knownRoles($roles);
+        if (null === $knownRoles) {
+            return false;
+        }
+
+        return array_any($knownRoles, static fn (ModeratorRole $role): bool => ModeratorRole::Member !== $role);
+    }
+
+    /**
      * @return list<ModeratorRole>|null
      */
     private static function knownRoles(mixed $roles): ?array
@@ -65,6 +78,11 @@ final class ModeratorAccessPolicy
         }
 
         if (in_array(ModeratorRole::Administrator, $knownRoles, true)
+            && 1 < count(array_filter($knownRoles, static fn (ModeratorRole $role): bool => ModeratorRole::Member !== $role))
+        ) {
+            return null;
+        }
+        if (in_array(ModeratorRole::ContentEditor, $knownRoles, true)
             && 1 < count(array_filter($knownRoles, static fn (ModeratorRole $role): bool => ModeratorRole::Member !== $role))
         ) {
             return null;

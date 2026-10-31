@@ -36,6 +36,30 @@ final class VideoMediaUploadServiceTest extends TestCase
         }
     }
 
+    public function testStoresOnlySniffedMp3AudioBytesUnderRandomObjectId(): void
+    {
+        $payload = "ID3\x04\x00\x00\x00\x00\x00\x00\xff\xfb\x90\x64".str_repeat("\x00", 4096);
+        $path = $this->createTemporaryUpload($payload);
+        $storage = $this->createMock(PrivateObjectStorageInterface::class);
+        $storage
+            ->expects($this->once())
+            ->method('write')
+            ->with(new RegularExpression('/\A[a-f0-9]{64}\z/'), $payload);
+
+        try {
+            $upload = new UploadedFile($path, 'claimed-audio.mp3', 'application/octet-stream', null, true);
+            $media = new VideoMediaUploadService($storage)->store($upload);
+
+            self::assertMatchesRegularExpression('/\A[a-f0-9]{64}\z/', $media['object_id']);
+            self::assertSame('audio/mpeg', $media['mime_type']);
+            self::assertSame(strlen($payload), $media['size']);
+        } finally {
+            if (is_file($path)) {
+                unlink($path);
+            }
+        }
+    }
+
     public function testRejectsNonVideoContentEvenWhenTheFilenameLooksLikeVideo(): void
     {
         $path = $this->createTemporaryUpload("%PDF-1.7\nnot a video");

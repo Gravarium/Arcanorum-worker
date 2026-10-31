@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
+use App\Service\MigrationRollbackGuard;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -22,6 +23,8 @@ final class Version20261022130000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
+        $rollbackGuard = new MigrationRollbackGuard($this->connection);
+        $rollbackGuard->lockTables('site_settings');
         $customSettings = $this->connection->fetchOne("SELECT COUNT(*) FROM site_settings WHERE site_name <> 'Arcanorum' OR tagline <> '' OR default_locale <> 'de' OR timezone <> 'Europe/Berlin'");
         if (!in_array($customSettings, [0, '0'], true)) {
             throw new \RuntimeException('Geänderte Website-Einstellungen dürfen durch den Migrationsrückbau nicht verloren gehen.');

@@ -7,6 +7,7 @@ namespace App\Module\Settings\Controller;
 use App\Service\CookieConsentService;
 use App\Service\SiteSettingsProvider;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -51,6 +52,21 @@ final class CookieConsentController extends AbstractController
             : $this->redirect($returnTo));
         $response->headers->setCookie($consent->createConsentCookie($request, $choice));
         $response->headers->setCookie($consent->expireCsrfCookie($request));
+        if ('necessary' === $choice) {
+            foreach (array_keys($request->cookies->all()) as $cookieName) {
+                if (1 !== preg_match('/\A_ga(?:_[A-Za-z0-9_]{1,64})?\z/D', $cookieName)) {
+                    continue;
+                }
+
+                $response->headers->setCookie(Cookie::create($cookieName)
+                    ->withValue('')
+                    ->withExpires(new \DateTimeImmutable('@1'))
+                    ->withPath('/')
+                    ->withSecure($request->isSecure())
+                    ->withHttpOnly(false)
+                    ->withSameSite(Cookie::SAMESITE_LAX));
+            }
+        }
 
         return $response;
     }

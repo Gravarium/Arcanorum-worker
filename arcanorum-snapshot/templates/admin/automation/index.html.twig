@@ -134,11 +134,13 @@
             <p class="muted">{{ 'Für diese Aufgaben liegen noch keine Ausführungen vor.'|trans }}</p>
         {% else %}
             <div class="table-scroll"><table>
-                <thead><tr><th>{{ 'Aufgabe'|trans }}</th><th>{{ 'Gestartet'|trans }}</th><th>{{ 'Status'|trans }}</th><th>{{ 'Scheduler'|trans }}</th><th>{{ 'Ergebnis'|trans }}</th></tr></thead>
+                <thead><tr><th>{{ 'Aufgabe'|trans }}</th><th>{{ 'Gestartet'|trans }}</th><th>{{ 'Status'|trans }}</th><th>{{ 'Versuche'|trans }}</th><th>{{ 'Nächster Versuch / Lease-Ende'|trans }}</th><th>{{ 'Scheduler'|trans }}</th><th>{{ 'Ergebnis'|trans }}</th></tr></thead>
                 <tbody>{% for run in runs %}<tr>
                     <td>{{ run.taskName }}</td>
                     <td>{{ run.startedAt|date('Y-m-d H:i:s', 'UTC') }} UTC</td>
                     <td>{{ run.status.value|trans }}</td>
+                    <td>{{ run.attemptCount }}/10</td>
+                    <td>{% if run.retryAfter %}{{ run.retryAfter|date('Y-m-d H:i:s', 'UTC') }} UTC{% elseif run.status.value == 'running' and run.leaseExpiresAt %}{{ 'Lease bis'|trans }} {{ run.leaseExpiresAt|date('Y-m-d H:i:s', 'UTC') }} UTC{% else %}—{% endif %}</td>
                     <td>{{ run.schedulerIdentity }}</td>
                     <td>{{ run.resultSummary|default('Lauf läuft.'|trans) }}</td>
                 </tr>{% endfor %}</tbody>

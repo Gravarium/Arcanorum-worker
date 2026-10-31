@@ -8,6 +8,7 @@ use App\Command\CreateAdminUserCommand;
 use App\Command\ProvisionAdminMfaCommand;
 use App\Entity\AdminRole;
 use App\Entity\AdminUser;
+use App\Entity\CommentContentType;
 use App\Entity\CommentFilterAction;
 use App\Entity\CommentFilterTerm;
 use App\Entity\CommentStatus;
@@ -22,6 +23,7 @@ use App\Entity\NewsArticle;
 use App\Entity\PublishingStatus;
 use App\Entity\SeriesEpisode;
 use App\Entity\SeriesGenre;
+use App\Entity\StaticPage;
 use App\Entity\Video;
 use App\Entity\VideoReport;
 use App\Entity\VideoReportReason;
@@ -55,6 +57,7 @@ use App\Repository\ContentSeriesRepository;
 use App\Repository\MemberAccountRepository;
 use App\Repository\NewsArticleRepository;
 use App\Repository\SeriesEpisodeRepository;
+use App\Repository\StaticPageRepository;
 use App\Repository\VideoReportRepository;
 use App\Repository\VideoRepository;
 use App\Repository\VideoSubmissionRepository;
@@ -68,6 +71,7 @@ use App\Service\VideoThumbnailUploadService;
 use App\Tests\Support\RecordingMemberSecurityEmailSender;
 use App\Tests\Support\VerifiedRuntimeAttestationReportProvider;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Persistence\ManagerRegistry;
 use Psr\Log\NullLogger;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -76,13 +80,16 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\Yaml\Yaml;
 
 final class AdminDashboardTest extends WebTestCase
@@ -163,7 +170,7 @@ final class AdminDashboardTest extends WebTestCase
         try {
             $this->persistUser($client, $email, 'CommentModerator!2026', [AdminRole::CommentModerator->value]);
             $comment = new ContentComment(
-                \App\Entity\CommentContentType::Video,
+                CommentContentType::Video,
                 bin2hex(random_bytes(16)),
                 'Moderator test video',
                 'Moderator test author',
@@ -294,6 +301,12 @@ final class AdminDashboardTest extends WebTestCase
             $client->request('GET', '/admin');
             self::assertResponseIsSuccessful();
             self::assertSelectorTextContains('#dashboard-notices-heading', 'Systemhinweise');
+            self::assertSelectorTextContains('section[data-dashboard-latest-videos]', 'Neueste Videos');
+            self::assertSelectorTextContains('section[data-dashboard-latest-videos]', 'Noch keine Videos. Füge die erste Videoquelle hinzu.');
+            self::assertSelectorTextContains('section[data-dashboard-latest-articles]', 'Noch keine Artikel vorhanden.');
+            self::assertSelectorTextContains('section[data-dashboard-latest-members]', 'Noch keine Mitglieder vorhanden.');
+            self::assertSelectorTextContains('section[data-dashboard-latest-comments]', 'Noch keine Kommentare vorhanden.');
+            self::assertSelectorNotExists('[data-dashboard-video-review]');
             self::assertStringContainsString('no-store', (string) $client->getResponse()->headers->get('Cache-Control'));
             self::assertSame('noindex, nofollow', $client->getResponse()->headers->get('X-Robots-Tag'));
 
@@ -318,6 +331,351 @@ final class AdminDashboardTest extends WebTestCase
             self::assertStringNotContainsString('session.save_path', $html);
             self::assertStringNotContainsString('sendmail_path', $html);
         } finally {
+            $this->removeUser($client, $email);
+        }
+    }
+
+    public function testDashboardShowsLatestArticlesMembersAndCommentsWithoutPrivateOrUnsafeData(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $client->getContainer()->set(
+            RuntimeAttestationReportProviderInterface::class,
+            new VerifiedRuntimeAttestationReportProvider(),
+        );
+        $runtime = self::createStub(PhpRuntimeInspectorInterface::class);
+        $runtime->method('version')->willReturn('8.5.4');
+        $runtime->method('sapi')->willReturn('fpm-fcgi');
+        $runtime->method('iniValue')->willReturn('0');
+        $runtime->method('extensionLoaded')->willReturn(true);
+        $client->getContainer()->set(PhpRuntimeInspectorInterface::class, $runtime);
+
+        $email = 'dashboard-widgets-'.bin2hex(random_bytes(5)).'@example.test';
+        $password = 'DashboardWidgets!2026';
+        $dashboardFixtureReferences = [];
+
+        try {
+            $this->persistUser($client, $email, $password, ['ROLE_ADMIN']);
+            $this->submitLogin($client, $email, $password);
+            self::assertResponseRedirects('/admin');
+
+            $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+            self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+            $connection = $entityManager->getConnection();
+            $suffix = bin2hex(random_bytes(4));
+            $members = [];
+            $articles = [];
+            $comments = [];
+            $memberEmails = [];
+
+            for ($index = 1; $index <= 6; ++$index) {
+                $memberEmail = sprintf('dashmember%s%d@example.test', $suffix, $index);
+                $memberEmails[] = $memberEmail;
+                $members[] = new MemberAccount(
+                    $memberEmail,
+                    'dashmember'.$suffix.$index,
+                    'Dashboard member '.$index.' '.$suffix,
+                );
+                $articleTitle = 1 === $index
+                    ? '<script>alert("dashboard-article-'.$suffix.'")</script>'
+                    : 'Dashboard article '.$index.' '.$suffix;
+                $articles[] = new NewsArticle(
+                    $articleTitle,
+                    'dashboard-'.$suffix.'-'.$index,
+                    null,
+                    null,
+                    'dashboard-private-article-body-'.$suffix.'-'.$index,
+                    PublishingStatus::Draft,
+                    false,
+                    true,
+                );
+                $commentBody = 1 === $index
+                    ? '<script>alert("dashboard-comment-'.$suffix.'")</script>'.str_repeat('x', 200).'comment-tail-secret-'.$suffix
+                    : 'Dashboard comment '.$index.' '.$suffix;
+                $comment = new ContentComment(
+                    CommentContentType::Video,
+                    bin2hex(random_bytes(16)),
+                    'Dashboard video '.$index.' '.$suffix,
+                    'Dashboard commenter '.$index.' '.$suffix,
+                    $commentBody,
+                );
+                if (1 === $index) {
+                    $comment->approve();
+                }
+                $comments[] = $comment;
+            }
+
+            foreach ($members as $member) {
+                $dashboardFixtureReferences[] = [MemberAccount::class, $member->getId()];
+                $entityManager->persist($member);
+            }
+            foreach ($articles as $article) {
+                $dashboardFixtureReferences[] = [NewsArticle::class, $article->getId()];
+                $entityManager->persist($article);
+            }
+            foreach ($comments as $comment) {
+                $dashboardFixtureReferences[] = [ContentComment::class, $comment->getId()];
+                $entityManager->persist($comment);
+            }
+            $entityManager->flush();
+
+            foreach ([
+                'member_accounts' => $members,
+                'news_articles' => $articles,
+                'content_comments' => $comments,
+            ] as $table => $entities) {
+                foreach ($entities as $index => $entity) {
+                    if (0 === $index) {
+                        $createdAt = '2099-12-31 23:59:59';
+                    } elseif ('content_comments' === $table && 5 === $index) {
+                        $createdAt = '1999-12-31 23:59:59';
+                    } elseif ('content_comments' === $table) {
+                        $createdAt = '2000-01-01 00:00:00';
+                    } else {
+                        $createdAt = sprintf('2000-01-%02d 00:00:00', $index + 1);
+                    }
+                    $connection->executeStatement(
+                        sprintf('UPDATE %s SET created_at = CAST(:created_at AS TIMESTAMP WITHOUT TIME ZONE) WHERE id = :id', $table),
+                        ['created_at' => $createdAt, 'id' => $entity->getId()],
+                    );
+                }
+            }
+            $entityManager->clear();
+
+            $client->request('GET', '/admin');
+            self::assertResponseIsSuccessful();
+            $cacheControl = $client->getResponse()->headers->get('Cache-Control');
+            self::assertIsString($cacheControl);
+            self::assertStringContainsString('private', $cacheControl);
+            self::assertStringContainsString('no-store', $cacheControl);
+            self::assertResponseHeaderSame('X-Robots-Tag', 'noindex, nofollow');
+
+            $latestArticles = $client->getCrawler()->filter('[data-dashboard-latest-articles] li');
+            self::assertCount(5, $latestArticles);
+            self::assertSame('<script>alert("dashboard-article-'.$suffix.'")</script>', trim($latestArticles->first()->filter('a')->text()));
+            self::assertSame('/admin/news/'.$articles[0]->getId().'/edit', $latestArticles->first()->filter('a')->attr('href'));
+            self::assertSelectorTextContains('section[data-dashboard-latest-articles]', 'Entwurf');
+            self::assertSelectorTextContains('section[data-dashboard-latest-articles] time', 'UTC');
+            self::assertStringEndsWith('+00:00', (string) $latestArticles->first()->filter('time')->attr('datetime'));
+
+            $latestMembers = $client->getCrawler()->filter('[data-dashboard-latest-members] li');
+            self::assertCount(5, $latestMembers);
+            self::assertSame('dashmember'.$suffix.'1 · Dashboard member 1 '.$suffix, trim($latestMembers->first()->filter('a')->text()));
+            self::assertSame('/admin/members/'.$members[0]->getId(), $latestMembers->first()->filter('a')->attr('href'));
+            self::assertSelectorTextContains('section[data-dashboard-latest-members]', 'Aktiv');
+            self::assertSelectorTextContains('section[data-dashboard-latest-members] time', 'UTC');
+            self::assertStringEndsWith('+00:00', (string) $latestMembers->first()->filter('time')->attr('datetime'));
+
+            $latestComments = $client->getCrawler()->filter('[data-dashboard-latest-comments] li');
+            self::assertCount(5, $latestComments);
+            self::assertSelectorTextContains('section[data-dashboard-latest-comments] li:first-child', 'Dashboard commenter 1 '.$suffix);
+            self::assertSelectorTextContains('section[data-dashboard-latest-comments] li:first-child', 'Dashboard video 1 '.$suffix);
+            self::assertSelectorTextContains('section[data-dashboard-latest-comments] li:first-child', 'Freigegeben');
+            self::assertSelectorTextContains('section[data-dashboard-latest-comments] time', 'UTC');
+            self::assertStringEndsWith('+00:00', (string) $latestComments->first()->filter('time')->attr('datetime'));
+            self::assertSelectorExists('section[data-dashboard-latest-comments] a[href="/admin/comments"]');
+            $tiedComments = array_slice($comments, 1, 4);
+            usort($tiedComments, static fn (ContentComment $left, ContentComment $right): int => $right->getId() <=> $left->getId());
+            $expectedCommenters = ['Dashboard commenter 1 '.$suffix];
+            foreach ($tiedComments as $comment) {
+                $expectedCommenters[] = $comment->getAuthorName();
+            }
+            $actualCommenters = $latestComments->each(
+                static fn (Crawler $commentRow): string => trim($commentRow->filter('strong')->text()),
+            );
+            self::assertSame($expectedCommenters, $actualCommenters);
+
+            $dashboardHtml = (string) $client->getResponse()->getContent();
+            self::assertStringContainsString('&lt;script&gt;', $dashboardHtml);
+            self::assertStringNotContainsString('<script>alert("dashboard-article-'.$suffix.'")</script>', $dashboardHtml);
+            self::assertStringNotContainsString('<script>alert("dashboard-comment-'.$suffix.'")</script>', $dashboardHtml);
+            self::assertStringNotContainsString('comment-tail-secret-'.$suffix, $dashboardHtml);
+            self::assertStringNotContainsString('dashboard-private-article-body-'.$suffix, $dashboardHtml);
+            foreach ($memberEmails as $memberEmail) {
+                self::assertStringNotContainsString($memberEmail, $dashboardHtml);
+            }
+        } finally {
+            $cleanupManager = $client->getContainer()->get(EntityManagerInterface::class);
+            if ($cleanupManager instanceof EntityManagerInterface) {
+                foreach ($dashboardFixtureReferences as [$entityClass, $entityId]) {
+                    $fixture = $cleanupManager->getRepository($entityClass)->find($entityId);
+                    if (null !== $fixture) {
+                        $cleanupManager->remove($fixture);
+                    }
+                }
+                $cleanupManager->flush();
+            }
+
+            $this->removeUser($client, $email);
+        }
+    }
+
+    public function testDashboardShowsBoundedPendingVideoReviewQueuesWithoutPrivateDetails(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $client->getContainer()->set(
+            RuntimeAttestationReportProviderInterface::class,
+            new VerifiedRuntimeAttestationReportProvider(),
+        );
+        $runtime = self::createStub(PhpRuntimeInspectorInterface::class);
+        $runtime->method('version')->willReturn('8.5.4');
+        $runtime->method('sapi')->willReturn('fpm-fcgi');
+        $runtime->method('iniValue')->willReturn('0');
+        $runtime->method('extensionLoaded')->willReturn(true);
+        $client->getContainer()->set(PhpRuntimeInspectorInterface::class, $runtime);
+
+        $email = 'dashboard-video-review-'.bin2hex(random_bytes(5)).'@example.test';
+        $password = 'DashboardVideoReview!2026';
+        $dashboardFixtureReferences = [];
+
+        try {
+            $this->persistUser($client, $email, $password, ['ROLE_ADMIN']);
+            $this->submitLogin($client, $email, $password);
+            self::assertResponseRedirects('/admin');
+
+            $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+            self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+            $connection = $entityManager->getConnection();
+            $suffix = bin2hex(random_bytes(4));
+            $submitterEmail = 'dashboard-review-submitter-'.$suffix.'@example.test';
+            $submitter = new MemberAccount($submitterEmail, 'review'.$suffix, 'Review Submitter '.$suffix);
+            $entityManager->persist($submitter);
+
+            $pendingReports = [];
+            $pendingSubmissions = [];
+            $closedReport = null;
+            $closedSubmission = null;
+
+            for ($index = 0; $index <= 6; ++$index) {
+                $videoTitle = 0 === $index
+                    ? '<script>alert("dashboard-review-'.$suffix.'")</script>'
+                    : 'Dashboard review video '.$index.' '.$suffix;
+                $video = new Video(
+                    $videoTitle,
+                    'Private dashboard review source description '.$suffix.' '.$index,
+                    null,
+                    VideoSourceType::Url,
+                    'https://review.example.test/'.$suffix.'/'.$index.'.mp4',
+                    PublishingStatus::Draft,
+                    false,
+                    true,
+                );
+                $submission = new VideoSubmission($video, $submitter);
+                $report = new VideoReport(
+                    $video,
+                    VideoReportReason::BrokenMedia,
+                    'dashboard-review-private-report-'.$suffix.'-'.$index,
+                );
+
+                if (6 === $index) {
+                    $submission->resolve(VideoSubmissionStatus::Rejected);
+                    $report->resolve(VideoReportStatus::Dismissed);
+                    $closedSubmission = $submission;
+                    $closedReport = $report;
+                } else {
+                    $pendingSubmissions[] = $submission;
+                    $pendingReports[] = $report;
+                }
+
+                $entityManager->persist($video);
+                $entityManager->persist($submission);
+                $entityManager->persist($report);
+                $dashboardFixtureReferences[] = [VideoReport::class, $report->getId()];
+                $dashboardFixtureReferences[] = [VideoSubmission::class, $submission->getId()];
+                $dashboardFixtureReferences[] = [Video::class, $video->getId()];
+            }
+            $dashboardFixtureReferences[] = [MemberAccount::class, $submitter->getId()];
+            self::assertInstanceOf(VideoSubmission::class, $closedSubmission);
+            self::assertInstanceOf(VideoReport::class, $closedReport);
+
+            $entityManager->flush();
+            foreach ($pendingReports as $index => $report) {
+                $createdAt = 5 === $index ? '1999-12-31 23:59:59' : '2000-01-01 00:00:00';
+                $connection->executeStatement(
+                    'UPDATE video_reports SET created_at = CAST(:created_at AS TIMESTAMP WITHOUT TIME ZONE) WHERE id = :id',
+                    ['created_at' => $createdAt, 'id' => $report->getId()],
+                );
+            }
+            foreach ($pendingSubmissions as $index => $submission) {
+                $createdAt = 5 === $index ? '1999-12-31 23:59:59' : '2000-01-01 00:00:00';
+                $connection->executeStatement(
+                    'UPDATE video_submissions SET created_at = CAST(:created_at AS TIMESTAMP WITHOUT TIME ZONE) WHERE id = :id',
+                    ['created_at' => $createdAt, 'id' => $submission->getId()],
+                );
+            }
+            $connection->executeStatement(
+                'UPDATE video_reports SET created_at = CAST(:created_at AS TIMESTAMP WITHOUT TIME ZONE) WHERE id = :id',
+                ['created_at' => '2099-12-31 23:59:59', 'id' => $closedReport->getId()],
+            );
+            $connection->executeStatement(
+                'UPDATE video_submissions SET created_at = CAST(:created_at AS TIMESTAMP WITHOUT TIME ZONE) WHERE id = :id',
+                ['created_at' => '2099-12-31 23:59:59', 'id' => $closedSubmission->getId()],
+            );
+            $entityManager->clear();
+
+            $client->request('GET', '/admin');
+            self::assertResponseIsSuccessful();
+            $cacheControl = $client->getResponse()->headers->get('Cache-Control');
+            self::assertIsString($cacheControl);
+            self::assertStringContainsString('private', $cacheControl);
+            self::assertStringContainsString('no-store', $cacheControl);
+            self::assertResponseHeaderSame('X-Robots-Tag', 'noindex, nofollow');
+            self::assertSelectorTextContains('[data-dashboard-video-review]', 'Videos zur Prüfung');
+
+            $latestReports = $client->getCrawler()->filter('[data-dashboard-pending-video-reports] li');
+            self::assertCount(5, $latestReports);
+            self::assertSelectorExists('[data-dashboard-pending-video-reports] a[href="/admin/video-reports"]');
+            self::assertSelectorExists('[data-dashboard-pending-video-reports] time[datetime]');
+            self::assertStringEndsWith('+00:00', (string) $latestReports->first()->filter('time')->attr('datetime'));
+            $expectedReports = array_slice($pendingReports, 0, 5);
+            usort($expectedReports, static fn (VideoReport $left, VideoReport $right): int => $right->getId() <=> $left->getId());
+            $expectedReportTitles = array_map(
+                static fn (VideoReport $report): string => $report->getVideo()->getTitle(),
+                $expectedReports,
+            );
+            $actualReportTitles = $latestReports->each(
+                static fn (Crawler $row): string => trim($row->filter('a')->text()),
+            );
+            self::assertSame($expectedReportTitles, $actualReportTitles);
+
+            $latestSubmissions = $client->getCrawler()->filter('[data-dashboard-pending-video-submissions] li');
+            self::assertCount(5, $latestSubmissions);
+            self::assertSelectorExists('[data-dashboard-pending-video-submissions] a[href="/admin/video-submissions"]');
+            self::assertSelectorExists('[data-dashboard-pending-video-submissions] time[datetime]');
+            self::assertStringEndsWith('+00:00', (string) $latestSubmissions->first()->filter('time')->attr('datetime'));
+            $expectedSubmissions = array_slice($pendingSubmissions, 0, 5);
+            usort($expectedSubmissions, static fn (VideoSubmission $left, VideoSubmission $right): int => $right->getId() <=> $left->getId());
+            $expectedSubmissionTitles = array_map(
+                static fn (VideoSubmission $submission): string => $submission->getVideo()->getTitle(),
+                $expectedSubmissions,
+            );
+            $actualSubmissionTitles = $latestSubmissions->each(
+                static fn (Crawler $row): string => trim($row->filter('a')->text()),
+            );
+            self::assertSame($expectedSubmissionTitles, $actualSubmissionTitles);
+
+            $dashboardHtml = (string) $client->getResponse()->getContent();
+            self::assertStringContainsString('&lt;script&gt;', $dashboardHtml);
+            self::assertStringNotContainsString('<script>alert("dashboard-review-'.$suffix.'")</script>', $dashboardHtml);
+            self::assertStringNotContainsString('dashboard-review-private-report-'.$suffix, $dashboardHtml);
+            self::assertStringNotContainsString('Private dashboard review source description '.$suffix, $dashboardHtml);
+            self::assertStringNotContainsString('https://review.example.test/', $dashboardHtml);
+            self::assertStringNotContainsString($submitterEmail, $dashboardHtml);
+            self::assertNotContains('Dashboard review video 6 '.$suffix, $actualReportTitles);
+            self::assertNotContains('Dashboard review video 6 '.$suffix, $actualSubmissionTitles);
+        } finally {
+            $cleanupManager = $client->getContainer()->get(EntityManagerInterface::class);
+            if ($cleanupManager instanceof EntityManagerInterface) {
+                foreach ($dashboardFixtureReferences as [$entityClass, $entityId]) {
+                    $fixture = $cleanupManager->getRepository($entityClass)->find($entityId);
+                    if (null !== $fixture) {
+                        $cleanupManager->remove($fixture);
+                    }
+                }
+                $cleanupManager->flush();
+            }
+
             $this->removeUser($client, $email);
         }
     }
@@ -804,6 +1162,7 @@ final class AdminDashboardTest extends WebTestCase
 
             $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
             self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+            $connection = $entityManager->getConnection();
             $repository = $entityManager->getRepository(AdminUser::class);
             self::assertInstanceOf(AdminUserRepository::class, $repository);
             $user = $repository->findOneByEmail($email);
@@ -831,8 +1190,9 @@ final class AdminDashboardTest extends WebTestCase
             $activeMember = new MemberAccount('dashboard-active-'.$suffix.'@example.test', 'dashactive'.$suffix, 'Dashboard Active');
             $inactiveMember = new MemberAccount('dashboard-inactive-'.$suffix.'@example.test', 'dashinactive'.$suffix, 'Dashboard Inactive');
             $inactiveMember->setActive(false);
+            $dashboardVideoTitle = '<script>alert("dashboard-title-'.$suffix.'")</script>';
             $pendingVideo = new Video(
-                'Dashboard-Warteschlange',
+                $dashboardVideoTitle,
                 'Noch nicht freigegeben',
                 null,
                 VideoSourceType::Url,
@@ -841,6 +1201,19 @@ final class AdminDashboardTest extends WebTestCase
                 false,
                 true,
             );
+            $olderDashboardVideos = [];
+            for ($index = 1; $index <= 6; ++$index) {
+                $olderDashboardVideos[] = new Video(
+                    'Dashboard älter '.$index.' '.$suffix,
+                    'Dashboard display fixture.',
+                    null,
+                    VideoSourceType::Url,
+                    'https://videos.example.test/dashboard-old-'.$suffix.'-'.$index.'.mp4',
+                    PublishingStatus::Draft,
+                    false,
+                    true,
+                );
+            }
             $pendingSubmission = new VideoSubmission($pendingVideo, $activeMember);
             $pendingReport = new VideoReport($pendingVideo, VideoReportReason::BrokenMedia, 'Quelle nicht erreichbar');
             $pendingContactMessage = new ContactMessage(
@@ -849,6 +1222,30 @@ final class AdminDashboardTest extends WebTestCase
                 'Dashboard-Anfrage',
                 'Offene Nachricht für die Dashboard-Prüfung.',
             );
+            $dashboardPage = new StaticPage(
+                'Dashboard-Seite '.$suffix,
+                'dashboard-seite-'.$suffix,
+                'Eine interne Testzusammenfassung.',
+                '<p>Interner Testinhalt</p>',
+                PublishingStatus::Draft,
+            );
+            $dashboardComments = [
+                new ContentComment(
+                    CommentContentType::Video,
+                    bin2hex(random_bytes(16)),
+                    'Dashboard metric video '.$suffix,
+                    'Dashboard pending commenter '.$suffix,
+                    'Pending dashboard metric comment.',
+                ),
+                new ContentComment(
+                    CommentContentType::Video,
+                    bin2hex(random_bytes(16)),
+                    'Dashboard metric video '.$suffix,
+                    'Dashboard approved commenter '.$suffix,
+                    'Approved dashboard metric comment.',
+                ),
+            ];
+            $dashboardComments[1]->approve();
             $dashboardFixtureReferences = [
                 [VideoSubmission::class, $pendingSubmission->getId()],
                 [VideoReport::class, $pendingReport->getId()],
@@ -856,23 +1253,69 @@ final class AdminDashboardTest extends WebTestCase
                 [Video::class, $pendingVideo->getId()],
                 [MemberAccount::class, $activeMember->getId()],
                 [MemberAccount::class, $inactiveMember->getId()],
+                [StaticPage::class, $dashboardPage->getId()],
+                [ContentComment::class, $dashboardComments[0]->getId()],
+                [ContentComment::class, $dashboardComments[1]->getId()],
             ];
+            foreach ($olderDashboardVideos as $dashboardVideo) {
+                $dashboardFixtureReferences[] = [Video::class, $dashboardVideo->getId()];
+            }
 
-            foreach ([$activeMember, $inactiveMember, $pendingVideo, $pendingSubmission, $pendingReport, $pendingContactMessage] as $entity) {
+            foreach ([
+                $activeMember,
+                $inactiveMember,
+                $pendingVideo,
+                $pendingSubmission,
+                $pendingReport,
+                $pendingContactMessage,
+                $dashboardPage,
+                ...$dashboardComments,
+            ] as $entity) {
                 $entityManager->persist($entity);
             }
+            foreach ($olderDashboardVideos as $dashboardVideo) {
+                $entityManager->persist($dashboardVideo);
+            }
             $entityManager->flush();
+            foreach ($olderDashboardVideos as $index => $dashboardVideo) {
+                $connection->executeStatement(
+                    'UPDATE videos SET created_at = CAST(:created_at AS TIMESTAMP WITHOUT TIME ZONE) WHERE id = :id',
+                    [
+                        'created_at' => sprintf('2000-01-%02d 00:00:00', $index + 1),
+                        'id' => $dashboardVideo->getId(),
+                    ],
+                );
+            }
+            $connection->executeStatement(
+                'UPDATE videos SET created_at = CAST(:created_at AS TIMESTAMP WITHOUT TIME ZONE) WHERE id = :id',
+                ['created_at' => '2099-12-31 23:59:59', 'id' => $pendingVideo->getId()],
+            );
+            $entityManager->clear();
 
             $client->followRedirect();
 
             self::assertResponseIsSuccessful();
             self::assertSelectorTextContains('h1', 'CMS-Verwaltung');
+            self::assertSelectorTextContains('#dashboard-latest-videos-heading', 'Neueste Videos');
+            $latestVideos = $client->getCrawler()->filter('[data-dashboard-latest-videos] li');
+            self::assertCount(5, $latestVideos);
+            self::assertSame($dashboardVideoTitle, trim($latestVideos->first()->filter('a')->text()));
+            self::assertSame('/admin/videos/'.$pendingVideo->getId().'/edit', $latestVideos->first()->filter('a')->attr('href'));
+            self::assertSelectorTextContains('section[data-dashboard-latest-videos]', 'Entwurf');
+            self::assertSelectorExists('section[data-dashboard-latest-videos] time[datetime]');
+            self::assertSelectorTextContains('section[data-dashboard-latest-videos] time', 'UTC');
+            self::assertStringEndsWith('+00:00', (string) $latestVideos->first()->filter('time')->attr('datetime'));
+            $dashboardHtml = (string) $client->getResponse()->getContent();
+            self::assertStringNotContainsString($dashboardVideoTitle, $dashboardHtml);
+            self::assertStringContainsString('&lt;script&gt;', $dashboardHtml);
+            self::assertStringNotContainsString('https://videos.example.test/', $dashboardHtml);
 
             $dashboardContainer = $client->getContainer();
             $newsArticles = $dashboardContainer->get(NewsArticleRepository::class);
             $videos = $dashboardContainer->get(VideoRepository::class);
             $series = $dashboardContainer->get(ContentSeriesRepository::class);
             $comments = $dashboardContainer->get(ContentCommentRepository::class);
+            $staticPages = $dashboardContainer->get(StaticPageRepository::class);
             $members = $dashboardContainer->get(MemberAccountRepository::class);
             $submissions = $dashboardContainer->get(VideoSubmissionRepository::class);
             $videoReports = $dashboardContainer->get(VideoReportRepository::class);
@@ -881,10 +1324,20 @@ final class AdminDashboardTest extends WebTestCase
             self::assertInstanceOf(VideoRepository::class, $videos);
             self::assertInstanceOf(ContentSeriesRepository::class, $series);
             self::assertInstanceOf(ContentCommentRepository::class, $comments);
+            self::assertInstanceOf(StaticPageRepository::class, $staticPages);
             self::assertInstanceOf(MemberAccountRepository::class, $members);
             self::assertInstanceOf(VideoSubmissionRepository::class, $submissions);
             self::assertInstanceOf(VideoReportRepository::class, $videoReports);
             self::assertInstanceOf(ContactMessageRepository::class, $contactMessages);
+            $databaseCommentCountValue = $connection->fetchOne('SELECT COUNT(*) FROM content_comments');
+            $databaseStaticPageCountValue = $connection->fetchOne('SELECT COUNT(*) FROM static_pages');
+            if (!is_numeric($databaseCommentCountValue) || !is_numeric($databaseStaticPageCountValue)) {
+                throw new \UnexpectedValueException('Dashboard aggregate query did not return numeric counts.');
+            }
+            $databaseCommentCount = (int) $databaseCommentCountValue;
+            $databaseStaticPageCount = (int) $databaseStaticPageCountValue;
+            self::assertSame($databaseCommentCount, $comments->countForAdmin());
+            self::assertSame($databaseStaticPageCount, $staticPages->countForAdmin());
             $expectedMetrics = [
                 'news' => [
                     'total' => $newsArticles->countForAdmin('', null),
@@ -902,8 +1355,12 @@ final class AdminDashboardTest extends WebTestCase
                     'draft' => $series->countForAdmin(PublishingStatus::Draft),
                 ],
                 'comments' => [
+                    'total' => $databaseCommentCount,
                     'pending' => $comments->countForStatus(CommentStatus::Pending),
                     'reported' => $comments->countForStatus(CommentStatus::Reported),
+                ],
+                'pages' => [
+                    'total' => $databaseStaticPageCount,
                 ],
                 'members' => [
                     'total' => $members->countForAdmin('', null),
@@ -931,6 +1388,9 @@ final class AdminDashboardTest extends WebTestCase
                     );
                 }
             }
+            self::assertSelectorExists('[data-dashboard-metric="pages"][href="/admin/pages"]');
+            self::assertSelectorExists('[data-dashboard-metric="comments"][href="/admin/comments"]');
+            self::assertStringNotContainsString('Interner Testinhalt', (string) $client->getResponse()->getContent());
             self::assertSelectorNotExists('section[aria-labelledby="fortress-heading"]');
             self::assertSelectorTextContains('section[aria-labelledby="host-capability-heading"]', 'Festgestellte Systemfähigkeiten');
             self::assertSelectorTextContains('section[aria-labelledby="host-capability-heading"] .admin-table tbody', 'PHP-Laufzeit');
@@ -1604,6 +2064,202 @@ final class AdminDashboardTest extends WebTestCase
         }
     }
 
+    public function testVideoBulkSourceCheckUsesFixedProvidersAndStoresTheOutcome(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $client->getContainer()->set('logger', new NullLogger());
+        $client->getContainer()->set(
+            RuntimeAttestationReportProviderInterface::class,
+            new VerifiedRuntimeAttestationReportProvider(),
+        );
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        $suffix = bin2hex(random_bytes(6));
+        $adminEmail = 'bulk-source-check-'.$suffix.'@example.test';
+        $availableVideo = new Video(
+            'Available source '.$suffix,
+            'A provider source used by the bulk check regression.',
+            null,
+            VideoSourceType::Embed,
+            'https://youtu.be/dQw4w9WgXcQ',
+            PublishingStatus::Draft,
+            false,
+            true,
+        );
+        $failedVideo = new Video(
+            'Failed source '.$suffix,
+            'A provider error must be stored without leaking provider details.',
+            null,
+            VideoSourceType::Embed,
+            'https://youtu.be/M7lc1UVf-VE',
+            PublishingStatus::Draft,
+            false,
+            true,
+        );
+        $unsupportedEmbed = new Video(
+            'Unsupported embed '.$suffix,
+            'Unrecognized embed hosts must not cause outbound requests.',
+            null,
+            VideoSourceType::Embed,
+            'https://untrusted.example/embed/video',
+            PublishingStatus::Draft,
+            false,
+            true,
+        );
+        $directUrl = new Video(
+            'Direct URL '.$suffix,
+            'Direct media URLs must not be fetched by source checks.',
+            null,
+            VideoSourceType::Url,
+            'https://untrusted.example/video.mp4',
+            PublishingStatus::Draft,
+            false,
+            true,
+        );
+        $databaseFailureVideo = new Video(
+            'Database failure '.$suffix,
+            'A database write error must roll back the whole source-check batch.',
+            null,
+            VideoSourceType::Embed,
+            'https://youtu.be/9bZkp7q19f0',
+            PublishingStatus::Draft,
+            false,
+            true,
+        );
+        $connection = $entityManager->getConnection();
+        $failureConstraintInstalled = false;
+
+        try {
+            foreach ([$availableVideo, $failedVideo, $unsupportedEmbed, $directUrl, $databaseFailureVideo] as $video) {
+                $entityManager->persist($video);
+            }
+            $entityManager->flush();
+
+            $providerRequestCount = 0;
+            $providerImport = new VideoProviderImportService(
+                new MockHttpClient(static function (string $method, string $url, array $options) use (&$providerRequestCount): MockResponse {
+                    ++$providerRequestCount;
+                    self::assertSame('GET', $method);
+                    self::assertSame(0, $options['max_redirects'] ?? null);
+                    $parts = parse_url($url);
+                    self::assertIsArray($parts);
+                    self::assertSame('www.googleapis.com', $parts['host'] ?? null);
+                    self::assertSame('/youtube/v3/videos', $parts['path'] ?? null);
+                    $query = $options['query'] ?? null;
+                    self::assertIsArray($query);
+                    $videoId = $query['id'] ?? null;
+                    self::assertIsString($videoId);
+
+                    if ('dQw4w9WgXcQ' === $videoId) {
+                        return new MockResponse(json_encode([
+                            'items' => [[
+                                'id' => $videoId,
+                                'status' => ['privacyStatus' => 'public', 'embeddable' => true],
+                            ]],
+                        ], JSON_THROW_ON_ERROR), ['http_code' => Response::HTTP_OK]);
+                    }
+
+                    return new MockResponse('{"error":"provider unavailable"}', ['http_code' => Response::HTTP_SERVICE_UNAVAILABLE]);
+                }),
+                new ExternalVideoEmbedResolver(),
+                'test-provider-api-key',
+            );
+            $client->getContainer()->set(VideoProviderImportService::class, $providerImport);
+
+            $this->persistUser($client, $adminEmail, 'BulkSourceCheckAdmin!2026', ['ROLE_ADMIN']);
+            $this->submitLogin($client, $adminEmail, 'BulkSourceCheckAdmin!2026');
+            self::assertResponseRedirects('/admin');
+
+            $client->request('GET', '/admin/videos');
+            self::assertResponseIsSuccessful();
+            self::assertSelectorExists('form.admin-bulk-form option[value="check_source_status"]');
+            self::assertSelectorTextContains('thead', 'Externer Quellenstatus');
+            $csrf = (string) $client->getCrawler()->filter('form.admin-bulk-form input[name="_token"]')->attr('value');
+
+            $validSelection = [
+                'action' => 'check_source_status',
+                'ids' => [$availableVideo->getId(), $failedVideo->getId(), $unsupportedEmbed->getId(), $directUrl->getId()],
+            ];
+            $client->request('POST', '/admin/videos/bulk', ['_token' => 'invalid'] + $validSelection);
+            self::assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
+            self::assertSame(0, $providerRequestCount);
+
+            $tooManyIds = array_map(static fn (int $index): string => str_pad(dechex($index + 1), 32, 'a'), range(0, 5));
+            $client->request('POST', '/admin/videos/bulk', [
+                '_token' => $csrf,
+                'action' => 'check_source_status',
+                'ids' => $tooManyIds,
+            ]);
+            self::assertResponseRedirects('/admin/videos');
+            self::assertSame(0, $providerRequestCount);
+
+            $client->request('POST', '/admin/videos/bulk', ['_token' => $csrf] + $validSelection);
+            self::assertResponseRedirects('/admin/videos');
+            self::assertSame(2, $providerRequestCount);
+
+            self::assertSame('available', $connection->fetchOne('SELECT external_source_status FROM videos WHERE id = :id', ['id' => $availableVideo->getId()]));
+            self::assertNull($connection->fetchOne('SELECT external_source_status FROM videos WHERE id = :id', ['id' => $failedVideo->getId()]));
+            self::assertTrue(in_array($connection->fetchOne('SELECT external_source_check_failed FROM videos WHERE id = :id', ['id' => $failedVideo->getId()]), [true, 1, '1', 't'], true));
+            self::assertSame('unsupported', $connection->fetchOne('SELECT external_source_status FROM videos WHERE id = :id', ['id' => $unsupportedEmbed->getId()]));
+            self::assertNull($connection->fetchOne('SELECT external_source_status FROM videos WHERE id = :id', ['id' => $directUrl->getId()]));
+            foreach ([$availableVideo, $failedVideo, $unsupportedEmbed, $directUrl] as $video) {
+                self::assertSame(PublishingStatus::Draft->value, $connection->fetchOne('SELECT status FROM videos WHERE id = :id', ['id' => $video->getId()]));
+            }
+
+            $client->request('GET', '/admin/videos');
+            self::assertResponseIsSuccessful();
+            self::assertSelectorTextContains('tbody', 'Quelle verfügbar');
+            self::assertSelectorTextContains('tbody', 'Prüfung fehlgeschlagen');
+            self::assertStringNotContainsString('provider unavailable', (string) $client->getResponse()->getContent());
+
+            $availableTimestampBeforeFailedTransaction = $connection->fetchOne(
+                'SELECT external_source_checked_at FROM videos WHERE id = :id',
+                ['id' => $availableVideo->getId()],
+            );
+            self::assertIsString($availableTimestampBeforeFailedTransaction);
+            $connection->executeStatement(sprintf(
+                "ALTER TABLE videos ADD CONSTRAINT chk_test_video_source_check_rollback CHECK (id <> '%s' OR external_source_check_failed = FALSE)",
+                $databaseFailureVideo->getId(),
+            ));
+            $failureConstraintInstalled = true;
+
+            $client->request('POST', '/admin/videos/bulk', [
+                '_token' => $csrf,
+                'action' => 'check_source_status',
+                'ids' => [$availableVideo->getId(), $databaseFailureVideo->getId()],
+            ]);
+            self::assertResponseStatusCodeSame(Response::HTTP_INTERNAL_SERVER_ERROR);
+            self::assertSame(4, $providerRequestCount);
+            $connection->executeStatement('ALTER TABLE videos DROP CONSTRAINT chk_test_video_source_check_rollback');
+            $failureConstraintInstalled = false;
+
+            self::assertSame($availableTimestampBeforeFailedTransaction, $connection->fetchOne(
+                'SELECT external_source_checked_at FROM videos WHERE id = :id',
+                ['id' => $availableVideo->getId()],
+            ));
+            self::assertNull($connection->fetchOne(
+                'SELECT external_source_checked_at FROM videos WHERE id = :id',
+                ['id' => $databaseFailureVideo->getId()],
+            ));
+            self::assertFalse(in_array($connection->fetchOne(
+                'SELECT external_source_check_failed FROM videos WHERE id = :id',
+                ['id' => $databaseFailureVideo->getId()],
+            ), [true, 1, '1', 't'], true));
+        } finally {
+            if ($failureConstraintInstalled) {
+                $connection->executeStatement('ALTER TABLE videos DROP CONSTRAINT IF EXISTS chk_test_video_source_check_rollback');
+            }
+            foreach ([$availableVideo, $failedVideo, $unsupportedEmbed, $directUrl, $databaseFailureVideo] as $video) {
+                $connection->executeStatement('DELETE FROM videos WHERE id = :id', ['id' => $video->getId()]);
+            }
+            $registry = $client->getContainer()->get(ManagerRegistry::class);
+            self::assertInstanceOf(ManagerRegistry::class, $registry);
+            $registry->resetManager();
+            $this->removeUser($client, $adminEmail);
+        }
+    }
+
     public function testVideoBulkStateAndDeletionAreValidatedAtomically(): void
     {
         $client = static::createClient();
@@ -1785,6 +2441,188 @@ final class AdminDashboardTest extends WebTestCase
         }
     }
 
+    public function testAdminCanFeatureAndOrderSeriesGenresWithCsrfAndStrictBounds(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $client->getContainer()->set(
+            RuntimeAttestationReportProviderInterface::class,
+            new VerifiedRuntimeAttestationReportProvider(),
+        );
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+
+        $suffix = bin2hex(random_bytes(6));
+        $genre = new SeriesGenre('Featured genre '.$suffix);
+        $adminEmail = 'featured-genre-admin-'.$suffix.'@example.test';
+        $adminPassword = 'FeaturedGenreAdmin!2026';
+        $entityManager->persist($genre);
+        $entityManager->flush();
+        $connection = $entityManager->getConnection();
+
+        try {
+            $client->request('POST', '/admin/series/genres/feature', [
+                'genre_id' => $genre->getId(),
+                'featured' => '1',
+                'sort_order' => '12',
+                '_token' => 'invalid',
+            ]);
+            self::assertResponseRedirects('/admin/login');
+
+            $this->persistUser($client, $adminEmail, $adminPassword, ['ROLE_ADMIN']);
+            $this->submitLogin($client, $adminEmail, $adminPassword);
+            self::assertResponseRedirects('/admin');
+            $client->followRedirect();
+
+            $genreOffset = $connection->fetchOne(
+                'SELECT COUNT(*) FROM series_genres WHERE name < :name OR (name = :name AND id < :id)',
+                ['name' => $genre->getName(), 'id' => $genre->getId()],
+            );
+            self::assertIsInt($genreOffset);
+            $genrePage = intdiv($genreOffset, 50) + 1;
+            $client->request('GET', '/admin/series/genres?page='.$genrePage);
+            self::assertResponseIsSuccessful();
+            $row = $client->getCrawler()->filterXPath('//tr[th[text()="'.$genre->getName().'"]]');
+            self::assertCount(1, $row);
+            self::assertSame('Startseite', trim($client->getCrawler()->filter('table.admin-table thead th')->eq(2)->text()));
+            $token = (string) $row->filter('form[action="/admin/series/genres/feature"] input[name="_token"]')->attr('value');
+            self::assertNotEmpty($token);
+
+            $client->request('POST', '/admin/series/genres/feature', [
+                'genre_id' => $genre->getId(),
+                'featured' => '1',
+                'sort_order' => '12',
+                '_token' => 'invalid',
+            ]);
+            self::assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
+            $state = $connection->fetchAssociative(
+                'SELECT CASE WHEN is_featured THEN 1 ELSE 0 END AS is_featured, featured_sort_order FROM series_genres WHERE id = :id',
+                ['id' => $genre->getId()],
+            );
+            self::assertIsArray($state);
+            self::assertTrue(in_array($state['is_featured'], [0, '0'], true));
+            self::assertTrue(in_array($state['featured_sort_order'], [0, '0'], true));
+
+            $client->request('POST', '/admin/series/genres/feature', [
+                'genre_id' => $genre->getId(),
+                'featured' => '1',
+                'sort_order' => '10001',
+                '_token' => $token,
+            ]);
+            self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+
+            $client->request('POST', '/admin/series/genres/feature', [
+                'genre_id' => $genre->getId(),
+                'featured' => '1',
+                'sort_order' => '12',
+                '_token' => $token,
+            ]);
+            self::assertResponseRedirects('/admin/series/genres');
+            $state = $connection->fetchAssociative(
+                'SELECT CASE WHEN is_featured THEN 1 ELSE 0 END AS is_featured, featured_sort_order FROM series_genres WHERE id = :id',
+                ['id' => $genre->getId()],
+            );
+            self::assertIsArray($state);
+            self::assertTrue(in_array($state['is_featured'], [1, '1'], true));
+            self::assertTrue(in_array($state['featured_sort_order'], [12, '12'], true));
+
+            $client->request('POST', '/admin/series/genres/feature', [
+                'genre_id' => $genre->getId(),
+                'sort_order' => '12',
+                '_token' => $token,
+            ]);
+            self::assertResponseRedirects('/admin/series/genres');
+            $state = $connection->fetchAssociative(
+                'SELECT CASE WHEN is_featured THEN 1 ELSE 0 END AS is_featured, featured_sort_order FROM series_genres WHERE id = :id',
+                ['id' => $genre->getId()],
+            );
+            self::assertIsArray($state);
+            self::assertTrue(in_array($state['is_featured'], [0, '0'], true));
+            self::assertTrue(in_array($state['featured_sort_order'], [12, '12'], true));
+        } finally {
+            $connection->delete('series_genres', ['id' => $genre->getId()]);
+            $this->removeUser($client, $adminEmail);
+        }
+    }
+
+    public function testAdminCanFetchProviderMetadataThroughCsrfProtectedSameSiteEndpoint(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $client->getContainer()->set(
+            RuntimeAttestationReportProviderInterface::class,
+            new VerifiedRuntimeAttestationReportProvider(),
+        );
+
+        $suffix = bin2hex(random_bytes(8));
+        $email = 'provider-metadata-'.$suffix.'@example.test';
+        $password = 'ProviderMetadata-'.$suffix.'-Q4!';
+        $providerImport = new VideoProviderImportService(
+            new MockHttpClient(static function (string $method, string $url, array $options): MockResponse {
+                self::assertSame('GET', $method);
+                self::assertSame(0, $options['max_redirects'] ?? null);
+                $parts = parse_url($url);
+                self::assertIsArray($parts);
+                self::assertSame('www.googleapis.com', $parts['host'] ?? null);
+                self::assertSame('/youtube/v3/videos', $parts['path'] ?? null);
+
+                return new MockResponse(json_encode([
+                    'items' => [[
+                        'id' => 'dQw4w9WgXcQ',
+                        'snippet' => [
+                            'title' => 'Provider metadata title',
+                            'description' => 'Provider metadata description',
+                            'thumbnails' => [
+                                'medium' => ['url' => 'https://i.ytimg.com/vi/dQw4w9WgXcQ/mqdefault.jpg', 'width' => 320],
+                            ],
+                        ],
+                        'contentDetails' => ['duration' => 'PT90S'],
+                        'status' => ['privacyStatus' => 'public', 'embeddable' => true],
+                    ]],
+                ], JSON_THROW_ON_ERROR), ['http_code' => Response::HTTP_OK]);
+            }),
+            new ExternalVideoEmbedResolver(),
+            'test-provider-api-key',
+        );
+        $client->getContainer()->set(VideoProviderImportService::class, $providerImport);
+
+        try {
+            $this->persistUser($client, $email, $password, ['ROLE_ADMIN']);
+            $this->submitLogin($client, $email, $password);
+            self::assertResponseRedirects('/admin');
+
+            $client->request('GET', '/admin/videos/new');
+            self::assertResponseIsSuccessful();
+            $metadataForm = $client->getCrawler()->filter('form[data-video-source-metadata]');
+            $csrfToken = $metadataForm->attr('data-metadata-csrf-token');
+            self::assertIsString($csrfToken);
+            self::assertNotEmpty($csrfToken);
+
+            $client->request('POST', '/admin/videos/metadata', [
+                '_token' => 'invalid-csrf-token',
+                'source_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            ]);
+            self::assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
+
+            $client->request('POST', '/admin/videos/metadata', [
+                '_token' => $csrfToken,
+                'source_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ&feature=share',
+            ]);
+            self::assertResponseIsSuccessful();
+            self::assertTrue($client->getResponse()->headers->getCacheControlDirective('no-store'));
+            self::assertSame([
+                'provider' => 'youtube',
+                'source_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                'title' => 'Provider metadata title',
+                'description' => 'Provider metadata description',
+                'duration_seconds' => 90,
+                'thumbnail_url' => 'https://i.ytimg.com/vi/dQw4w9WgXcQ/mqdefault.jpg',
+            ], json_decode((string) $client->getResponse()->getContent(), true, 32, JSON_THROW_ON_ERROR));
+        } finally {
+            $this->removeUser($client, $email);
+        }
+    }
+
     public function testAdminCanImportVimeoVideosAsDraftsAndSkipDuplicates(): void
     {
         $client = static::createClient();
@@ -1808,6 +2646,9 @@ final class AdminDashboardTest extends WebTestCase
                 'name' => $videoTitle,
                 'description' => 'Imported as a private draft.',
                 'link' => 'https://vimeo.com/345678901?h=privacy789',
+                'pictures' => ['sizes' => [
+                    ['width' => 640, 'link' => 'https://i.vimeocdn.com/video/345678901_640x360.jpg'],
+                ]],
             ]],
         ], JSON_THROW_ON_ERROR);
         $providerResponses = [
@@ -1825,6 +2666,31 @@ final class AdminDashboardTest extends WebTestCase
             'vimeo-test-access-token_123',
         );
         $client->getContainer()->set(VideoProviderImportService::class, $providerImport);
+        $thumbnailPng = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/WioAAAAASUVORK5CYII=', true);
+        self::assertIsString($thumbnailPng);
+        $storedThumbnailObjectId = null;
+        $privateStorage = $this->createMock(PrivateObjectStorageInterface::class);
+        $privateStorage->expects(self::once())->method('write')->willReturnCallback(
+            static function (string $objectId, string $contents) use (&$storedThumbnailObjectId, $thumbnailPng): void {
+                self::assertMatchesRegularExpression('/\A[a-f0-9]{64}\z/D', $objectId);
+                self::assertSame($thumbnailPng, $contents);
+                $storedThumbnailObjectId = $objectId;
+            },
+        );
+        $privateStorage->expects(self::once())->method('read')->willReturnCallback(
+            static function (string $objectId, int $maximumBytes) use (&$storedThumbnailObjectId, $thumbnailPng): string {
+                self::assertSame($storedThumbnailObjectId, $objectId);
+                self::assertSame(strlen($thumbnailPng), $maximumBytes);
+
+                return $thumbnailPng;
+            },
+        );
+        $client->getContainer()->set(PrivateObjectStorageInterface::class, $privateStorage);
+        $thumbnailImports = new VideoThumbnailImportService(
+            new MockHttpClient([new MockResponse($thumbnailPng, ['http_code' => Response::HTTP_OK])]),
+            new VideoThumbnailUploadService($privateStorage),
+        );
+        $client->getContainer()->set(VideoThumbnailImportService::class, $thumbnailImports);
 
         try {
             $this->persistUser($client, $email, $password, ['ROLE_ADMIN']);
@@ -1917,6 +2783,24 @@ final class AdminDashboardTest extends WebTestCase
             self::assertSame('embed', $video['source_type']);
             self::assertFalse((bool) $video['comments_enabled']);
             self::assertSame('https://vimeo.com/345678901?h=privacy789', $video['source_url']);
+            $thumbnailRecord = $connection->fetchAssociative(
+                'SELECT thumbnail_object_id, thumbnail_mime_type, thumbnail_size FROM videos WHERE source_url = :source_url',
+                ['source_url' => 'https://vimeo.com/345678901?h=privacy789'],
+            );
+            self::assertIsArray($thumbnailRecord);
+            self::assertSame($storedThumbnailObjectId, $thumbnailRecord['thumbnail_object_id']);
+            self::assertSame('image/png', $thumbnailRecord['thumbnail_mime_type']);
+            self::assertIsNumeric($thumbnailRecord['thumbnail_size']);
+            self::assertSame(strlen($thumbnailPng), (int) $thumbnailRecord['thumbnail_size']);
+            $videoId = $connection->fetchOne(
+                'SELECT id FROM videos WHERE source_url = :source_url',
+                ['source_url' => 'https://vimeo.com/345678901?h=privacy789'],
+            );
+            self::assertIsString($videoId);
+            $client->request('GET', '/admin/videos/'.$videoId.'/thumbnail');
+            self::assertResponseIsSuccessful();
+            self::assertSame($thumbnailPng, $client->getResponse()->getContent());
+            self::assertStringContainsString('no-store', (string) $client->getResponse()->headers->get('Cache-Control'));
 
             $client->request('POST', '/admin/videos/import/provider', [
                 '_token' => $csrfToken,
@@ -1941,7 +2825,7 @@ final class AdminDashboardTest extends WebTestCase
                 'category' => '',
             ]);
             self::assertResponseStatusCodeSame(Response::HTTP_BAD_GATEWAY);
-            self::assertStringContainsString('Vimeo konnte die Anfrage nicht sicher beantworten', (string) $client->getResponse()->getContent());
+            self::assertStringContainsString('Vimeo konnte die Anfrage nicht sicher beantworten', $client->getResponse()->getContent());
             self::assertEquals(1, $connection->fetchOne(
                 'SELECT COUNT(*) FROM videos WHERE source_url = :source_url',
                 ['source_url' => 'https://vimeo.com/345678901?h=privacy789'],
@@ -1971,6 +2855,114 @@ final class AdminDashboardTest extends WebTestCase
             self::assertNotNull($client->getResponse()->headers->get('Retry-After'));
         } finally {
             $connection->executeStatement('DELETE FROM videos WHERE title = :title', ['title' => $videoTitle]);
+            $this->removeUser($client, $email);
+        }
+    }
+
+    public function testProviderThumbnailStorageFailureCleansEarlierFilesBeforeImport(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $client->getContainer()->set('logger', new NullLogger());
+        $client->getContainer()->set(
+            RuntimeAttestationReportProviderInterface::class,
+            new VerifiedRuntimeAttestationReportProvider(),
+        );
+
+        $suffix = bin2hex(random_bytes(8));
+        $email = 'provider-thumbnail-failure-'.$suffix.'@example.test';
+        $password = 'ThumbnailFailure-'.$suffix.'-A9!';
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        $connection = $entityManager->getConnection();
+        $titlePrefix = 'Vimeo Thumbnail Failure '.$suffix;
+        $providerResponse = json_encode([
+            'data' => [
+                [
+                    'uri' => '/videos/345678901',
+                    'name' => $titlePrefix.' first',
+                    'description' => '',
+                    'link' => 'https://vimeo.com/345678901',
+                    'pictures' => ['sizes' => [
+                        ['width' => 640, 'link' => 'https://i.vimeocdn.com/video/345678901_640x360.jpg'],
+                    ]],
+                ],
+                [
+                    'uri' => '/videos/346678901',
+                    'name' => $titlePrefix.' second',
+                    'description' => '',
+                    'link' => 'https://vimeo.com/346678901',
+                    'pictures' => ['sizes' => [
+                        ['width' => 640, 'link' => 'https://i.vimeocdn.com/video/346678901_640x360.jpg'],
+                    ]],
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR);
+        $providerImport = new VideoProviderImportService(
+            new MockHttpClient([new MockResponse($providerResponse, ['http_code' => Response::HTTP_OK])]),
+            new ExternalVideoEmbedResolver(),
+            'test-provider-api-key',
+            'vimeo-test-access-token_123',
+        );
+        $client->getContainer()->set(VideoProviderImportService::class, $providerImport);
+
+        $thumbnailPng = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/WioAAAAASUVORK5CYII=', true);
+        self::assertIsString($thumbnailPng);
+        $writeCount = 0;
+        $storedObjectIds = [];
+        $privateStorage = $this->createMock(PrivateObjectStorageInterface::class);
+        $privateStorage->expects(self::exactly(2))->method('write')->willReturnCallback(
+            static function (string $objectId, string $contents) use (&$writeCount, &$storedObjectIds, $thumbnailPng): void {
+                ++$writeCount;
+                if (2 === $writeCount) {
+                    throw new \RuntimeException('Private storage is unavailable.');
+                }
+                self::assertSame($thumbnailPng, $contents);
+                $storedObjectIds[] = $objectId;
+            },
+        );
+        $privateStorage->expects(self::exactly(2))->method('delete')->willReturnCallback(
+            static function (string $objectId): void {
+                self::assertMatchesRegularExpression('/\A[a-f0-9]{64}\z/D', $objectId);
+            },
+        );
+        $client->getContainer()->set(PrivateObjectStorageInterface::class, $privateStorage);
+        $client->getContainer()->set(VideoThumbnailImportService::class, new VideoThumbnailImportService(
+            new MockHttpClient([
+                new MockResponse($thumbnailPng, ['http_code' => Response::HTTP_OK]),
+                new MockResponse($thumbnailPng, ['http_code' => Response::HTTP_OK]),
+            ]),
+            new VideoThumbnailUploadService($privateStorage),
+        ));
+
+        try {
+            $this->persistUser($client, $email, $password, ['ROLE_ADMIN']);
+            $this->submitLogin($client, $email, $password);
+            self::assertResponseRedirects('/admin');
+
+            $client->request('GET', '/admin/videos/import/provider');
+            self::assertResponseIsSuccessful();
+            $csrfToken = $client->getCrawler()->filter('input[name="_token"]')->attr('value');
+            self::assertIsString($csrfToken);
+            $client->request('POST', '/admin/videos/import/provider', [
+                '_token' => $csrfToken,
+                'provider' => 'vimeo',
+                'mode' => 'search',
+                'query' => 'nature',
+                'channel_id' => '',
+                'category' => '',
+            ]);
+
+            self::assertResponseStatusCodeSame(Response::HTTP_INTERNAL_SERVER_ERROR);
+            self::assertCount(1, $storedObjectIds);
+            $importedCount = $connection->fetchOne(
+                'SELECT COUNT(*) FROM videos WHERE title LIKE :title',
+                ['title' => $titlePrefix.'%'],
+            );
+            self::assertIsNumeric($importedCount);
+            self::assertSame(0, (int) $importedCount);
+        } finally {
+            $connection->executeStatement('DELETE FROM videos WHERE title LIKE :title', ['title' => $titlePrefix.'%']);
             $this->removeUser($client, $email);
         }
     }
@@ -2429,15 +3421,48 @@ final class AdminDashboardTest extends WebTestCase
             self::assertSelectorTextContains('h1', 'News und Artikel');
             $client->request('GET', '/admin/news/new');
             self::assertResponseIsSuccessful();
-            $client->submitForm('News speichern', [
+            self::assertSelectorExists('[name="custom_fields_present"]');
+            $customNewsValue = '<script>news-custom-field</script>';
+            $invalidNewsToken = (string) $client->getCrawler()->filter('form.admin-form input[name="_token"]')->attr('value');
+            $client->request('POST', '/admin/news/new', [
+                '_token' => $invalidNewsToken,
                 'title' => $newsTitle,
                 'author_name' => 'Test Redaktion',
                 'category' => $categoryName,
+                'tags' => '',
+                'summary' => 'Kurzer Vorspann',
+                'body' => 'Ein Testbeitrag für die redaktionelle Verwaltung.',
+                'status' => 'published',
+                'publish_at' => '',
+                'custom_fields_present' => '1',
+                'custom_fields' => [
+                    ['key' => 'Studio', 'value' => 'First'],
+                    ['key' => ' studio ', 'value' => 'Duplicate'],
+                ],
+            ]);
+            self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+            self::assertFalse((bool) $categoryManager->getConnection()->fetchOne(
+                'SELECT COUNT(*) FROM news_articles WHERE slug = :slug',
+                ['slug' => $newsSlug],
+            ));
+
+            $client->request('GET', '/admin/news/new');
+            self::assertResponseIsSuccessful();
+            $newsToken = (string) $client->getCrawler()->filter('form.admin-form input[name="_token"]')->attr('value');
+            $client->request('POST', '/admin/news/new', [
+                '_token' => $newsToken,
+                'title' => $newsTitle,
+                'author_name' => 'Test Redaktion',
+                'category' => $categoryName,
+                'tags' => '',
                 'summary' => 'Kurzer Vorspann',
                 'body' => 'Ein Testbeitrag für die redaktionelle Verwaltung.',
                 'status' => 'published',
                 'featured' => '1',
                 'comments_enabled' => '1',
+                'publish_at' => '',
+                'custom_fields_present' => '1',
+                'custom_fields' => [['key' => 'Studio', 'value' => $customNewsValue]],
             ]);
             self::assertResponseRedirects('/admin/news');
             $client->followRedirect();
@@ -2451,6 +3476,23 @@ final class AdminDashboardTest extends WebTestCase
                 ['slug' => $newsSlug],
             );
             self::assertIsString($articleId);
+            $newsCustomFieldsJson = $entityManager->getConnection()->fetchOne(
+                'SELECT custom_fields::text FROM news_articles WHERE id = :id',
+                ['id' => $articleId],
+            );
+            if (!is_string($newsCustomFieldsJson)) {
+                throw new \LogicException('Die News-Metafelder wurden nicht als JSON gespeichert.');
+            }
+            $newsCustomFields = json_decode($newsCustomFieldsJson, true, 512, JSON_THROW_ON_ERROR);
+            self::assertSame([['key' => 'Studio', 'value' => $customNewsValue]], $newsCustomFields);
+            $client->request('GET', '/news/'.$newsSlug);
+            self::assertResponseIsSuccessful();
+            self::assertSelectorTextContains('.article-custom-fields', $customNewsValue);
+            $newsResponseContent = $client->getResponse()->getContent();
+            if (!is_string($newsResponseContent)) {
+                throw new \LogicException('Die News-Seite lieferte keinen lesbaren Antworttext.');
+            }
+            self::assertStringNotContainsString($customNewsValue, $newsResponseContent);
 
             $client->request('GET', '/admin/news/'.$articleId.'/edit');
             self::assertResponseIsSuccessful();
@@ -2484,14 +3526,23 @@ final class AdminDashboardTest extends WebTestCase
             self::assertNotNull($client->getResponse()->headers->get('Content-Security-Policy-Report-Only'));
             $client->request('GET', '/admin/videos/new');
             self::assertResponseIsSuccessful();
-            $client->submitForm('Video speichern', [
+            self::assertSelectorExists('[name="custom_fields_present"]');
+            $videoToken = (string) $client->getCrawler()->filter('form.admin-form input[name="_token"]')->attr('value');
+            $customVideoValue = '<script>video-custom-field</script>';
+            $client->request('POST', '/admin/videos/new', [
+                '_token' => $videoToken,
                 'title' => $videoTitle,
                 'description' => 'Testvideo mit einer HTTPS-Quelle.',
                 'category' => $categoryName,
+                'tags' => '',
                 'source_type' => 'url',
                 'source_url' => 'https://youtu.be/dQw4w9WgXcQ',
-                'status' => 'draft',
+                'status' => 'published',
                 'comments_enabled' => '1',
+                'duration_seconds' => '',
+                'embed_origins' => '',
+                'custom_fields_present' => '1',
+                'custom_fields' => [['key' => 'License', 'value' => $customVideoValue]],
             ]);
             self::assertResponseRedirects('/admin/videos');
             $client->followRedirect();
@@ -2521,6 +3572,23 @@ final class AdminDashboardTest extends WebTestCase
                 ['title' => $videoTitle],
             );
             self::assertIsString($videoId);
+            $videoCustomFieldsJson = $entityManager->getConnection()->fetchOne(
+                'SELECT custom_fields::text FROM videos WHERE id = :id',
+                ['id' => $videoId],
+            );
+            if (!is_string($videoCustomFieldsJson)) {
+                throw new \LogicException('Die Video-Metafelder wurden nicht als JSON gespeichert.');
+            }
+            $videoCustomFields = json_decode($videoCustomFieldsJson, true, 512, JSON_THROW_ON_ERROR);
+            self::assertSame([['key' => 'License', 'value' => $customVideoValue]], $videoCustomFields);
+            $client->request('GET', '/videos/'.$videoId);
+            self::assertResponseIsSuccessful();
+            self::assertSelectorTextContains('.article-custom-fields', $customVideoValue);
+            $videoResponseContent = $client->getResponse()->getContent();
+            if (!is_string($videoResponseContent)) {
+                throw new \LogicException('Die Videoseite lieferte keinen lesbaren Antworttext.');
+            }
+            self::assertStringNotContainsString($customVideoValue, $videoResponseContent);
             $client->request('GET', '/admin/videos/'.$videoId.'/edit');
             self::assertResponseIsSuccessful();
             $client->submitForm('Änderungen speichern', [
@@ -2556,7 +3624,7 @@ final class AdminDashboardTest extends WebTestCase
 
             $client->request('GET', '/admin/videos/new');
             self::assertResponseIsSuccessful();
-            self::assertSelectorTextContains('form.admin-form', 'direkte MP4-, M4V-, WebM- und Ogg-Dateien');
+            self::assertSelectorTextContains('form.admin-form', 'MP4-, M4V-, WebM-, Ogg- und MP3-Dateien');
             self::assertSelectorTextContains('form.admin-form', 'keine Zugangsdaten oder geheimen Tokens');
             $client->request('POST', '/admin/videos/new', [
                 '_token' => 'ungueltiger-token',
@@ -2874,6 +3942,8 @@ final class AdminDashboardTest extends WebTestCase
             $client->request('GET', '/videos/'.$uploadedVideoId.'/media');
             self::assertResponseIsSuccessful();
             self::assertSame('video/mp4', $client->getResponse()->headers->get('Content-Type'));
+            self::assertSame('same-origin', $client->getResponse()->headers->get('Cross-Origin-Resource-Policy'));
+            self::assertSame('nosniff', $client->getResponse()->headers->get('X-Content-Type-Options'));
             self::assertSame($videoBytes, $client->getResponse()->getContent());
 
             $client->request('GET', '/videos/'.$uploadedVideoId.'/media', [], [], ['HTTP_RANGE' => 'bytes=2-5']);
@@ -2881,8 +3951,66 @@ final class AdminDashboardTest extends WebTestCase
             self::assertSame('bytes 2-5/'.strlen($videoBytes), $client->getResponse()->headers->get('Content-Range'));
             self::assertSame(substr($videoBytes, 2, 4), $client->getResponse()->getContent());
 
-            $client->request('GET', '/videos/'.$uploadedVideoId.'/media', [], [], ['HTTP_RANGE' => 'bytes=999999-']);
-            self::assertResponseStatusCodeSame(Response::HTTP_REQUESTED_RANGE_NOT_SATISFIABLE);
+            $validMediaRanges = [
+                ['bytes=2-', 2, strlen($videoBytes) - 1],
+                ['bytes=2-999999', 2, strlen($videoBytes) - 1],
+                ['bytes=-4', strlen($videoBytes) - 4, strlen($videoBytes) - 1],
+            ];
+            foreach ($validMediaRanges as [$rangeHeader, $start, $end]) {
+                $client->request('GET', '/videos/'.$uploadedVideoId.'/media', [], [], ['HTTP_RANGE' => $rangeHeader]);
+                self::assertResponseStatusCodeSame(Response::HTTP_PARTIAL_CONTENT, $rangeHeader);
+                self::assertResponseHeaderSame(
+                    'Content-Range',
+                    sprintf('bytes %d-%d/%d', $start, $end, strlen($videoBytes)),
+                );
+                self::assertResponseHeaderSame('Content-Length', (string) ($end - $start + 1));
+                self::assertSame(substr($videoBytes, $start, $end - $start + 1), $client->getResponse()->getContent());
+            }
+
+            $invalidMediaRanges = [
+                'bytes=999999-',
+                'items=0-1',
+                'bytes=3-2',
+                'bytes=-0',
+                'bytes=0-1,4-5',
+                'bytes=-',
+                'bytes='.str_repeat('9', 101),
+            ];
+            foreach ($invalidMediaRanges as $rangeHeader) {
+                $client->request('GET', '/videos/'.$uploadedVideoId.'/media', [], [], ['HTTP_RANGE' => $rangeHeader]);
+                self::assertResponseStatusCodeSame(Response::HTTP_REQUESTED_RANGE_NOT_SATISFIABLE, $rangeHeader);
+                self::assertResponseHeaderSame('Accept-Ranges', 'bytes');
+                self::assertResponseHeaderSame('Content-Range', 'bytes */'.strlen($videoBytes));
+                self::assertStringContainsString(
+                    'no-store',
+                    (string) $client->getResponse()->headers->get('Cache-Control'),
+                );
+                self::assertSame('', $client->getResponse()->getContent());
+            }
+
+            $mediaStorage->delete($uploadedObjectId);
+            $client->request('GET', '/videos/'.$uploadedVideoId.'/media');
+            self::assertResponseStatusCodeSame(Response::HTTP_SERVICE_UNAVAILABLE);
+            self::assertResponseHeaderSame('Retry-After', '60');
+            self::assertStringContainsString(
+                'no-store',
+                (string) $client->getResponse()->headers->get('Cache-Control'),
+            );
+            self::assertSame('', $client->getResponse()->getContent());
+            $mediaStorage->write($uploadedObjectId, $videoBytes);
+
+            foreach ([str_repeat('x', strlen($videoBytes)), substr($videoBytes, 1)] as $damagedMediaBytes) {
+                $mediaStorage->delete($uploadedObjectId);
+                $mediaStorage->write($uploadedObjectId, $damagedMediaBytes);
+                $client->request('GET', '/videos/'.$uploadedVideoId.'/media');
+                self::assertResponseStatusCodeSame(Response::HTTP_SERVICE_UNAVAILABLE);
+                self::assertResponseHeaderSame('Retry-After', '60');
+                $damagedMediaCacheControl = (string) $client->getResponse()->headers->get('Cache-Control');
+                self::assertStringContainsString('no-store', $damagedMediaCacheControl);
+                self::assertSame('', $client->getResponse()->getContent());
+            }
+            $mediaStorage->delete($uploadedObjectId);
+            $mediaStorage->write($uploadedObjectId, $videoBytes);
 
             $temporaryInvalidCsvPath = tempnam(sys_get_temp_dir(), 'arcanorum-video-import-');
             if (false === $temporaryInvalidCsvPath) {
@@ -2925,7 +4053,7 @@ final class AdminDashboardTest extends WebTestCase
             ]);
             self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
             self::assertSelectorTextContains('[role="alert"]', 'CSV-Quellart muss url, stream oder embed sein');
-            self::assertSelectorTextContains('[role="alert"]', 'YouTube, Dailymotion oder Vimeo');
+            self::assertSelectorTextContains('[role="alert"]', 'unterstützten Providers');
             self::assertSelectorTextContains('[role="alert"]', 'freigegebenen Host');
             self::assertFalse((bool) $entityManager->getConnection()->fetchOne(
                 'SELECT COUNT(*) FROM videos WHERE title = :title',
@@ -2963,7 +4091,7 @@ final class AdminDashboardTest extends WebTestCase
                 'status' => 'draft',
             ]);
             self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
-            self::assertSelectorTextContains('[role="alert"]', 'YouTube-, Dailymotion- oder Vimeo-Video-URL');
+            self::assertSelectorTextContains('[role="alert"]', 'Video-URL von YouTube, Vimeo, Dailymotion, Facebook, Google Drive, Rutube, VK oder Youku');
             self::assertFalse((bool) $entityManager->getConnection()->fetchOne(
                 'SELECT COUNT(*) FROM videos WHERE title = :title',
                 ['title' => $invalidEmbedAdminTitle],
@@ -3001,6 +4129,48 @@ final class AdminDashboardTest extends WebTestCase
             }
 
             $this->removeUser($client, $email);
+        }
+    }
+
+    public function testPublicVideoMediaRejectsNonCanonicalPrivateObjectId(): void
+    {
+        $client = static::createClient();
+        $client->getContainer()->set(
+            RuntimeAttestationReportProviderInterface::class,
+            new VerifiedRuntimeAttestationReportProvider(),
+        );
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+
+        $video = new Video(
+            'Corrupted storage reference '.bin2hex(random_bytes(6)),
+            '',
+            null,
+            VideoSourceType::File,
+            '',
+            PublishingStatus::Published,
+            false,
+            true,
+        );
+        $video->attachUploadedMedia(bin2hex(random_bytes(32)), 'video/mp4', 1);
+        $videoId = $video->getId();
+
+        try {
+            $entityManager->persist($video);
+            $entityManager->flush();
+            $entityManager->getConnection()->executeStatement(
+                'UPDATE videos SET uploaded_object_id = :object_id WHERE id = :id',
+                ['object_id' => '../outside-private-storage', 'id' => $videoId],
+            );
+            $entityManager->clear();
+
+            $client->request('GET', '/videos/'.$videoId.'/media');
+            self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+        } finally {
+            $cleanupManager = $client->getContainer()->get(EntityManagerInterface::class);
+            if ($cleanupManager instanceof EntityManagerInterface) {
+                $cleanupManager->getConnection()->executeStatement('DELETE FROM videos WHERE id = :id', ['id' => $videoId]);
+            }
         }
     }
 
@@ -3406,6 +4576,26 @@ final class AdminDashboardTest extends WebTestCase
             self::assertResponseHeaderSame('Content-Type', 'text/vtt; charset=UTF-8');
             self::assertSame($firstSubtitle, $client->getResponse()->getContent());
             self::assertResponseHeaderSame('X-Content-Type-Options', 'nosniff');
+            $connection = $entityManager->getConnection();
+            $connection->beginTransaction();
+            try {
+                $connection->executeStatement(
+                    'ALTER TABLE video_subtitle_tracks DROP CONSTRAINT video_subtitle_tracks_storage_object_id_check',
+                );
+                $connection->executeStatement(
+                    'UPDATE video_subtitle_tracks SET storage_object_id = :object_id WHERE id = :id',
+                    ['object_id' => 'A'.substr($oldObjectId, 1), 'id' => $trackId],
+                );
+                $entityManager->clear();
+                $client->request('GET', '/videos/'.$videoId.'/subtitles/'.$trackId);
+                self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+                self::assertTrue($client->getResponse()->headers->getCacheControlDirective('no-store'));
+            } finally {
+                if ($connection->isTransactionActive()) {
+                    $connection->rollBack();
+                }
+                $entityManager->clear();
+            }
             $storage->write($oldObjectId, $updatedSubtitle);
             $client->request('GET', '/videos/'.$videoId.'/subtitles/'.$trackId);
             self::assertResponseStatusCodeSame(Response::HTTP_SERVICE_UNAVAILABLE);
@@ -3518,7 +4708,7 @@ final class AdminDashboardTest extends WebTestCase
             $client->request('GET', '/videos/'.$videoId.'/subtitles/'.$remainingTrackId);
             self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
             try {
-                $storage->read($remainingObjectId);
+                $storage->read($remainingObjectId, 67_108_864);
                 self::fail('A subtitle file remained in private storage after its video was deleted.');
             } catch (\App\Platform\Hosting\PrivateStorageOperationFailed) {
                 // Missing private objects are rejected by the storage adapter.
@@ -3715,27 +4905,48 @@ final class AdminDashboardTest extends WebTestCase
             RuntimeAttestationReportProviderInterface::class,
             new VerifiedRuntimeAttestationReportProvider(),
         );
-        $categoryName = 'Category admin '.bin2hex(random_bytes(6));
+        $suffix = bin2hex(random_bytes(6));
+        $categoryName = 'Category admin '.$suffix;
+        $parentCategoryName = 'Parent category '.$suffix;
+        $categorySlug = 'category-admin-'.$suffix;
+        $categoryFields = [
+            'name' => $categoryName,
+            'type' => 'news',
+            'slug' => $categorySlug,
+            'description' => 'News about local culture.',
+            'meta_title' => 'Local culture news',
+            'meta_description' => 'Recent news about culture in the region.',
+            'meta_keywords' => 'culture, local news',
+            'sort_order' => '17',
+            'parent_id' => '',
+        ];
         $email = 'category-admin-'.bin2hex(random_bytes(6)).'@example.test';
         $password = 'Category-Admin-'.bin2hex(random_bytes(6)).'-A9!';
         $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
         self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        $parentCategory = null;
+        $usedArticle = null;
 
         try {
             $this->persistUser($client, $email, $password, ['ROLE_ADMIN']);
             $this->submitLogin($client, $email, $password);
             self::assertResponseRedirects('/admin');
 
-            $client->request('GET', '/admin/categories/new');
+            $parentCategory = new ContentCategory($parentCategoryName, ContentCategoryType::News);
+            $parentCategory->updateTaxonomy('parent-category-'.$suffix, '', null, null, null, 0);
+            $entityManager->persist($parentCategory);
+            $entityManager->flush();
+            $categoryFields['parent_id'] = $parentCategory->getId();
+
+            $client->request('GET', '/admin/categories/new?type=news');
             self::assertResponseIsSuccessful();
             $token = (string) $client->getCrawler()->filter('input[name="_token"]')->attr('value');
             self::assertNotSame('', $token);
+            self::assertSelectorExists('select[name="parent_id"] option[value="'.$parentCategory->getId().'"]');
 
             $client->request('POST', '/admin/categories/new', [
                 '_token' => 'invalid',
-                'name' => $categoryName,
-                'type' => 'news',
-            ]);
+            ] + $categoryFields);
             self::assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
             self::assertSame(0, $entityManager->getConnection()->fetchOne(
                 'SELECT COUNT(*) FROM content_categories WHERE name = :name',
@@ -3744,9 +4955,7 @@ final class AdminDashboardTest extends WebTestCase
 
             $client->request('POST', '/admin/categories/new', [
                 '_token' => $token,
-                'name' => $categoryName,
-                'type' => 'news',
-            ]);
+            ] + $categoryFields);
             self::assertResponseRedirects('/admin/categories?type=news');
             $client->followRedirect();
             self::assertSelectorTextContains('.flash-message.is-success', 'Kategorie wurde angelegt.');
@@ -3754,31 +4963,341 @@ final class AdminDashboardTest extends WebTestCase
                 'SELECT COUNT(*) FROM content_categories WHERE name = :name AND content_type = :type',
                 ['name' => $categoryName, 'type' => 'news'],
             ));
+            $createdCategory = $entityManager->getRepository(ContentCategory::class)->findOneBy(['name' => $categoryName]);
+            self::assertInstanceOf(ContentCategory::class, $createdCategory);
+            self::assertSame($categorySlug, $createdCategory->getSlug());
+            self::assertSame('News about local culture.', $createdCategory->getDescription());
+            self::assertSame('Local culture news', $createdCategory->getMetaTitle());
+            self::assertSame('Recent news about culture in the region.', $createdCategory->getMetaDescription());
+            self::assertSame('culture, local news', $createdCategory->getMetaKeywords());
+            self::assertSame(17, $createdCategory->getSortOrder());
+            $createdParent = $createdCategory->getParent();
+            self::assertNotNull($createdParent);
+            self::assertSame($parentCategory->getId(), $createdParent->getId());
+
+            $client->request('GET', '/admin/categories/'.$createdCategory->getId().'/edit');
+            self::assertResponseIsSuccessful();
+            $editToken = (string) $client->getCrawler()->filter('input[name="_token"]')->attr('value');
+            $invalidParentFields = $categoryFields;
+            $invalidParentFields['parent_id'] = $createdCategory->getId();
+            $client->request('POST', '/admin/categories/'.$createdCategory->getId().'/edit', [
+                '_token' => $editToken,
+            ] + $invalidParentFields);
+            self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+            self::assertSelectorTextContains('[role="alert"]', 'Die übergeordnete Kategorie ist ungültig.');
+            $createdParentAfterInvalidUpdate = $createdCategory->getParent();
+            self::assertNotNull($createdParentAfterInvalidUpdate);
+            self::assertSame($parentCategory->getId(), $createdParentAfterInvalidUpdate->getId());
 
             $client->request('GET', '/admin/categories/new?type=news');
             self::assertResponseIsSuccessful();
             $token = (string) $client->getCrawler()->filter('input[name="_token"]')->attr('value');
             $client->request('POST', '/admin/categories/new', [
                 '_token' => $token,
-                'name' => $categoryName,
-                'type' => 'news',
-            ]);
+            ] + $categoryFields);
             self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
             self::assertSelectorTextContains('[role="alert"]', 'Diese Kategorie gibt es in diesem Inhaltsbereich bereits.');
             self::assertSame(1, $entityManager->getConnection()->fetchOne(
                 'SELECT COUNT(*) FROM content_categories WHERE name = :name AND content_type = :type',
                 ['name' => $categoryName, 'type' => 'news'],
             ));
+
+            $duplicateSlugFields = $categoryFields;
+            $duplicateSlugFields['name'] = 'Another category '.$suffix;
+            $client->request('GET', '/admin/categories/new?type=news');
+            self::assertResponseIsSuccessful();
+            $slugToken = (string) $client->getCrawler()->filter('input[name="_token"]')->attr('value');
+            $client->request('POST', '/admin/categories/new?type=news', [
+                '_token' => $slugToken,
+            ] + $duplicateSlugFields);
+            self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+            self::assertSelectorTextContains('[role="alert"]', 'Dieser Kategorien-Slug wird in diesem Inhaltsbereich bereits verwendet.');
+            self::assertSame(1, $entityManager->getConnection()->fetchOne(
+                'SELECT COUNT(*) FROM content_categories WHERE content_type = :type AND slug = :slug',
+                ['type' => 'news', 'slug' => $categorySlug],
+            ));
+
+            $client->request('POST', '/admin/categories/'.$parentCategory->getId().'/delete', ['_token' => 'invalid']);
+            self::assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
+
+            $usedArticle = new NewsArticle(
+                'Used category article '.$suffix,
+                'category-delete-usage-'.$suffix,
+                $categoryName,
+                null,
+                'This article prevents its category from being deleted.',
+                PublishingStatus::Draft,
+                false,
+                true,
+            );
+            $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+            self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+            $entityManager->persist($usedArticle);
+            $entityManager->flush();
+
+            $parentDeleteToken = $this->categoryDeleteToken($client, $parentCategory->getId());
+            $client->request('POST', '/admin/categories/'.$parentCategory->getId().'/delete', ['_token' => $parentDeleteToken]);
+            self::assertResponseRedirects('/admin/categories?type=news');
+            $client->followRedirect();
+            self::assertSelectorTextContains('.flash-message.is-error', 'Die Kategorie wird noch verwendet oder enthält Unterkategorien und kann nicht gelöscht werden.');
+            self::assertSame(1, $this->integer($entityManager->getConnection()->fetchOne(
+                'SELECT COUNT(*) FROM content_categories WHERE id = :id',
+                ['id' => $parentCategory->getId()],
+            )));
+
+            $usedCategoryDeleteToken = $this->categoryDeleteToken($client, $createdCategory->getId());
+            $client->request('POST', '/admin/categories/'.$createdCategory->getId().'/delete', ['_token' => $usedCategoryDeleteToken]);
+            self::assertResponseRedirects('/admin/categories?type=news');
+            $client->followRedirect();
+            self::assertSelectorTextContains('.flash-message.is-error', 'Die Kategorie wird noch verwendet oder enthält Unterkategorien und kann nicht gelöscht werden.');
+            self::assertSame(1, $this->integer($entityManager->getConnection()->fetchOne(
+                'SELECT COUNT(*) FROM content_categories WHERE id = :id',
+                ['id' => $createdCategory->getId()],
+            )));
+
+            $entityManager->getConnection()->delete('news_articles', ['id' => $usedArticle->getId()]);
+            $client->request('GET', '/admin/categories?type=news');
+            self::assertResponseIsSuccessful();
+            $categoryDeleteForm = $client->getCrawler()->filter('form[action="/admin/categories/'.$createdCategory->getId().'/delete"]');
+            self::assertSame(1, $categoryDeleteForm->count());
+            $categoryDeleteToken = (string) $categoryDeleteForm->filter('input[name="_token"]')->attr('value');
+            $client->request('POST', '/admin/categories/'.$createdCategory->getId().'/delete', ['_token' => $categoryDeleteToken]);
+            self::assertResponseRedirects('/admin/categories?type=news');
+            self::assertSame(0, $this->integer($entityManager->getConnection()->fetchOne(
+                'SELECT COUNT(*) FROM content_categories WHERE id = :id',
+                ['id' => $createdCategory->getId()],
+            )));
+
+            $client->request('GET', '/admin/categories?type=news');
+            self::assertResponseIsSuccessful();
+            $parentDeleteForm = $client->getCrawler()->filter('form[action="/admin/categories/'.$parentCategory->getId().'/delete"]');
+            self::assertSame(1, $parentDeleteForm->count());
+            $parentDeleteToken = (string) $parentDeleteForm->filter('input[name="_token"]')->attr('value');
+            $client->request('POST', '/admin/categories/'.$parentCategory->getId().'/delete', ['_token' => $parentDeleteToken]);
+            self::assertResponseRedirects('/admin/categories?type=news');
+            self::assertSame(0, $this->integer($entityManager->getConnection()->fetchOne(
+                'SELECT COUNT(*) FROM content_categories WHERE id = :id',
+                ['id' => $parentCategory->getId()],
+            )));
         } finally {
-            $entityManager->getConnection()->executeStatement(
+            static::ensureKernelShutdown();
+            $cleanupClient = static::createClient();
+            $cleanupEntityManager = $cleanupClient->getContainer()->get(EntityManagerInterface::class);
+            self::assertInstanceOf(EntityManagerInterface::class, $cleanupEntityManager);
+            $connection = $cleanupEntityManager->getConnection();
+            if ($usedArticle instanceof NewsArticle) {
+                $connection->delete('news_articles', ['id' => $usedArticle->getId()]);
+            }
+            $connection->executeStatement(
                 'DELETE FROM content_categories WHERE name = :name',
                 ['name' => $categoryName],
             );
-            $entityManager->getConnection()->executeStatement(
+            $connection->executeStatement(
+                'DELETE FROM content_categories WHERE name = :name',
+                ['name' => $parentCategoryName],
+            );
+            $connection->executeStatement(
                 'DELETE FROM admin_activity_entries WHERE actor_id = (SELECT id FROM admin_users WHERE email = :email)',
                 ['email' => $email],
             );
+            $this->removeUser($cleanupClient, $email);
+            static::ensureKernelShutdown();
+        }
+    }
+
+    public function testAdminCanUploadAndRemoveVideoCategoryArtworkWithCsrfAndPublicValidation(): void
+    {
+        $client = static::createClient();
+        $client->getContainer()->set(
+            RuntimeAttestationReportProviderInterface::class,
+            new VerifiedRuntimeAttestationReportProvider(),
+        );
+        $token = bin2hex(random_bytes(8));
+        $email = 'video-category-artwork-'.$token.'@example.test';
+        $password = 'Video-Category-Artwork-'.$token.'-K8!';
+        $category = new ContentCategory('Artwork category '.$token, ContentCategoryType::Video);
+        $category->updateTaxonomy('artwork-category-'.$token, '', null, null, null, 0);
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        $storage = $client->getContainer()->get(PrivateObjectStorageInterface::class);
+        self::assertInstanceOf(PrivateObjectStorageInterface::class, $storage);
+        $png = self::categoryArtworkPng();
+        $temporaryPath = tempnam(sys_get_temp_dir(), 'arcanorum-video-category-artwork-');
+        self::assertIsString($temporaryPath);
+        self::assertSame(strlen($png), file_put_contents($temporaryPath, $png));
+        $entityManager->persist($category);
+        $entityManager->flush();
+        $artworkPath = '/admin/categories/'.$category->getId().'/artwork';
+        $editPath = '/admin/categories/'.$category->getId().'/edit';
+
+        try {
+            $this->persistUser($client, $email, $password, ['ROLE_ADMIN']);
+            $this->submitLogin($client, $email, $password);
+            self::assertResponseRedirects('/admin');
+            $client->followRedirect();
+            self::assertResponseIsSuccessful();
+
+            $client->request('GET', $editPath);
+            self::assertResponseIsSuccessful();
+            $categorySaveToken = $client->getCrawler()->filter('input[name="_token"]')->eq(0)->attr('value');
+            self::assertIsString($categorySaveToken);
+            $client->request('POST', $editPath, [
+                '_token' => $categorySaveToken,
+                'name' => $category->getName(),
+                'slug' => $category->getSlug(),
+                'description' => '',
+                'meta_title' => '',
+                'meta_description' => '',
+                'meta_keywords' => '',
+                'sort_order' => '0',
+                'parent_id' => '',
+                'featured' => '1',
+            ]);
+            self::assertResponseRedirects('/admin/categories?type=video');
+
+            $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+            self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+            $entityManager->clear();
+            $featuredCategory = $entityManager->getRepository(ContentCategory::class)->find($category->getId());
+            self::assertInstanceOf(ContentCategory::class, $featuredCategory);
+            self::assertTrue($featuredCategory->isFeatured());
+
+            $client->request('POST', $artworkPath, [
+                '_token' => 'invalid-token',
+                'action' => 'upload',
+            ], [
+                'artwork' => new UploadedFile($temporaryPath, 'category.png', 'image/png', null, true),
+            ]);
+            self::assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
+
+            $client->request('GET', $editPath);
+            self::assertResponseIsSuccessful();
+            $csrfToken = $client->getCrawler()
+                ->filter('form[action="'.$artworkPath.'"] input[name="_token"]')
+                ->eq(0)
+                ->attr('value');
+            self::assertIsString($csrfToken);
+
+            $client->request('POST', $artworkPath, [
+                '_token' => $csrfToken,
+                'action' => 'upload',
+            ], [
+                'artwork' => new UploadedFile($temporaryPath, 'category.png', 'image/png', null, true),
+            ]);
+            self::assertResponseRedirects($editPath);
+
+            $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+            self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+            $entityManager->clear();
+            $storedCategory = $entityManager->getRepository(ContentCategory::class)->find($category->getId());
+            self::assertInstanceOf(ContentCategory::class, $storedCategory);
+            $storedArtworkObjectId = $storedCategory->getArtworkObjectId();
+            self::assertIsString($storedArtworkObjectId);
+            self::assertSame('image/png', $storedCategory->getArtworkMimeType());
+            $storedArtworkSha256 = $storedCategory->getArtworkSha256();
+            self::assertIsString($storedArtworkSha256);
+            self::assertSame(hash('sha256', $storage->read($storedArtworkObjectId, 1048576)), $storedArtworkSha256);
+            $firstArtworkObjectId = $storedArtworkObjectId;
+
+            $client->request('GET', $editPath);
+            self::assertResponseIsSuccessful();
+            $replacementToken = $client->getCrawler()
+                ->filter('form[action="'.$artworkPath.'"] input[name="_token"]')
+                ->eq(0)
+                ->attr('value');
+            self::assertIsString($replacementToken);
+            $client->request('POST', $artworkPath, [
+                '_token' => $replacementToken,
+                'action' => 'upload',
+            ], [
+                'artwork' => new UploadedFile($temporaryPath, 'category-replacement.png', 'image/png', null, true),
+            ]);
+            self::assertResponseRedirects($editPath);
+            $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+            self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+            $entityManager->clear();
+            $storedCategory = $entityManager->getRepository(ContentCategory::class)->find($category->getId());
+            self::assertInstanceOf(ContentCategory::class, $storedCategory);
+            $replacementArtworkObjectId = $storedCategory->getArtworkObjectId();
+            self::assertIsString($replacementArtworkObjectId);
+            self::assertNotSame($firstArtworkObjectId, $replacementArtworkObjectId);
+            try {
+                $storage->read($firstArtworkObjectId, 1048576);
+                self::fail('Replacing category artwork must remove the superseded private object.');
+            } catch (\App\Platform\Hosting\PrivateStorageOperationFailed) {
+                self::assertNotNull($storedCategory->getArtworkObjectId());
+            }
+
+            $client->request('GET', '/videos/category/'.$category->getSlug().'/artwork');
+            self::assertResponseIsSuccessful();
+            self::assertResponseHeaderSame('Content-Type', 'image/png');
+            self::assertResponseHeaderSame('X-Content-Type-Options', 'nosniff');
+            self::assertResponseHeaderSame('Cross-Origin-Resource-Policy', 'same-origin');
+            $publicImage = $client->getResponse()->getContent();
+            self::assertIsString($publicImage);
+            $imageInfo = getimagesizefromstring($publicImage);
+            self::assertIsArray($imageInfo);
+            self::assertLessThanOrEqual(320, $imageInfo[0]);
+            self::assertLessThanOrEqual(180, $imageInfo[1]);
+
+            $entityManager->getConnection()->executeStatement(
+                'UPDATE content_categories SET artwork_sha256 = :sha256 WHERE id = :id',
+                ['sha256' => str_repeat('0', 64), 'id' => $category->getId()],
+            );
+            $client->request('GET', '/videos/category/'.$category->getSlug().'/artwork');
+            self::assertResponseStatusCodeSame(Response::HTTP_SERVICE_UNAVAILABLE);
+            $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+            self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+            $entityManager->getConnection()->executeStatement(
+                'UPDATE content_categories SET artwork_sha256 = :sha256 WHERE id = :id',
+                ['sha256' => hash('sha256', $storage->read($replacementArtworkObjectId, 1048576)), 'id' => $category->getId()],
+            );
+
+            $client->request('GET', $editPath);
+            self::assertResponseIsSuccessful();
+            $removeToken = $client->getCrawler()
+                ->filter('form[action="'.$artworkPath.'"] input[name="_token"]')
+                ->eq(1)
+                ->attr('value');
+            self::assertIsString($removeToken);
+            $client->request('POST', $artworkPath, [
+                '_token' => $removeToken,
+                'action' => 'remove',
+            ]);
+            self::assertResponseRedirects($editPath);
+
+            $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+            self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+            $entityManager->clear();
+            $storedCategory = $entityManager->getRepository(ContentCategory::class)->find($category->getId());
+            self::assertInstanceOf(ContentCategory::class, $storedCategory);
+            self::assertNull($storedCategory->getArtworkObjectId());
+            self::assertNull($storedCategory->getArtworkSha256());
+            $client->request('GET', '/videos/category/'.$category->getSlug().'/artwork');
+            self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+        } finally {
+            $cleanupManager = $client->getContainer()->get(EntityManagerInterface::class);
+            if ($cleanupManager instanceof EntityManagerInterface) {
+                $objectId = $cleanupManager->getConnection()->fetchOne(
+                    'SELECT artwork_object_id FROM content_categories WHERE id = :id',
+                    ['id' => $category->getId()],
+                );
+                if (is_string($objectId)) {
+                    $storage->delete($objectId);
+                }
+                $cleanupManager->getConnection()->executeStatement(
+                    'DELETE FROM content_categories WHERE id = :id',
+                    ['id' => $category->getId()],
+                );
+                $cleanupManager->getConnection()->executeStatement(
+                    'DELETE FROM admin_activity_entries WHERE actor_id = (SELECT id FROM admin_users WHERE email = :email)',
+                    ['email' => $email],
+                );
+            }
             $this->removeUser($client, $email);
+            if (is_file($temporaryPath)) {
+                unlink($temporaryPath);
+            }
         }
     }
 
@@ -3978,10 +5497,80 @@ final class AdminDashboardTest extends WebTestCase
             $client->request('GET', '/admin/video-submissions/'.$submission->getId().'/preview');
             self::assertResponseIsSuccessful();
             self::assertResponseHeaderSame('Content-Type', 'video/mp4');
+            self::assertResponseHeaderSame('Cross-Origin-Resource-Policy', 'same-origin');
+            self::assertResponseHeaderSame('X-Content-Type-Options', 'nosniff');
             $previewCacheControl = (string) $client->getResponse()->headers->get('Cache-Control');
             self::assertStringContainsString('private', $previewCacheControl);
             self::assertStringContainsString('no-store', $previewCacheControl);
             self::assertSame($videoBytes, $client->getResponse()->getContent());
+
+            $previewPath = '/admin/video-submissions/'.$submission->getId().'/preview';
+            $client->request('GET', $previewPath, [], [], ['HTTP_RANGE' => 'bytes=2-5']);
+            self::assertResponseStatusCodeSame(Response::HTTP_PARTIAL_CONTENT);
+            self::assertResponseHeaderSame('Content-Range', 'bytes 2-5/'.strlen($videoBytes));
+            self::assertResponseHeaderSame('Content-Length', '4');
+            self::assertSame(substr($videoBytes, 2, 4), $client->getResponse()->getContent());
+
+            $client->request('GET', $previewPath, [], [], ['HTTP_RANGE' => 'bytes=-4']);
+            self::assertResponseStatusCodeSame(Response::HTTP_PARTIAL_CONTENT);
+            self::assertResponseHeaderSame(
+                'Content-Range',
+                sprintf('bytes %d-%d/%d', strlen($videoBytes) - 4, strlen($videoBytes) - 1, strlen($videoBytes)),
+            );
+            self::assertSame(substr($videoBytes, -4), $client->getResponse()->getContent());
+
+            foreach (['bytes=2-', 'bytes=2-999999'] as $openEndedRange) {
+                $client->request('GET', $previewPath, [], [], ['HTTP_RANGE' => $openEndedRange]);
+                self::assertResponseStatusCodeSame(Response::HTTP_PARTIAL_CONTENT);
+                self::assertResponseHeaderSame(
+                    'Content-Range',
+                    'bytes 2-'.(strlen($videoBytes) - 1).'/'.strlen($videoBytes),
+                );
+                self::assertSame(substr($videoBytes, 2), $client->getResponse()->getContent());
+            }
+
+            $invalidRanges = [
+                'bytes=999999-',
+                'items=0-1',
+                'bytes=3-2',
+                'bytes=-0',
+                'bytes=0-1,4-5',
+                'bytes=-',
+                'bytes='.str_repeat('9', 101),
+            ];
+            foreach ($invalidRanges as $invalidRange) {
+                $client->request('GET', $previewPath, [], [], ['HTTP_RANGE' => $invalidRange]);
+                self::assertResponseStatusCodeSame(Response::HTTP_REQUESTED_RANGE_NOT_SATISFIABLE, $invalidRange);
+                self::assertResponseHeaderSame('Accept-Ranges', 'bytes');
+                self::assertResponseHeaderSame('Content-Range', 'bytes */'.strlen($videoBytes));
+                $invalidRangeCacheControl = (string) $client->getResponse()->headers->get('Cache-Control');
+                self::assertStringContainsString('private', $invalidRangeCacheControl);
+                self::assertStringContainsString('no-store', $invalidRangeCacheControl);
+                self::assertSame('', $client->getResponse()->getContent());
+            }
+
+            $storage->delete($objectId);
+            $client->request('GET', $previewPath);
+            self::assertResponseStatusCodeSame(Response::HTTP_SERVICE_UNAVAILABLE);
+            self::assertResponseHeaderSame('Retry-After', '60');
+            $missingMediaCacheControl = (string) $client->getResponse()->headers->get('Cache-Control');
+            self::assertStringContainsString('private', $missingMediaCacheControl);
+            self::assertStringContainsString('no-store', $missingMediaCacheControl);
+            self::assertSame('', $client->getResponse()->getContent());
+            $storage->write($objectId, $videoBytes);
+
+            foreach ([str_repeat('x', strlen($videoBytes)), substr($videoBytes, 1)] as $tamperedBytes) {
+                $storage->delete($objectId);
+                $storage->write($objectId, $tamperedBytes);
+                $client->request('GET', $previewPath);
+                self::assertResponseStatusCodeSame(Response::HTTP_SERVICE_UNAVAILABLE);
+                $invalidMediaCacheControl = (string) $client->getResponse()->headers->get('Cache-Control');
+                self::assertStringContainsString('private', $invalidMediaCacheControl);
+                self::assertStringContainsString('no-store', $invalidMediaCacheControl);
+                self::assertSame('', $client->getResponse()->getContent());
+            }
+            $storage->delete($objectId);
+            $storage->write($objectId, $videoBytes);
 
             $client->request('POST', '/admin/video-submissions/'.$submission->getId().'/review', [
                 '_token' => $token,
@@ -3998,6 +5587,11 @@ final class AdminDashboardTest extends WebTestCase
             self::assertSame(PublishingStatus::Published, $storedVideo->getStatus());
             self::assertSame(VideoSubmissionStatus::Approved, $storedSubmission->getStatus());
             self::assertNotNull($storedSubmission->getReviewedAt());
+
+            $client->request('GET', '/admin/video-submissions/'.bin2hex(random_bytes(16)).'/preview');
+            self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+            $client->request('GET', $previewPath);
+            self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
         } finally {
             $cleanupManager = $client->getContainer()->get(EntityManagerInterface::class);
             if ($cleanupManager instanceof EntityManagerInterface) {
@@ -4253,6 +5847,8 @@ final class AdminDashboardTest extends WebTestCase
         self::assertResponseRedirects('/admin/login');
         $client->request('GET', '/admin/members/export');
         self::assertResponseRedirects('/admin/login');
+        $client->request('GET', '/admin/members/export-contacts');
+        self::assertResponseRedirects('/admin/login');
 
         $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
         self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
@@ -4331,6 +5927,23 @@ final class AdminDashboardTest extends WebTestCase
                 'attachment; filename="arcanorum-mitglieder.csv"',
                 $client->getResponse()->headers->get('Content-Disposition'),
             );
+
+            $client->request('GET', '/admin/members/export-contacts?'.http_build_query([
+                'q' => 'directory-'.$suffix,
+                'status' => 'active',
+            ]));
+            self::assertResponseIsSuccessful();
+            self::assertStringContainsString('text/csv', (string) $client->getResponse()->headers->get('Content-Type'));
+            self::assertSame(
+                'attachment; filename="arcanorum-mitglieder-kontakte.csv"',
+                $client->getResponse()->headers->get('Content-Disposition'),
+            );
+            self::assertStringContainsString(
+                'no-store',
+                strtolower((string) $client->getResponse()->headers->get('Cache-Control')),
+            );
+            self::assertSame('noindex, nofollow', $client->getResponse()->headers->get('X-Robots-Tag'));
+            self::assertSame('nosniff', $client->getResponse()->headers->get('X-Content-Type-Options'));
         } finally {
             $this->removeUser($client, $adminEmail);
         }
@@ -4824,6 +6437,12 @@ final class AdminDashboardTest extends WebTestCase
                 ->attr('href');
             self::assertStringContainsString('status=suspended', $exportLink);
 
+            $contactExportLink = (string) $client->getCrawler()
+                ->filter('a[href^="/admin/members/export-contacts"]')
+                ->attr('href');
+            self::assertStringContainsString('status=suspended', $contactExportLink);
+            self::assertStringContainsString('q='.$suffix, $contactExportLink);
+
             $client->request('GET', '/admin/members/export?q='.$suffix.'&status=suspended');
             self::assertResponseIsSuccessful();
             self::assertStringContainsString(
@@ -5143,6 +6762,55 @@ final class AdminDashboardTest extends WebTestCase
             }
             $this->removeUser($client, $email);
         }
+    }
+
+    private static function categoryArtworkPng(): string
+    {
+        $image = imagecreatetruecolor(640, 360);
+        self::assertInstanceOf(\GdImage::class, $image);
+        $color = imagecolorallocate($image, 48, 112, 160);
+        self::assertNotFalse($color);
+        imagefill($image, 0, 0, $color);
+
+        ob_start();
+        try {
+            self::assertTrue(imagepng($image));
+            $contents = ob_get_contents();
+        } finally {
+            ob_end_clean();
+            unset($image);
+        }
+        self::assertIsString($contents);
+
+        return $contents;
+    }
+
+    private function categoryDeleteToken(KernelBrowser $client, string $categoryId): string
+    {
+        $client->request('GET', '/admin/categories?type=news');
+        self::assertResponseIsSuccessful();
+        $csrfTokens = $client->getContainer()->get(CsrfTokenManagerInterface::class);
+        $requestStack = $client->getContainer()->get(RequestStack::class);
+        self::assertInstanceOf(CsrfTokenManagerInterface::class, $csrfTokens);
+        self::assertInstanceOf(RequestStack::class, $requestStack);
+        $session = $client->getRequest()->getSession();
+        $request = Request::create('/admin/categories?type=news');
+        $request->setSession($session);
+        $requestStack->push($request);
+        try {
+            return $csrfTokens->getToken('admin_category_delete_'.$categoryId)->getValue();
+        } finally {
+            $requestStack->pop();
+            $session->save();
+        }
+    }
+
+    private function integer(mixed $value): int
+    {
+        $integer = filter_var($value, FILTER_VALIDATE_INT);
+        self::assertIsInt($integer);
+
+        return $integer;
     }
 
     /** @param list<string> $roles */

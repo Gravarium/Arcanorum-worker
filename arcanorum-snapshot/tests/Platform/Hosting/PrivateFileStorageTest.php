@@ -23,13 +23,51 @@ final class PrivateFileStorageTest extends TestCase
             $objectPath = $paths['storage'].DIRECTORY_SEPARATOR.'image_01.bin';
             $permissions = fileperms($objectPath);
 
-            self::assertSame('photo-payload', $storage->read('image_01'));
+            self::assertSame('photo-payload', $storage->read('image_01', strlen('photo-payload')));
             self::assertNotFalse($permissions);
             self::assertSame(0, $permissions & 0077);
 
             $storage->delete('image_01');
 
             self::assertFileDoesNotExist($objectPath);
+        } finally {
+            $this->removeTree($paths['root']);
+        }
+    }
+
+    public function testReadHonorsTheCallersValidatedMaximumByteCount(): void
+    {
+        $paths = $this->createStorageRoot();
+
+        try {
+            $storage = $this->createStorage($paths['public'], $paths['storage']);
+            $storage->write('bounded', '12345');
+
+            $this->expectException(PrivateStorageOperationFailed::class);
+            $storage->read('bounded', 4);
+        } finally {
+            $this->removeTree($paths['root']);
+        }
+    }
+
+    public function testReadRejectsInvalidCallerByteLimits(): void
+    {
+        $paths = $this->createStorageRoot();
+
+        try {
+            $storage = $this->createStorage($paths['public'], $paths['storage']);
+            $storage->write('bounded', '12345');
+
+            $nonPositiveLimitWasRejected = false;
+            try {
+                $storage->read('bounded', 0);
+            } catch (PrivateStorageOperationFailed) {
+                $nonPositiveLimitWasRejected = true;
+            }
+            self::assertTrue($nonPositiveLimitWasRejected);
+
+            $this->expectException(PrivateStorageOperationFailed::class);
+            $storage->read('bounded', 67108865);
         } finally {
             $this->removeTree($paths['root']);
         }
@@ -67,7 +105,7 @@ final class PrivateFileStorageTest extends TestCase
             $storage = $this->createStorage($paths['public'], $paths['storage']);
 
             $this->expectException(PrivateStorageOperationFailed::class);
-            $storage->read('image_02');
+            $storage->read('image_02', 100);
         } finally {
             $this->removeTree($paths['root']);
         }
@@ -175,7 +213,7 @@ final class PrivateFileStorageTest extends TestCase
             );
 
             $this->expectException(PrivateStorageOperationFailed::class);
-            $storage->read('guarded');
+            $storage->read('guarded', strlen('stored'));
         } finally {
             $this->removeTree($paths['root']);
         }

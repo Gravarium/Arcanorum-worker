@@ -23,6 +23,9 @@ final class LoginController extends AbstractController
         if ($this->isGranted('ROLE_MODERATOR_COMMENTS')) {
             return $this->redirectToRoute('admin_comment_index');
         }
+        if ($this->isGranted('ROLE_CONTENT_EDITOR')) {
+            return $this->redirectToRoute('admin_news_index');
+        }
 
         return $this->render('admin/login.html.twig', [
             'last_username' => $authenticationUtils->getLastUsername(),

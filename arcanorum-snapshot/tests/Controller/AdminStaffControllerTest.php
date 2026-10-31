@@ -6,6 +6,12 @@ namespace App\Tests\Controller;
 
 use App\Entity\AdminRole;
 use App\Entity\AdminUser;
+use App\Entity\ContentCategory;
+use App\Entity\ContentCategoryType;
+use App\Entity\ContentTag;
+use App\Entity\PublishingStatus;
+use App\Entity\Video;
+use App\Entity\VideoSourceType;
 use App\Module\Admin\Service\AdminModeratorAccessManager;
 use App\Module\Admin\Service\AdminRoleChangeResult;
 use App\Platform\Security\AdminMfaProvisioningService;
@@ -173,6 +179,231 @@ final class AdminStaffControllerTest extends WebTestCase
             static::ensureKernelShutdown();
             $cleanupClient = static::createClient();
             $this->removeUsers($cleanupClient, [$adminEmail, $unprovisionedEmail]);
+            static::ensureKernelShutdown();
+        }
+    }
+
+    public function testAdministratorCanAssignTheSeparateContentEditorRole(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $client->getContainer()->set(
+            RuntimeAttestationReportProviderInterface::class,
+            new VerifiedRuntimeAttestationReportProvider(),
+        );
+        $adminEmail = 'editor-role-admin-'.bin2hex(random_bytes(6)).'@example.test';
+        $editorEmail = 'editor-role-target-'.bin2hex(random_bytes(6)).'@example.test';
+
+        try {
+            $this->persistUser($client, $adminEmail, 'EditorRoleAdmin!Password2026', AdminRole::Administrator);
+            $this->persistUser($client, $editorEmail, 'EditorRoleTarget!Password2026', null);
+            $this->submitLogin($client, $adminEmail, 'EditorRoleAdmin!Password2026');
+            self::assertResponseRedirects('/admin');
+
+            $client->request('GET', '/admin/staff');
+            self::assertResponseIsSuccessful();
+            self::assertSelectorExists('select option[value="'.AdminRole::ContentEditor->value.'"]');
+
+            $users = $client->getContainer()->get(AdminUserRepository::class);
+            self::assertInstanceOf(AdminUserRepository::class, $users);
+            $editor = $users->findOneByEmail($editorEmail);
+            self::assertInstanceOf(AdminUser::class, $editor);
+            $token = (string) $client->getCrawler()
+                ->filter('form[id="staff-role-'.$editor->getId().'"] input[name="_token"]')
+                ->attr('value');
+
+            $client->request('POST', '/admin/staff/'.$editor->getId().'/role', [
+                '_token' => $token,
+                'role' => AdminRole::ContentEditor->value,
+            ]);
+            self::assertResponseRedirects('/admin/staff?page=1');
+            self::assertSame(
+                [AdminRole::ContentEditor->value, 'ROLE_USER'],
+                $users->findOneByEmail($editorEmail)?->getRoles(),
+            );
+        } finally {
+            static::ensureKernelShutdown();
+            $cleanupClient = static::createClient();
+            $this->removeUsers($cleanupClient, [$adminEmail, $editorEmail]);
+            static::ensureKernelShutdown();
+        }
+    }
+
+    public function testContentEditorCanPublishNewsButCannotCrossEditorialBoundaryOrDeleteArticles(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $client->getContainer()->set(
+            RuntimeAttestationReportProviderInterface::class,
+            new VerifiedRuntimeAttestationReportProvider(),
+        );
+
+        $suffix = bin2hex(random_bytes(6));
+        $email = 'news-editor-'.$suffix.'@example.test';
+        $password = 'NewsEditor-'.$suffix.'-Password!';
+        $newsCategoryName = 'Editor News '.$suffix;
+        $videoCategoryName = 'Editor Video '.$suffix;
+        $articleTitle = 'Editor article '.$suffix;
+        $articleSlug = 'editor-article-'.$suffix;
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        $newsCategory = new ContentCategory($newsCategoryName, ContentCategoryType::News);
+        $videoCategory = new ContentCategory($videoCategoryName, ContentCategoryType::Video);
+        $videoOnlyTag = new ContentTag('Video-only '.$suffix);
+        $video = new Video(
+            'Editor boundary video '.$suffix,
+            'A tag that must not be exposed to news editors.',
+            $videoCategoryName,
+            VideoSourceType::Url,
+            'https://video.example.test/editor-boundary-'.$suffix.'.mp4',
+            PublishingStatus::Draft,
+            false,
+            false,
+        );
+        $video->replaceTags([$videoOnlyTag]);
+        $entityManager->persist($newsCategory);
+        $entityManager->persist($videoCategory);
+        $entityManager->persist($videoOnlyTag);
+        $entityManager->persist($video);
+        $entityManager->flush();
+
+        try {
+            $this->persistUser($client, $email, $password, AdminRole::ContentEditor);
+            $this->submitLogin($client, $email, $password);
+            self::assertResponseRedirects('/admin');
+
+            $client->request('GET', '/admin');
+            self::assertResponseRedirects('/admin/news');
+            $client->request('GET', '/admin/news');
+            self::assertResponseIsSuccessful();
+            self::assertSelectorTextContains('h1', 'News und Artikel');
+            self::assertStringNotContainsString(
+                $videoOnlyTag->getName(),
+                $client->getCrawler()->filter('select[name="tag"]')->text(),
+            );
+            self::assertSelectorExists('a[href="/admin/news"]');
+            self::assertSelectorNotExists('a[href="/admin/videos"]');
+            self::assertSelectorNotExists('a[href="/admin/staff"]');
+
+            foreach (['/admin/videos', '/admin/pages', '/admin/comments', '/admin/tags', '/admin/staff'] as $forbiddenPath) {
+                $client->request('GET', $forbiddenPath);
+                self::assertResponseStatusCodeSame(403, $forbiddenPath);
+            }
+
+            $client->request('GET', '/admin/categories');
+            self::assertResponseIsSuccessful();
+            self::assertSelectorTextContains('table', $newsCategoryName);
+            self::assertStringNotContainsString($videoCategoryName, $client->getCrawler()->filter('table')->text());
+            $client->request('GET', '/admin/categories?type=video');
+            self::assertResponseStatusCodeSame(403);
+            $client->request('GET', '/admin/categories/new?type=video');
+            self::assertResponseStatusCodeSame(403);
+            $client->request('GET', '/admin/categories/'.$videoCategory->getId().'/edit');
+            self::assertResponseStatusCodeSame(403);
+            $client->request('POST', '/admin/categories/'.$videoCategory->getId().'/artwork', [
+                '_token' => 'invalid-token',
+                'action' => 'remove',
+            ]);
+            self::assertResponseStatusCodeSame(403);
+
+            $client->request('GET', '/admin/categories/new?type=news');
+            self::assertResponseIsSuccessful();
+            self::assertSelectorExists('select[name="type"] option[value="news"]');
+            self::assertSelectorNotExists('select[name="type"] option[value="video"]');
+            $categoryToken = (string) $client->getCrawler()->filter('form.admin-form input[name="_token"]')->attr('value');
+            $client->request('POST', '/admin/categories/new?type=news', [
+                '_token' => $categoryToken,
+                'name' => 'Rejected video '.$suffix,
+                'type' => 'video',
+            ]);
+            self::assertResponseStatusCodeSame(403);
+
+            $client->request('GET', '/admin/news/new');
+            self::assertResponseIsSuccessful();
+            $newsToken = (string) $client->getCrawler()->filter('form.admin-form input[name="_token"]')->attr('value');
+            $client->request('POST', '/admin/news/new', [
+                '_token' => $newsToken,
+                'title' => $articleTitle,
+                'slug' => $articleSlug,
+                'author_name' => 'Redaktionstest',
+                'category' => $newsCategoryName,
+                'tags' => '',
+                'summary' => 'Ein redaktioneller Testbeitrag.',
+                'body' => 'Der Beitrag wurde von einem News-Redakteur erstellt.',
+                'status' => 'published',
+                'publish_at' => '',
+                'featured' => '1',
+                'comments_enabled' => '1',
+                'custom_fields_present' => '1',
+                'custom_fields' => [],
+            ]);
+            self::assertResponseRedirects('/admin/news');
+            $publishedArticleCount = $entityManager->getConnection()->fetchOne(
+                'SELECT COUNT(*) FROM news_articles WHERE slug = :slug AND status = :status',
+                ['slug' => $articleSlug, 'status' => 'published'],
+            );
+            self::assertIsInt($publishedArticleCount);
+            self::assertSame(1, $publishedArticleCount);
+
+            $client->request('GET', '/admin/news');
+            self::assertSelectorNotExists('select[name="action"] option[value="delete"]');
+            $bulkToken = (string) $client->getCrawler()->filter('form.admin-bulk-form input[name="_token"]')->attr('value');
+            $articleId = $entityManager->getConnection()->fetchOne(
+                'SELECT id FROM news_articles WHERE slug = :slug',
+                ['slug' => $articleSlug],
+            );
+            self::assertIsString($articleId);
+
+            $client->request('GET', '/admin/news/'.$articleId.'/edit');
+            self::assertResponseIsSuccessful();
+            $inlineImageToken = (string) $client->getCrawler()
+                ->filter('.rich-text-widget')
+                ->attr('data-rich-text-image-upload-token');
+            self::assertNotSame('', $inlineImageToken);
+            $client->request('POST', '/admin/content-inline-images/news/'.$articleId, ['_token' => $inlineImageToken]);
+            self::assertResponseStatusCodeSame(422);
+            $client->request('POST', '/admin/content-inline-images/page/'.str_repeat('a', 32), ['_token' => 'unused']);
+            self::assertResponseStatusCodeSame(403);
+            $client->request('GET', '/admin/news/'.$articleId.'/thumbnail');
+            self::assertResponseStatusCodeSame(404);
+
+            $client->request('GET', '/admin/news/'.$articleId.'/edit');
+            $client->submitForm('Änderungen speichern', [
+                'title' => $articleTitle.' bearbeitet',
+                'category' => $newsCategoryName,
+                'summary' => 'Redaktionell überarbeiteter Vorspann.',
+                'body' => 'Der News-Redakteur hat den Beitrag bearbeitet.',
+                'status' => 'published',
+            ]);
+            self::assertResponseRedirects('/admin/news');
+            self::assertSame($articleTitle.' bearbeitet', $entityManager->getConnection()->fetchOne(
+                'SELECT title FROM news_articles WHERE id = :id',
+                ['id' => $articleId],
+            ));
+
+            $client->request('POST', '/admin/news/bulk', [
+                '_token' => $bulkToken,
+                'action' => 'delete',
+                'ids' => [$articleId],
+                'confirm_delete' => '1',
+            ]);
+            self::assertResponseStatusCodeSame(403);
+            $remainingArticleCount = $entityManager->getConnection()->fetchOne(
+                'SELECT COUNT(*) FROM news_articles WHERE id = :id',
+                ['id' => $articleId],
+            );
+            self::assertIsInt($remainingArticleCount);
+            self::assertSame(1, $remainingArticleCount);
+        } finally {
+            $connection = $entityManager->getConnection();
+            $connection->executeStatement('DELETE FROM news_articles WHERE slug = :slug', ['slug' => $articleSlug]);
+            $connection->executeStatement('DELETE FROM videos WHERE id = :id', ['id' => $video->getId()]);
+            $connection->delete('content_tags', ['id' => $videoOnlyTag->getId()]);
+            $connection->delete('content_categories', ['id' => $newsCategory->getId()]);
+            $connection->delete('content_categories', ['id' => $videoCategory->getId()]);
+            static::ensureKernelShutdown();
+            $cleanupClient = static::createClient();
+            $this->removeUsers($cleanupClient, [$email]);
             static::ensureKernelShutdown();
         }
     }

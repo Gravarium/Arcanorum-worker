@@ -89,7 +89,16 @@
                 <textarea name="summary" rows="3" maxlength="500">{{ values.summary }}</textarea>
             </label>
 
-            {{ include('admin/partials/rich_text_editor.html.twig', {id: 'news-body', label: 'Inhalt', value: values.body, rows: 12}) }}
+            {{ include('admin/partials/rich_text_editor.html.twig', {
+                id: 'news-body',
+                label: 'Inhalt',
+                value: values.body,
+                rows: 12,
+                image_upload_url: image_upload_url,
+                image_upload_token: article_id ? csrf_token('admin_inline_image_upload_news_' ~ article_id) : ''
+            }) }}
+
+            {{ include('admin/partials/custom_fields_editor.html.twig', {custom_fields: values.custom_fields, field_id_prefix: 'news-custom-field'}) }}
 
             <fieldset class="admin-fieldset">
                 <legend>{{ 'Vorschaubild'|trans }}</legend>

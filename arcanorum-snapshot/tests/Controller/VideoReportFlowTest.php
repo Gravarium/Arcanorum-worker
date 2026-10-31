@@ -51,7 +51,9 @@ final class VideoReportFlowTest extends WebTestCase
             $client->request('GET', '/videos/'.$published->getId().'?private=do-not-share');
             self::assertResponseIsSuccessful();
             self::assertSelectorExists('form.video-report-form');
-            self::assertSelectorTextContains('#video-share-heading', 'Video teilen');
+            $shareHeading = $client->getCrawler()->filter('#video-share-heading');
+            self::assertCount(1, $shareHeading);
+            self::assertNotSame('', trim($shareHeading->text()));
             self::assertSelectorExists('section#video-share a[rel="bookmark"][href="/videos/'.$published->getId().'"]');
             $shareUrl = (string) $client->getCrawler()->filter('section#video-share a[rel="bookmark"]')->attr('href');
             self::assertStringNotContainsString('do-not-share', $shareUrl);

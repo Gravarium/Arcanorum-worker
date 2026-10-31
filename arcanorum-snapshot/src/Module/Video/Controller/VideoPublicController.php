@@ -14,6 +14,8 @@ use App\Entity\Video;
 use App\Entity\VideoReport;
 use App\Entity\VideoReportReason;
 use App\Entity\VideoSourceType;
+use App\Module\Comment\CommentPagination;
+use App\Module\Feed\Service\CanonicalPublicUrlGenerator;
 use App\Module\Member\Service\VideoEmailShareSender;
 use App\Module\Video\Service\VideoEmbedCodeGenerator;
 use App\Module\Video\Service\VideoQualitySourceResolver;
@@ -40,16 +42,46 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/videos', name: 'video_')]
 final class VideoPublicController extends AbstractController
 {
+    #[Route('/categories', name: 'categories', methods: ['GET'])]
+    public function categories(ContentCategoryRepository $categories): Response
+    {
+        return $this->render('videos/categories.html.twig', [
+            'categories' => $categories->findVideoRootCategories(),
+        ]);
+    }
+
     #[Route('', name: 'index', methods: ['GET'])]
+    #[Route(
+        '/category/{slug}',
+        name: 'category',
+        requirements: ['slug' => '[a-z0-9]+(?:-[a-z0-9]+)*'],
+        methods: ['GET'],
+    )]
     public function index(
         Request $request,
         VideoRepository $videos,
         ContentCategoryRepository $categories,
         SiteSettingsProvider $siteSettings,
+        CanonicalPublicUrlGenerator $publicUrls,
+        ?string $slug = null,
     ): Response {
+        $categoryPage = null;
+        if (null !== $slug) {
+            $categoryPage = $categories->findForTypeAndSlug(ContentCategoryType::Video, $slug);
+            if (null === $categoryPage) {
+                return $this->render('public/not_found.html.twig', [
+                    'content_type' => 'Video-Kategorie',
+                ], new Response(status: Response::HTTP_NOT_FOUND));
+            }
+        }
+
         $pageSize = $siteSettings->current()->getPublicVideoPageLimit();
         $search = mb_substr(trim($request->query->getString('q')), 0, 100);
-        $category = mb_substr(trim($request->query->getString('category')), 0, 100);
+        $categoryName = $categoryPage?->getName();
+        $category = $categoryName ?? mb_substr(trim($request->query->getString('category')), 0, 100);
+        $categoryCanonicalUrl = null !== $categoryPage && $publicUrls->isConfigured()
+            ? $publicUrls->generate('video_category', ['slug' => $categoryPage->getSlug()])
+            : null;
         $tag = mb_substr(trim($request->query->getString('tag')), 0, 100);
         $page = self::pageNumber($request);
         $items = $videos->findPublished(
@@ -64,6 +96,9 @@ final class VideoPublicController extends AbstractController
             'videos' => array_slice($items, 0, $pageSize),
             'search' => $search,
             'category' => $category,
+            'category_page' => $categoryPage,
+            'child_categories' => null !== $categoryPage ? $categories->findVideoChildren($categoryPage) : [],
+            'category_canonical_url' => $categoryCanonicalUrl,
             'tag' => $tag,
             'categories' => $categories->findForAdmin(ContentCategoryType::Video),
             'page' => $page,
@@ -90,6 +125,8 @@ final class VideoPublicController extends AbstractController
             'videos' => array_slice($items, 0, $pageSize),
             'search' => '',
             'category' => '',
+            'category_page' => null,
+            'category_canonical_url' => null,
             'tag' => '',
             'categories' => [],
             'page' => $page,
@@ -151,9 +188,26 @@ final class VideoPublicController extends AbstractController
             ]
             : null;
         $settings = $siteSettings->current();
-        $approvedComments = CommentProvider::Native === $settings->getCommentProvider()
-            ? $comments->findApprovedForContent(CommentContentType::Video, $video->getId())
+        $commentsAvailable = CommentProvider::Native === $settings->getCommentProvider();
+        $commentCount = $commentsAvailable
+            ? $comments->countApprovedForContent(CommentContentType::Video, $video->getId())
+            : 0;
+        $commentsPerPage = $settings->getCommentsPerPage();
+        $commentPageCount = CommentPagination::pageCount($commentCount, $commentsPerPage);
+        $commentPage = CommentPagination::selectedPage($request, $commentPageCount);
+        $approvedComments = $commentsAvailable
+            ? $comments->findApprovedForContent(
+                CommentContentType::Video,
+                $video->getId(),
+                $settings->getCommentDefaultSort(),
+                $commentsPerPage,
+                ($commentPage - 1) * $commentsPerPage,
+            )
             : [];
+        $commentRatingSummaries = $ratings->summariesForComments(
+            array_map(static fn (ContentComment $comment): string => $comment->getId(), $approvedComments),
+            $memberId,
+        );
         $relatedVideos = $settings->getRelatedVideoLimit() > 0
             ? $videos->findRelatedPublished($video, $settings->getRelatedVideoLimit())
             : [];
@@ -184,18 +238,18 @@ final class VideoPublicController extends AbstractController
             'embed_code' => $embedCodeGenerator->generate($video),
             'stream_source' => $streamSource,
             'comments' => $approvedComments,
+            'comment_page' => $commentPage,
+            'comment_page_count' => $commentPageCount,
             'video_rating' => $ratings->summaryForVideo($video->getId(), $memberId),
-            'comment_rating_summaries' => $ratings->summariesForComments(
-                array_map(static fn (ContentComment $comment): string => $comment->getId(), $approvedComments),
-                $memberId,
-            ),
+            'comment_rating_summaries' => $commentRatingSummaries,
+            'muted_comment_ids' => self::mutedCommentIds($commentRatingSummaries, $settings->getCommentRatingHideThreshold()),
             'video_report_reasons' => VideoReportReason::cases(),
             'subtitle_tracks' => $subtitleTracks->findForVideo($video),
             'quality_sources' => $qualitySources,
             'social_metadata' => $shareMetadata->forVideo($video),
             'related_videos' => $relatedVideos,
             'top_rated_videos' => $topRatedVideos,
-            'video_share_widget_enabled' => $settings->isVideoShareWidgetEnabled(),
+            'share_widget_enabled' => $settings->isVideoShareWidgetEnabled(),
         ]);
         $response->headers->set('Cache-Control', 'private, no-store');
 
@@ -265,5 +319,26 @@ final class VideoPublicController extends AbstractController
         $page = ctype_digit($value) ? (int) $value : 1;
 
         return max(1, min(5000, $page));
+    }
+
+    /**
+     * @param array<string, array{like_count: int, dislike_count: int, member_value: ?string}> $summaries
+     *
+     * @return array<string, true>
+     */
+    private static function mutedCommentIds(array $summaries, int $threshold): array
+    {
+        if (0 === $threshold) {
+            return [];
+        }
+
+        $muted = [];
+        foreach ($summaries as $commentId => $summary) {
+            if ($summary['dislike_count'] >= $threshold && $summary['dislike_count'] > $summary['like_count']) {
+                $muted[$commentId] = true;
+            }
+        }
+
+        return $muted;
     }
 }

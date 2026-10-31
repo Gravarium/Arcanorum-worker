@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Entity\Video;
+use App\Entity\VideoThumbnailResolution;
 use App\Platform\Security\StrictJsonObjectDecoder;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -25,6 +26,8 @@ final readonly class VideoProviderImportService
     private const int MAX_RESPONSE_BYTES = 1048576;
     private const int MAX_DESCRIPTION_LENGTH = 20000;
 
+    private ProviderThumbnailUrlPolicy $thumbnailUrlPolicy;
+
     /** @var array<string, string> */
     private const array PROVIDERS = [
         'youtube' => 'YouTube',
@@ -42,7 +45,9 @@ final readonly class VideoProviderImportService
         private string $youtubeOAuthClientId = '',
         private string $youtubeOAuthClientSecret = '',
         private string $youtubeOAuthRefreshToken = '',
+        ?ProviderThumbnailUrlPolicy $thumbnailUrlPolicy = null,
     ) {
+        $this->thumbnailUrlPolicy = $thumbnailUrlPolicy ?? new ProviderThumbnailUrlPolicy();
     }
 
     /** @return array<string, string> */
@@ -141,10 +146,14 @@ final readonly class VideoProviderImportService
     }
 
     /**
-     * @return list<array{title: string, description: string, source_url: string}>
+     * @return list<array{title: string, description: string, source_url: string, thumbnail_url?: string}>
      */
-    public function search(string $provider, string $query, ?string $channelId = null): array
-    {
+    public function search(
+        string $provider,
+        string $query,
+        ?string $channelId = null,
+        VideoThumbnailResolution $thumbnailResolution = VideoThumbnailResolution::Medium,
+    ): array {
         if (!self::isSupportedProvider($provider)) {
             throw new \InvalidArgumentException('Der Videoanbieter wird nicht unterstützt.');
         }
@@ -188,6 +197,7 @@ final readonly class VideoProviderImportService
             $parameters = [
                 'per_page' => self::MAX_RESULTS,
                 'filter' => 'embeddable',
+                'fields' => 'uri,name,description,link,privacy.view,pictures.sizes',
             ];
             if (null === $channelId) {
                 $parameters['query'] = $query;
@@ -200,7 +210,7 @@ final readonly class VideoProviderImportService
             $parameters = [
                 'search' => $query,
                 'limit' => self::MAX_RESULTS,
-                'fields' => 'id,title,description,url,allow_embed',
+                'fields' => 'id,title,description,url,allow_embed,thumbnail_url,thumbnail_120_url,thumbnail_180_url,thumbnail_240_url,thumbnail_360_url,thumbnail_480_url,thumbnail_720_url,thumbnail_1080_url',
             ];
         } else {
             $token = $this->dailymotionAccessToken();
@@ -212,7 +222,7 @@ final readonly class VideoProviderImportService
             $parameters = [
                 'page' => 1,
                 'page_size' => self::MAX_RESULTS,
-                'fields' => 'video_id,title,description,video_url,visibility,embedding.enable_embed',
+                'fields' => 'video_id,title,description,video_url,visibility,embedding.enable_embed,thumbnail_url,thumbnail_120_url,thumbnail_180_url,thumbnail_240_url,thumbnail_360_url,thumbnail_480_url,thumbnail_720_url,thumbnail_1080_url',
             ];
         }
 
@@ -224,7 +234,7 @@ final readonly class VideoProviderImportService
             'max_duration' => 10,
         ]);
 
-        return $this->readItems($payload, $provider, 'dailymotion' === $provider && null !== $channelId);
+        return $this->readItems($payload, $provider, $thumbnailResolution, 'dailymotion' === $provider && null !== $channelId);
     }
 
     /**
@@ -325,12 +335,174 @@ final readonly class VideoProviderImportService
     }
 
     /**
+     * Read metadata for one supported provider URL through that provider's fixed API.
+     * Direct URLs and unrecognized hosts are never fetched.
+     *
+     * @return array{provider: 'youtube'|'vimeo'|'dailymotion', source_url: string, title: string, description: string, duration_seconds: ?int, thumbnail_url?: string}|null
+     */
+    public function metadataForSourceUrl(
+        string $sourceUrl,
+        VideoThumbnailResolution $thumbnailResolution = VideoThumbnailResolution::Medium,
+    ): ?array {
+        $source = $this->providerSourceIdentity($sourceUrl);
+        if (null === $source) {
+            return null;
+        }
+
+        $provider = $source['provider'];
+        $videoId = $source['id'];
+        if (!$this->isConfigured($provider)) {
+            throw new VideoProviderImportException(sprintf('Der %s-Metadatenabruf ist nicht konfiguriert.', self::providerLabel($provider)));
+        }
+
+        if ('youtube' === $provider) {
+            $payload = $this->requestJson('GET', self::YOUTUBE_VIDEOS_ENDPOINT, [
+                'headers' => [
+                    'Accept' => 'application/json',
+                    'X-Goog-Api-Key' => $this->youtubeApiKey,
+                ],
+                'query' => [
+                    'part' => 'snippet,contentDetails,status',
+                    'id' => $videoId,
+                    'maxResults' => 1,
+                ],
+                'max_redirects' => 0,
+                'timeout' => 5,
+                'max_duration' => 10,
+            ]);
+            $items = $payload->items ?? null;
+            if (!is_array($items) || !array_is_list($items) || count($items) > 1) {
+                throw new VideoProviderImportException('YouTube hat ungültige Metadaten geliefert.');
+            }
+            if ([] === $items) {
+                return null;
+            }
+
+            $item = $items[0];
+            $snippet = $item instanceof \stdClass ? ($item->snippet ?? null) : null;
+            $details = $item instanceof \stdClass ? ($item->contentDetails ?? null) : null;
+            $status = $item instanceof \stdClass ? ($item->status ?? null) : null;
+            if (!$item instanceof \stdClass
+                || ($item->id ?? null) !== $videoId
+                || !$snippet instanceof \stdClass
+                || !$details instanceof \stdClass
+                || !$status instanceof \stdClass
+                || !is_string($status->privacyStatus ?? null)
+                || !in_array($status->privacyStatus, ['public', 'unlisted'], true)
+                || true !== ($status->embeddable ?? null)
+                || !is_string($details->duration ?? null)
+            ) {
+                return null;
+            }
+
+            return $this->normalizedSourceMetadata(
+                'youtube',
+                'https://www.youtube.com/watch?v='.$videoId,
+                $videoId,
+                $snippet->title ?? null,
+                $snippet->description ?? '',
+                self::youtubeDurationSeconds($details->duration),
+                $snippet,
+                $thumbnailResolution,
+            );
+        }
+
+        if ('vimeo' === $provider) {
+            $payload = $this->requestJsonOrMissing('GET', self::VIMEO_API_ENDPOINT.'/videos/'.rawurlencode($videoId), [
+                'headers' => [
+                    'Accept' => 'application/vnd.vimeo.video+json',
+                    'Authorization' => 'Bearer '.$this->vimeoAccessToken,
+                ],
+                'query' => ['fields' => 'uri,name,description,link,duration,privacy.view,pictures.sizes'],
+                'max_redirects' => 0,
+                'timeout' => 5,
+                'max_duration' => 10,
+            ]);
+            if (null === $payload) {
+                return null;
+            }
+
+            $privacy = $payload->privacy ?? null;
+            $duration = $payload->duration ?? null;
+            if (!$privacy instanceof \stdClass
+                || !is_string($privacy->view ?? null)
+                || !in_array($privacy->view, ['anybody', 'unlisted'], true)
+                || ('unlisted' === $privacy->view && !$source['has_privacy_hash'])
+                || !is_int($duration)
+                || $duration < 0
+                || $duration > 2147483647
+            ) {
+                return null;
+            }
+
+            $canonicalSourceUrl = $this->canonicalVimeoSourceUrl($payload->link ?? null, $videoId);
+            if (null === $canonicalSourceUrl) {
+                return null;
+            }
+
+            return $this->normalizedSourceMetadata(
+                'vimeo',
+                $canonicalSourceUrl,
+                $videoId,
+                $payload->name ?? null,
+                $payload->description ?? '',
+                $duration,
+                $payload,
+                $thumbnailResolution,
+            );
+        }
+
+        $payload = $this->requestJsonOrMissing('GET', self::DAILYMOTION_PLATFORM_ENDPOINT.'/video/'.rawurlencode($videoId), [
+            'headers' => ['Accept' => 'application/json'],
+            'query' => [
+                'fields' => 'id,title,description,duration,allow_embed,status,url,thumbnail_url,thumbnail_120_url,thumbnail_180_url,thumbnail_240_url,thumbnail_360_url,thumbnail_480_url,thumbnail_720_url,thumbnail_1080_url',
+            ],
+            'max_redirects' => 0,
+            'timeout' => 5,
+            'max_duration' => 10,
+        ]);
+        if (null === $payload) {
+            return null;
+        }
+
+        $duration = $payload->duration ?? null;
+        if (($payload->id ?? null) !== $videoId
+            || true !== ($payload->allow_embed ?? null)
+            || 'published' !== ($payload->status ?? null)
+            || !is_int($duration)
+            || $duration < 0
+            || $duration > 2147483647
+        ) {
+            return null;
+        }
+
+        $canonicalSourceUrl = $this->canonicalDailymotionSourceUrl($payload->url ?? null, $videoId);
+        if (null === $canonicalSourceUrl) {
+            return null;
+        }
+
+        return $this->normalizedSourceMetadata(
+            'dailymotion',
+            $canonicalSourceUrl,
+            $videoId,
+            $payload->title ?? null,
+            $payload->description ?? '',
+            $duration,
+            $payload,
+            $thumbnailResolution,
+        );
+    }
+
+    /**
      * Importiert ausschließlich öffentliche, einbettbare Videos aus einer Anbieter-Wiedergabeliste.
      *
-     * @return list<array{title: string, description: string, source_url: string}>
+     * @return list<array{title: string, description: string, source_url: string, thumbnail_url?: string}>
      */
-    public function playlist(string $provider, string $playlistId): array
-    {
+    public function playlist(
+        string $provider,
+        string $playlistId,
+        VideoThumbnailResolution $thumbnailResolution = VideoThumbnailResolution::Medium,
+    ): array {
         if (!self::isSupportedProvider($provider)) {
             throw new \InvalidArgumentException('Der Videoanbieter wird nicht unterstützt.');
         }
@@ -342,7 +514,7 @@ final readonly class VideoProviderImportService
         }
 
         if ('youtube' === $provider) {
-            return $this->youtubePlaylist($playlistId);
+            return $this->youtubePlaylist($playlistId, $thumbnailResolution);
         }
 
         if ('vimeo' === $provider) {
@@ -354,14 +526,14 @@ final readonly class VideoProviderImportService
                 'query' => [
                     'per_page' => self::MAX_RESULTS,
                     'filter' => 'embeddable',
-                    'fields' => 'uri,name,description,link,privacy.view',
+                    'fields' => 'uri,name,description,link,privacy.view,pictures.sizes',
                 ],
                 'max_redirects' => 0,
                 'timeout' => 5,
                 'max_duration' => 10,
             ]);
 
-            return $this->readVimeoPlaylistItems($payload);
+            return $this->readVimeoPlaylistItems($payload, $thumbnailResolution);
         }
 
         $token = $this->dailymotionAccessToken('playlist.read');
@@ -373,24 +545,27 @@ final readonly class VideoProviderImportService
             'query' => [
                 'page' => 1,
                 'page_size' => self::MAX_RESULTS,
-                'fields' => 'video_id,title,description,video_url,visibility,embedding.enable_embed',
+                'fields' => 'video_id,title,description,video_url,visibility,embedding.enable_embed,thumbnail_url,thumbnail_120_url,thumbnail_180_url,thumbnail_240_url,thumbnail_360_url,thumbnail_480_url,thumbnail_720_url,thumbnail_1080_url',
             ],
             'max_redirects' => 0,
             'timeout' => 5,
             'max_duration' => 10,
         ]);
 
-        return $this->readItems($payload, 'dailymotion', true);
+        return $this->readItems($payload, 'dailymotion', $thumbnailResolution, true);
     }
 
     /**
      * Importiert ausschließlich öffentliche, einbettbare Videos aus den Likes des verbundenen Kontos.
      * Dailymotion verwendet stattdessen die öffentliche Favoritenliste einer validierten Profil-ID.
      *
-     * @return list<array{title: string, description: string, source_url: string}>
+     * @return list<array{title: string, description: string, source_url: string, thumbnail_url?: string}>
      */
-    public function favorites(string $provider, ?string $profileId = null): array
-    {
+    public function favorites(
+        string $provider,
+        ?string $profileId = null,
+        VideoThumbnailResolution $thumbnailResolution = VideoThumbnailResolution::Medium,
+    ): array {
         if (!self::isSupportedProvider($provider)) {
             throw new \InvalidArgumentException('Der Videoanbieter wird nicht unterstützt.');
         }
@@ -419,7 +594,7 @@ final readonly class VideoProviderImportService
             ]);
             $videoIds = self::youtubeFavoriteVideoIds($payload);
 
-            return $this->readYouTubePlaylistVideos($payload, $videoIds);
+            return $this->readYouTubePlaylistVideos($payload, $videoIds, $thumbnailResolution);
         }
 
         if ('vimeo' === $provider) {
@@ -432,28 +607,28 @@ final readonly class VideoProviderImportService
                     'per_page' => self::MAX_RESULTS,
                     'filter' => 'embeddable',
                     'filter_embeddable' => 'true',
-                    'fields' => 'uri,name,description,link,privacy.view',
+                    'fields' => 'uri,name,description,link,privacy.view,pictures.sizes',
                 ],
                 'max_redirects' => 0,
                 'timeout' => 5,
                 'max_duration' => 10,
             ]);
 
-            return $this->readVimeoPlaylistItems($payload);
+            return $this->readVimeoPlaylistItems($payload, $thumbnailResolution);
         }
 
         $payload = $this->requestJson('GET', self::DAILYMOTION_PLATFORM_ENDPOINT.'/user/'.rawurlencode((string) $profileId).'/favorites', [
             'headers' => ['Accept' => 'application/json'],
             'query' => [
                 'limit' => self::MAX_RESULTS,
-                'fields' => 'id,title,description,url,allow_embed',
+                'fields' => 'id,title,description,url,allow_embed,thumbnail_url,thumbnail_120_url,thumbnail_180_url,thumbnail_240_url,thumbnail_360_url,thumbnail_480_url,thumbnail_720_url,thumbnail_1080_url',
             ],
             'max_redirects' => 0,
             'timeout' => 5,
             'max_duration' => 10,
         ]);
 
-        return $this->readItems($payload, 'dailymotion');
+        return $this->readItems($payload, 'dailymotion', $thumbnailResolution);
     }
 
     public static function playlistLabel(string $provider): string
@@ -465,8 +640,8 @@ final readonly class VideoProviderImportService
         };
     }
 
-    /** @return list<array{title: string, description: string, source_url: string}> */
-    private function youtubePlaylist(string $playlistId): array
+    /** @return list<array{title: string, description: string, source_url: string, thumbnail_url?: string}> */
+    private function youtubePlaylist(string $playlistId, VideoThumbnailResolution $thumbnailResolution): array
     {
         $headers = [
             'Accept' => 'application/json',
@@ -499,7 +674,7 @@ final readonly class VideoProviderImportService
             'max_duration' => 10,
         ]);
 
-        return $this->readYouTubePlaylistVideos($videosPayload, $videoIds);
+        return $this->readYouTubePlaylistVideos($videosPayload, $videoIds, $thumbnailResolution);
     }
 
     /** @return list<string> */
@@ -604,10 +779,13 @@ final readonly class VideoProviderImportService
     /**
      * @param list<string> $requestedIds
      *
-     * @return list<array{title: string, description: string, source_url: string}>
+     * @return list<array{title: string, description: string, source_url: string, thumbnail_url?: string}>
      */
-    private function readYouTubePlaylistVideos(mixed $payload, array $requestedIds): array
-    {
+    private function readYouTubePlaylistVideos(
+        mixed $payload,
+        array $requestedIds,
+        VideoThumbnailResolution $thumbnailResolution,
+    ): array {
         if (!$payload instanceof \stdClass
             || !is_array($payload->items ?? null)
             || !array_is_list($payload->items)
@@ -649,18 +827,23 @@ final readonly class VideoProviderImportService
             }
 
             $seenIds[$videoId] = true;
-            $results[] = [
+            $result = [
                 'title' => $metadata['title'],
                 'description' => $metadata['description'],
                 'source_url' => $sourceUrl,
             ];
+            $thumbnailUrl = $this->thumbnailUrlPolicy->select('youtube', $snippet, $thumbnailResolution, $videoId);
+            if (null !== $thumbnailUrl) {
+                $result['thumbnail_url'] = $thumbnailUrl;
+            }
+            $results[] = $result;
         }
 
         return $results;
     }
 
-    /** @return list<array{title: string, description: string, source_url: string}> */
-    private function readVimeoPlaylistItems(mixed $payload): array
+    /** @return list<array{title: string, description: string, source_url: string, thumbnail_url?: string}> */
+    private function readVimeoPlaylistItems(mixed $payload, VideoThumbnailResolution $thumbnailResolution): array
     {
         if (!$payload instanceof \stdClass
             || !is_array($payload->data ?? null)
@@ -695,11 +878,16 @@ final readonly class VideoProviderImportService
             }
 
             $seenIds[$videoId] = true;
-            $results[] = [
+            $result = [
                 'title' => $metadata['title'],
                 'description' => $metadata['description'],
                 'source_url' => $sourceUrl,
             ];
+            $thumbnailUrl = $this->thumbnailUrlPolicy->select('vimeo', $item, $thumbnailResolution, $videoId);
+            if (null !== $thumbnailUrl) {
+                $result['thumbnail_url'] = $thumbnailUrl;
+            }
+            $results[] = $result;
         }
 
         return $results;
@@ -868,10 +1056,14 @@ final readonly class VideoProviderImportService
     }
 
     /**
-     * @return list<array{title: string, description: string, source_url: string}>
+     * @return list<array{title: string, description: string, source_url: string, thumbnail_url?: string}>
      */
-    private function readItems(mixed $payload, string $provider, bool $dailymotionChannel = false): array
-    {
+    private function readItems(
+        mixed $payload,
+        string $provider,
+        VideoThumbnailResolution $thumbnailResolution,
+        bool $dailymotionChannel = false,
+    ): array {
         if (!$payload instanceof \stdClass) {
             throw new VideoProviderImportException('Der Videoanbieter hat eine ungültige Ergebnisliste geliefert.');
         }
@@ -907,6 +1099,7 @@ final readonly class VideoProviderImportService
                 $title = $snippet->title ?? null;
                 $description = $snippet->description ?? '';
                 $sourceUrl = 'https://www.youtube.com/watch?v='.$videoId;
+                $thumbnailMetadata = $snippet;
             } elseif ('vimeo' === $provider) {
                 $videoId = self::vimeoVideoId($item->uri ?? null);
                 if (null === $videoId) {
@@ -918,6 +1111,7 @@ final readonly class VideoProviderImportService
                 if (null === $sourceUrl) {
                     throw new VideoProviderImportException('Der Videoanbieter hat eine ungültige Videoquelle geliefert.');
                 }
+                $thumbnailMetadata = $item;
             } elseif ($dailymotionChannel) {
                 $visibility = $item->visibility ?? null;
                 $embedding = $item->embedding ?? null;
@@ -938,6 +1132,7 @@ final readonly class VideoProviderImportService
                 }
                 $title = $item->title ?? null;
                 $description = $item->description ?? '';
+                $thumbnailMetadata = $item;
             } else {
                 $videoId = $item->id ?? null;
                 $allowEmbed = $item->allow_embed ?? null;
@@ -957,6 +1152,7 @@ final readonly class VideoProviderImportService
                 }
                 $title = $item->title ?? null;
                 $description = $item->description ?? '';
+                $thumbnailMetadata = $item;
             }
 
             if (isset($seenIds[$videoId])) {
@@ -973,11 +1169,16 @@ final readonly class VideoProviderImportService
             }
 
             $seenIds[$videoId] = true;
-            $results[] = [
+            $result = [
                 'title' => $metadata['title'],
                 'description' => $metadata['description'],
                 'source_url' => $sourceUrl,
             ];
+            $thumbnailUrl = $this->thumbnailUrlPolicy->select($provider, $thumbnailMetadata, $thumbnailResolution, $videoId);
+            if (null !== $thumbnailUrl) {
+                $result['thumbnail_url'] = $thumbnailUrl;
+            }
+            $results[] = $result;
         }
 
         return $results;
@@ -1016,6 +1217,59 @@ final readonly class VideoProviderImportService
             'title' => $title,
             'description' => $description,
         ];
+    }
+
+    /**
+     * @param 'youtube'|'vimeo'|'dailymotion' $provider
+     *
+     * @return array{provider: 'youtube'|'vimeo'|'dailymotion', source_url: string, title: string, description: string, duration_seconds: ?int, thumbnail_url?: string}|null
+     */
+    private function normalizedSourceMetadata(
+        string $provider,
+        string $canonicalSourceUrl,
+        string $videoId,
+        mixed $title,
+        mixed $description,
+        ?int $durationSeconds,
+        object $thumbnailMetadata,
+        VideoThumbnailResolution $thumbnailResolution,
+    ): ?array {
+        $metadata = self::normalizeMetadata($title, $description);
+        if (null === $metadata || null === $this->embedResolver->resolve($canonicalSourceUrl)) {
+            return null;
+        }
+
+        $result = [
+            'provider' => $provider,
+            'source_url' => $canonicalSourceUrl,
+            'title' => $metadata['title'],
+            'description' => $metadata['description'],
+            'duration_seconds' => $durationSeconds,
+        ];
+        $thumbnailUrl = $this->thumbnailUrlPolicy->select($provider, $thumbnailMetadata, $thumbnailResolution, $videoId);
+        if (null !== $thumbnailUrl) {
+            $result['thumbnail_url'] = $thumbnailUrl;
+        }
+
+        return $result;
+    }
+
+    private static function youtubeDurationSeconds(string $duration): ?int
+    {
+        if (1 !== preg_match('/\AP(?:(\d{1,6})D)?(?:T(?:(\d{1,6})H)?(?:(\d{1,6})M)?(?:(\d{1,6})S)?)?\z/D', $duration, $matches)
+            || str_ends_with($duration, 'T')
+            || [] === array_filter(array_slice($matches, 1), static fn (string $part): bool => '' !== $part)
+        ) {
+            return null;
+        }
+
+        $days = (int) ($matches[1] ?? 0);
+        $hours = (int) ($matches[2] ?? 0);
+        $minutes = (int) ($matches[3] ?? 0);
+        $seconds = (int) ($matches[4] ?? 0);
+        $durationSeconds = $days * 86400 + $hours * 3600 + $minutes * 60 + $seconds;
+
+        return $durationSeconds <= 2147483647 ? $durationSeconds : null;
     }
 
     private function canonicalVimeoSourceUrl(mixed $link, string $videoId): ?string

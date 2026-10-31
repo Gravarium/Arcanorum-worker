@@ -19,6 +19,7 @@ final readonly class VideoViewCounter
         #[Autowire(service: 'limiter.video_view')]
         private RateLimiterFactory $limiter,
         private RateLimitKeyFactory $rateLimitKeys,
+        private SiteSettingsProvider $siteSettings,
         private LoggerInterface $logger,
     ) {
     }
@@ -53,7 +54,7 @@ final readonly class VideoViewCounter
         $key = $this->rateLimitKeys->forIdentityAndIp($video->getId(), $request, 'video-view');
         try {
             if ($this->limiter->create($key)->consume()->isAccepted()) {
-                $this->videos->recordPublicView($video->getId());
+                $this->videos->recordPublicView($video->getId(), $this->siteSettings->current()->getAutoFeatureViewThreshold());
             }
         } catch (\Exception) {
             $this->logger->warning('Ein öffentlicher Videoaufruf konnte nicht gezählt werden.');

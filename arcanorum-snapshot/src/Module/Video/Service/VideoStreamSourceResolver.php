@@ -72,6 +72,7 @@ final readonly class VideoStreamSourceResolver
             'mp4', 'm4v' => 'video/mp4',
             'webm' => 'video/webm',
             'ogv', 'ogg' => 'video/ogg',
+            'mp3' => 'audio/mpeg',
             'm3u8' => VideoStreamSource::HLS_MIME_TYPE,
             default => null,
         };

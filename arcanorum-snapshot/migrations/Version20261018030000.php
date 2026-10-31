@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
+use App\Service\MigrationRollbackGuard;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -25,6 +26,13 @@ final class Version20261018030000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
+        $guard = new MigrationRollbackGuard($this->connection);
+        $guard->lockTables('content_categories');
+        $categories = $guard->countRows('SELECT COUNT(*) FROM content_categories');
+        if ($categories > 0) {
+            throw new \RuntimeException('Verwaltete Inhaltskategorien müssen vor dem Migrationsrückbau erhalten oder exportiert werden.');
+        }
+
         $this->addSql('DROP TABLE content_categories');
     }
 }

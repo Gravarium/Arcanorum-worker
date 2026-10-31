@@ -12,6 +12,7 @@ use App\Entity\ContentRatingValue;
 use App\Entity\MemberAccount;
 use App\Entity\NewsArticle;
 use App\Entity\Video;
+use App\Module\Comment\CommentPagination;
 use App\Module\News\Service\NewsArticleAccessPolicy;
 use App\Platform\Security\RateLimitKeyFactory;
 use App\Repository\ContentCommentRepository;
@@ -126,6 +127,10 @@ final class PublicContentRatingController extends AbstractController
             ? ['slug' => $target->getSlug()]
             : ['id' => $target->getId()];
         $parameters['_fragment'] = 'comments';
+        $commentPage = CommentPagination::pageParameter($request);
+        if (null !== $commentPage) {
+            $parameters['comment_page'] = $commentPage;
+        }
 
         return $this->noStore($this->redirectToRoute($route, $parameters));
     }

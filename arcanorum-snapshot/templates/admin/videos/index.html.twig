@@ -93,6 +93,7 @@
                         <option value="draft">{{ 'Als Entwurf speichern'|trans }}</option>
                         <option value="feature">{{ 'Hervorheben'|trans }}</option>
                         <option value="unfeature">{{ 'Hervorhebung entfernen'|trans }}</option>
+                        <option value="check_source_status">{{ 'Quellenstatus prüfen'|trans }}</option>
                         <option value="move">{{ 'In Kategorie verschieben'|trans }}</option>
                         <option value="delete">{{ 'Ausgewählte löschen'|trans }}</option>
                     </select>
@@ -112,7 +113,7 @@
                 </label>
                 <button class="button button-secondary" type="submit">{{ 'Auf Auswahl anwenden'|trans }}</button>
             </div>
-            <p class="muted">{{ 'Wähle bis zu 50 Einträge aus. Löschen entfernt auch ihre Kommentare.'|trans }}</p>
+            <p class="muted">{{ 'Wähle bis zu 50 Einträge aus. Für eine Quellenprüfung werden höchstens fünf externe Einbettungen abgefragt; Uploads, Streams und direkte URLs werden nicht kontaktiert. Löschen entfernt auch ihre Kommentare.'|trans }}</p>
 
         <div class="table-wrap">
             <table class="admin-table">
@@ -122,6 +123,7 @@
                         <th scope="col">{{ 'Auswahl'|trans }}</th>
                         <th scope="col">{{ 'Titel'|trans }}</th>
                         <th scope="col">{{ 'Quelle'|trans }}</th>
+                        <th scope="col">{{ 'Externer Quellenstatus'|trans }}</th>
                         <th scope="col">{{ 'Kategorie'|trans }}</th>
                         <th scope="col">{{ 'Schlagwörter'|trans }}</th>
                         <th scope="col">{{ 'Status'|trans }}</th>
@@ -136,6 +138,34 @@
                             <td><input type="checkbox" name="ids[]" value="{{ video.id }}" aria-label="{{ 'Video auswählen: %title%'|trans({'%title%': video.title}) }}"></td>
                             <th scope="row">{{ video.title }}</th>
                             <td>{{ video.sourceType.label|trans }} · {{ video.sourceHost }}</td>
+                            <td>
+                                {% if video.sourceType.value == 'embed' %}
+                                    {% if video.externalSourceCheckFailed %}
+                                        <span class="status-pill">{{ 'Prüfung fehlgeschlagen'|trans }}</span>
+                                        {% if video.externalSourceStatus is not null %}
+                                            {% if video.externalSourceStatus.value == 'available' %}{% set known_source_status = 'Quelle verfügbar' %}
+                                            {% elseif video.externalSourceStatus.value == 'unavailable' %}{% set known_source_status = 'Quelle nicht verfügbar' %}
+                                            {% else %}{% set known_source_status = 'Anbieter nicht unterstützt' %}{% endif %}
+                                            <br><span class="muted">{{ 'Letzter bekannter Status: %status%'|trans({'%status%': known_source_status|trans}) }}</span>
+                                        {% endif %}
+                                    {% elseif video.externalSourceStatus is null %}
+                                        <span class="muted">{{ 'Noch nicht geprüft'|trans }}</span>
+                                    {% elseif video.externalSourceStatus.value == 'available' %}
+                                        <span class="status-pill">{{ 'Quelle verfügbar'|trans }}</span>
+                                    {% elseif video.externalSourceStatus.value == 'unavailable' %}
+                                        <span class="status-pill">{{ 'Quelle nicht verfügbar'|trans }}</span>
+                                    {% elseif video.externalSourceStatus.value == 'unsupported' %}
+                                        <span class="status-pill">{{ 'Anbieter nicht unterstützt'|trans }}</span>
+                                    {% else %}
+                                        <span class="status-pill">{{ 'Prüfung fehlgeschlagen'|trans }}</span>
+                                    {% endif %}
+                                    {% if video.externalSourceCheckedAt is not null %}
+                                        <br><span class="muted">{{ (video.externalSourceCheckFailed ? 'Letzter Prüfversuch: %date%' : 'Zuletzt geprüft: %date%')|trans({'%date%': video.externalSourceCheckedAt|date('d.m.Y H:i')}) }}</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="muted">{{ 'Keine externe Einbettungsquelle'|trans }}</span>
+                                {% endif %}
+                            </td>
                             <td>{{ video.category ?? '—' }}</td>
                             <td>{% for content_tag in video.tags %}{{ content_tag.name }}{% if not loop.last %}, {% endif %}{% else %}—{% endfor %}</td>
                             <td><span class="status-pill {{ video.status.cssClass }}">{{ video.status.label|trans }}</span></td>
@@ -145,7 +175,7 @@
                         </tr>
                     {% else %}
                         <tr>
-                            <td colspan="9">{{ 'Noch keine Videos. Füge die erste Videoquelle hinzu.'|trans }}</td>
+                            <td colspan="10">{{ 'Noch keine Videos. Füge die erste Videoquelle hinzu.'|trans }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>

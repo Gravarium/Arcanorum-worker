@@ -21,6 +21,81 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class PublicSeriesFlowTest extends WebTestCase
 {
+    public function testSeriesEpisodeShareLinksUseTheCanonicalRouteAndRespectTheSiteSetting(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        $settingsManager = $client->getContainer()->get(SiteSettingsManager::class);
+        $settingsProvider = $client->getContainer()->get(SiteSettingsProvider::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        self::assertInstanceOf(SiteSettingsManager::class, $settingsManager);
+        self::assertInstanceOf(SiteSettingsProvider::class, $settingsProvider);
+        $originalShareSetting = $settingsProvider->current()->isVideoShareWidgetEnabled() ? '1' : '0';
+
+        $suffix = bin2hex(random_bytes(6));
+        $seriesSlug = 'share-series-'.$suffix;
+        $series = new ContentSeries('Share series '.$suffix, $seriesSlug, 'A public series.', PublishingStatus::Published);
+        $video = new Video(
+            'Fallback video title '.$suffix,
+            'A public episode.',
+            null,
+            VideoSourceType::Url,
+            'https://video.example.test/share-'.$suffix.'.mp4',
+            PublishingStatus::Published,
+            false,
+            false,
+        );
+        $episodeTitle = 'Episode "share" & Grüße '.$suffix;
+        $episode = new SeriesEpisode($series, $video, 2, 7, $episodeTitle, 'A public episode description.');
+
+        try {
+            foreach ([$series, $video, $episode] as $entity) {
+                $entityManager->persist($entity);
+            }
+            $entityManager->flush();
+            self::assertSame([], $settingsManager->updatePublicDisplayOptions(['video_share_widget_enabled' => '1']));
+
+            $client->request(
+                'GET',
+                '/series/'.$seriesSlug.'/season/2/episode/7',
+                server: ['HTTP_HOST' => 'attacker.example.test'],
+            );
+
+            self::assertResponseIsSuccessful();
+            self::assertSelectorTextContains('#series-episode-share-heading', 'Diesen Inhalt teilen');
+            self::assertCount(3, $client->getCrawler()->filter('#series-episode-share [data-testid^="share-"]'));
+            self::assertSelectorExists('#series-episode-share a[data-testid="share-facebook"][target="_blank"][rel="nofollow noopener noreferrer"][referrerpolicy="no-referrer"]');
+            self::assertSelectorExists('#series-episode-share a[data-testid="share-x"][target="_blank"][rel="nofollow noopener noreferrer"][referrerpolicy="no-referrer"]');
+            self::assertSelectorExists('#series-episode-share a[data-testid="share-pinterest"][target="_blank"][rel="nofollow noopener noreferrer"][referrerpolicy="no-referrer"]');
+
+            $twitterHref = $client->getCrawler()->filter('#series-episode-share [data-testid="share-x"]')->attr('href');
+            self::assertIsString($twitterHref);
+            $twitterQuery = [];
+            parse_str((string) parse_url($twitterHref, PHP_URL_QUERY), $twitterQuery);
+            self::assertSame(
+                'https://arcanorum.example.test/series/'.$seriesSlug.'/season/2/episode/7',
+                $twitterQuery['url'] ?? null,
+            );
+            self::assertSame($episodeTitle, $twitterQuery['text'] ?? null);
+            self::assertSelectorExists('#series-episode-share a[data-testid="public-share-url"][href="/series/'.$seriesSlug.'/season/2/episode/7"]');
+
+            self::assertSame([], $settingsManager->updatePublicDisplayOptions(['video_share_widget_enabled' => '0']));
+            $client->request('GET', '/series/'.$seriesSlug.'/season/2/episode/7');
+            self::assertResponseIsSuccessful();
+            self::assertSelectorNotExists('#series-episode-share');
+        } finally {
+            self::assertSame([], $settingsManager->updatePublicDisplayOptions([
+                'video_share_widget_enabled' => $originalShareSetting,
+            ]));
+            $connection = $entityManager->getConnection();
+            $connection->executeStatement('DELETE FROM series_episodes WHERE id = :id', ['id' => $episode->getId()]);
+            $connection->executeStatement('DELETE FROM content_series WHERE id = :id', ['id' => $series->getId()]);
+            $connection->executeStatement('DELETE FROM videos WHERE id = :id', ['id' => $video->getId()]);
+            $entityManager->clear();
+        }
+    }
+
     public function testOnlyPublishedSeriesAndEpisodesAppearOnPublicPages(): void
     {
         $client = static::createClient();
@@ -62,7 +137,7 @@ final class PublicSeriesFlowTest extends WebTestCase
         $artworkStorage
             ->expects($this->once())
             ->method('read')
-            ->with($publishedArtworkId)
+            ->with($publishedArtworkId, strlen($artwork))
             ->willReturn($artwork);
         $client->getContainer()->set(PrivateObjectStorageInterface::class, $artworkStorage);
         $video = new Video(
@@ -201,6 +276,41 @@ final class PublicSeriesFlowTest extends WebTestCase
             self::assertSame('max-age=300, public', $client->getResponse()->headers->get('Cache-Control'));
             self::assertSame($artwork, $client->getResponse()->getContent());
 
+            $connection = $entityManager->getConnection();
+            $connection->beginTransaction();
+            try {
+                $connection->executeStatement('ALTER TABLE content_series DROP CONSTRAINT chk_content_series_artwork_metadata');
+                $connection->executeStatement(
+                    'UPDATE content_series SET artwork_object_id = :object_id WHERE id = :id',
+                    ['object_id' => 'A'.str_repeat('a', 63), 'id' => $series->getId()],
+                );
+                $entityManager->clear();
+                $client->request('GET', '/series/'.$seriesSlug.'/artwork');
+                self::assertResponseStatusCodeSame(404);
+                self::assertTrue($client->getResponse()->headers->getCacheControlDirective('no-store'));
+
+                $connection->executeStatement(
+                    'UPDATE content_series SET artwork_object_id = :object_id, artwork_size = :size WHERE id = :id',
+                    ['object_id' => $publishedArtworkId, 'size' => 4194305, 'id' => $series->getId()],
+                );
+                $entityManager->clear();
+                $client->request('GET', '/series/'.$seriesSlug.'/artwork');
+                self::assertResponseStatusCodeSame(404);
+
+                $connection->executeStatement(
+                    'UPDATE content_series SET artwork_size = :size, artwork_mime_type = :mime WHERE id = :id',
+                    ['size' => strlen($artwork), 'mime' => 'image/svg+xml', 'id' => $series->getId()],
+                );
+                $entityManager->clear();
+                $client->request('GET', '/series/'.$seriesSlug.'/artwork');
+                self::assertResponseStatusCodeSame(404);
+            } finally {
+                if ($connection->isTransactionActive()) {
+                    $connection->rollBack();
+                }
+                $entityManager->clear();
+            }
+
             $client->request('GET', '/series/'.$draftSeriesSlug.'/artwork');
             self::assertResponseStatusCodeSame(404);
 
@@ -264,10 +374,10 @@ final class PublicSeriesFlowTest extends WebTestCase
 
             $client->request('GET', '/series/'.$seriesSlug.'/season/1/episode/6');
             self::assertResponseIsSuccessful();
-            self::assertSame(
-                'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ',
-                $client->getCrawler()->filter('iframe[data-testid="episode-video-embed"]')->attr('src'),
-            );
+            self::assertSame('https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ', $client->getCrawler()->filter('[data-testid="video-embed-provider"]')->attr('data-embed-url'));
+            self::assertSelectorExists('[data-testid="video-embed-provider"] button[data-provider-embed-load]');
+            self::assertSelectorNotExists('iframe[data-testid="video-embed-provider"]');
+            self::assertStringContainsString('video/provider-embed-consent.js', $client->getResponse()->getContent());
             self::assertSelectorNotExists('[data-testid="video-player-watermark"]');
             self::assertFalse($client->getResponse()->headers->has('Content-Security-Policy'));
 

@@ -21,6 +21,7 @@
             <div class="form-actions">
                 <a class="button" href="{{ path('admin_member_new') }}">{{ 'Mitglied anlegen'|trans }}</a>
                 <a class="button button-secondary" href="{{ path('admin_member_export', {q: search, status: status}) }}">{{ 'CSV exportieren'|trans }}</a>
+                <a class="button button-secondary" href="{{ path('admin_member_export_contacts', {q: search, status: status}) }}">{{ 'Kontaktliste exportieren'|trans }}</a>
             </div>
         </header>
 

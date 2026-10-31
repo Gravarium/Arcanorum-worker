@@ -9,8 +9,6 @@ use App\Entity\ScheduledTaskRun;
 
 interface ScheduledTaskRunStore
 {
-    public function markStaleRunning(\DateTimeImmutable $cutoff, \DateTimeImmutable $now): int;
-
     public function findExistingForDueTime(ScheduledTask $task, \DateTimeImmutable $scheduledFor): ?ScheduledTaskRun;
 
     public function findRunById(string $id): ?ScheduledTaskRun;

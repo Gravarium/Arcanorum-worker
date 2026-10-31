@@ -38,7 +38,7 @@ final class NewsArticleThumbnailController extends AbstractController
     }
 
     #[Route('/admin/news/{id}/thumbnail', name: 'admin_news_thumbnail_preview', requirements: ['id' => '[a-f0-9]{32}'], methods: ['GET'])]
-    #[IsGranted('ROLE_ADMIN')]
+    #[IsGranted('ROLE_CONTENT_EDITOR')]
     public function preview(string $id, NewsArticleRepository $articles): Response
     {
         $article = $articles->find($id);
@@ -54,12 +54,19 @@ final class NewsArticleThumbnailController extends AbstractController
         $objectId = $article->getThumbnailObjectId();
         $expectedMimeType = $article->getThumbnailMimeType();
         $expectedSize = $article->getThumbnailSize();
-        if (null === $objectId || null === $expectedMimeType || null === $expectedSize) {
+        if (null === $objectId
+            || 1 !== preg_match('/\A[a-f0-9]{64}\z/', $objectId)
+            || null === $expectedMimeType
+            || null === $expectedSize
+            || !in_array($expectedMimeType, self::ALLOWED_MIME_TYPES, true)
+            || $expectedSize < 1
+            || $expectedSize > self::MAX_FILE_BYTES
+        ) {
             return new Response('', Response::HTTP_NOT_FOUND, ['Cache-Control' => 'no-store']);
         }
 
         try {
-            $contents = $this->storage->read($objectId);
+            $contents = $this->storage->read($objectId, $expectedSize);
         } catch (PrivateStorageOperationFailed) {
             return new Response('', Response::HTTP_SERVICE_UNAVAILABLE, ['Cache-Control' => 'no-store']);
         }
@@ -67,8 +74,6 @@ final class NewsArticleThumbnailController extends AbstractController
         $detectedMimeType = new \finfo(FILEINFO_MIME_TYPE)->buffer($contents);
         $imageInfo = @getimagesizefromstring($contents);
         if (strlen($contents) !== $expectedSize
-            || $expectedSize < 1
-            || $expectedSize > self::MAX_FILE_BYTES
             || !is_string($detectedMimeType)
             || $detectedMimeType !== $expectedMimeType
             || !in_array($detectedMimeType, self::ALLOWED_MIME_TYPES, true)

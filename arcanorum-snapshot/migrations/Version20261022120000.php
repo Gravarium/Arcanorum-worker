@@ -29,7 +29,7 @@ final class Version20261022120000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
-        (new MemberEmailChallengeMigrationGuard($this->connection))->assertSafeToRemove();
+        new MemberEmailChallengeMigrationGuard($this->connection)->assertSafeToRemove();
 
         $this->addSql('DROP INDEX idx_member_email_challenges_member_purpose');
         $this->addSql('DROP INDEX uniq_member_email_challenges_token_hash');

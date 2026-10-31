@@ -1,0 +1,42 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'Videokategorien'|trans }} · {{ site_settings().siteName }}{% endblock %}
+
+{% block body %}
+    <header class="public-header">
+        {{ include('partials/public_brand.html.twig') }}
+        <nav class="public-navigation" aria-label="{{ 'Hauptnavigation'|trans }}">
+            <a href="{{ path('video_index') }}" aria-current="page">{{ 'Videos'|trans }}</a>
+            {% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}
+            {% if module_enabled('series') %}<a href="{{ path('series_index') }}">{{ 'Serien'|trans }}</a>{% endif %}
+            {% if module_enabled('search') %}<a href="{{ path('public_search') }}">{{ 'Suche'|trans }}</a>{% endif %}
+            {% if module_enabled('pages') %}<a href="{{ path('page_index') }}">{{ 'Seiten'|trans }}</a>{% endif %}
+            {{ include('partials/public_navigation_links.html.twig') }}
+        </nav>
+    </header>
+    <main class="public-main">
+        <section class="public-page-heading">
+            <p class="eyebrow">{{ 'Videokatalog'|trans }}</p>
+            <h1>{{ 'Videokategorien'|trans }}</h1>
+            <p class="lead">{{ 'Durchsuche die Themenbereiche des Videokatalogs.'|trans }}</p>
+            <p><a href="{{ path('video_index') }}">{{ 'Alle Videos ansehen'|trans }}</a></p>
+        </section>
+        <div class="content-grid" aria-label="{{ 'Videokategorien'|trans }}">
+            {% for category in categories %}
+                <article class="content-card">
+                    <a href="{{ path('video_category', {slug: category.slug}) }}" aria-label="{{ 'Kategorie %category% öffnen'|trans({'%category%': category.name}) }}">
+                        {% if category.artworkObjectId is not null %}
+                            <img class="video-thumbnail" src="{{ path('video_category_artwork', {slug: category.slug}) }}" alt="{{ category.name }}" width="320" height="180" loading="lazy" decoding="async">
+                        {% else %}
+                            <span class="video-thumbnail category-artwork-fallback" aria-hidden="true">{{ category.name|slice(0, 1)|upper }}</span>
+                        {% endif %}
+                    </a>
+                    <h2><a href="{{ path('video_category', {slug: category.slug}) }}">{{ category.name }}</a></h2>
+                    {% if category.description is not empty %}<p>{{ category.description|striptags|slice(0, 240) }}</p>{% endif %}
+                </article>
+            {% else %}
+                <p class="empty-state">{{ 'Noch keine Videokategorien vorhanden.'|trans }}</p>
+            {% endfor %}
+        </div>
+    </main>
+{% endblock %}

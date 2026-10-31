@@ -39,33 +39,40 @@
                 <thead>
                     <tr>
                         <th scope="col">{{ 'Kategorie'|trans }}</th>
+                        <th scope="col">{{ 'Übergeordnete Kategorie'|trans }}</th>
                         <th scope="col">{{ 'Bereich'|trans }}</th>
+                        <th scope="col">{{ 'Startseite'|trans }}</th>
                         <th scope="col">{{ 'Verwendung'|trans }}</th>
+                        <th scope="col">{{ 'Unterkategorien'|trans }}</th>
                         <th scope="col"><span class="visually-hidden">{{ 'Aktionen'|trans }}</span></th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for category in categories %}
                         {% set usage_count = usage_counts[category.id] ?? 0 %}
+                        {% set child_count = child_counts[category.id] ?? 0 %}
                         <tr>
-                            <th scope="row">{{ category.name }}</th>
+                            <th scope="row">{% if category.depth > 0 %}{% for level in 1..category.depth %}— {% endfor %}{% endif %}{{ category.name }}</th>
+                            <td>{{ category.parent ? category.parent.name : '—' }}</td>
                             <td>{{ category.contentType.label|trans }}</td>
+                            <td>{{ category.featured ? 'Hervorgehoben'|trans : '—' }}</td>
                             <td>{{ usage_count }}</td>
+                            <td>{{ child_count }}</td>
                             <td class="table-actions">
                                 <a class="button button-secondary" href="{{ path('admin_category_edit', {id: category.id}) }}">{{ 'Bearbeiten'|trans }}</a>
-                                {% if usage_count == 0 %}
+                                {% if usage_count == 0 and child_count == 0 %}
                                     <form method="post" action="{{ path('admin_category_delete', {id: category.id}) }}">
                                         <input type="hidden" name="_token" value="{{ csrf_token('admin_category_delete_' ~ category.id) }}">
                                         <button class="button button-danger" type="submit">{{ 'Löschen'|trans }}</button>
                                     </form>
                                 {% else %}
-                                    <span class="muted">{{ 'In Verwendung'|trans }}</span>
+                                    <span class="muted">{{ usage_count > 0 ? 'In Verwendung'|trans : 'Enthält Unterkategorien'|trans }}</span>
                                 {% endif %}
                             </td>
                         </tr>
                     {% else %}
                         <tr>
-                            <td colspan="4">{{ 'Noch keine Kategorien vorhanden.'|trans }}</td>
+                            <td colspan="7">{{ 'Noch keine Kategorien vorhanden.'|trans }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>

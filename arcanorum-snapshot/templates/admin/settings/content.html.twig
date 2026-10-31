@@ -13,7 +13,7 @@
     </div>
 
     {% if errors.form is defined %}<p class="field-error" role="alert">{{ errors.form|trans }}</p>{% endif %}
-    {% for field, message in errors %}{% if field != 'form' %}<p class="field-error" role="alert">{{ message|trans }}</p>{% endif %}{% endfor %}
+    {% for field, message in errors %}{% if field != 'form' %}<p id="{{ field }}-error" class="field-error" role="alert">{{ message|trans }}</p>{% endif %}{% endfor %}
 
     <section class="admin-panel" aria-labelledby="player-options-heading">
         <header class="panel-heading"><h2 id="player-options-heading">{{ 'Player'|trans }}</h2></header>
@@ -79,6 +79,16 @@
                     <option value="ember"{% if form.video_player_color_scheme == 'ember' %} selected{% endif %}>{{ 'Glut'|trans }}</option>
                 </select>
             </label>
+            <label>
+                <span>{{ 'Auflösung importierter Provider-Vorschaubilder'|trans }}</span>
+                <select name="provider_thumbnail_resolution" required>
+                    <option value="small"{% if form.provider_thumbnail_resolution == 'small' %} selected{% endif %}>{{ 'Klein (bis etwa 320 px)'|trans }}</option>
+                    <option value="medium"{% if form.provider_thumbnail_resolution == 'medium' %} selected{% endif %}>{{ 'Mittel (bis etwa 640 px)'|trans }}</option>
+                    <option value="large"{% if form.provider_thumbnail_resolution == 'large' %} selected{% endif %}>{{ 'Groß (bis etwa 1280 px)'|trans }}</option>
+                    <option value="extra-large"{% if form.provider_thumbnail_resolution == 'extra-large' %} selected{% endif %}>{{ 'Extra groß (bis etwa 1920 px)'|trans }}</option>
+                    <option value="original"{% if form.provider_thumbnail_resolution == 'original' %} selected{% endif %}>{{ 'Größte verfügbare Auflösung'|trans }}</option>
+                </select>
+            </label>
             <input type="hidden" name="video_player_watermark_enabled" value="0">
             <label><input type="checkbox" name="video_player_watermark_enabled" value="1"{% if form.video_player_watermark_enabled == '1' %} checked{% endif %}> {{ 'Arcanorum-Wasserzeichen im eigenen Player anzeigen'|trans }}</label>
             <input type="hidden" name="player_autoplay_enabled" value="0">
@@ -87,7 +97,13 @@
             <label><input type="checkbox" name="player_autoplay_muted" value="1"{% if form.player_autoplay_muted == '1' %} checked{% endif %}> {{ 'Automatische Wiedergabe stummschalten'|trans }}</label>
             <input type="hidden" name="player_featured_autoplay_enabled" value="0">
             <label><input type="checkbox" name="player_featured_autoplay_enabled" value="1"{% if form.player_featured_autoplay_enabled == '1' %} checked{% endif %}> {{ 'Hervorgehobenes Video auf der Startseite automatisch und stumm starten'|trans }}</label>
+            <label>
+                <span>{{ 'Schwelle für automatische Video-Hervorhebung'|trans }}</span>
+                <input type="number" name="auto_feature_view_threshold" min="0" max="2147483647" step="1" inputmode="numeric" required aria-describedby="auto-feature-view-threshold-help{% if errors.auto_feature_view_threshold is defined %} auto_feature_view_threshold-error{% endif %}"{% if errors.auto_feature_view_threshold is defined %} aria-invalid="true"{% endif %} value="{{ form.auto_feature_view_threshold }}">
+            </label>
+            <p id="auto-feature-view-threshold-help" class="muted">{{ 'Gezählte öffentliche Aufrufe bis zur einmaligen Hervorhebung; 0 deaktiviert die automatische Hervorhebung.'|trans }}</p>
             <input type="hidden" name="default_comments_enabled" value="{{ form.default_comments_enabled }}">
+            <input type="hidden" name="guest_comments_enabled" value="{{ form.guest_comments_enabled }}">
             <input type="hidden" name="public_video_submissions_enabled" value="{{ form.public_video_submissions_enabled }}">
             <input type="hidden" name="public_video_embedding_enabled" value="{{ form.public_video_embedding_enabled }}">
             <p class="muted">{{ 'Die Auswahl gilt für lokale Dateien und geprüfte Streams. Externe Anbieter-Einbettungen verwenden weiterhin den Player des Anbieters. Video.js wird lokal bereitgestellt.'|trans }}</p>
@@ -96,6 +112,7 @@
             <p class="muted">{{ 'Die Einbettungsbreite begrenzt den kopierbaren Playercode responsiv auf die gewählte Maximalbreite.'|trans }}</p>
             <p class="muted">{{ 'Der hervorgehobene Startseitenplayer verwendet seine eigene Breite. Autoplay gilt nur für lokale Dateien und freigegebene Streams und startet immer stumm.'|trans }}</p>
             <p class="muted">{{ 'Das Wasserzeichen verwendet den Website-Namen und führt zurück zur Startseite. Die Farbauswahl gilt nur für den Arcanorum-Player.'|trans }}</p>
+            <p class="muted">{{ 'Provider-Vorschaubilder werden beim Import geprüft und privat gespeichert. Besucher laden sie anschließend nur von dieser Website.'|trans }}</p>
             <div class="form-actions"><button class="button button-primary" type="submit">{{ 'Player-Einstellungen speichern'|trans }}</button></div>
         </form>
         <div class="admin-form">
@@ -123,6 +140,7 @@
         <form method="post" action="{{ path('admin_content_settings_update') }}" class="admin-form">
             <input type="hidden" name="token" value="{{ csrf_token('admin_content_settings') }}">
             <input type="hidden" name="video_player_engine" value="{{ form.video_player_engine }}">
+            <input type="hidden" name="provider_thumbnail_resolution" value="{{ form.provider_thumbnail_resolution }}">
             <input type="hidden" name="video_preload_mode" value="{{ form.video_preload_mode }}">
             <input type="hidden" name="player_autoplay_enabled" value="{{ form.player_autoplay_enabled }}">
             <input type="hidden" name="player_autoplay_muted" value="{{ form.player_autoplay_muted }}">
@@ -131,15 +149,39 @@
             <input type="hidden" name="video_player_embed_max_width" value="{{ form.video_player_embed_max_width }}">
             <input type="hidden" name="video_player_home_max_width" value="{{ form.video_player_home_max_width }}">
             <input type="hidden" name="player_featured_autoplay_enabled" value="{{ form.player_featured_autoplay_enabled }}">
+            <input type="hidden" name="auto_feature_view_threshold" value="{{ form.auto_feature_view_threshold }}">
             <input type="hidden" name="video_player_color_scheme" value="{{ form.video_player_color_scheme }}">
             <input type="hidden" name="video_player_watermark_enabled" value="{{ form.video_player_watermark_enabled }}">
             <input type="hidden" name="default_comments_enabled" value="0">
             <label><input type="checkbox" name="default_comments_enabled" value="1"{% if form.default_comments_enabled == '1' %} checked{% endif %}> {{ 'Kommentare bei neuen News und Videos standardmäßig erlauben'|trans }}</label>
+            <input type="hidden" name="guest_comments_enabled" value="0">
+            <label><input type="checkbox" name="guest_comments_enabled" value="1"{% if form.guest_comments_enabled == '1' %} checked{% endif %}> {{ 'Kommentare von Gästen ohne Mitgliedskonto erlauben'|trans }}</label>
+            <label>
+                <span>{{ 'Standardreihenfolge der Kommentare'|trans }}</span>
+                <select name="comment_default_sort" required>
+                    <option value="added"{% if form.comment_default_sort == 'added' %} selected{% endif %}>{{ 'Neueste Kommentare zuerst'|trans }}</option>
+                    <option value="score"{% if form.comment_default_sort == 'score' %} selected{% endif %}>{{ 'Am besten bewertete Kommentare zuerst'|trans }}</option>
+                </select>
+            </label>
+            {% if errors.comment_default_sort is defined %}<p class="field-error" role="alert">{{ errors.comment_default_sort|trans }}</p>{% endif %}
+            <label>
+                <span>{{ 'Kommentar einklappen ab dieser Zahl von Ablehnungen'|trans }}</span>
+                <input type="number" name="comment_rating_hide_threshold" min="0" max="1000" step="1" inputmode="numeric" required value="{{ form.comment_rating_hide_threshold }}">
+            </label>
+            {% if errors.comment_rating_hide_threshold is defined %}<p class="field-error" role="alert">{{ errors.comment_rating_hide_threshold|trans }}</p>{% endif %}
+            <p class="muted">{{ 'Der Wert 0 schaltet das Einklappen aus. Ein Kommentar wird erst eingeklappt, wenn die Ablehnungen den Schwellenwert erreichen und die Ablehnungen die Zustimmungen übersteigen. Der Text bleibt über eine tastaturbedienbare Aufklappsteuerung erreichbar.'|trans }}</p>
+            <label>
+                <span>{{ 'Kommentare pro Seite'|trans }}</span>
+                <input type="number" name="comments_per_page" min="1" max="100" step="1" inputmode="numeric" required value="{{ form.comments_per_page }}">
+            </label>
+            {% if errors.comments_per_page is defined %}<p class="field-error" role="alert">{{ errors.comments_per_page|trans }}</p>{% endif %}
+            <p class="muted">{{ 'Lege fest, wie viele freigegebene Kommentare pro Seite erscheinen. Der Seitenwechsel funktioniert auch ohne JavaScript.'|trans }}</p>
             <input type="hidden" name="public_video_submissions_enabled" value="0">
             <label><input type="checkbox" name="public_video_submissions_enabled" value="1"{% if form.public_video_submissions_enabled == '1' %} checked{% endif %}> {{ 'Öffentliche Videoeinreichungen annehmen'|trans }}</label>
             <input type="hidden" name="public_video_embedding_enabled" value="0">
             <label><input type="checkbox" name="public_video_embedding_enabled" value="1"{% if form.public_video_embedding_enabled == '1' %} checked{% endif %}> {{ 'Eigenen Videoplayer für externe Websites freigeben'|trans }}</label>
             <p class="muted">{{ 'Die Vorgabe für Kommentare betrifft nur neu angelegte Inhalte. Jede Videoeinreichung bleibt bis zur Prüfung unveröffentlicht. Beim Abschalten bleiben bereits wartende Einreichungen erhalten.'|trans }}</p>
+            <p class="muted">{{ 'Wenn Gästekommentare deaktiviert sind, dürfen angemeldete Konten weiterhin kommentieren. Änderungen gelten nur für neue Kommentare.'|trans }}</p>
             <div class="form-actions"><button class="button button-primary" type="submit">{{ 'Inhaltseinstellungen speichern'|trans }}</button></div>
         </form>
     </section>

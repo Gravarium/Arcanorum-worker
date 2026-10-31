@@ -136,6 +136,44 @@ final class SeriesGenreAdminController extends AbstractController
         return $this->noStore($this->redirectToRoute('admin_series_genre_index'));
     }
 
+    #[Route('/feature', name: 'feature', methods: ['POST'])]
+    public function feature(Request $request, SeriesGenreManager $genres): Response
+    {
+        $values = $request->request->all();
+        if ([] !== array_diff(array_keys($values), ['genre_id', 'featured', 'sort_order', '_token'])) {
+            return $this->noStore(new Response('', Response::HTTP_BAD_REQUEST));
+        }
+
+        $genreId = $values['genre_id'] ?? null;
+        $token = $values['_token'] ?? null;
+        if (!is_string($genreId) || 1 !== preg_match('/^[a-f0-9]{32}$/D', $genreId)) {
+            return $this->noStore(new Response('', Response::HTTP_BAD_REQUEST));
+        }
+        if (!is_string($token) || !$this->isCsrfTokenValid('series_genre_feature_'.$genreId, $token)) {
+            return $this->noStore(new Response('', Response::HTTP_FORBIDDEN));
+        }
+
+        $featuredValue = $values['featured'] ?? '0';
+        $sortOrderValue = $values['sort_order'] ?? null;
+        if (!is_string($featuredValue) || !in_array($featuredValue, ['0', '1'], true)
+            || !is_string($sortOrderValue) || strlen($sortOrderValue) > 5 || !ctype_digit($sortOrderValue)
+            || (int) $sortOrderValue > 10_000
+        ) {
+            return $this->noStore(new Response('', Response::HTTP_BAD_REQUEST));
+        }
+
+        if (!$genres->setFeatured($genreId, '1' === $featuredValue, (int) $sortOrderValue)) {
+            return $this->noStore(new Response('', Response::HTTP_NOT_FOUND));
+        }
+        $this->addFlash('success', $this->translator->trans(
+            '1' === $featuredValue
+                ? 'Startseitenhervorhebung für das Seriengenre gespeichert.'
+                : 'Seriengenre aus der Startseitenhervorhebung entfernt.',
+        ));
+
+        return $this->noStore($this->redirectToRoute('admin_series_genre_index'));
+    }
+
     private function noStore(Response $response): Response
     {
         $response->headers->set('Cache-Control', 'private, no-store');

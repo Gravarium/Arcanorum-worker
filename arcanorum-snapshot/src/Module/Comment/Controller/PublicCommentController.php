@@ -10,11 +10,13 @@ use App\Entity\ContentComment;
 use App\Entity\MemberAccount;
 use App\Entity\NewsArticle;
 use App\Entity\Video;
+use App\Module\Comment\CommentPagination;
 use App\Module\News\Service\NewsArticleAccessPolicy;
 use App\Repository\ContentCommentRepository;
 use App\Repository\NewsArticleRepository;
 use App\Repository\VideoRepository;
 use App\Service\CommentWordFilter;
+use App\Service\SiteSettingsProvider;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -42,6 +44,7 @@ final class PublicCommentController extends AbstractController
         CommentWordFilter $wordFilter,
         EntityManagerInterface $entityManager,
         NewsArticleAccessPolicy $articleAccess,
+        SiteSettingsProvider $siteSettings,
     ): Response {
         $type = CommentContentType::tryFrom($contentType);
         if (null === $type) {
@@ -64,6 +67,10 @@ final class PublicCommentController extends AbstractController
             ? ['slug' => $target->getSlug()]
             : ['id' => $target->getId()];
         $routeParameters['_fragment'] = 'comments';
+        $commentPage = CommentPagination::pageParameter($request);
+        if (null !== $commentPage) {
+            $routeParameters['comment_page'] = $commentPage;
+        }
 
         if (!$target->isCommentsEnabled()) {
             $this->addFlash('public_comment_error', 'Kommentare sind für diesen Inhalt deaktiviert.');
@@ -74,6 +81,15 @@ final class PublicCommentController extends AbstractController
         $csrfId = 'public_comment_'.$type->value.'_'.$target->getId();
         if (!$this->isCsrfTokenValid($csrfId, $request->request->getString('_token'))) {
             return new Response(status: Response::HTTP_FORBIDDEN);
+        }
+
+        if (null === $this->getUser() && !$siteSettings->current()->isGuestCommentsEnabled()) {
+            $this->addFlash('public_comment_error', 'Bitte melde dich an, um einen Kommentar zu schreiben.');
+            $response = $this->redirectToRoute($route, $routeParameters);
+            $response->headers->set('Cache-Control', 'private, no-store');
+            $response->headers->set('Referrer-Policy', 'no-referrer');
+
+            return $response;
         }
 
         if ('' !== trim($request->request->getString('website'))) {
@@ -160,12 +176,26 @@ final class PublicCommentController extends AbstractController
             return $this->notFound();
         }
 
-        $newsArticle = null;
+        $routeParameters = [];
         if (CommentContentType::News === $comment->getContentType()) {
             $newsArticle = $articles->findPublishedById($comment->getContentId());
             if (!$newsArticle instanceof NewsArticle || !$articleAccess->canRead($newsArticle, $this->getUser())) {
                 return $this->notFound();
             }
+            $route = 'news_show';
+            $routeParameters['slug'] = $newsArticle->getSlug();
+        } else {
+            $video = $videos->findPublishedById($comment->getContentId());
+            if (!$video instanceof Video) {
+                return $this->notFound();
+            }
+            $route = 'video_show';
+            $routeParameters['id'] = $video->getId();
+        }
+        $routeParameters['_fragment'] = 'comments';
+        $commentPage = CommentPagination::pageParameter($request);
+        if (null !== $commentPage) {
+            $routeParameters['comment_page'] = $commentPage;
         }
 
         if (!$this->isCsrfTokenValid('public_comment_report_'.$comment->getId(), $request->request->getString('_token'))) {
@@ -177,9 +207,7 @@ final class PublicCommentController extends AbstractController
         if (is_int($previousReport) && time() - $previousReport < 15) {
             $this->addFlash('public_comment_error', 'Bitte warte kurz, bevor du einen weiteren Kommentar meldest.');
 
-            return $this->redirectToRoute(
-                CommentContentType::News === $comment->getContentType() ? 'news_index' : 'video_index',
-            );
+            return $this->redirectToRoute($route, $routeParameters);
         }
 
         $comment->report();
@@ -187,19 +215,7 @@ final class PublicCommentController extends AbstractController
         $session->set('public_comment_last_report', time());
         $this->addFlash('public_comment_success', 'Danke. Der Kommentar wurde zur Prüfung gemeldet.');
 
-        if ($newsArticle instanceof NewsArticle) {
-            return $this->redirectToRoute('news_show', ['slug' => $newsArticle->getSlug(), '_fragment' => 'comments']);
-        }
-        if (CommentContentType::News === $comment->getContentType()) {
-            return $this->notFound();
-        }
-
-        $video = $videos->findPublishedById($comment->getContentId());
-        if (!$video instanceof Video) {
-            return $this->redirectToRoute('video_index');
-        }
-
-        return $this->redirectToRoute('video_show', ['id' => $video->getId(), '_fragment' => 'comments']);
+        return $this->redirectToRoute($route, $routeParameters);
     }
 
     private function notFound(): Response

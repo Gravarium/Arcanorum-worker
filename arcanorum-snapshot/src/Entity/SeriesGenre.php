@@ -29,6 +29,12 @@ final class SeriesGenre
     #[ORM\Column(name: 'updated_at', type: Types::DATETIME_IMMUTABLE)]
     private \DateTimeImmutable $updatedAt;
 
+    #[ORM\Column(name: 'is_featured', options: ['default' => false])]
+    private bool $featured = false;
+
+    #[ORM\Column(name: 'featured_sort_order', type: Types::SMALLINT, options: ['default' => 0])]
+    private int $featuredSortOrder = 0;
+
     public function __construct(string $name)
     {
         $this->id = bin2hex(random_bytes(16));
@@ -70,5 +76,26 @@ final class SeriesGenre
     public function getUpdatedAt(): \DateTimeImmutable
     {
         return $this->updatedAt;
+    }
+
+    public function isFeatured(): bool
+    {
+        return $this->featured;
+    }
+
+    public function getFeaturedSortOrder(): int
+    {
+        return $this->featuredSortOrder;
+    }
+
+    public function setFeatured(bool $featured, int $sortOrder): void
+    {
+        if ($sortOrder < 0 || $sortOrder > 10_000) {
+            throw new \InvalidArgumentException('Die Startseitenreihenfolge muss zwischen 0 und 10000 liegen.');
+        }
+
+        $this->featured = $featured;
+        $this->featuredSortOrder = $sortOrder;
+        $this->updatedAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
     }
 }

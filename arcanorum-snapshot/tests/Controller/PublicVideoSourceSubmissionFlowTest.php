@@ -84,7 +84,7 @@ final class PublicVideoSourceSubmissionFlowTest extends WebTestCase
         ]);
 
         self::assertResponseStatusCodeSame(422);
-        self::assertSelectorTextContains('main', 'nur sichere, einbettbare YouTube-, Dailymotion- und Vimeo-Videos');
+        self::assertSelectorTextContains('main', 'sichere, einbettbare Videos von unterstützten Providern');
         self::assertNull($entityManager->getRepository(Video::class)->findOneBy(['title' => $title]));
     }
 }

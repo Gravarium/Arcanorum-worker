@@ -122,7 +122,7 @@ final class AdminScheduledTaskControllerTest extends WebTestCase
 
             $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
             $run = new ScheduledTaskRun($task, $now, $now, 'controller-test');
-            $run->succeed('Sitemap wurde aktualisiert.', $now->modify('+1 second'));
+            $run->succeed($run->takeLeaseToken(), 'Sitemap wurde aktualisiert.', $now->modify('+1 second'));
             $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
             self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
             $entityManager->persist($run);

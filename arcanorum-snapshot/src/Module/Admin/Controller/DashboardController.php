@@ -15,6 +15,7 @@ use App\Repository\ContentSeriesRepository;
 use App\Repository\MemberAccountRepository;
 use App\Repository\NewsArticleRepository;
 use App\Repository\SearchTermStatisticsRepository;
+use App\Repository\StaticPageRepository;
 use App\Repository\VideoReportRepository;
 use App\Repository\VideoRepository;
 use App\Repository\VideoSubmissionRepository;
@@ -40,6 +41,7 @@ final class DashboardController extends AbstractController
         private readonly VideoReportRepository $videoReports,
         private readonly ContactMessageRepository $contactMessages,
         private readonly SearchTermStatisticsRepository $searchStatistics,
+        private readonly StaticPageRepository $staticPages,
     ) {
     }
 
@@ -53,6 +55,9 @@ final class DashboardController extends AbstractController
             if ($this->isGranted('ROLE_MODERATOR_COMMENTS')) {
                 return $this->redirectToRoute('admin_comment_index');
             }
+            if ($this->isGranted('ROLE_CONTENT_EDITOR')) {
+                return $this->redirectToRoute('admin_news_index');
+            }
 
             throw $this->createAccessDeniedException();
         }
@@ -64,6 +69,12 @@ final class DashboardController extends AbstractController
         $response = $this->render('admin/dashboard.html.twig', [
             'capability_checks' => $system['checks'],
             'system_notices' => [...$system['notices'], ...$phpRuntime['notices']],
+            'latest_videos' => $this->videos->findForAdmin('', null, 5),
+            'latest_articles' => $this->newsArticles->findForAdmin('', null, 5),
+            'latest_members' => $this->members->findForAdmin('', 5),
+            'latest_comments' => $this->comments->findLatestForAdmin(),
+            'latest_pending_video_reports' => $this->videoReports->findPendingForDashboard(),
+            'latest_pending_video_submissions' => $this->submissions->findPendingForDashboard(),
             'content_metrics' => [
                 'news' => [
                     'total' => $this->newsArticles->countForAdmin('', null),
@@ -81,8 +92,12 @@ final class DashboardController extends AbstractController
                     'draft' => $this->series->countForAdmin(PublishingStatus::Draft),
                 ],
                 'comments' => [
+                    'total' => $this->comments->countForAdmin(),
                     'pending' => $this->comments->countForStatus(CommentStatus::Pending),
                     'reported' => $this->comments->countForStatus(CommentStatus::Reported),
+                ],
+                'pages' => [
+                    'total' => $this->staticPages->countForAdmin(),
                 ],
                 'members' => [
                     'total' => $this->members->countForAdmin('', null),

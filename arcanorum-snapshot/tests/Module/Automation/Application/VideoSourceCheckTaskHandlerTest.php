@@ -21,6 +21,44 @@ use Symfony\Component\HttpClient\Response\MockResponse;
 
 final class VideoSourceCheckTaskHandlerTest extends TestCase
 {
+    public function testUnavailableProviderSourceIsReportedWithoutChangingPublicationOrDeletingVideo(): void
+    {
+        $now = new \DateTimeImmutable('2026-10-29T12:00:00+00:00');
+        $video = new Video(
+            'Unverfügbare Providerquelle',
+            'Die Quelle bleibt zur Moderation erhalten.',
+            null,
+            VideoSourceType::Embed,
+            'https://youtu.be/dQw4w9WgXcQ',
+            PublishingStatus::Published,
+            false,
+            true,
+        );
+        $video->markExternalSourceStatus(ExternalVideoSourceStatus::Available, $now->modify('-48 hours'));
+
+        $videos = $this->createMock(ExternalVideoSourceStore::class);
+        $videos->expects(self::once())
+            ->method('findExternalSourcesNeedingCheck')
+            ->with($now->modify('-24 hours'), 5)
+            ->willReturn([$video]);
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->expects(self::once())->method('flush');
+        $entityManager->expects(self::never())->method('remove');
+        $provider = new VideoProviderImportService(
+            new MockHttpClient([new MockResponse('{"items":[]}', ['http_code' => 200])]),
+            new ExternalVideoEmbedResolver(),
+            'source-check-test-api-key',
+        );
+        $handler = new VideoSourceCheckTaskHandler($provider, $videos, $entityManager);
+
+        $summary = $handler->execute(ScheduledTask::createSystemSourceCheck($now->modify('-2 hours')), $now);
+
+        self::assertSame(ExternalVideoSourceStatus::Unavailable, $video->getExternalSourceStatus());
+        self::assertSame($now, $video->getExternalSourceCheckedAt());
+        self::assertSame(PublishingStatus::Published, $video->getStatus());
+        self::assertStringContainsString('zur Moderation vorgemerkt', $summary);
+    }
+
     public function testProviderFailureAdvancesRetryCursorAndPreservesLastKnownStatus(): void
     {
         $now = new \DateTimeImmutable('2026-10-28T12:00:00+00:00');
@@ -60,5 +98,6 @@ final class VideoSourceCheckTaskHandlerTest extends TestCase
 
         self::assertSame(ExternalVideoSourceStatus::Available, $video->getExternalSourceStatus());
         self::assertSame($now, $video->getExternalSourceCheckedAt());
+        self::assertTrue($video->isExternalSourceCheckFailed());
     }
 }

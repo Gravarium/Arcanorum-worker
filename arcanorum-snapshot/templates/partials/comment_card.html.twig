@@ -1,0 +1,42 @@
+{% set rating_summary = comment_rating_summaries[comment.id] %}
+{% set is_muted = muted_comment_ids[comment.id] is defined %}
+{% if is_muted %}
+    <details id="comment-{{ comment.id }}" class="comment-card comment-card-muted">
+        <summary>
+            <strong>{{ comment.authorName }}</strong> · <time datetime="{{ comment.createdAt|date('c') }}">{{ comment.createdAt|date('d.m.Y H:i') }}</time>
+            <span class="comment-muted-label">{{ 'Dieser Kommentar wurde wegen negativer Bewertungen eingeklappt.'|trans }}</span>
+        </summary>
+        <div class="comment-card-content">
+            <p class="comment-body">{{ comment.body }}</p>
+            {{ include('partials/content_rating.html.twig', {
+                action: comment_page > 1
+                    ? path('public_rating_comment', {id: comment.id, comment_page: comment_page})
+                    : path('public_rating_comment', {id: comment.id}),
+                csrf_id: 'content_rating_comment_' ~ comment.id,
+                label: 'Kommentar bewerten',
+                rating_summary: rating_summary,
+            }) }}
+            <form action="{{ comment_page > 1 ? path('public_comment_report', {id: comment.id, comment_page: comment_page}) : path('public_comment_report', {id: comment.id}) }}" method="post">
+                <input type="hidden" name="_token" value="{{ csrf_token('public_comment_report_' ~ comment.id) }}">
+                <button class="button button-secondary" type="submit">{{ 'Kommentar melden'|trans }}</button>
+            </form>
+        </div>
+    </details>
+{% else %}
+    <article id="comment-{{ comment.id }}" class="comment-card">
+        <header><strong>{{ comment.authorName }}</strong> · <time datetime="{{ comment.createdAt|date('c') }}">{{ comment.createdAt|date('d.m.Y H:i') }}</time></header>
+        <p class="comment-body">{{ comment.body }}</p>
+        {{ include('partials/content_rating.html.twig', {
+            action: comment_page > 1
+                ? path('public_rating_comment', {id: comment.id, comment_page: comment_page})
+                : path('public_rating_comment', {id: comment.id}),
+            csrf_id: 'content_rating_comment_' ~ comment.id,
+            label: 'Kommentar bewerten',
+            rating_summary: rating_summary,
+        }) }}
+        <form action="{{ comment_page > 1 ? path('public_comment_report', {id: comment.id, comment_page: comment_page}) : path('public_comment_report', {id: comment.id}) }}" method="post">
+            <input type="hidden" name="_token" value="{{ csrf_token('public_comment_report_' ~ comment.id) }}">
+            <button class="button button-secondary" type="submit">{{ 'Kommentar melden'|trans }}</button>
+        </form>
+    </article>
+{% endif %}

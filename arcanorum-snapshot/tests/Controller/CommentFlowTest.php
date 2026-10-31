@@ -9,12 +9,14 @@ use App\Entity\CommentFilterAction;
 use App\Entity\CommentFilterTerm;
 use App\Entity\CommentStatus;
 use App\Entity\ContentComment;
+use App\Entity\MemberAccount;
 use App\Entity\NewsArticle;
 use App\Entity\PublishingStatus;
 use App\Entity\Video;
 use App\Entity\VideoSourceType;
 use App\Repository\ContentCommentRepository;
 use App\Service\CommentWordFilterNormalizer;
+use App\Service\SiteSettingsManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -124,6 +126,128 @@ final class CommentFlowTest extends WebTestCase
             $connection = $entityManager->getConnection();
             $connection->executeStatement('DELETE FROM content_comments WHERE content_id = :id', ['id' => $article->getId()]);
             $connection->executeStatement('DELETE FROM news_articles WHERE slug = :slug', ['slug' => $slug]);
+        }
+    }
+
+    public function testGuestCommentSettingBlocksAnonymousWritersButAllowsSignedInMembers(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        $settings = $client->getContainer()->get(SiteSettingsManager::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        self::assertInstanceOf(SiteSettingsManager::class, $settings);
+
+        $suffix = bin2hex(random_bytes(8));
+        $slug = 'guest-comments-'.$suffix;
+        $article = new NewsArticle(
+            'Guest comments '.$suffix,
+            $slug,
+            'Community',
+            null,
+            'Guest comment policy test body',
+            PublishingStatus::Published,
+            false,
+            true,
+        );
+        $video = new Video(
+            'Guest comments video '.$suffix,
+            'Video used to verify the guest comment policy.',
+            'Community',
+            VideoSourceType::Embed,
+            'https://youtu.be/dQw4w9WgXcQ',
+            PublishingStatus::Published,
+            false,
+            true,
+        );
+        $member = new MemberAccount('guest-comments-'.$suffix.'@example.test', 'guestcomments'.$suffix, 'Commenting member');
+        $connection = $entityManager->getConnection();
+        $connection->beginTransaction();
+
+        try {
+            $entityManager->persist($article);
+            $entityManager->persist($video);
+            $entityManager->persist($member);
+            $entityManager->flush();
+            self::assertSame([], $settings->updateContentOptions(['guest_comments_enabled' => '1']));
+
+            $client->request('GET', '/news/'.$slug);
+            self::assertResponseIsSuccessful();
+            self::assertSelectorExists('form[action="/comments/news/'.$slug.'"]');
+            $token = (string) $client->getCrawler()
+                ->filter('form[action="/comments/news/'.$slug.'"] input[name="_token"]')
+                ->attr('value');
+            self::assertNotSame('', $token);
+
+            $client->request('GET', '/videos/'.$video->getId());
+            self::assertResponseIsSuccessful();
+            self::assertSelectorExists('form[action="/comments/video/'.$video->getId().'"]');
+            $videoToken = (string) $client->getCrawler()
+                ->filter('form[action="/comments/video/'.$video->getId().'"] input[name="_token"]')
+                ->attr('value');
+            self::assertNotSame('', $videoToken);
+
+            self::assertSame([], $settings->updateContentOptions(['guest_comments_enabled' => '0']));
+
+            $client->request('GET', '/news/'.$slug);
+            self::assertResponseIsSuccessful();
+            self::assertSelectorNotExists('form[action="/comments/news/'.$slug.'"]');
+            self::assertSelectorTextContains('#comments', 'Bitte melde dich an, um einen Kommentar zu schreiben.');
+
+            $guestBody = 'Anonymous comment must be rejected.';
+            $client->request('POST', '/comments/news/'.$slug, [
+                '_token' => $token,
+                'author_name' => 'Anonymous visitor',
+                'body' => $guestBody,
+                'website' => '',
+            ]);
+            self::assertResponseRedirects('/news/'.$slug.'#comments');
+            self::assertStringContainsString('private', (string) $client->getResponse()->headers->get('Cache-Control'));
+            self::assertStringContainsString('no-store', (string) $client->getResponse()->headers->get('Cache-Control'));
+            self::assertSame('no-referrer', $client->getResponse()->headers->get('Referrer-Policy'));
+            self::assertFalse($connection->fetchOne('SELECT id FROM content_comments WHERE body = :body', ['body' => $guestBody]));
+
+            $client->request('GET', '/videos/'.$video->getId());
+            self::assertResponseIsSuccessful();
+            self::assertSelectorNotExists('form[action="/comments/video/'.$video->getId().'"]');
+            self::assertSelectorTextContains('#comments', 'Bitte melde dich an, um einen Kommentar zu schreiben.');
+
+            $guestVideoBody = 'Anonymous video comment must be rejected.';
+            $client->request('POST', '/comments/video/'.$video->getId(), [
+                '_token' => $videoToken,
+                'author_name' => 'Anonymous visitor',
+                'body' => $guestVideoBody,
+                'website' => '',
+            ]);
+            self::assertResponseRedirects('/videos/'.$video->getId().'#comments');
+            self::assertFalse($connection->fetchOne('SELECT id FROM content_comments WHERE body = :body', ['body' => $guestVideoBody]));
+
+            $client->loginUser($member, 'members');
+            $client->request('GET', '/news/'.$slug);
+            self::assertResponseIsSuccessful();
+            self::assertSelectorExists('form[action="/comments/news/'.$slug.'"]');
+            $memberToken = (string) $client->getCrawler()
+                ->filter('form[action="/comments/news/'.$slug.'"] input[name="_token"]')
+                ->attr('value');
+            self::assertNotSame('', $memberToken);
+
+            $memberBody = 'A signed-in member may still comment.';
+            $client->request('POST', '/comments/news/'.$slug, [
+                '_token' => $memberToken,
+                'author_name' => 'Commenting member',
+                'body' => $memberBody,
+                'website' => '',
+            ]);
+            self::assertResponseRedirects('/news/'.$slug.'#comments');
+            self::assertSame($member->getId(), $connection->fetchOne(
+                'SELECT member_id FROM content_comments WHERE body = :body',
+                ['body' => $memberBody],
+            ));
+        } finally {
+            if ($connection->isTransactionActive()) {
+                $connection->rollBack();
+            }
+            $entityManager->clear();
         }
     }
 

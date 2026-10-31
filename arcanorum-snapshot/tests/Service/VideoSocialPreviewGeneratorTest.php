@@ -30,6 +30,17 @@ final class VideoSocialPreviewGeneratorTest extends TestCase
         self::assertSame(630, $info[1]);
         self::assertLessThanOrEqual(3145728, strlen($preview));
         self::assertSame($preview, $storage->objects[VideoSocialPreviewGenerator::cacheObjectIdForSourceObjectId($sourceId)]);
+        self::assertContains(
+            ['object_id' => $sourceId, 'maximum_bytes' => strlen($source)],
+            $storage->readLimits,
+        );
+        self::assertContains(
+            [
+                'object_id' => VideoSocialPreviewGenerator::cacheObjectIdForSourceObjectId($sourceId),
+                'maximum_bytes' => 3145728,
+            ],
+            $storage->readLimits,
+        );
         $decodedPreview = imagecreatefromstring($preview);
         self::assertInstanceOf(\GdImage::class, $decodedPreview);
         try {
@@ -55,6 +66,30 @@ final class VideoSocialPreviewGeneratorTest extends TestCase
         $info = getimagesizefromstring($preview);
         self::assertIsArray($info);
         self::assertSame(1200, $info[0]);
+    }
+
+    public function testOversizedCachedPreviewIsRejectedAtTheStorageReadBoundary(): void
+    {
+        $sourceId = str_repeat('f', 64);
+        $source = $this->createPng(320, 240);
+        $cacheId = VideoSocialPreviewGenerator::cacheObjectIdForSourceObjectId($sourceId);
+        $storage = $this->storageFor([
+            $sourceId => $source,
+            $cacheId => str_repeat('x', 3145729),
+        ]);
+
+        $preview = new VideoSocialPreviewGenerator($storage)->generate($sourceId, 'image/png', strlen($source));
+
+        self::assertNotSame(str_repeat('x', 3145729), $preview);
+        self::assertSame(
+            ['object_id' => $cacheId, 'maximum_bytes' => 3145728],
+            $storage->readLimits[0],
+        );
+        self::assertSame(
+            ['object_id' => $sourceId, 'maximum_bytes' => strlen($source)],
+            $storage->readLimits[1],
+        );
+        self::assertSame($preview, $storage->objects[$cacheId]);
     }
 
     public function testGeneratesAValidSocialPreviewFromEveryAcceptedSourceFormat(): void
@@ -160,6 +195,9 @@ final class VideoSocialPreviewGeneratorTest extends TestCase
 
 final class InMemoryVideoSocialPreviewStorage implements PrivateObjectStorageInterface
 {
+    /** @var list<array{object_id: string, maximum_bytes: int}> */
+    public array $readLimits = [];
+
     /** @param array<string, string> $objects */
     public function __construct(public array $objects)
     {
@@ -170,9 +208,14 @@ final class InMemoryVideoSocialPreviewStorage implements PrivateObjectStorageInt
         $this->objects[$objectId] = $contents;
     }
 
-    public function read(string $objectId): string
+    public function read(string $objectId, int $maximumBytes): string
     {
+        $this->readLimits[] = ['object_id' => $objectId, 'maximum_bytes' => $maximumBytes];
         if (!array_key_exists($objectId, $this->objects)) {
+            throw new PrivateStorageOperationFailed();
+        }
+
+        if ($maximumBytes < 1 || strlen($this->objects[$objectId]) > $maximumBytes) {
             throw new PrivateStorageOperationFailed();
         }
 

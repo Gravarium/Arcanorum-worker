@@ -43,12 +43,82 @@
 
             <label for="accent-color">{{ 'Akzentfarbe für Fokus- und Bereichsmarkierungen'|trans }}</label>
             <input id="accent-color" name="accent_color" type="color" value="{{ form.accent_color }}" required>
-            <p class="muted">{{ 'Farben werden als feste Hexwerte gespeichert. Eingebettetes CSS, externe Stylesheets und Uploads werden nicht angenommen. Die Hauptfarbe benötigt 4,5:1 Kontrast zu Weiß; die Akzentfarbe mindestens 3:1.'|trans }}</p>
+            <p class="muted">{{ 'Farben werden als feste Hexwerte gespeichert. Eingebettetes CSS und externe Stylesheets werden nicht angenommen. Textfarben müssen den erforderlichen Kontrast zu ihrer gewählten Fläche erreichen.'|trans }}</p>
+
+            <h2>{{ 'Weitere Farben der öffentlichen Website'|trans }}</h2>
+            <p class="muted">{{ 'Legen Sie die Flächen, Überschriften, Links und Navigation einzeln fest. Die Eingabe akzeptiert nur Hexfarben; Text- und Fokusfarben werden auf Kontrast geprüft.'|trans }}</p>
+
+            <label for="heading-color">{{ 'Überschriften'|trans }}</label>
+            <input id="heading-color" name="heading_color" type="color" value="{{ form.heading_color }}" required>
+            <label for="content-background-color">{{ 'Inhaltsfläche und Karten'|trans }}</label>
+            <input id="content-background-color" name="content_background_color" type="color" value="{{ form.content_background_color }}" required>
+            <label for="content-text-color">{{ 'Inhaltstext'|trans }}</label>
+            <input id="content-text-color" name="content_text_color" type="color" value="{{ form.content_text_color }}" required>
+            <label for="body-background-color">{{ 'Seitenhintergrund'|trans }}</label>
+            <input id="body-background-color" name="body_background_color" type="color" value="{{ form.body_background_color }}" required>
+
+            <h3>{{ 'Kopfbereich und Navigation'|trans }}</h3>
+            <label for="header-background-color">{{ 'Hintergrund des Kopfbereichs'|trans }}</label>
+            <input id="header-background-color" name="header_background_color" type="color" value="{{ form.header_background_color }}" required>
+            <label for="header-pane-color">{{ 'Text im Kopfbereich'|trans }}</label>
+            <input id="header-pane-color" name="header_pane_color" type="color" value="{{ form.header_pane_color }}" required>
+            <label for="navigation-background-color">{{ 'Navigationshintergrund'|trans }}</label>
+            <input id="navigation-background-color" name="navigation_background_color" type="color" value="{{ form.navigation_background_color }}" required>
+            <label for="navigation-link-color">{{ 'Navigationslinks'|trans }}</label>
+            <input id="navigation-link-color" name="navigation_link_color" type="color" value="{{ form.navigation_link_color }}" required>
+            <label for="content-link-color">{{ 'Inhaltslinks'|trans }}</label>
+            <input id="content-link-color" name="content_link_color" type="color" value="{{ form.content_link_color }}" required>
+            <label for="video-link-color">{{ 'Video- und Artikeltitel'|trans }}</label>
+            <input id="video-link-color" name="video_link_color" type="color" value="{{ form.video_link_color }}" required>
+            <label for="site-title-color">{{ 'Website-Titel'|trans }}</label>
+            <input id="site-title-color" name="site_title_color" type="color" value="{{ form.site_title_color }}" required>
+
+            <h3>{{ 'Fußbereich und Seitenbreite'|trans }}</h3>
+            <label for="footer-background-color">{{ 'Hintergrund des Fußbereichs'|trans }}</label>
+            <input id="footer-background-color" name="footer_background_color" type="color" value="{{ form.footer_background_color }}" required>
+            <label for="footer-link-color">{{ 'Text und Links im Fußbereich'|trans }}</label>
+            <input id="footer-link-color" name="footer_link_color" type="color" value="{{ form.footer_link_color }}" required>
+            <label for="content-width">{{ 'Maximale Inhaltsbreite in Pixeln'|trans }}</label>
+            <input id="content-width" name="content_width" type="number" min="640" max="1920" step="1" value="{{ form.content_width }}" required>
 
             <div class="form-actions">
                 <button class="button button-secondary" name="action" value="preview" type="submit">{{ 'Vorschau'|trans }}</button>
                 <button class="button button-primary" name="action" value="save" type="submit">{{ 'Theme und Layout speichern'|trans }}</button>
             </div>
+        </form>
+    </section>
+
+    <section class="admin-panel" aria-labelledby="theme-store-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="theme-store-heading">{{ 'Weitere Themes'|trans }}</h2>
+                <p>{{ 'Weitere kaufbare Themes, Vorschauen und Kompatibilitätshinweise finden Sie im externen PHPSUGAR Theme Store.'|trans }}</p>
+            </div>
+            <a class="button button-secondary" href="https://www.phpsugar.com/" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">{{ 'PHPSUGAR Theme Store öffnen'|trans }}</a>
+        </header>
+    </section>
+
+    <section class="admin-panel" aria-labelledby="site-logo-heading">
+        <header class="panel-heading">
+            <div>
+                <h2 id="site-logo-heading">{{ 'Website-Logo'|trans }}</h2>
+                <p class="muted">{{ 'Laden Sie ein JPEG-, PNG- oder WebP-Bild hoch. Das Bild wird geprüft, auf ein transparentes PNG normalisiert und im Kopfbereich auf höchstens 233 × 80 Pixel begrenzt.'|trans }}</p>
+            </div>
+        </header>
+        {% if settings.siteLogoSha256 is not null %}
+            <p><img class="site-logo-preview" src="{{ path('site_logo_image', {sha256: settings.siteLogoSha256}) }}" alt="{{ 'Aktuelles Website-Logo'|trans }}" width="233" height="80" decoding="async"></p>
+            <form method="post" action="{{ path('admin_design_settings_logo_remove') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('admin_design_logo') }}">
+                <button class="button button-secondary" type="submit">{{ 'Logo entfernen'|trans }}</button>
+            </form>
+        {% else %}
+            <p class="muted">{{ 'Es ist kein eigenes Logo festgelegt.'|trans }}</p>
+        {% endif %}
+        <form method="post" action="{{ path('admin_design_settings_logo_upload') }}" enctype="multipart/form-data" class="admin-form">
+            <input type="hidden" name="_token" value="{{ csrf_token('admin_design_logo') }}">
+            <label for="site-logo-upload">{{ 'Logo auswählen'|trans }}</label>
+            <input id="site-logo-upload" name="logo" type="file" accept="image/jpeg,image/png,image/webp" required>
+            <button class="button button-primary" type="submit">{{ 'Logo hochladen'|trans }}</button>
         </form>
     </section>
 
@@ -61,7 +131,11 @@
         </header>
         <div class="theme-preview" data-preview-theme="{{ preview_settings.publicTheme.value }}" data-preview-layout="{{ preview_settings.publicLayout.value }}">
             <header class="theme-preview-header">
-                <strong>{{ settings.siteName }}</strong>
+                {% if settings.siteLogoSha256 is not null %}
+                    <img class="theme-preview-logo" src="{{ path('site_logo_image', {sha256: settings.siteLogoSha256}) }}" alt="{{ settings.siteName }}" width="233" height="80" decoding="async">
+                {% else %}
+                    <strong>{{ settings.siteName }}</strong>
+                {% endif %}
                 <nav aria-label="{{ 'Vorschau-Navigation'|trans }}"><span>{{ 'Videos'|trans }}</span><span>{{ 'News'|trans }}</span><span>{{ 'Mitglieder'|trans }}</span></nav>
             </header>
             <div class="theme-preview-content">

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Entity\ScheduledTask;
+use App\Entity\ScheduledTaskRun;
 use App\Entity\ScheduledTaskType;
 use App\Module\Automation\Application\ScheduledTaskStore;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -46,12 +47,23 @@ final class ScheduledTaskRepository extends ServiceEntityRepository implements S
     /** @return list<ScheduledTask> */
     public function findDue(\DateTimeImmutable $now, int $limit = 10): array
     {
+        $blockedRuns = $this->getEntityManager()->createQueryBuilder()
+            ->select('blockedRun.id')
+            ->from(ScheduledTaskRun::class, 'blockedRun')
+            ->andWhere('blockedRun.task = task')
+            ->andWhere('blockedRun.scheduledFor = task.nextRunAt')
+            ->andWhere('(blockedRun.status = :running_status AND blockedRun.leaseExpiresAt > :now OR blockedRun.status = :failed_status AND blockedRun.attemptCount < :maximum_attempts AND blockedRun.retryAfter > :now)');
+
         /** @var list<ScheduledTask> $tasks */
         $tasks = $this->createQueryBuilder('task')
             ->andWhere('task.enabled = :enabled')
             ->andWhere('task.nextRunAt <= :now')
+            ->andWhere('NOT EXISTS ('.$blockedRuns->getDQL().')')
             ->setParameter('enabled', true)
             ->setParameter('now', $now)
+            ->setParameter('running_status', 'running')
+            ->setParameter('failed_status', 'failed')
+            ->setParameter('maximum_attempts', ScheduledTaskRun::MAX_ATTEMPTS)
             ->orderBy('task.nextRunAt', \SortDirection::Ascending)
             ->addOrderBy('task.id', \SortDirection::Ascending)
             ->setMaxResults(max(1, min(25, $limit)))

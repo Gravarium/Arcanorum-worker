@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
+use App\Service\MigrationRollbackGuard;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -23,6 +24,13 @@ final class Version20261018040000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
+        $guard = new MigrationRollbackGuard($this->connection);
+        $guard->lockTables('content_comments');
+        $comments = $guard->countRows('SELECT COUNT(*) FROM content_comments');
+        if ($comments > 0) {
+            throw new \RuntimeException('Kommentare und ihre Moderationsdaten müssen vor dem Migrationsrückbau erhalten oder exportiert werden.');
+        }
+
         $this->addSql('DROP TABLE content_comments');
     }
 }

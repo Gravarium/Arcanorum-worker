@@ -18,9 +18,9 @@ final readonly class PrivateObjectStorageGateway implements PrivateObjectStorage
         $this->storage->write($objectId, $contents);
     }
 
-    public function read(string $objectId): string
+    public function read(string $objectId, int $maximumBytes): string
     {
-        return $this->storage->read($objectId);
+        return $this->storage->read($objectId, $maximumBytes);
     }
 
     public function delete(string $objectId): void

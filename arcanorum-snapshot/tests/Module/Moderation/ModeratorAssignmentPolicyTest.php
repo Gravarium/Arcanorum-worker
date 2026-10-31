@@ -54,6 +54,10 @@ final class ModeratorAssignmentPolicyTest extends TestCase
             ['ROLE_ADMIN'], self::ACTOR_ID, self::TARGET_ID, null, ModeratorRole::VideoModerator, true, true, true, 1,
             ModeratorAssignmentDecision::Allowed,
         ];
+        yield 'admin can grant the separate content editor role after safeguards' => [
+            ['ROLE_ADMIN'], self::ACTOR_ID, self::TARGET_ID, null, ModeratorRole::ContentEditor, true, true, true, 1,
+            ModeratorAssignmentDecision::Allowed,
+        ];
         yield 'non-admin cannot assign roles' => [
             ['ROLE_MODERATOR'], self::ACTOR_ID, self::TARGET_ID, null, ModeratorRole::VideoModerator, true, true, true, 1,
             ModeratorAssignmentDecision::ActorDenied,

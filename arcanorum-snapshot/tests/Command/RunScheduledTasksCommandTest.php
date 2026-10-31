@@ -14,6 +14,7 @@ use App\Module\Automation\Application\SchedulerRequestSignatureReaderInterface;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -43,14 +44,13 @@ final class RunScheduledTasksCommandTest extends TestCase
             ->willReturnOnConsecutiveCalls('t', 't');
 
         $entityManager = $this->createMock(EntityManagerInterface::class);
-        $entityManager->expects(self::exactly(2))->method('flush');
+        $entityManager->expects(self::never())->method('flush');
         $tasks = $this->createMock(ScheduledTaskStore::class);
         $tasks->expects(self::once())
             ->method('findDue')
             ->with(self::isInstanceOf(\DateTimeImmutable::class), 10)
             ->willReturn([]);
         $runs = $this->createMock(ScheduledTaskRunStore::class);
-        $runs->expects(self::once())->method('markStaleRunning')->willReturn(0);
         $runs->expects(self::once())->method('pruneHistory')->with(200)->willReturn(0);
 
         $reader = $this->createMock(SchedulerRequestSignatureReaderInterface::class);
@@ -61,6 +61,7 @@ final class RunScheduledTasksCommandTest extends TestCase
             $tasks,
             $runs,
             new ScheduledTaskHandlerRegistry([]),
+            new MockClock(),
         );
         $command = new RunScheduledTasksCommand(
             new SchedulerRequestAuthenticator($connection, self::KEY),
@@ -90,7 +91,7 @@ final class RunScheduledTasksCommandTest extends TestCase
         $tasks = $this->createMock(ScheduledTaskStore::class);
         $tasks->expects(self::never())->method('findDue');
         $runs = $this->createMock(ScheduledTaskRunStore::class);
-        $runs->expects(self::never())->method('markStaleRunning');
+        $runs->expects(self::never())->method('findExistingForDueTime');
 
         $runner = new ScheduledTaskRunner(
             $connection,
@@ -98,6 +99,7 @@ final class RunScheduledTasksCommandTest extends TestCase
             $tasks,
             $runs,
             new ScheduledTaskHandlerRegistry([]),
+            new MockClock(),
         );
         $command = new RunScheduledTasksCommand(
             new SchedulerRequestAuthenticator($connection, self::KEY),

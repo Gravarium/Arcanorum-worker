@@ -25,4 +25,9 @@ final readonly class VideoStreamSource
     {
         return self::HLS_MIME_TYPE === $this->mimeType;
     }
+
+    public function isAudio(): bool
+    {
+        return 'audio/mpeg' === $this->mimeType;
+    }
 }

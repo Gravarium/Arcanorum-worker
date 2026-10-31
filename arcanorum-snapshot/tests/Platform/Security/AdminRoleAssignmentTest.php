@@ -37,6 +37,25 @@ final class AdminRoleAssignmentTest extends TestCase
         $user->setRoles([AdminRole::Administrator->value, AdminRole::VideoModerator->value]);
     }
 
+    public function testNewsEditorHasStaffAccessWithoutModerationRights(): void
+    {
+        $user = new AdminUser('editor@example.test');
+        $user->setRoles([AdminRole::ContentEditor->value]);
+
+        self::assertSame([AdminRole::ContentEditor->value, 'ROLE_USER'], $user->getRoles());
+        self::assertTrue(AdminRole::hasStaffAccess($user->getRoles()));
+        self::assertFalse(AdminRole::canModerateVideos($user->getRoles()));
+        self::assertFalse(AdminRole::canModerateComments($user->getRoles()));
+    }
+
+    public function testNewsEditorCannotBeCombinedWithAnotherStaffRole(): void
+    {
+        $user = new AdminUser('conflicting-editor@example.test');
+
+        $this->expectException(\InvalidArgumentException::class);
+        $user->setRoles([AdminRole::ContentEditor->value, AdminRole::VideoModerator->value]);
+    }
+
     public function testUnexpectedPersistedRolesFailClosed(): void
     {
         $user = new AdminUser('corrupted-roles@example.test');
@@ -56,6 +75,7 @@ final class AdminRoleAssignmentTest extends TestCase
             [AdminRole::VideoModerator->value, 'ROLE_UNKNOWN'],
             [AdminRole::VideoModerator->value, AdminRole::VideoModerator->value],
             [AdminRole::Administrator->value, AdminRole::CommentModerator->value],
+            [AdminRole::ContentEditor->value, AdminRole::VideoModerator->value],
         ] as $invalidRoles) {
             $roles->setValue($user, $invalidRoles);
 

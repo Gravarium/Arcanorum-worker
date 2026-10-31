@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
+use App\Service\MigrationRollbackGuard;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -22,6 +23,13 @@ final class Version20261019195500 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
+        $rollbackGuard = new MigrationRollbackGuard($this->connection);
+        $rollbackGuard->lockTables('contact_messages');
+        $messages = $this->connection->fetchOne('SELECT COUNT(*) FROM contact_messages');
+        if (!in_array($messages, [0, '0'], true)) {
+            throw new \RuntimeException('Gespeicherte Kontaktnachrichten mit personenbezogenen Angaben müssen vor dem Migrationsrückbau erhalten oder exportiert werden.');
+        }
+
         $this->addSql('DROP INDEX idx_contact_messages_status_created');
         $this->addSql('DROP TABLE contact_messages');
     }

@@ -49,7 +49,7 @@ final readonly class VideoSocialPreviewGenerator
 
         $cacheObjectId = self::cacheObjectIdForSourceObjectId($sourceObjectId);
         try {
-            $cached = $this->storage->read($cacheObjectId);
+            $cached = $this->storage->read($cacheObjectId, self::MAX_PREVIEW_BYTES);
             if (self::isValidPreview($cached)) {
                 return $cached;
             }
@@ -58,7 +58,7 @@ final readonly class VideoSocialPreviewGenerator
             // Reading the source and writing the regenerated cache below still fail closed.
         }
 
-        $source = $this->storage->read($sourceObjectId);
+        $source = $this->storage->read($sourceObjectId, $sourceSize);
         $sourceInfo = self::inspectSource($source, $sourceMimeType, $sourceSize);
         self::assertGdCapabilities($sourceMimeType);
         $decoded = @imagecreatefromstring($source);

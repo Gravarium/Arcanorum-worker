@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
+use App\Service\MigrationRollbackGuard;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -22,6 +23,15 @@ final class Version20261025150000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
+        $rollbackGuard = new MigrationRollbackGuard($this->connection);
+        $rollbackGuard->lockTables('videos');
+        $configuredOrigins = $this->connection->fetchOne(
+            'SELECT COUNT(*) FROM videos WHERE jsonb_array_length(embed_allowed_origins::jsonb) > 0',
+        );
+        if (!in_array($configuredOrigins, [0, '0'], true)) {
+            throw new \RuntimeException('Konfigurierte externe Einbettungsfreigaben müssen vor dem Migrationsrückbau erhalten oder exportiert werden.');
+        }
+
         $this->addSql('ALTER TABLE videos DROP CONSTRAINT chk_videos_embed_allowed_origins_array');
         $this->addSql('ALTER TABLE videos DROP embed_allowed_origins');
     }

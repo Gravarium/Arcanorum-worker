@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
+use App\Service\MigrationRollbackGuard;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -23,6 +24,13 @@ final class Version20261025140000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
+        $rollbackGuard = new MigrationRollbackGuard($this->connection);
+        $rollbackGuard->lockTables('content_ratings');
+        $ratings = $this->connection->fetchOne('SELECT COUNT(*) FROM content_ratings');
+        if (!in_array($ratings, [0, '0'], true)) {
+            throw new \RuntimeException('Mitgliedsbewertungen müssen vor dem Migrationsrückbau erhalten oder exportiert werden.');
+        }
+
         $this->addSql('DROP INDEX idx_content_ratings_comment_value');
         $this->addSql('DROP INDEX idx_content_ratings_video_value');
         $this->addSql('DROP TABLE content_ratings');

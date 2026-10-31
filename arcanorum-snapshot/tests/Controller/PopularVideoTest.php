@@ -15,6 +15,141 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class PopularVideoTest extends WebTestCase
 {
+    public function testAutomaticFeatureSettingAppliesOnlyAtTheExactCountedViewThreshold(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        $settingsManager = $client->getContainer()->get(SiteSettingsManager::class);
+        $siteSettings = $client->getContainer()->get(SiteSettingsProvider::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        self::assertInstanceOf(SiteSettingsManager::class, $settingsManager);
+        self::assertInstanceOf(SiteSettingsProvider::class, $siteSettings);
+        $originalThreshold = $siteSettings->current()->getAutoFeatureViewThreshold();
+        $suffix = bin2hex(random_bytes(6));
+        $crossing = new Video(
+            'Threshold crossing '.$suffix,
+            'The highlight changes only when the configured counted view is reached.',
+            null,
+            VideoSourceType::Url,
+            'https://videos.example.test/'.$suffix.'-crossing.mp4',
+            PublishingStatus::Published,
+            false,
+            true,
+        );
+        $throughPage = new Video(
+            'Threshold through public page '.$suffix,
+            'The public request passes the current site threshold to the atomic view update.',
+            null,
+            VideoSourceType::Url,
+            'https://videos.example.test/'.$suffix.'-public-page.mp4',
+            PublishingStatus::Published,
+            false,
+            true,
+        );
+        $disabled = new Video(
+            'Disabled automatic highlight '.$suffix,
+            'A zero threshold leaves automatic highlighting disabled.',
+            null,
+            VideoSourceType::Url,
+            'https://videos.example.test/'.$suffix.'-disabled.mp4',
+            PublishingStatus::Published,
+            false,
+            true,
+        );
+        $draft = new Video(
+            'Draft threshold '.$suffix,
+            'Unpublished videos must not gain public views or automatic highlights.',
+            null,
+            VideoSourceType::Url,
+            'https://videos.example.test/'.$suffix.'-draft.mp4',
+            PublishingStatus::Draft,
+            false,
+            true,
+        );
+        $future = new Video(
+            'Scheduled threshold '.$suffix,
+            'Scheduled videos must not gain public views or automatic highlights.',
+            null,
+            VideoSourceType::Url,
+            'https://videos.example.test/'.$suffix.'-future.mp4',
+            PublishingStatus::Published,
+            false,
+            true,
+        );
+        $repository = $client->getContainer()->get(\App\Repository\VideoRepository::class);
+        self::assertInstanceOf(\App\Repository\VideoRepository::class, $repository);
+
+        try {
+            self::assertSame([], $settingsManager->updateContentOptions(['auto_feature_view_threshold' => '2']));
+            $entityManager->persist($crossing);
+            $entityManager->persist($throughPage);
+            $entityManager->persist($disabled);
+            $entityManager->persist($draft);
+            $entityManager->persist($future);
+            $entityManager->flush();
+
+            $repository->recordPublicView($disabled->getId(), 0);
+            $connection = $entityManager->getConnection();
+            self::assertSame('1', $connection->fetchOne('SELECT view_count::text FROM videos WHERE id = :id', ['id' => $disabled->getId()]));
+            self::assertSame('false', $connection->fetchOne('SELECT featured::text FROM videos WHERE id = :id', ['id' => $disabled->getId()]));
+
+            $repository->recordPublicView($crossing->getId(), 2);
+            self::assertSame('1', $connection->fetchOne('SELECT view_count::text FROM videos WHERE id = :id', ['id' => $crossing->getId()]));
+            self::assertSame('false', $connection->fetchOne('SELECT featured::text FROM videos WHERE id = :id', ['id' => $crossing->getId()]));
+
+            $repository->recordPublicView($crossing->getId(), 2);
+            self::assertSame('2', $connection->fetchOne('SELECT view_count::text FROM videos WHERE id = :id', ['id' => $crossing->getId()]));
+            self::assertSame('true', $connection->fetchOne('SELECT featured::text FROM videos WHERE id = :id', ['id' => $crossing->getId()]));
+
+            $connection->executeStatement('UPDATE videos SET featured = FALSE WHERE id = :id', ['id' => $crossing->getId()]);
+            $repository->recordPublicView($crossing->getId(), 2);
+            self::assertSame('false', $connection->fetchOne('SELECT featured::text FROM videos WHERE id = :id', ['id' => $crossing->getId()]));
+
+            self::assertSame([], $settingsManager->updateContentOptions(['auto_feature_view_threshold' => '1']));
+            $client->request('GET', '/videos/'.$throughPage->getId());
+            self::assertResponseIsSuccessful();
+            self::assertSame('1', $connection->fetchOne('SELECT view_count::text FROM videos WHERE id = :id', ['id' => $throughPage->getId()]));
+            self::assertSame('true', $connection->fetchOne('SELECT featured::text FROM videos WHERE id = :id', ['id' => $throughPage->getId()]));
+            $client->request('GET', '/videos/'.$throughPage->getId());
+            self::assertResponseIsSuccessful();
+            self::assertSame('1', $connection->fetchOne('SELECT view_count::text FROM videos WHERE id = :id', ['id' => $throughPage->getId()]));
+            $connection->executeStatement('UPDATE videos SET featured = FALSE WHERE id = :id', ['id' => $throughPage->getId()]);
+            $client->request('GET', '/videos/'.$throughPage->getId());
+            self::assertResponseIsSuccessful();
+            self::assertSame('false', $connection->fetchOne('SELECT featured::text FROM videos WHERE id = :id', ['id' => $throughPage->getId()]));
+
+            $repository->recordPublicView($draft->getId(), 1);
+            self::assertSame('0', $connection->fetchOne('SELECT view_count::text FROM videos WHERE id = :id', ['id' => $draft->getId()]));
+            self::assertSame('false', $connection->fetchOne('SELECT featured::text FROM videos WHERE id = :id', ['id' => $draft->getId()]));
+
+            $connection->executeStatement(
+                'UPDATE videos SET published_at = CURRENT_TIMESTAMP + INTERVAL \'1 day\' WHERE id = :id',
+                ['id' => $future->getId()],
+            );
+            $repository->recordPublicView($future->getId(), 1);
+            self::assertSame('0', $connection->fetchOne('SELECT view_count::text FROM videos WHERE id = :id', ['id' => $future->getId()]));
+            self::assertSame('false', $connection->fetchOne('SELECT featured::text FROM videos WHERE id = :id', ['id' => $future->getId()]));
+        } finally {
+            try {
+                self::assertSame([], $settingsManager->updateContentOptions([
+                    'auto_feature_view_threshold' => (string) $originalThreshold,
+                ]));
+            } finally {
+                $entityManager->getConnection()->executeStatement(
+                    'DELETE FROM videos WHERE id IN (:crossing, :through_page, :disabled, :draft, :future)',
+                    [
+                        'crossing' => $crossing->getId(),
+                        'through_page' => $throughPage->getId(),
+                        'disabled' => $disabled->getId(),
+                        'draft' => $draft->getId(),
+                        'future' => $future->getId(),
+                    ],
+                );
+            }
+        }
+    }
+
     public function testPublishedViewsAreCountedOncePerSessionAndSortedWithoutDrafts(): void
     {
         $client = static::createClient();

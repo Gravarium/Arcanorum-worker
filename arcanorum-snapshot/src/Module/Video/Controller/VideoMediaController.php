@@ -18,7 +18,7 @@ use Symfony\Component\Routing\Attribute\Route;
 final class VideoMediaController extends AbstractController
 {
     /** @var list<string> */
-    private const array ALLOWED_MIME_TYPES = ['video/mp4', 'video/webm', 'video/ogg'];
+    private const array ALLOWED_MIME_TYPES = ['video/mp4', 'video/webm', 'video/ogg', 'audio/mpeg'];
 
     #[Route(
         '/{id}/media',
@@ -42,6 +42,7 @@ final class VideoMediaController extends AbstractController
         $size = $video->getUploadedSize();
         if (VideoSourceType::File !== $video->getSourceType()
             || null === $objectId
+            || 1 !== preg_match('/\A[a-f0-9]{64}\z/', $objectId)
             || null === $mimeType
             || null === $size
             || $size < 1
@@ -65,7 +66,7 @@ final class VideoMediaController extends AbstractController
         }
 
         try {
-            $contents = $storage->read($objectId);
+            $contents = $storage->read($objectId, $size);
         } catch (PrivateStorageOperationFailed) {
             return new Response('', Response::HTTP_SERVICE_UNAVAILABLE, [
                 'Cache-Control' => 'no-store',
@@ -74,7 +75,8 @@ final class VideoMediaController extends AbstractController
             ]);
         }
 
-        if (strlen($contents) !== $size) {
+        $actualMimeType = new \finfo(FILEINFO_MIME_TYPE)->buffer($contents);
+        if (strlen($contents) !== $size || $actualMimeType !== $mimeType) {
             return new Response('', Response::HTTP_SERVICE_UNAVAILABLE, [
                 'Cache-Control' => 'no-store',
                 'Retry-After' => '60',

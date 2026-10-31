@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
+use App\Service\MigrationRollbackGuard;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -22,6 +23,13 @@ final class Version20261026110000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
+        $rollbackGuard = new MigrationRollbackGuard($this->connection);
+        $rollbackGuard->lockTables('private_object_deletion_jobs');
+        $deletionJobs = $this->connection->fetchOne('SELECT COUNT(*) FROM private_object_deletion_jobs');
+        if (!in_array($deletionJobs, [0, '0'], true)) {
+            throw new \RuntimeException('Aufträge zur sicheren Löschung privater Speicherobjekte müssen vor dem Migrationsrückbau erhalten bleiben.');
+        }
+
         $this->addSql('DROP TABLE private_object_deletion_jobs');
     }
 }

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Module\Video\Controller;
 
+use App\Content\CustomFieldSet;
 use App\Entity\CommentContentType;
 use App\Entity\ContentCategory;
 use App\Entity\ContentCategoryType;
+use App\Entity\ExternalVideoSourceStatus;
 use App\Entity\PublishingStatus;
 use App\Entity\Video;
 use App\Entity\VideoQuality;
@@ -14,7 +16,9 @@ use App\Entity\VideoSourceType;
 use App\Module\Video\Service\VideoEmbedCodeGenerator;
 use App\Module\Video\Service\VideoEmbedOriginPolicy;
 use App\Module\Video\Service\VideoStreamSourceResolver;
+use App\Platform\Hosting\HostingCachePoolProvider;
 use App\Platform\Hosting\PrivateStorageOperationFailed;
+use App\Platform\Security\RateLimitKeyFactory;
 use App\Repository\ContentCategoryRepository;
 use App\Repository\ContentCommentRepository;
 use App\Repository\ContentTagRepository;
@@ -25,18 +29,23 @@ use App\Service\ContentTagManager;
 use App\Service\ExternalVideoEmbedResolver;
 use App\Service\SiteSettingsProvider;
 use App\Service\VideoMediaUploadService;
+use App\Service\VideoProviderImportException;
+use App\Service\VideoProviderImportService;
 use App\Service\VideoSourceUrlLock;
 use App\Service\VideoSubtitleUploadService;
 use App\Service\VideoThumbnailUploadService;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\InputBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 #[Route('/admin/videos', name: 'admin_video_')]
 #[IsGranted('ROLE_ADMIN')]
@@ -111,6 +120,11 @@ final class VideoAdminController extends AbstractController
         VideoSubtitleTrackRepository $subtitleTracks,
         VideoSubtitleUploadService $subtitleUploads,
         EntityManagerInterface $entityManager,
+        VideoProviderImportService $providerImport,
+        HostingCachePoolProvider $rateLimitCache,
+        RateLimitKeyFactory $rateLimitKeys,
+        TranslatorInterface $translator,
+        #[Autowire(service: 'limiter.video_provider_import')] RateLimiterFactory $providerRateLimiter,
     ): Response {
         $token = self::input($request->request, '_token');
         if ('' === $token || !$this->isCsrfTokenValid('admin_video_bulk', $token)) {
@@ -153,8 +167,13 @@ final class VideoAdminController extends AbstractController
         }
 
         $action = self::input($request->request, 'action');
-        if (!in_array($action, ['publish', 'draft', 'feature', 'unfeature', 'move', 'delete'], true)) {
+        if (!in_array($action, ['publish', 'draft', 'feature', 'unfeature', 'move', 'delete', 'check_source_status'], true)) {
             $this->addFlash('error', 'Bitte wähle eine gültige Sammelaktion aus.');
+
+            return $this->redirectToRoute('admin_video_index');
+        }
+        if ('check_source_status' === $action && count($ids) > 5) {
+            $this->addFlash('error', $translator->trans('Pro Quellenprüfung können höchstens fünf Videos ausgewählt werden.'));
 
             return $this->redirectToRoute('admin_video_index');
         }
@@ -193,6 +212,18 @@ final class VideoAdminController extends AbstractController
             $this->addFlash('error', 'Mindestens ein ausgewählter Eintrag wurde nicht gefunden.');
 
             return $this->redirectToRoute('admin_video_index');
+        }
+
+        if ('check_source_status' === $action) {
+            return $this->checkSourceStatus(
+                $items,
+                $entityManager,
+                $providerImport,
+                $rateLimitCache,
+                $rateLimitKeys,
+                $providerRateLimiter,
+                $translator,
+            );
         }
 
         $uploadedObjectIds = [];
@@ -279,6 +310,97 @@ final class VideoAdminController extends AbstractController
             default => 'gelöscht',
         };
         $this->addFlash('success', sprintf('%d Einträge wurden %s.', count($items), $actionLabel));
+
+        return $this->redirectToRoute('admin_video_index');
+    }
+
+    /** @param list<Video> $items */
+    private function checkSourceStatus(
+        array $items,
+        EntityManagerInterface $entityManager,
+        VideoProviderImportService $providerImport,
+        HostingCachePoolProvider $rateLimitCache,
+        RateLimitKeyFactory $rateLimitKeys,
+        RateLimiterFactory $providerRateLimiter,
+        TranslatorInterface $translator,
+    ): Response {
+        $embeddedItems = array_values(array_filter(
+            $items,
+            static fn (Video $video): bool => VideoSourceType::Embed === $video->getSourceType(),
+        ));
+        if ([] === $embeddedItems) {
+            $this->addFlash('error', $translator->trans('Die Quellenprüfung ist nur für eingebettete Videos verfügbar.'));
+
+            return $this->redirectToRoute('admin_video_index');
+        }
+
+        if (!$rateLimitCache->usesRedisPool()) {
+            $this->addFlash('error', $translator->trans('Der gemeinsame Importschutz ist nicht verfügbar. Es wurden keine Videoanbieter angefragt.'));
+
+            return $this->redirectToRoute('admin_video_index');
+        }
+
+        $admin = $this->getUser();
+        if (null === $admin) {
+            throw $this->createAccessDeniedException();
+        }
+        $limiterKey = $rateLimitKeys->forIdentity($admin->getUserIdentifier(), 'video-source-status');
+        $limit = $providerRateLimiter->create($limiterKey)->consume();
+        if (!$limit->isAccepted()) {
+            $this->addFlash('error', $translator->trans('Das Limit für Quellenprüfungen ist erreicht. Bitte versuche es später erneut.'));
+
+            return $this->redirectToRoute('admin_video_index');
+        }
+
+        $attemptedAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        /** @var list<array{video: Video, available: bool|null, failed: bool}> $results */
+        $results = [];
+        $unavailableCount = 0;
+        $unsupportedCount = 0;
+        $failedCount = 0;
+        foreach ($embeddedItems as $video) {
+            try {
+                $available = $providerImport->checkSourceAvailability($video->getSourceUrl());
+            } catch (VideoProviderImportException) {
+                ++$failedCount;
+                $results[] = ['video' => $video, 'available' => null, 'failed' => true];
+
+                continue;
+            }
+
+            $status = null === $available
+                ? ExternalVideoSourceStatus::Unsupported
+                : ($available ? ExternalVideoSourceStatus::Available : ExternalVideoSourceStatus::Unavailable);
+            if (ExternalVideoSourceStatus::Unavailable === $status) {
+                ++$unavailableCount;
+            } elseif (ExternalVideoSourceStatus::Unsupported === $status) {
+                ++$unsupportedCount;
+            }
+            $results[] = ['video' => $video, 'available' => $available, 'failed' => false];
+        }
+
+        $entityManager->getConnection()->transactional(function () use ($entityManager, $results, $attemptedAt): void {
+            foreach ($results as $result) {
+                if ($result['failed']) {
+                    $result['video']->markExternalSourceCheckFailed($attemptedAt);
+                } else {
+                    $status = match ($result['available']) {
+                        true => ExternalVideoSourceStatus::Available,
+                        false => ExternalVideoSourceStatus::Unavailable,
+                        null => ExternalVideoSourceStatus::Unsupported,
+                    };
+                    $result['video']->markExternalSourceStatus($status, $attemptedAt);
+                }
+            }
+            $entityManager->flush();
+        });
+
+        $this->addFlash('success', $translator->trans('Quellenprüfung abgeschlossen: %checked% geprüft, %unavailable% nicht verfügbar, %unsupported% nicht unterstützt und %failed% fehlgeschlagen.', [
+            '%checked%' => count($results),
+            '%unavailable%' => $unavailableCount,
+            '%unsupported%' => $unsupportedCount,
+            '%failed%' => $failedCount,
+        ]));
 
         return $this->redirectToRoute('admin_video_index');
     }
@@ -399,6 +521,7 @@ final class VideoAdminController extends AbstractController
             'featured' => $video?->isFeatured() ?? false,
             'comments_enabled' => $video?->isCommentsEnabled() ?? $siteSettings->current()->isDefaultCommentsEnabled(),
             'embed_origins' => implode("\n", $storedEmbedOrigins ?? []),
+            'custom_fields' => $video?->getCustomFields() ?? [],
         ];
         $errors = [];
         $tagNames = [];
@@ -414,6 +537,43 @@ final class VideoAdminController extends AbstractController
             }
 
             $rawPayload = $request->request->all();
+            $allowedFields = [
+                '_token', 'title', 'description', 'category', 'tags', 'source_type', 'source_url',
+                'duration_seconds', 'status', 'featured', 'comments_enabled', 'embed_origins',
+                'custom_fields_present', 'custom_fields',
+            ];
+            if ([] !== array_diff(array_keys($rawPayload), $allowedFields)) {
+                $errors[] = 'Die Anfrage enthält unerwartete Eingabefelder.';
+            }
+            foreach (['_token', 'title', 'description', 'category', 'tags', 'source_type', 'source_url', 'duration_seconds', 'status', 'embed_origins'] as $field) {
+                if (isset($rawPayload[$field]) && !is_string($rawPayload[$field])) {
+                    $errors[] = 'Die Eingabe enthält einen ungültigen Wert.';
+                }
+            }
+            foreach (['featured', 'comments_enabled'] as $field) {
+                if (isset($rawPayload[$field]) && '1' !== $rawPayload[$field]) {
+                    $errors[] = 'Die Eingabe enthält einen ungültigen Wert.';
+                }
+            }
+            if (array_key_exists('custom_fields', $rawPayload) && !array_key_exists('custom_fields_present', $rawPayload)) {
+                $errors[] = 'Die benutzerdefinierten Felder benötigen eine gültige Formularmarkierung.';
+            }
+            if (array_key_exists('custom_fields_present', $rawPayload) && '1' !== $rawPayload['custom_fields_present']) {
+                $errors[] = 'Die benutzerdefinierten Felder benötigen eine gültige Formularmarkierung.';
+            }
+            $customFields = $video?->getCustomFields() ?? [];
+            if ('1' === ($rawPayload['custom_fields_present'] ?? null)) {
+                $normalizedCustomFields = CustomFieldSet::normalize($rawPayload['custom_fields'] ?? []);
+                if (null === $normalizedCustomFields) {
+                    $errors[] = 'Die benutzerdefinierten Videofelder sind ungültig oder überschreiten die zulässigen Grenzen.';
+                } else {
+                    $customFields = $normalizedCustomFields;
+                }
+            }
+            $uploadedFields = array_keys($request->files->all());
+            if ([] !== array_diff($uploadedFields, ['video_file'])) {
+                $errors[] = 'Die Anfrage enthält unerwartete Uploadfelder.';
+            }
             $values = [
                 'title' => trim(self::input($request->request, 'title')),
                 'description' => self::input($request->request, 'description'),
@@ -428,12 +588,13 @@ final class VideoAdminController extends AbstractController
                 'embed_origins' => isset($rawPayload['embed_origins']) && is_string($rawPayload['embed_origins'])
                     ? $rawPayload['embed_origins']
                     : '',
+                'custom_fields' => $customFields,
             ];
             if (array_key_exists('embed_origins', $rawPayload) && !is_string($rawPayload['embed_origins'])) {
                 $errors[] = 'Die Freigabeliste für Videoeinbettungen muss aus Text bestehen.';
             }
             if (array_key_exists('duration_seconds', $rawPayload) && !is_string($rawPayload['duration_seconds'])) {
-                $errors[] = 'Die Videolaufzeit muss eine ganze Zahl sein.';
+                $errors[] = 'Die Medienlaufzeit muss eine ganze Zahl sein.';
             }
             $parsedEmbedOrigins = $embedOriginPolicy->parseInput($values['embed_origins']);
             if (null === $parsedEmbedOrigins) {
@@ -444,7 +605,7 @@ final class VideoAdminController extends AbstractController
 
             $uploadedField = $request->files->get('video_file');
             if (null !== $uploadedField && !($uploadedField instanceof UploadedFile)) {
-                $errors[] = 'Bitte wähle genau eine gültige Videodatei aus.';
+                $errors[] = 'Bitte wähle genau eine gültige Mediendatei aus.';
                 $uploadedFile = null;
             } else {
                 $uploadedFile = $uploadedField instanceof UploadedFile ? $uploadedField : null;
@@ -472,7 +633,7 @@ final class VideoAdminController extends AbstractController
                     || strlen($values['duration_seconds']) > 10
                     || (int) $values['duration_seconds'] > 2147483647
                 ) {
-                    $errors[] = 'Die Videolaufzeit muss eine ganze Zahl von 0 bis 2.147.483.647 Sekunden sein.';
+                    $errors[] = 'Die Medienlaufzeit muss eine ganze Zahl von 0 bis 2.147.483.647 Sekunden sein.';
                 } else {
                     $durationSeconds = (int) $values['duration_seconds'];
                 }
@@ -486,7 +647,7 @@ final class VideoAdminController extends AbstractController
                 $errors[] = 'Bitte wähle eine gültige Videoquelle.';
             } elseif (VideoSourceType::File === $sourceType) {
                 if (null === $uploadedFile && (null === $video || null === $video->getUploadedObjectId())) {
-                    $errors[] = 'Für ein neues Datei-Video ist eine geprüfte Videodatei erforderlich.';
+                    $errors[] = 'Für einen neuen Datei-Upload ist eine geprüfte Medien-Datei erforderlich.';
                 }
             } elseif (VideoSourceType::Stream === $sourceType) {
                 $unchangedExistingStream = null !== $video
@@ -502,7 +663,7 @@ final class VideoAdminController extends AbstractController
                 if (!Video::isSafeHttpsSource($values['source_url'])) {
                     $errors[] = 'Die Videoquelle muss eine gültige HTTPS-Adresse ohne Zugangsdaten sein.';
                 } elseif (VideoSourceType::Embed === $sourceType && null === $embedResolver->resolve($values['source_url'])) {
-                    $errors[] = 'Für eine Einbettung ist nur eine gültige YouTube-, Dailymotion- oder Vimeo-Video-URL zulässig.';
+                    $errors[] = 'Für eine Einbettung ist nur eine gültige Video-URL von YouTube, Vimeo, Dailymotion, Facebook, Google Drive, Rutube, VK oder Youku zulässig.';
                 }
                 if (null !== $uploadedFile) {
                     $errors[] = 'Eine Datei kann nur mit der Quellart Datei-Upload gespeichert werden.';
@@ -519,7 +680,7 @@ final class VideoAdminController extends AbstractController
                     VideoSourceType::Url => false,
                 };
                 if (!$canEmbedSource) {
-                    $errors[] = 'Nur veröffentlichte Datei-Uploads, freigegebene Streams und geprüfte YouTube-, Dailymotion- oder Vimeo-Einbettungen können extern freigegeben werden.';
+                    $errors[] = 'Nur veröffentlichte Datei-Uploads, freigegebene Streams und geprüfte Provider-Einbettungen können extern freigegeben werden.';
                 }
             }
 
@@ -560,6 +721,7 @@ final class VideoAdminController extends AbstractController
                     );
                 }
                 $video->setDurationSeconds($durationSeconds);
+                $video->replaceCustomFields($values['custom_fields']);
                 $video->setEmbedAllowedOrigins(
                     PublishingStatus::Published === $status ? $embedOrigins : [],
                 );
@@ -619,7 +781,7 @@ final class VideoAdminController extends AbstractController
                         }
                     }
                     if ($mediaCleanupFailed) {
-                        $this->addFlash('warning', 'Die frühere private Videodatei konnte nicht bereinigt werden.');
+                        $this->addFlash('warning', 'Die frühere private Medien-Datei konnte nicht bereinigt werden.');
                     }
 
                     $this->addFlash('success', 'Video wurde gespeichert.');
@@ -628,6 +790,14 @@ final class VideoAdminController extends AbstractController
                 }
             }
         }
+
+        $qualitySourceSupported = $isEdit && match ($video->getSourceType()) {
+            VideoSourceType::File => !$video->isAudio(),
+            VideoSourceType::Stream => null !== ($currentStream = $streamResolver->resolve($video->getSourceUrl()))
+                && !$currentStream->isAudio()
+                && !$currentStream->isHls(),
+            default => false,
+        };
 
         return $this->render('admin/videos/form.html.twig', [
             'values' => $values,
@@ -641,7 +811,7 @@ final class VideoAdminController extends AbstractController
             'subtitle_supported' => $isEdit && in_array($video->getSourceType(), [VideoSourceType::File, VideoSourceType::Stream], true),
             'quality_sources' => $isEdit ? $qualitySources->findForVideo($video) : [],
             'quality_options' => VideoQuality::cases(),
-            'quality_source_supported' => $isEdit && in_array($video->getSourceType(), [VideoSourceType::File, VideoSourceType::Stream], true),
+            'quality_source_supported' => $qualitySourceSupported,
             'stream_configured' => $streamResolver->isConfigured(),
             'embed_code' => $request->isMethod('GET') && null !== $video
                 ? $embedCodeGenerator->generate($video)

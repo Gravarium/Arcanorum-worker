@@ -8,7 +8,7 @@
         <div>
             <p class="eyebrow">{{ 'Videokatalog'|trans }}</p>
             <h1 id="seitenueberschrift">{{ is_edit ? ('Video bearbeiten'|trans) : ('Video hinzufügen'|trans) }}</h1>
-            <p class="muted">{{ 'Geprüfte HTTPS-Quelle oder private Videodatei mit Metadaten speichern.'|trans }}</p>
+            <p class="muted">{{ 'Geprüfte HTTPS-Quelle oder private Medien-Datei mit Metadaten speichern.'|trans }}</p>
         </div>
         <a class="button button-secondary" href="{{ path('admin_video_index') }}">{{ 'Zurück zur Übersicht'|trans }}</a>
     </div>
@@ -26,11 +26,11 @@
         <header class="panel-heading">
             <div>
                 <h2 id="video-form-heading">{{ 'Videodaten'|trans }}</h2>
-                <p class="muted">{{ 'Dateien werden außerhalb des öffentlichen Webpfads gespeichert; nur MP4, WebM und Ogg bis 32 MiB sind zugelassen.'|trans }}</p>
+                <p class="muted">{{ 'Dateien werden außerhalb des öffentlichen Webpfads gespeichert; MP4, WebM, Ogg und MP3 bis 32 MiB sind zugelassen.'|trans }}</p>
             </div>
         </header>
 
-        <form class="admin-form" method="post" enctype="multipart/form-data">
+        <form class="admin-form" method="post" enctype="multipart/form-data" data-video-source-metadata data-metadata-endpoint="{{ path('admin_video_metadata') }}" data-metadata-csrf-token="{{ csrf_token('admin_video_metadata') }}" data-metadata-error="{{ 'Provider-Metadaten konnten nicht abgerufen werden.'|trans }}" data-metadata-loaded="{{ 'Provider-Metadaten wurden übernommen.'|trans }}" data-metadata-loading="{{ 'Provider-Metadaten werden abgerufen.'|trans }}">
             <input type="hidden" name="_token" value="{{ csrf_token('admin_video_save') }}">
 
             <label>
@@ -45,26 +45,28 @@
                         <option value="url" {{ values.source_type == 'url' ? 'selected' : '' }}>{{ 'Video-URL'|trans }}</option>
                         <option value="stream" {{ values.source_type == 'stream' ? 'selected' : '' }}>{{ 'Stream'|trans }}</option>
                         <option value="embed" {{ values.source_type == 'embed' ? 'selected' : '' }}>{{ 'Einbettungs-URL'|trans }}</option>
-                        <option value="file" {{ values.source_type == 'file' ? 'selected' : '' }}>{{ 'Private Videodatei'|trans }}</option>
+                        <option value="file" {{ values.source_type == 'file' ? 'selected' : '' }}>{{ 'Private Medien-Datei'|trans }}</option>
                     </select>
                 </label>
                 <label>
                     <span>{{ 'Quell-URL'|trans }}</span>
                     <input type="url" name="source_url" value="{{ values.source_url }}" maxlength="2048" placeholder="https://www.youtube.com/watch?v=…">
-                    <small>{{ 'Für Einbettungen sind nur geprüfte YouTube-, Dailymotion- und Vimeo-Video-URLs zugelassen; fremder HTML-Code wird nicht ausgeführt.'|trans }}</small>
-                    <small>{{ 'Unterstützt werden direkte MP4-, M4V-, WebM- und Ogg-Dateien sowie HLS-Live-Playlists (M3U8) auf freigegebenen HTTPS-Hosts. HLS-Segmente und Schlüssel müssen ebenfalls von freigegebenen Hosts kommen; der Server ruft die Stream-Adresse nicht ab.'|trans }}</small>
+                    <button class="button button-secondary" type="button" data-video-metadata-fetch>{{ 'Provider-Metadaten übernehmen'|trans }}</button>
+                    <p class="muted" data-video-metadata-status role="status" aria-live="polite"></p>
+                    <small>{{ 'Für Einbettungen sind nur geprüfte YouTube-, Vimeo-, Dailymotion-, Facebook-, Google-Drive-, Rutube-, VK- und Youku-Video-URLs zugelassen; fremder HTML-Code wird nicht ausgeführt.'|trans }}</small>
+                    <small>{{ 'Unterstützt werden direkte MP4-, M4V-, WebM-, Ogg- und MP3-Dateien sowie HLS-Live-Playlists (M3U8) auf freigegebenen HTTPS-Hosts. HLS-Segmente und Schlüssel müssen ebenfalls von freigegebenen Hosts kommen; der Server ruft die Stream-Adresse nicht ab.'|trans }}</small>
                     <small>{{ 'Die vollständige Adresse einschließlich Abfrageparametern wird öffentlich ausgegeben. Bitte keine Zugangsdaten oder geheimen Tokens verwenden.'|trans }}</small>
                     {% if not stream_configured %}<small>{{ 'Streamhosts sind derzeit nicht freigegeben; bitte die Hostingverwaltung um Einrichtung bitten.'|trans }}</small>{% endif %}
                 </label>
                 <label>
-                    <span>{{ 'Videolaufzeit in Sekunden'|trans }}</span>
+                    <span>{{ 'Medienlaufzeit in Sekunden'|trans }}</span>
                     <input type="number" name="duration_seconds" value="{{ values.duration_seconds }}" min="0" max="2147483647" step="1" inputmode="numeric">
                     <small>{{ 'Optional, zum Beispiel 120 Sekunden für zwei Minuten.'|trans }}</small>
                 </label>
                 <label>
-                    <span>{{ 'Videodatei'|trans }}</span>
-                    <input type="file" name="video_file" accept="video/mp4,video/webm,video/ogg">
-                    <small>{{ 'Bei Quellart „Private Videodatei“ erforderlich; beim Bearbeiten optional, wenn die vorhandene Datei bleiben soll.'|trans }}</small>
+                    <span>{{ 'Video- oder MP3-Datei'|trans }}</span>
+                    <input type="file" name="video_file" accept="video/mp4,video/webm,video/ogg,audio/mpeg,.mp3">
+                    <small>{{ 'Bei Quellart „Private Medien-Datei“ erforderlich; beim Bearbeiten optional, wenn die vorhandene Datei bleiben soll.'|trans }}</small>
                     {% if current_media_type %}<small>{{ 'Aktuelle private Datei: %media_type%.'|trans({'%media_type%': current_media_type}) }}</small>{% endif %}
                 </label>
             </div>
@@ -98,6 +100,8 @@
                 <span>{{ 'Beschreibung'|trans }}</span>
                 <textarea name="description" rows="8" maxlength="100000">{{ values.description }}</textarea>
             </label>
+
+            {{ include('admin/partials/custom_fields_editor.html.twig', {custom_fields: values.custom_fields, field_id_prefix: 'video-custom-field'}) }}
 
             <label>
                 <span>{{ 'Erlaubte Einbettungsseiten'|trans }}</span>
@@ -157,6 +161,15 @@
                 </div>
             </form>
 
+            {% if values.source_type in ['embed', 'url'] and values.source_url != '' %}
+                <form method="post" action="{{ path('admin_video_thumbnail_provider_import', {id: video_id}) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('admin_video_thumbnail_provider_import_' ~ video_id) }}">
+                    <input type="hidden" name="action" value="provider_import">
+                    <p class="muted">{{ 'Das Vorschaubild wird über die feste Provider-API ausgewählt, sicher geprüft und privat gespeichert.'|trans }}</p>
+                    <button class="button button-secondary" type="submit">{{ 'Provider-Vorschaubild übernehmen'|trans }}</button>
+                </form>
+            {% endif %}
+
             {% if has_thumbnail %}
                 <form method="post" action="{{ path('admin_video_thumbnail_manage', {id: video_id}) }}">
                     <input type="hidden" name="_token" value="{{ csrf_token('admin_video_thumbnail_' ~ video_id) }}">
@@ -196,7 +209,7 @@
                     </div>
                 </form>
             {% else %}
-                <p>{{ 'Untertitelspuren können nur für Videodateien und geprüfte Streams hochgeladen werden.'|trans }}</p>
+                <p>{{ 'Untertitelspuren können für private Medien-Dateien und geprüfte Video- oder Audiostreams hochgeladen werden.'|trans }}</p>
             {% endif %}
 
             {% if subtitle_tracks is not empty %}
@@ -285,4 +298,9 @@
             {% endif %}
         </section>
     {% endif %}
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="{{ asset('admin/video-source-metadata.js') }}" defer></script>
 {% endblock %}

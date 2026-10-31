@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
+use App\Service\MigrationRollbackGuard;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -25,6 +26,15 @@ final class Version20261018070000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
+        $rollbackGuard = new MigrationRollbackGuard($this->connection);
+        $rollbackGuard->lockTables('videos');
+        $uploadedVideos = $this->connection->fetchOne(
+            'SELECT COUNT(*) FROM videos WHERE uploaded_object_id IS NOT NULL OR uploaded_mime_type IS NOT NULL OR uploaded_size IS NOT NULL',
+        );
+        if (!in_array($uploadedVideos, [0, '0'], true)) {
+            throw new \RuntimeException('Privat gespeicherte Video-Uploads müssen vor dem Migrationsrückbau erhalten oder exportiert werden.');
+        }
+
         $this->addSql('ALTER TABLE videos DROP CONSTRAINT chk_videos_source_metadata');
         $this->addSql('DROP INDEX uniq_videos_uploaded_object_id');
         $this->addSql('ALTER TABLE videos DROP uploaded_object_id');

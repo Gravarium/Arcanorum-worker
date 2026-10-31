@@ -10,6 +10,7 @@ enum ModeratorRole: string
     case Moderator = 'ROLE_MODERATOR';
     case VideoModerator = 'ROLE_MODERATOR_VIDEO';
     case CommentModerator = 'ROLE_MODERATOR_COMMENTS';
+    case ContentEditor = 'ROLE_CONTENT_EDITOR';
     case Member = 'ROLE_USER';
 
     public function isAssignable(): bool
@@ -23,6 +24,7 @@ enum ModeratorRole: string
             self::Administrator, self::Moderator => true,
             self::VideoModerator => ModeratorPermission::ModerateVideos === $permission,
             self::CommentModerator => ModeratorPermission::ModerateComments === $permission,
+            self::ContentEditor => false,
             self::Member => false,
         };
     }

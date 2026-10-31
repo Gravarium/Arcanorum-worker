@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
+use App\Service\MigrationRollbackGuard;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -25,6 +26,8 @@ final class Version20261022204000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
+        $rollbackGuard = new MigrationRollbackGuard($this->connection);
+        $rollbackGuard->lockTables('site_settings');
         $customizedOptions = $this->connection->fetchOne(
             'SELECT COUNT(*) FROM site_settings WHERE player_autoplay_enabled IS NOT FALSE OR player_autoplay_muted IS NOT TRUE OR default_comments_enabled IS NOT TRUE OR public_video_submissions_enabled IS NOT TRUE',
         );

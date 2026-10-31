@@ -153,12 +153,37 @@ final class CookieConsentControllerTest extends WebTestCase
         $this->resetConsentSettings($client);
     }
 
+    public function testWithdrawingOptionalConsentExpiresOnlyGoogleAnalyticsCookies(): void
+    {
+        $client = static::createClient();
+        $this->resetConsentSettings($client);
+        $client->getCookieJar()->set(new BrowserCookie('_ga', 'GA1.1.123.456', null, '/', '', false, false, false, 'lax'));
+        $client->getCookieJar()->set(new BrowserCookie('_ga_ABC1234567', 'GS1.1.123.456', null, '/', '', false, false, false, 'lax'));
+        $client->getCookieJar()->set(new BrowserCookie('unrelated_cookie', 'keep', null, '/', '', false, false, false, 'lax'));
+
+        $client->request('GET', '/cookie-einstellungen');
+        self::assertResponseIsSuccessful();
+        $token = (string) $client->getCrawler()->filter('form[action="/cookie-einstellungen"] input[name="token"]')->attr('value');
+        $client->request('POST', '/cookie-einstellungen', ['token' => $token, 'choice' => 'necessary']);
+
+        self::assertResponseRedirects('/');
+        foreach (['_ga', '_ga_ABC1234567'] as $name) {
+            $expired = $this->responseCookie($client, $name);
+            self::assertInstanceOf(Cookie::class, $expired);
+            self::assertSame('', $expired->getValue());
+            self::assertLessThanOrEqual(1, $expired->getExpiresTime());
+        }
+        self::assertNull($this->responseCookie($client, 'unrelated_cookie'));
+
+        $this->resetConsentSettings($client);
+    }
+
     private function resetConsentSettings(KernelBrowser $client): void
     {
         $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
         self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
         $entityManager->getConnection()->executeStatement(
-            "UPDATE site_settings SET cookie_consent_enabled = TRUE, cookie_consent_message = 'Wir verwenden notwendige Cookies für Anmeldung und Sicherheit. Derzeit setzen wir keine Analyse- oder Werbecookies.', maintenance_mode_enabled = FALSE, search_indexing_enabled = TRUE, seo_description = '' WHERE id = 1",
+            "UPDATE site_settings SET cookie_consent_enabled = TRUE, cookie_consent_message = 'Wir verwenden notwendige Cookies für Anmeldung, Sicherheit und die Ansichtspräferenz in diesem Browser. Optionale Analyse- und Werbedienste werden nur nach Ihrer Zustimmung geladen.', google_analytics_measurement_id = '', maintenance_mode_enabled = FALSE, search_indexing_enabled = TRUE, seo_description = '' WHERE id = 1",
         );
     }
 

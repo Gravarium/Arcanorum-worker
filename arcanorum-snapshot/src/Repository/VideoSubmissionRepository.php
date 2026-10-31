@@ -30,6 +30,24 @@ final class VideoSubmissionRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
     }
 
+    /** @return list<VideoSubmission> */
+    public function findPendingForDashboard(int $limit = 5): array
+    {
+        /** @var list<VideoSubmission> $submissions */
+        $submissions = $this->createQueryBuilder('submission')
+            ->innerJoin('submission.video', 'video')
+            ->addSelect('video')
+            ->andWhere('submission.status = :status')
+            ->setParameter('status', VideoSubmissionStatus::Pending)
+            ->orderBy('submission.createdAt', \SortDirection::Descending)
+            ->addOrderBy('submission.id', \SortDirection::Descending)
+            ->setMaxResults(max(1, min(5, $limit)))
+            ->getQuery()
+            ->getResult();
+
+        return $submissions;
+    }
+
     /**
      * @return list<VideoSubmission>
      */

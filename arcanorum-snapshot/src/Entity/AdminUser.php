@@ -78,6 +78,9 @@ final class AdminUser implements UserInterface, PasswordAuthenticatedUserInterfa
         if (in_array(AdminRole::Administrator->value, $roles, true) && 1 < count($roles)) {
             return ['ROLE_USER'];
         }
+        if (in_array(AdminRole::ContentEditor->value, $roles, true) && 1 < count($roles)) {
+            return ['ROLE_USER'];
+        }
 
         $roles[] = 'ROLE_USER';
 
@@ -105,6 +108,9 @@ final class AdminUser implements UserInterface, PasswordAuthenticatedUserInterfa
         $validatedRoles = array_values(array_unique($validatedRoles));
         if (in_array(AdminRole::Administrator->value, $validatedRoles, true) && 1 < count($validatedRoles)) {
             throw new \InvalidArgumentException('Administratoren erhalten keine zusätzlichen Moderationsrollen.');
+        }
+        if (in_array(AdminRole::ContentEditor->value, $validatedRoles, true) && 1 < count($validatedRoles)) {
+            throw new \InvalidArgumentException('Redakteure erhalten keine zusätzlichen Verwaltungs- oder Moderationsrollen.');
         }
 
         $this->roles = $validatedRoles;
