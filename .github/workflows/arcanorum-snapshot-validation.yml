@@ -5,8 +5,7 @@ on:
     inputs:
       source_commit:
         description: "Exact source commit represented by the public snapshot."
-        required: false
-        default: c96df1383aa1377bba3cf7ac3016a4ea5eb3742c
+        required: true
         type: string
       validation_scope:
         description: "Choose the full validation or the affected regression scope."
