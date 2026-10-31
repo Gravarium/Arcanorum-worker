@@ -1787,7 +1787,9 @@ jobs:
       - name: Install unchanged locked Composer dependencies
         run: |
           touch .env
+          composer validate --strict --no-interaction
           composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader
+          composer audit --locked --no-interaction
 
       - name: Check affected PHP syntax
         shell: bash
@@ -1797,6 +1799,7 @@ jobs:
             migrations/Version20261030230000.php \
             src/Entity/Video.php \
             src/Module/Video/Controller/VideoAdminController.php \
+          src/Service/VideoCsvImportParser.php \
             tests/Controller/AdminDashboardTest.php \
             tests/Entity/VideoExternalSourceStatusTest.php \
             tests/Module/Automation/Application/VideoSourceCheckTaskHandlerTest.php; do
@@ -1807,6 +1810,7 @@ jobs:
         run: |
           php bin/console lint:yaml translations/messages.de.yaml translations/messages.en.yaml translations/messages.ar.yaml
           php bin/console lint:twig templates/admin/videos/index.html.twig
+          php bin/console lint:twig templates/admin/videos/import.html.twig
           php bin/console lint:container --env=dev
           APP_ENV=prod APP_DEBUG=0 php bin/console lint:container --env=prod
 
@@ -1817,7 +1821,7 @@ jobs:
 
       - name: PHPStan level 10 on affected PHP files
         run: >-
-          vendor/bin/phpstan analyse
+          vendor/bin/phpstan analyse src/Service/VideoCsvImportParser.php tests/Service/VideoCsvImportParserTest.php
           --configuration=phpstan.neon.dist
           --no-progress
           --error-format=table
@@ -1831,7 +1835,7 @@ jobs:
 
       - name: PHP CS Fixer on affected PHP files
         run: >-
-          vendor/bin/php-cs-fixer check
+          vendor/bin/php-cs-fixer check src/Service/VideoCsvImportParser.php tests/Service/VideoCsvImportParserTest.php
           --config=.php-cs-fixer.dist.php
           --diff
           --using-cache=no
@@ -1844,7 +1848,7 @@ jobs:
 
       - name: Rector dry run on affected PHP files
         run: >-
-          vendor/bin/rector process
+          vendor/bin/rector process src/Service/VideoCsvImportParser.php tests/Service/VideoCsvImportParserTest.php
           migrations/Version20261030230000.php
           src/Entity/Video.php
           src/Module/Video/Controller/VideoAdminController.php
@@ -1862,7 +1866,9 @@ jobs:
             migrations/Version20261030230000.php \
             src/Entity/Video.php \
             src/Module/Video/Controller/VideoAdminController.php \
+          src/Service/VideoCsvImportParser.php \
             tests/Controller/AdminDashboardTest.php \
+          tests/Service/VideoCsvImportParserTest.php \
             tests/Entity/VideoExternalSourceStatusTest.php \
             tests/Module/Automation/Application/VideoSourceCheckTaskHandlerTest.php
 
@@ -1873,8 +1879,9 @@ jobs:
             --fail-on-risky --fail-on-warning --fail-on-deprecation \
             --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
             --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
-            --filter='testVideoBulkSourceCheckUsesFixedProvidersAndStoresTheOutcome|testFailedCheckIsRecordedWithoutDiscardingTheLastKnownStatus|testProviderFailureAdvancesRetryCursorAndPreservesLastKnownStatus' \
+            --filter='testVideoBulkSourceCheckUsesFixedProvidersAndStoresTheOutcome|testFailedCheckIsRecordedWithoutDiscardingTheLastKnownStatus|testProviderFailureAdvancesRetryCursorAndPreservesLastKnownStatus|testFirstNewsAndVideoIterationPersistsContentAndRejectsUnsafeSources|testParsesTheHeaderlessSixColumnLegacyFormat|testRejectsRowsThatDoNotMatchTheHeaderlessLegacyColumnCount' \
             tests/Controller/AdminDashboardTest.php \
+          tests/Service/VideoCsvImportParserTest.php \
             tests/Entity/VideoExternalSourceStatusTest.php \
             tests/Module/Automation/Application/VideoSourceCheckTaskHandlerTest.php
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
