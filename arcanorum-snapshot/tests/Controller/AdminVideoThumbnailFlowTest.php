@@ -15,6 +15,7 @@ use App\Platform\Security\AdminMfaSecretCipher;
 use App\Platform\Security\RuntimeAttestationReportProviderInterface;
 use App\Platform\Security\TotpVerifier;
 use App\Service\ExternalVideoEmbedResolver;
+use App\Service\VideoMediaUploadService;
 use App\Service\VideoProviderImportService;
 use App\Service\VideoSocialPreviewGenerator;
 use App\Service\VideoThumbnailImportService;
@@ -414,6 +415,115 @@ final class AdminVideoThumbnailFlowTest extends WebTestCase
                 ],
                 $deletedObjectIds,
             );
+        } finally {
+            $connection->executeStatement('DELETE FROM videos WHERE id = :id', ['id' => $video->getId()]);
+            $connection->executeStatement('DELETE FROM admin_users WHERE email = :email', ['email' => $email]);
+            if (is_file($temporaryPath)) {
+                unlink($temporaryPath);
+            }
+        }
+    }
+
+    public function testAdminVideoEditLocksCurrentPrivateMediaBeforeReplacement(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $client->getContainer()->set(
+            RuntimeAttestationReportProviderInterface::class,
+            new VerifiedRuntimeAttestationReportProvider(),
+        );
+
+        $suffix = bin2hex(random_bytes(8));
+        $email = 'video-media-edit-race-'.$suffix.'@example.test';
+        $password = 'VideoMediaEditRace-'.$suffix.'-G4!';
+        $video = new Video(
+            'Private media edit race '.$suffix,
+            'A video used to check concurrent private media replacement.',
+            null,
+            VideoSourceType::File,
+            '',
+            PublishingStatus::Draft,
+            false,
+            true,
+        );
+        $originalObjectId = str_repeat('a', 64);
+        $video->attachUploadedMedia($originalObjectId, 'video/mp4', 128);
+
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        $connection = $entityManager->getConnection();
+        $temporaryPath = tempnam(sys_get_temp_dir(), 'arcanorum-video-media-race-');
+        self::assertIsString($temporaryPath);
+        $videoBytes = "\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom".str_repeat("\x00", 64);
+        self::assertSame(strlen($videoBytes), file_put_contents($temporaryPath, $videoBytes));
+        $concurrentObjectId = str_repeat('b', 64);
+        $storedObjectId = null;
+        $privateStorage = $this->createMock(PrivateObjectStorageInterface::class);
+        $privateStorage->expects(self::once())->method('write')->willReturnCallback(
+            static function (string $objectId, string $contents) use (
+                &$storedObjectId,
+                $videoBytes,
+                $connection,
+                $video,
+                $concurrentObjectId,
+            ): void {
+                self::assertSame($videoBytes, $contents);
+                $storedObjectId = $objectId;
+                $connection->executeStatement(
+                    'UPDATE videos SET uploaded_object_id = :object_id, uploaded_mime_type = :mime_type, uploaded_size = :size WHERE id = :video_id',
+                    [
+                        'object_id' => $concurrentObjectId,
+                        'mime_type' => 'video/mp4',
+                        'size' => strlen($videoBytes),
+                        'video_id' => $video->getId(),
+                    ],
+                );
+            },
+        );
+        $privateStorage->expects(self::once())->method('delete')->with($concurrentObjectId);
+        $client->getContainer()->set(PrivateObjectStorageInterface::class, $privateStorage);
+        $client->getContainer()->set(VideoMediaUploadService::class, new VideoMediaUploadService($privateStorage));
+        $entityManager->persist($video);
+        $entityManager->flush();
+
+        try {
+            $admin = $this->persistAdministrator($client, $email, $password);
+            $this->submitLogin($client, $admin, $password);
+            self::assertResponseRedirects('/admin');
+
+            $editPath = '/admin/videos/'.$video->getId().'/edit';
+            $client->request('GET', $editPath);
+            self::assertResponseIsSuccessful();
+            $token = $client->getCrawler()->filter('form.admin-form input[name="_token"]')->attr('value');
+            self::assertIsString($token);
+
+            $client->request(
+                'POST',
+                $editPath,
+                [
+                    '_token' => $token,
+                    'title' => 'Updated private media '.$suffix,
+                    'description' => 'Replace the upload after another request changed its metadata.',
+                    'category' => '',
+                    'tags' => '',
+                    'source_type' => 'file',
+                    'source_url' => '',
+                    'duration_seconds' => '',
+                    'status' => 'draft',
+                    'comments_enabled' => '1',
+                ],
+                ['video_file' => new UploadedFile($temporaryPath, 'replacement.mp4', 'video/mp4', null, true)],
+            );
+
+            self::assertResponseRedirects('/admin/videos');
+            self::assertIsString($storedObjectId);
+            self::assertNotSame($originalObjectId, $storedObjectId);
+            $entityManager->clear();
+            $storedVideo = $entityManager->getRepository(Video::class)->find($video->getId());
+            self::assertInstanceOf(Video::class, $storedVideo);
+            self::assertSame($storedObjectId, $storedVideo->getUploadedObjectId());
+            self::assertSame('video/mp4', $storedVideo->getUploadedMimeType());
+            self::assertSame(strlen($videoBytes), $storedVideo->getUploadedSize());
         } finally {
             $connection->executeStatement('DELETE FROM videos WHERE id = :id', ['id' => $video->getId()]);
             $connection->executeStatement('DELETE FROM admin_users WHERE email = :email', ['email' => $email]);

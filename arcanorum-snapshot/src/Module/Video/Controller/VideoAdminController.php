@@ -708,8 +708,9 @@ final class VideoAdminController extends AbstractController
             }
 
             if ([] === $errors && null !== $sourceType) {
-                $previousObjectId = $video?->getUploadedObjectId();
-                if (null === $video) {
+                $isNew = null === $video;
+                $previousObjectId = null;
+                if ($isNew) {
                     $video = new Video(
                         $values['title'],
                         $values['description'],
@@ -720,54 +721,87 @@ final class VideoAdminController extends AbstractController
                         $values['featured'],
                         $values['comments_enabled'],
                     );
-                } else {
-                    $video->revise(
-                        $values['title'],
-                        $values['description'],
-                        '' === $values['category'] ? null : $values['category'],
-                        $sourceType,
-                        $values['source_url'],
-                        $status,
-                        $values['featured'],
-                        $values['comments_enabled'],
-                    );
-                }
-                $video->setDurationSeconds($durationSeconds);
-                $video->replaceCustomFields($values['custom_fields']);
-                $video->setEmbedAllowedOrigins(
-                    PublishingStatus::Published === $status ? $embedOrigins : [],
-                );
-                if (null !== $uploadedMedia) {
-                    $video->attachUploadedMedia(
-                        $uploadedMedia['object_id'],
-                        $uploadedMedia['mime_type'],
-                        $uploadedMedia['size'],
-                    );
                 }
                 try {
-                    $saved = $entityManager->getConnection()->transactional(function (Connection $connection) use (
+                    $saveResult = $entityManager->getConnection()->transactional(function (Connection $connection) use (
                         $sourceType,
                         $sourceLock,
                         $values,
+                        $durationSeconds,
+                        $status,
+                        $embedOrigins,
+                        $uploadedMedia,
+                        $isNew,
                         $videos,
-                        $video,
+                        &$video,
+                        &$previousObjectId,
                         $tagManager,
                         $tagNames,
                         $entityManager,
-                    ): bool {
+                    ): string {
                         if (VideoSourceType::File !== $sourceType) {
                             $sourceLock->lock($connection, [$values['source_url']]);
+                        }
+
+                        if (!$isNew) {
+                            if (!$video instanceof Video) {
+                                return 'missing_video';
+                            }
+
+                            $currentVideo = $videos->findByIdForUpdate($video->getId());
+                            if (!$currentVideo instanceof Video) {
+                                return 'missing_video';
+                            }
+
+                            $video = $currentVideo;
+                        }
+
+                        if (VideoSourceType::File !== $sourceType) {
                             $existingVideo = $videos->findBySourceUrl($values['source_url']);
                             if (null !== $existingVideo && $existingVideo->getId() !== $video->getId()) {
-                                return false;
+                                return 'duplicate_source';
                             }
                         }
 
+                        if (VideoSourceType::File === $sourceType
+                            && null === $uploadedMedia
+                            && null === $video->getUploadedObjectId()
+                        ) {
+                            return 'missing_media';
+                        }
+
+                        if (!$status instanceof PublishingStatus) {
+                            return 'invalid_status';
+                        }
+
+                        $previousObjectId = $video->getUploadedObjectId();
+                        $video->revise(
+                            $values['title'],
+                            $values['description'],
+                            '' === $values['category'] ? null : $values['category'],
+                            $sourceType,
+                            $values['source_url'],
+                            $status,
+                            $values['featured'],
+                            $values['comments_enabled'],
+                        );
+                        $video->setDurationSeconds($durationSeconds);
+                        $video->replaceCustomFields($values['custom_fields']);
+                        $video->setEmbedAllowedOrigins(
+                            PublishingStatus::Published === $status ? $embedOrigins : [],
+                        );
+                        if (null !== $uploadedMedia) {
+                            $video->attachUploadedMedia(
+                                $uploadedMedia['object_id'],
+                                $uploadedMedia['mime_type'],
+                                $uploadedMedia['size'],
+                            );
+                        }
                         $video->replaceTags($tagManager->resolve($tagNames));
                         $entityManager->persist($video);
                         $entityManager->flush();
 
-                        return true;
+                        return 'saved';
                     });
                 } catch (\Throwable $exception) {
                     if (null !== $uploadedMedia) {
@@ -781,8 +815,22 @@ final class VideoAdminController extends AbstractController
                     throw $exception;
                 }
 
-                if (!$saved) {
-                    $errors[] = 'Diese Videoquelle ist bereits vorhanden.';
+                if ('saved' !== $saveResult) {
+                    if (null !== $uploadedMedia) {
+                        try {
+                            $mediaUploads->delete($uploadedMedia['object_id']);
+                        } catch (PrivateStorageOperationFailed|\InvalidArgumentException) {
+                            $this->addFlash('warning', 'Ein abgelehnter privater Upload konnte nicht bereinigt werden.');
+                        }
+                    }
+
+                    $errors[] = match ($saveResult) {
+                        'duplicate_source' => 'Diese Videoquelle ist bereits vorhanden.',
+                        'missing_media' => 'Für einen Datei-Upload ist weiterhin eine geprüfte Mediendatei erforderlich.',
+                        'missing_video' => 'Das Video wurde zwischenzeitlich entfernt. Bitte lade die Seite neu.',
+                        'invalid_status' => 'Bitte wähle einen gültigen Veröffentlichungsstatus.',
+                        default => 'Das Video konnte nicht sicher gespeichert werden.',
+                    };
                 } else {
                     $mediaCleanupFailed = false;
                     if (null !== $previousObjectId && $previousObjectId !== $video->getUploadedObjectId()) {
