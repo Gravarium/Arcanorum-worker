@@ -25,6 +25,7 @@ use App\Service\ContentTagManager;
 use App\Service\RichTextSanitizer;
 use App\Service\SiteSettingsProvider;
 use App\Service\VideoThumbnailUploadService;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
@@ -530,6 +531,7 @@ final class NewsAdminController extends AbstractController
                     throw $this->createAccessDeniedException();
                 }
 
+                $originalArticleId = $article?->getId();
                 try {
                     $entityManager->getConnection()->transactional(function () use ($entityManager, &$article, $articles, $tagManager, $tagNames, $values, $slug, $status, $publicationAt, $revisions, $editor, $storedThumbnail, $removeThumbnail, $inlineImageIds, $inlineImageManager): void {
                         if (null !== $article) {
@@ -586,15 +588,37 @@ final class NewsAdminController extends AbstractController
                         $entityManager->flush();
                     });
                 } catch (\Throwable $exception) {
+                    $entityManagerOpen = $entityManager->isOpen();
+                    $articleRemoved = false;
+                    if ($entityManagerOpen) {
+                        $entityManager->clear();
+                        $article = null === $originalArticleId ? null : $articles->find($originalArticleId);
+                        $articleRemoved = null !== $originalArticleId && !$article instanceof NewsArticle;
+                    }
+
                     if (null !== $storedThumbnail) {
                         self::cleanupUploadedThumbnail($storedThumbnail['object_id'], $this->thumbnailUploads, $this->deletionJobs, $entityManager, $this->logger);
                     }
 
-                    throw $exception;
-                }
-                $this->addFlash('success', 'News-Beitrag wurde gespeichert.');
+                    if ($articleRemoved) {
+                        throw $this->createNotFoundException('News-Beitrag wurde zwischenzeitlich entfernt.');
+                    }
 
-                return $this->redirectToRoute('admin_news_index');
+                    if (!$entityManagerOpen
+                        || !$exception instanceof UniqueConstraintViolationException
+                        || !str_contains($exception->getMessage(), 'uniq_news_articles_slug')
+                    ) {
+                        throw $exception;
+                    }
+
+                    $errors[] = 'Für diesen Permalink gibt es bereits einen Beitrag.';
+                }
+
+                if ([] === $errors) {
+                    $this->addFlash('success', 'News-Beitrag wurde gespeichert.');
+
+                    return $this->redirectToRoute('admin_news_index');
+                }
             }
         }
 

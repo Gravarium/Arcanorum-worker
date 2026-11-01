@@ -24,6 +24,7 @@ use App\Repository\NewsArticleRevisionRepository;
 use App\Repository\StaticPageRepository;
 use App\Service\SiteSettingsManager;
 use App\Service\SiteSettingsProvider;
+use App\Service\VideoThumbnailUploadService;
 use App\Tests\Support\VerifiedRuntimeAttestationReportProvider;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -54,6 +55,146 @@ final class NewsArticleHistoryFlowTest extends WebTestCase
         $client->request('GET', '/admin/news/'.str_repeat('a', 32).'/history');
 
         self::assertResponseRedirects('/admin/login');
+    }
+
+    public function testNewsEditReportsConcurrentSlugClaimAndCleansUploadedThumbnail(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $client->getContainer()->set(
+            RuntimeAttestationReportProviderInterface::class,
+            new VerifiedRuntimeAttestationReportProvider(),
+        );
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        $connection = $entityManager->getConnection();
+
+        $suffix = bin2hex(random_bytes(8));
+        $email = 'news-slug-race-'.$suffix.'@example.test';
+        $password = 'NewsSlugRace-'.$suffix.'-G4!';
+        $currentSlug = 'news-current-'.$suffix;
+        $initialOtherSlug = 'news-other-'.$suffix;
+        $claimedSlug = 'news-claimed-'.$suffix;
+        $article = new NewsArticle(
+            'News slug race '.$suffix,
+            $currentSlug,
+            null,
+            null,
+            'Existing article content.',
+            PublishingStatus::Draft,
+            false,
+            true,
+            'Redaktion',
+            false,
+        );
+        $otherArticle = new NewsArticle(
+            'Concurrent news slug claimant '.$suffix,
+            $initialOtherSlug,
+            null,
+            null,
+            'Another article content.',
+            PublishingStatus::Draft,
+            false,
+            true,
+            'Redaktion',
+            false,
+        );
+        $png = $this->createPng();
+        $temporaryPath = tempnam(sys_get_temp_dir(), 'arcanorum-news-slug-race-');
+        self::assertIsString($temporaryPath);
+        self::assertSame(strlen($png), file_put_contents($temporaryPath, $png));
+        $storedObjectId = null;
+        $storage = $this->createMock(PrivateObjectStorageInterface::class);
+        $storage->expects(self::once())->method('write')->willReturnCallback(
+            static function (string $objectId, string $contents) use (
+                &$storedObjectId,
+                $png,
+                $connection,
+                $otherArticle,
+                $claimedSlug,
+            ): void {
+                self::assertMatchesRegularExpression('/\A[a-f0-9]{64}\z/D', $objectId);
+                self::assertSame($png, $contents);
+                $storedObjectId = $objectId;
+                self::assertSame(1, $connection->executeStatement(
+                    'UPDATE news_articles SET slug = :slug WHERE id = :id',
+                    ['slug' => $claimedSlug, 'id' => $otherArticle->getId()],
+                ));
+            },
+        );
+        $storage->expects(self::once())->method('delete')->willReturnCallback(
+            static function (string $objectId) use (&$storedObjectId): void {
+                self::assertIsString($storedObjectId);
+                self::assertSame($storedObjectId, $objectId);
+            },
+        );
+        $client->getContainer()->set(PrivateObjectStorageInterface::class, $storage);
+        $client->getContainer()->set(VideoThumbnailUploadService::class, new VideoThumbnailUploadService($storage));
+
+        $admin = new AdminUser($email);
+        $admin->setRoles([AdminRole::Administrator->value]);
+        $hasher = $client->getContainer()->get(UserPasswordHasherInterface::class);
+        self::assertInstanceOf(UserPasswordHasherInterface::class, $hasher);
+        $admin->setPassword($hasher->hashPassword($admin, $password));
+        $provisioner = $client->getContainer()->get(AdminMfaProvisioningService::class);
+        self::assertInstanceOf(AdminMfaProvisioningService::class, $provisioner);
+        $provisioner->provision($admin);
+        $entityManager->persist($admin);
+        $entityManager->persist($article);
+        $entityManager->persist($otherArticle);
+        $entityManager->flush();
+
+        try {
+            $this->submitLogin($client, $admin, $password);
+            $editPath = '/admin/news/'.$article->getId().'/edit';
+            $client->request('GET', $editPath);
+            self::assertResponseIsSuccessful();
+            $token = (string) $client->getCrawler()->filter('form.admin-form input[name="_token"]')->attr('value');
+            self::assertNotSame('', $token);
+
+            $client->request(
+                'POST',
+                $editPath,
+                [
+                    '_token' => $token,
+                    'title' => 'Updated news slug race '.$suffix,
+                    'slug' => $claimedSlug,
+                    'author_name' => 'Redaktion',
+                    'category' => '',
+                    'tags' => '',
+                    'summary' => '',
+                    'body' => 'Updated article content.',
+                    'status' => 'draft',
+                    'publish_at' => '',
+                    'comments_enabled' => '1',
+                    'custom_fields_present' => '1',
+                ],
+                ['thumbnail' => new UploadedFile($temporaryPath, 'news.png', 'image/png', null, true)],
+            );
+
+            self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+            self::assertSelectorTextContains('body', 'Für diesen Permalink gibt es bereits einen Beitrag.');
+            self::assertStringNotContainsString('uniq_news_articles_slug', (string) $client->getResponse()->getContent());
+            $storedArticle = $connection->fetchAssociative(
+                'SELECT title, slug, thumbnail_object_id FROM news_articles WHERE id = :id',
+                ['id' => $article->getId()],
+            );
+            self::assertIsArray($storedArticle);
+            self::assertSame('News slug race '.$suffix, $storedArticle['title']);
+            self::assertSame($currentSlug, $storedArticle['slug']);
+            self::assertNull($storedArticle['thumbnail_object_id']);
+            self::assertSame($claimedSlug, $connection->fetchOne(
+                'SELECT slug FROM news_articles WHERE id = :id',
+                ['id' => $otherArticle->getId()],
+            ));
+        } finally {
+            $connection->executeStatement('DELETE FROM news_articles WHERE id = :id', ['id' => $article->getId()]);
+            $connection->executeStatement('DELETE FROM news_articles WHERE id = :id', ['id' => $otherArticle->getId()]);
+            $connection->executeStatement('DELETE FROM admin_users WHERE id = :id', ['id' => $admin->getId()]);
+            if (is_file($temporaryPath)) {
+                unlink($temporaryPath);
+            }
+        }
     }
 
     public function testAdministratorCreatesVersionedNewsWithEscapedAuthorAndPrivateHistory(): void

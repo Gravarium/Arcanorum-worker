@@ -28,6 +28,7 @@ on:
           - video-thumbnail-concurrency-followup
           - private-artwork-concurrency-followup
           - site-logo-concurrency-followup
+          - admin-content-concurrency-followup
           - video-social-preview-cache-followup
           - public-media-cache-followup
           - auto-feature-threshold-followup
@@ -2042,8 +2043,8 @@ jobs:
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
 
   validate-video-thumbnail-concurrency:
-    if: github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'video-thumbnail-concurrency-followup'
-    name: Focused video private media concurrency checks
+    if: github.event_name == 'workflow_dispatch' && (inputs.validation_scope == 'video-thumbnail-concurrency-followup' || inputs.validation_scope == 'admin-content-concurrency-followup')
+    name: Focused admin content concurrency checks
     runs-on: ubuntu-26.04
     timeout-minutes: 45
     permissions:
@@ -2181,6 +2182,8 @@ jobs:
           php -l src/Repository/VideoRepository.php
           php -l src/Service/VideoMediaUploadService.php
           php -l tests/Controller/AdminVideoThumbnailFlowTest.php
+          php -l src/Module/News/Controller/NewsAdminController.php
+          php -l tests/Controller/NewsArticleHistoryFlowTest.php
 
       - name: Prepare PostgreSQL schema and validate Doctrine mapping
         run: |
@@ -2199,6 +2202,8 @@ jobs:
           src/Repository/VideoRepository.php
           src/Service/VideoMediaUploadService.php
           tests/Controller/AdminVideoThumbnailFlowTest.php
+          src/Module/News/Controller/NewsAdminController.php
+          tests/Controller/NewsArticleHistoryFlowTest.php
 
       - name: PHP CS Fixer on affected PHP files
         run: >-
@@ -2211,6 +2216,8 @@ jobs:
           src/Repository/VideoRepository.php
           src/Service/VideoMediaUploadService.php
           tests/Controller/AdminVideoThumbnailFlowTest.php
+          src/Module/News/Controller/NewsAdminController.php
+          tests/Controller/NewsArticleHistoryFlowTest.php
 
       - name: Rector dry run on affected PHP files
         run: >-
@@ -2220,6 +2227,8 @@ jobs:
           src/Repository/VideoRepository.php
           src/Service/VideoMediaUploadService.php
           tests/Controller/AdminVideoThumbnailFlowTest.php
+          src/Module/News/Controller/NewsAdminController.php
+          tests/Controller/NewsArticleHistoryFlowTest.php
           --config=rector.php
           --dry-run
           --no-progress-bar
@@ -2229,15 +2238,16 @@ jobs:
           mkdir -p var/test-results
           vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm.sarif
 
-      - name: Run video media concurrency regressions
+      - name: Run admin content concurrency regressions
         run: |
           mkdir -p var/test-results
           php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
             --fail-on-risky --fail-on-warning --fail-on-deprecation \
             --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
             --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
-            --filter='testThumbnailUploadLocksCurrentVideoStateBeforeReplacingThumbnail|testAdminVideoEditLocksCurrentPrivateMediaBeforeReplacement|testAdminCanUploadPreviewAndRemoveVideoThumbnail|testAdministratorCanImportAValidatedProviderThumbnailForAnExistingVideo|testProviderImportDiscardsThumbnailWhenVideoSourceChangesDuringFetch' \
+            --filter='testThumbnailUploadLocksCurrentVideoStateBeforeReplacingThumbnail|testAdminVideoEditLocksCurrentPrivateMediaBeforeReplacement|testAdminCanUploadPreviewAndRemoveVideoThumbnail|testAdministratorCanImportAValidatedProviderThumbnailForAnExistingVideo|testProviderImportDiscardsThumbnailWhenVideoSourceChangesDuringFetch|testNewsEditReportsConcurrentSlugClaimAndCleansUploadedThumbnail' \
             tests/Controller/AdminVideoThumbnailFlowTest.php \
+            tests/Controller/NewsArticleHistoryFlowTest.php \
             tests/Controller/AdminDashboardTest.php
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
 
