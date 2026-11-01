@@ -1766,12 +1766,17 @@ jobs:
       - name: Verify exact source commit and exclude credentials
         shell: bash
         env:
-          EXPECTED_SOURCE_SHA: 'c96df1383aa1377bba3cf7ac3016a4ea5eb3742c'
+          EXPECTED_SOURCE_SHA: ${{ inputs.source_commit }}
         run: |
           set -euo pipefail
+          if [[ ! "$EXPECTED_SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo 'The source commit must be a full lowercase Git SHA.' >&2
+            exit 1
+          fi
           printf '%s\n' "$EXPECTED_SOURCE_SHA" | cmp -s - SOURCE_BASE_SHA
           python3 - <<'PY'
           from pathlib import Path
+          from hashlib import sha256
           import re
 
           root = Path('.')
@@ -1805,6 +1810,29 @@ jobs:
                   print(f'Credential pattern {name} in {relative}')
               raise SystemExit('Snapshot security check failed.')
           print('Snapshot check passed: no forbidden files or high-confidence credential patterns.')
+
+          manifest_path = root / 'SOURCE_MANIFEST.sha256'
+          if not manifest_path.is_file() or manifest_path.is_symlink():
+              raise SystemExit('The source manifest is missing or unsafe.')
+          manifest = {}
+          for line in manifest_path.read_text(encoding='utf-8').splitlines():
+              digest, separator, relative = line.partition('  ')
+              path = Path(relative)
+              if (not separator or not re.fullmatch(r'[a-f0-9]{64}', digest)
+                      or not relative or path.is_absolute() or '..' in path.parts
+                      or relative in manifest):
+                  raise SystemExit('The source manifest contains an invalid entry.')
+              manifest[relative] = digest
+
+          actual = {}
+          for path in root.rglob('*'):
+              if path.is_symlink():
+                  raise SystemExit('The source snapshot contains a symbolic link.')
+              if path.is_file() and path.name not in {'SOURCE_BASE_SHA', 'SOURCE_MANIFEST.sha256'}:
+                  actual[path.relative_to(root).as_posix()] = sha256(path.read_bytes()).hexdigest()
+          if actual != manifest:
+              raise SystemExit('The source snapshot does not match its complete file manifest.')
+          print(f'Source manifest passed: {len(actual)} files match.')
           PY
 
       - name: Set up PHP 8.5 and extensions
@@ -1831,6 +1859,7 @@ jobs:
             migrations/Version20261030230000.php \
             src/Entity/Video.php \
             src/Module/Video/Controller/VideoAdminController.php \
+            src/Repository/VideoRepository.php \
           src/Service/VideoCsvImportParser.php \
             tests/Controller/AdminDashboardTest.php \
             tests/Entity/VideoExternalSourceStatusTest.php \
@@ -1861,6 +1890,7 @@ jobs:
           migrations/Version20261030230000.php
           src/Entity/Video.php
           src/Module/Video/Controller/VideoAdminController.php
+          src/Repository/VideoRepository.php
           tests/Controller/AdminDashboardTest.php
           tests/Entity/VideoExternalSourceStatusTest.php
           tests/Module/Automation/Application/VideoSourceCheckTaskHandlerTest.php
@@ -1874,6 +1904,7 @@ jobs:
           migrations/Version20261030230000.php
           src/Entity/Video.php
           src/Module/Video/Controller/VideoAdminController.php
+          src/Repository/VideoRepository.php
           tests/Controller/AdminDashboardTest.php
           tests/Entity/VideoExternalSourceStatusTest.php
           tests/Module/Automation/Application/VideoSourceCheckTaskHandlerTest.php
@@ -1884,6 +1915,7 @@ jobs:
           migrations/Version20261030230000.php
           src/Entity/Video.php
           src/Module/Video/Controller/VideoAdminController.php
+          src/Repository/VideoRepository.php
           tests/Controller/AdminDashboardTest.php
           tests/Entity/VideoExternalSourceStatusTest.php
           tests/Module/Automation/Application/VideoSourceCheckTaskHandlerTest.php
@@ -1898,6 +1930,7 @@ jobs:
             migrations/Version20261030230000.php \
             src/Entity/Video.php \
             src/Module/Video/Controller/VideoAdminController.php \
+            src/Repository/VideoRepository.php \
           src/Service/VideoCsvImportParser.php \
             tests/Controller/AdminDashboardTest.php \
           tests/Service/VideoCsvImportParserTest.php \
