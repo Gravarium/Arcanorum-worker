@@ -9,6 +9,7 @@ use App\Entity\ContentCategoryType;
 use App\Platform\Hosting\PrivateStorageOperationFailed;
 use App\Repository\ContentCategoryRepository;
 use App\Repository\ContentInlineImageRepository;
+use App\Service\ContentCategoryIdentityLock;
 use App\Service\ContentInlineImageManager;
 use App\Service\RichTextSanitizer;
 use App\Service\VideoCategoryArtworkManager;
@@ -60,6 +61,7 @@ final class ContentCategoryAdminController extends AbstractController
         ContentCategoryRepository $categories,
         RichTextSanitizer $richText,
         EntityManagerInterface $entityManager,
+        ContentCategoryIdentityLock $identityLock,
     ): Response {
         $rawQueryType = self::input($request->query, 'type');
         $queryType = ContentCategoryType::tryFrom($rawQueryType);
@@ -163,11 +165,31 @@ final class ContentCategoryAdminController extends AbstractController
                     self::optionalText($values['meta_keywords']),
                     $sortOrder,
                 );
-                $entityManager->persist($category);
-                $entityManager->flush();
-                $this->addFlash('success', 'Kategorie wurde angelegt.');
+                $conflict = $entityManager->getConnection()->transactional(function () use ($entityManager, $category, $categories, $identityLock, $type, $values, $slug): ?string {
+                    $identityLock->lock($entityManager->getConnection(), $type, $values['name'], $slug);
 
-                return $this->redirectToRoute('admin_category_index', ['type' => $type->value]);
+                    if (null !== $categories->findForTypeAndName($type, $values['name'])) {
+                        return 'name';
+                    }
+                    if (null !== $categories->findForTypeAndSlug($type, $slug)) {
+                        return 'slug';
+                    }
+
+                    $entityManager->persist($category);
+                    $entityManager->flush();
+
+                    return null;
+                });
+
+                if (null === $conflict) {
+                    $this->addFlash('success', 'Kategorie wurde angelegt.');
+
+                    return $this->redirectToRoute('admin_category_index', ['type' => $type->value]);
+                }
+
+                $errors[] = 'name' === $conflict
+                    ? 'Diese Kategorie gibt es in diesem Inhaltsbereich bereits.'
+                    : 'Dieser Kategorien-Slug wird in diesem Inhaltsbereich bereits verwendet.';
             }
         }
 
@@ -201,6 +223,7 @@ final class ContentCategoryAdminController extends AbstractController
         EntityManagerInterface $entityManager,
         RichTextSanitizer $richText,
         TranslatorInterface $translator,
+        ContentCategoryIdentityLock $identityLock,
     ): Response {
         $category = $categories->find($id);
         if (!$category instanceof ContentCategory) {
@@ -284,13 +307,22 @@ final class ContentCategoryAdminController extends AbstractController
             }
 
             if ([] === $errors && null !== $sortOrder) {
-                $saved = $entityManager->getConnection()->transactional(function () use ($category, $name, $slug, $values, $sortOrder, $parent, $categories, $inlineImages, $entityManager, $imageManager, $inlineImageIds): bool {
+                $conflict = $entityManager->getConnection()->transactional(function () use ($category, $name, $slug, $values, $sortOrder, $parent, $categories, $inlineImages, $entityManager, $imageManager, $inlineImageIds, $identityLock): ?string {
+                    $identityLock->lock($entityManager->getConnection(), $category->getContentType(), $name, $slug);
                     $lockedCategory = $categories->findForUpdate($category->getId());
                     if (!$lockedCategory instanceof ContentCategory) {
                         throw new \RuntimeException('Die Kategorie wurde während der Bearbeitung entfernt.');
                     }
+                    $existingName = $categories->findForTypeAndName($lockedCategory->getContentType(), $name);
+                    if (null !== $existingName && $existingName->getId() !== $lockedCategory->getId()) {
+                        return 'name';
+                    }
+                    $existingSlug = $categories->findForTypeAndSlug($lockedCategory->getContentType(), $slug);
+                    if (null !== $existingSlug && $existingSlug->getId() !== $lockedCategory->getId()) {
+                        return 'slug';
+                    }
                     if (!$inlineImages->allBelongToCategory($lockedCategory->getId(), $inlineImageIds)) {
-                        return false;
+                        return 'inline-image';
                     }
                     if ($name !== $lockedCategory->getName()) {
                         $categories->renameAssignedContent($lockedCategory, $name);
@@ -309,11 +341,15 @@ final class ContentCategoryAdminController extends AbstractController
                     $imageManager->removeUnusedCategoryImages($lockedCategory, $inlineImageIds);
                     $entityManager->flush();
 
-                    return true;
+                    return null;
                 });
 
-                if (!$saved) {
+                if ('inline-image' === $conflict) {
                     $errors[] = 'Die Beschreibung darf nur Inline-Bilder dieser Kategorie verwenden.';
+                } elseif (null !== $conflict) {
+                    $errors[] = 'name' === $conflict
+                        ? 'Diese Kategorie gibt es in diesem Inhaltsbereich bereits.'
+                        : 'Dieser Kategorien-Slug wird in diesem Inhaltsbereich bereits verwendet.';
                 } else {
                     $this->addFlash('success', 'Kategorie wurde gespeichert.');
 

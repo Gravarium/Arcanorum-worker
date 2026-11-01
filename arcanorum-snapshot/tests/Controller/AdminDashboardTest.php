@@ -5049,6 +5049,7 @@ final class AdminDashboardTest extends WebTestCase
         );
         $suffix = bin2hex(random_bytes(6));
         $categoryName = 'Category admin '.$suffix;
+        $originalCategoryName = $categoryName;
         $parentCategoryName = 'Parent category '.$suffix;
         $categorySlug = 'category-admin-'.$suffix;
         $categoryFields = [
@@ -5130,6 +5131,22 @@ final class AdminDashboardTest extends WebTestCase
             $createdParentAfterInvalidUpdate = $createdCategory->getParent();
             self::assertNotNull($createdParentAfterInvalidUpdate);
             self::assertSame($parentCategory->getId(), $createdParentAfterInvalidUpdate->getId());
+
+            $categoryName = 'Category admin renamed '.$suffix;
+            $categorySlug = 'category-admin-renamed-'.$suffix;
+            $categoryFields['name'] = $categoryName;
+            $categoryFields['slug'] = $categorySlug;
+            $client->request('GET', '/admin/categories/'.$createdCategory->getId().'/edit');
+            self::assertResponseIsSuccessful();
+            $editToken = (string) $client->getCrawler()->filter('input[name="_token"]')->attr('value');
+            $client->request('POST', '/admin/categories/'.$createdCategory->getId().'/edit', [
+                '_token' => $editToken,
+            ] + $categoryFields);
+            self::assertResponseRedirects('/admin/categories?type=news');
+            self::assertSame(1, $this->integer($entityManager->getConnection()->fetchOne(
+                'SELECT COUNT(*) FROM content_categories WHERE id = :id AND name = :name AND slug = :slug',
+                ['id' => $createdCategory->getId(), 'name' => $categoryName, 'slug' => $categorySlug],
+            )));
 
             $client->request('GET', '/admin/categories/new?type=news');
             self::assertResponseIsSuccessful();
@@ -5231,8 +5248,8 @@ final class AdminDashboardTest extends WebTestCase
                 $connection->delete('news_articles', ['id' => $usedArticle->getId()]);
             }
             $connection->executeStatement(
-                'DELETE FROM content_categories WHERE name = :name',
-                ['name' => $categoryName],
+                'DELETE FROM content_categories WHERE name IN (:current_name, :original_name)',
+                ['current_name' => $categoryName, 'original_name' => $originalCategoryName],
             );
             $connection->executeStatement(
                 'DELETE FROM content_categories WHERE name = :name',

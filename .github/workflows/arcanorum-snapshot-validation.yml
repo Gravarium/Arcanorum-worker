@@ -2189,6 +2189,10 @@ jobs:
           php -l src/Module/Page/Controller/PageAdminController.php
           php -l src/Service/StaticPageSlugLock.php
           php -l tests/Service/StaticPageSlugLockTest.php
+          php -l src/Module/Category/Controller/ContentCategoryAdminController.php
+          php -l src/Service/ContentCategoryIdentityLock.php
+          php -l tests/Service/ContentCategoryIdentityLockTest.php
+          php -l tests/Controller/AdminDashboardTest.php
 
       - name: Prepare PostgreSQL schema and validate Doctrine mapping
         run: |
@@ -2214,6 +2218,10 @@ jobs:
           src/Module/Page/Controller/PageAdminController.php
           src/Service/StaticPageSlugLock.php
           tests/Service/StaticPageSlugLockTest.php
+          src/Module/Category/Controller/ContentCategoryAdminController.php
+          src/Service/ContentCategoryIdentityLock.php
+          tests/Service/ContentCategoryIdentityLockTest.php
+          tests/Controller/AdminDashboardTest.php
 
       - name: PHP CS Fixer on affected PHP files
         run: >-
@@ -2233,6 +2241,10 @@ jobs:
           src/Module/Page/Controller/PageAdminController.php
           src/Service/StaticPageSlugLock.php
           tests/Service/StaticPageSlugLockTest.php
+          src/Module/Category/Controller/ContentCategoryAdminController.php
+          src/Service/ContentCategoryIdentityLock.php
+          tests/Service/ContentCategoryIdentityLockTest.php
+          tests/Controller/AdminDashboardTest.php
 
       - name: Rector dry run on affected PHP files
         run: >-
@@ -2249,6 +2261,10 @@ jobs:
           src/Module/Page/Controller/PageAdminController.php
           src/Service/StaticPageSlugLock.php
           tests/Service/StaticPageSlugLockTest.php
+          src/Module/Category/Controller/ContentCategoryAdminController.php
+          src/Service/ContentCategoryIdentityLock.php
+          tests/Service/ContentCategoryIdentityLockTest.php
+          tests/Controller/AdminDashboardTest.php
           --config=rector.php
           --dry-run
           --no-progress-bar
@@ -2265,11 +2281,12 @@ jobs:
             --fail-on-risky --fail-on-warning --fail-on-deprecation \
             --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
             --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
-            --filter='testThumbnailUploadLocksCurrentVideoStateBeforeReplacingThumbnail|testAdminVideoEditLocksCurrentPrivateMediaBeforeReplacement|testAdminCanUploadPreviewAndRemoveVideoThumbnail|testAdministratorCanImportAValidatedProviderThumbnailForAnExistingVideo|testProviderImportDiscardsThumbnailWhenVideoSourceChangesDuringFetch|testNewsEditReportsConcurrentSlugClaimAndCleansUploadedThumbnail|testSlugLockIsHeldUntilTransactionCommits|testSlugLocksRequireTransactionAndRejectMalformedSlugs|testMalformedSlugIsRejectedBeforeLockAcquisition|testStaticPageSlugLockIsHeldUntilTransactionCommits|testStaticPageSlugLockRequiresTransaction|testMalformedStaticPageSlugIsRejectedBeforeLockAcquisition|testAdministratorCreatesVersionedNewsWithEscapedAuthorAndPrivateHistory' \
+            --filter='testThumbnailUploadLocksCurrentVideoStateBeforeReplacingThumbnail|testAdminVideoEditLocksCurrentPrivateMediaBeforeReplacement|testAdminCanUploadPreviewAndRemoveVideoThumbnail|testAdministratorCanImportAValidatedProviderThumbnailForAnExistingVideo|testProviderImportDiscardsThumbnailWhenVideoSourceChangesDuringFetch|testNewsEditReportsConcurrentSlugClaimAndCleansUploadedThumbnail|testSlugLockIsHeldUntilTransactionCommits|testSlugLocksRequireTransactionAndRejectMalformedSlugs|testMalformedSlugIsRejectedBeforeLockAcquisition|testStaticPageSlugLockIsHeldUntilTransactionCommits|testStaticPageSlugLockRequiresTransaction|testMalformedStaticPageSlugIsRejectedBeforeLockAcquisition|testLocksNormalizedNameAndSlugWithinTheirContentTypeUntilCommit|testIdentityLocksRequireAnActiveTransaction|testIdentityLockRejectsInvalidNamesAndSlugs|testAdminCanCreateCategoryAndDuplicateNamesAreRejected|testAdministratorCreatesVersionedNewsWithEscapedAuthorAndPrivateHistory' \
             tests/Controller/AdminVideoThumbnailFlowTest.php \
             tests/Controller/NewsArticleHistoryFlowTest.php \
             tests/Service/NewsArticleSlugLockTest.php \
             tests/Service/StaticPageSlugLockTest.php \
+            tests/Service/ContentCategoryIdentityLockTest.php \
             tests/Controller/AdminDashboardTest.php
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
 
