@@ -1143,7 +1143,7 @@ final class AdminGeneralSettingsTest extends WebTestCase
                 $objectContents = $storedContents;
             },
         );
-        $storage->expects(self::exactly(3))->method('read')->willReturnCallback(
+        $storage->expects(self::exactly(4))->method('read')->willReturnCallback(
             static function (string $requestedId, int $maximumBytes) use (&$objectId, &$objectContents, $contents): string {
                 self::assertSame($objectId, $requestedId);
                 self::assertIsString($objectContents);
@@ -1217,6 +1217,11 @@ final class AdminGeneralSettingsTest extends WebTestCase
             $client->request('GET', '/_assets/player-watermark/'.$storedHash, server: ['HTTP_IF_NONE_MATCH' => $publicEtag]);
             self::assertResponseStatusCodeSame(Response::HTTP_NOT_MODIFIED);
             self::assertSame('', $client->getResponse()->getContent());
+
+            $objectContents = 'corrupt image bytes';
+            $client->request('GET', '/_assets/player-watermark/'.$storedHash, server: ['HTTP_IF_NONE_MATCH' => $publicEtag]);
+            self::assertResponseStatusCodeSame(Response::HTTP_SERVICE_UNAVAILABLE);
+            self::assertTrue($client->getResponse()->headers->getCacheControlDirective('no-store'));
 
             $client->request('POST', '/admin/settings/content/watermark/remove', ['_token' => $token]);
             self::assertResponseRedirects('/admin/settings/content');

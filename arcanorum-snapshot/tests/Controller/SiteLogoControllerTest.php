@@ -79,7 +79,7 @@ final class SiteLogoControllerTest extends WebTestCase
         $this->flush($client);
 
         try {
-            $client->request('GET', '/site-logo/'.$sha256);
+            $client->request('GET', '/site-logo/'.$sha256, server: ['HTTP_IF_NONE_MATCH' => '"'.$sha256.'"']);
 
             self::assertResponseStatusCodeSame(503);
             $cacheControl = (string) $client->getResponse()->headers->get('Cache-Control');
