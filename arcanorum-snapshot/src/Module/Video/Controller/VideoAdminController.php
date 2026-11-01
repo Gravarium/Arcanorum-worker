@@ -821,7 +821,7 @@ final class VideoAdminController extends AbstractController
                         'missing_media' => 'Für einen Datei-Upload ist weiterhin eine geprüfte Mediendatei erforderlich.',
                         'missing_video' => 'Das Video wurde zwischenzeitlich entfernt. Bitte lade die Seite neu.',
                     ];
-                    $errors[] = $errorMessages[$saveResult] ?? 'Das Video konnte nicht sicher gespeichert werden.';
+                    $errors[] = $errorMessages[$saveResult];
                 } else {
                     $mediaCleanupFailed = false;
                     if (null !== $previousObjectId && $previousObjectId !== $video->getUploadedObjectId()) {
