@@ -3978,7 +3978,26 @@ final class AdminDashboardTest extends WebTestCase
             self::assertSame('video/mp4', $client->getResponse()->headers->get('Content-Type'));
             self::assertSame('same-origin', $client->getResponse()->headers->get('Cross-Origin-Resource-Policy'));
             self::assertSame('nosniff', $client->getResponse()->headers->get('X-Content-Type-Options'));
+            $mediaCacheControl = (string) $client->getResponse()->headers->get('Cache-Control');
+            self::assertStringContainsString('public', $mediaCacheControl);
+            self::assertStringContainsString('max-age=0', $mediaCacheControl);
+            self::assertStringContainsString('must-revalidate', $mediaCacheControl);
+            $mediaEtag = (string) $client->getResponse()->headers->get('ETag');
+            self::assertNotSame('', $mediaEtag);
             self::assertSame($videoBytes, $client->getResponse()->getContent());
+
+            $client->request('GET', '/videos/'.$uploadedVideoId.'/media', server: ['HTTP_IF_NONE_MATCH' => $mediaEtag]);
+            self::assertResponseStatusCodeSame(Response::HTTP_NOT_MODIFIED);
+            self::assertSame('', $client->getResponse()->getContent());
+
+            $uploadedVideoEntity = $entityManager->getRepository(Video::class)->find($uploadedVideoId);
+            self::assertInstanceOf(Video::class, $uploadedVideoEntity);
+            $uploadedVideoEntity->setPublishingStatus(PublishingStatus::Draft);
+            $entityManager->flush();
+            $client->request('GET', '/videos/'.$uploadedVideoId.'/media', server: ['HTTP_IF_NONE_MATCH' => $mediaEtag]);
+            self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+            $uploadedVideoEntity->setPublishingStatus(PublishingStatus::Published);
+            $entityManager->flush();
 
             $client->request('GET', '/videos/'.$uploadedVideoId.'/media', [], [], ['HTTP_RANGE' => 'bytes=2-5']);
             self::assertResponseStatusCodeSame(Response::HTTP_PARTIAL_CONTENT);

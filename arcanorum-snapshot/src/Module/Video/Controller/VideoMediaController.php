@@ -86,7 +86,7 @@ final class VideoMediaController extends AbstractController
 
         $headers = [
             'Accept-Ranges' => 'bytes',
-            'Cache-Control' => 'public, max-age=300',
+            'Cache-Control' => 'public, max-age=0, must-revalidate',
             'Content-Disposition' => 'inline',
             'Content-Type' => $mimeType,
             'Cross-Origin-Resource-Policy' => 'same-origin',
@@ -102,7 +102,11 @@ final class VideoMediaController extends AbstractController
         }
         $headers['Content-Length'] = (string) strlen($body);
 
-        return new Response($body, $status, $headers);
+        $response = new Response($body, $status, $headers);
+        $response->setEtag(hash('sha256', $contents));
+        $response->isNotModified($request);
+
+        return $response;
     }
 
     /**
