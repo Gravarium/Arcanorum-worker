@@ -626,6 +626,7 @@ jobs:
             php -l src/Module/Series/Controller/SeriesArtworkController.php
             php -l src/Module/Settings/Controller/PlayerWatermarkImageController.php
             php -l src/Module/Video/Controller/VideoCategoryArtworkController.php
+            php -l src/Module/Comment/Controller/PublicEmojiHelpController.php
             php -l src/Service/ContentInlineImageReader.php
             php -l src/Module/Video/Controller/VideoSubtitleController.php
             php -l tests/Controller/AdminDesignSettingsControllerTest.php
@@ -638,6 +639,7 @@ jobs:
             php -l tests/Controller/SiteLogoControllerTest.php
             php -l tests/Controller/VideoCategoryArtworkCacheFlowTest.php
             php -l tests/Controller/VideoSubtitleCacheFlowTest.php
+            php -l tests/Controller/CommentFlowTest.php
           fi
 
       - name: Lint Symfony containers and prepare PostgreSQL schema
@@ -662,6 +664,7 @@ jobs:
               src/Module/Series/Controller/SeriesArtworkController.php \
               src/Module/Settings/Controller/PlayerWatermarkImageController.php \
               src/Module/Video/Controller/VideoCategoryArtworkController.php \
+              src/Module/Comment/Controller/PublicEmojiHelpController.php \
               src/Service/ContentInlineImageReader.php \
               src/Module/Video/Controller/VideoSubtitleController.php \
               tests/Controller/AdminDesignSettingsControllerTest.php \
@@ -673,7 +676,8 @@ jobs:
               tests/Controller/SeriesArtworkCacheFlowTest.php \
               tests/Controller/SiteLogoControllerTest.php \
               tests/Controller/VideoCategoryArtworkCacheFlowTest.php \
-              tests/Controller/VideoSubtitleCacheFlowTest.php
+              tests/Controller/VideoSubtitleCacheFlowTest.php \
+              tests/Controller/CommentFlowTest.php
           fi
 
       - name: PHP CS Fixer on affected PHP files
@@ -691,6 +695,7 @@ jobs:
               src/Module/Series/Controller/SeriesArtworkController.php \
               src/Module/Settings/Controller/PlayerWatermarkImageController.php \
               src/Module/Video/Controller/VideoCategoryArtworkController.php \
+              src/Module/Comment/Controller/PublicEmojiHelpController.php \
               src/Service/ContentInlineImageReader.php \
               src/Module/Video/Controller/VideoSubtitleController.php \
               tests/Controller/AdminDesignSettingsControllerTest.php \
@@ -702,7 +707,8 @@ jobs:
               tests/Controller/SeriesArtworkCacheFlowTest.php \
               tests/Controller/SiteLogoControllerTest.php \
               tests/Controller/VideoCategoryArtworkCacheFlowTest.php \
-              tests/Controller/VideoSubtitleCacheFlowTest.php
+              tests/Controller/VideoSubtitleCacheFlowTest.php \
+              tests/Controller/CommentFlowTest.php
           fi
 
       - name: Rector dry run on affected PHP files
@@ -721,6 +727,7 @@ jobs:
               src/Module/Series/Controller/SeriesArtworkController.php \
               src/Module/Settings/Controller/PlayerWatermarkImageController.php \
               src/Module/Video/Controller/VideoCategoryArtworkController.php \
+              src/Module/Comment/Controller/PublicEmojiHelpController.php \
               src/Service/ContentInlineImageReader.php \
               src/Module/Video/Controller/VideoSubtitleController.php \
               tests/Controller/AdminDesignSettingsControllerTest.php \
@@ -733,6 +740,7 @@ jobs:
               tests/Controller/SiteLogoControllerTest.php \
               tests/Controller/VideoCategoryArtworkCacheFlowTest.php \
               tests/Controller/VideoSubtitleCacheFlowTest.php \
+              tests/Controller/CommentFlowTest.php \
               --config=rector.php --dry-run --no-progress-bar
           fi
 
@@ -752,6 +760,7 @@ jobs:
               src/Module/Series/Controller/SeriesArtworkController.php \
               src/Module/Settings/Controller/PlayerWatermarkImageController.php \
               src/Module/Video/Controller/VideoCategoryArtworkController.php \
+              src/Module/Comment/Controller/PublicEmojiHelpController.php \
               src/Service/ContentInlineImageReader.php \
               src/Module/Video/Controller/VideoSubtitleController.php \
               tests/Controller/AdminDesignSettingsControllerTest.php \
@@ -763,7 +772,8 @@ jobs:
               tests/Controller/SeriesArtworkCacheFlowTest.php \
               tests/Controller/SiteLogoControllerTest.php \
               tests/Controller/VideoCategoryArtworkCacheFlowTest.php \
-              tests/Controller/VideoSubtitleCacheFlowTest.php
+              tests/Controller/VideoSubtitleCacheFlowTest.php \
+              tests/Controller/CommentFlowTest.php
           fi
 
       - name: Run published media cache regression
@@ -780,7 +790,7 @@ jobs:
               --fail-on-risky --fail-on-warning --fail-on-deprecation \
               --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
               --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
-              --filter='testAdministratorCreatesVersionedNewsWithEscapedAuthorAndPrivateHistory|testPublicThumbnailRevalidatesBeforeServingAndAfterMembershipChange|testPublishedSubtitleRevalidatesAndIsDeniedAfterUnpublish|testPublicCategoryRichTextIsSanitizedAndOnlyOwnReferencedImagesAreOutput|testNewsEditorCanUploadOnlyNewsCategoryImagesAndUnusedImagesAreQueuedForDeletion|testOnlyPublishedSeriesAndEpisodesAppearOnPublicPages|testPublishedArtworkRevalidatesAndIsDeniedAfterUnpublish|testPublishedArtworkRejectsOutOfRangeImageBeforeMatchingEtagCanReturnNotModified|testCategoryArtworkRevalidatesAfterReplacementIsRemoved|testServesOnlyTheCurrentSanitizedLogoWithSafeHeaders|testInvalidPrivateLogoBytesFailClosed|testAdministratorCanUploadAndRemoveSanitizedLogoWithCsrfAndPrivateStorage|testAdministratorCanUploadPreviewAndRemovePrivatePlayerWatermark' \
+              --filter='testAdministratorCreatesVersionedNewsWithEscapedAuthorAndPrivateHistory|testPublicThumbnailRevalidatesBeforeServingAndAfterMembershipChange|testPublishedSubtitleRevalidatesAndIsDeniedAfterUnpublish|testPublicCategoryRichTextIsSanitizedAndOnlyOwnReferencedImagesAreOutput|testNewsEditorCanUploadOnlyNewsCategoryImagesAndUnusedImagesAreQueuedForDeletion|testOnlyPublishedSeriesAndEpisodesAppearOnPublicPages|testPublishedArtworkRevalidatesAndIsDeniedAfterUnpublish|testPublishedArtworkRejectsOutOfRangeImageBeforeMatchingEtagCanReturnNotModified|testCategoryArtworkRevalidatesAfterReplacementIsRemoved|testServesOnlyTheCurrentSanitizedLogoWithSafeHeaders|testInvalidPrivateLogoBytesFailClosed|testAdministratorCanUploadAndRemoveSanitizedLogoWithCsrfAndPrivateStorage|testAdministratorCanUploadPreviewAndRemovePrivatePlayerWatermark|testEmojiCatalogRevalidatesWhenCommentsModuleIsDisabled' \
               tests/Controller
           fi
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml

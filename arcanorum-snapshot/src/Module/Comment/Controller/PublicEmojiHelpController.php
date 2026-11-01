@@ -8,6 +8,7 @@ use App\Module\Comment\Service\EmojiCatalog;
 use App\Module\Settings\Service\ModuleAvailability;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -26,7 +27,7 @@ final class PublicEmojiHelpController extends AbstractController
     }
 
     #[Route('/hilfe/emoji/katalog.json', name: 'public_emoji_catalog', methods: ['GET'])]
-    public function catalog(EmojiCatalog $catalog, ModuleAvailability $modules): JsonResponse
+    public function catalog(EmojiCatalog $catalog, ModuleAvailability $modules, Request $request): JsonResponse
     {
         if (!$modules->isEnabled('comments')) {
             throw $this->createNotFoundException();
@@ -34,7 +35,10 @@ final class PublicEmojiHelpController extends AbstractController
 
         $response = new JsonResponse(['categories' => $catalog->publicCategories()]);
         $response->setPublic();
-        $response->setMaxAge(86400);
+        $response->setMaxAge(0);
+        $response->headers->addCacheControlDirective('must-revalidate');
+        $response->setEtag(hash('sha256', (string) $response->getContent()));
+        $response->isNotModified($request);
 
         return $response;
     }

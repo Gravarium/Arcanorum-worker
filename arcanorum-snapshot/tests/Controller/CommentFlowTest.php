@@ -43,7 +43,12 @@ final class CommentFlowTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSame('application/json', $client->getResponse()->headers->get('Content-Type'));
-        self::assertStringContainsString('public', (string) $client->getResponse()->headers->get('Cache-Control'));
+        $cacheControl = $client->getResponse()->headers;
+        self::assertTrue($cacheControl->getCacheControlDirective('public'));
+        self::assertSame('0', $cacheControl->getCacheControlDirective('max-age'));
+        self::assertTrue($cacheControl->getCacheControlDirective('must-revalidate'));
+        $etag = (string) $cacheControl->get('ETag');
+        self::assertNotSame('', $etag);
 
         $catalog = json_decode((string) $client->getResponse()->getContent(), true, 512, JSON_THROW_ON_ERROR);
         self::assertIsArray($catalog);
@@ -65,6 +70,41 @@ final class CommentFlowTest extends WebTestCase
         self::assertCount(3963, array_unique($values));
         self::assertContains('🫩', $values);
         self::assertContains("🏴\u{E0067}\u{E0062}\u{E0077}\u{E006C}\u{E0073}\u{E007F}", $values);
+
+        $client->request('GET', '/hilfe/emoji/katalog.json', server: ['HTTP_IF_NONE_MATCH' => $etag]);
+        self::assertResponseStatusCodeSame(304);
+        self::assertSame('', $client->getResponse()->getContent());
+    }
+
+    public function testEmojiCatalogRevalidatesWhenCommentsModuleIsDisabled(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        $connection = $entityManager->getConnection();
+        $previouslyEnabled = (bool) $connection->fetchOne('SELECT module_comments_enabled FROM site_settings WHERE id = 1');
+
+        try {
+            $connection->executeStatement('UPDATE site_settings SET module_comments_enabled = TRUE WHERE id = 1');
+            $entityManager->clear();
+            $client->request('GET', '/hilfe/emoji/katalog.json');
+            self::assertResponseIsSuccessful();
+            $etag = (string) $client->getResponse()->headers->get('ETag');
+            self::assertNotSame('', $etag);
+
+            $connection->executeStatement('UPDATE site_settings SET module_comments_enabled = FALSE WHERE id = 1');
+            $entityManager->clear();
+            $client->request('GET', '/hilfe/emoji/katalog.json', server: ['HTTP_IF_NONE_MATCH' => $etag]);
+            self::assertResponseStatusCodeSame(404);
+            self::assertTrue($client->getResponse()->headers->getCacheControlDirective('no-store'));
+        } finally {
+            $connection->executeStatement(
+                'UPDATE site_settings SET module_comments_enabled = :enabled WHERE id = 1',
+                ['enabled' => $previouslyEnabled],
+            );
+            $entityManager->clear();
+        }
     }
 
     public function testPublicCommentWaitsForModerationAndIsNotShown(): void
