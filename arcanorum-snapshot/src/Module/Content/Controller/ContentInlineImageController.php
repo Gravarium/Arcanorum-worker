@@ -17,6 +17,7 @@ use App\Repository\StaticPageRepository;
 use App\Service\ContentInlineImageReader;
 use App\Service\RichTextSanitizer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -26,6 +27,7 @@ final class ContentInlineImageController extends AbstractController
     #[Route('/{id}', name: 'show', requirements: ['id' => '[a-f0-9]{64}'], methods: ['GET'])]
     public function show(
         string $id,
+        Request $request,
         ContentInlineImageRepository $images,
         NewsArticleRepository $articles,
         StaticPageRepository $pages,
@@ -88,7 +90,7 @@ final class ContentInlineImageController extends AbstractController
             return $this->notFound();
         }
 
-        return $reader->response($image, $private);
+        return $reader->response($image, $private, $request);
     }
 
     private function notFound(): Response

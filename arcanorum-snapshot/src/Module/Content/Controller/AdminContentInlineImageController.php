@@ -109,6 +109,7 @@ final class AdminContentInlineImageController extends AbstractController
         string $type,
         string $ownerId,
         string $imageId,
+        Request $request,
         ContentCategoryRepository $categories,
         ContentInlineImageRepository $images,
         ContentInlineImageReader $reader,
@@ -140,7 +141,7 @@ final class AdminContentInlineImageController extends AbstractController
             return $this->notFound();
         }
 
-        return $reader->response($image, true);
+        return $reader->response($image, true, $request);
     }
 
     private function failure(string $message, int $status): JsonResponse

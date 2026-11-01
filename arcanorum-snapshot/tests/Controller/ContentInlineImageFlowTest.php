@@ -92,8 +92,23 @@ final class ContentInlineImageFlowTest extends WebTestCase
             $client->request('GET', '/content-inline-images/'.$newsId);
             self::assertResponseIsSuccessful();
             self::assertSame($png, $client->getResponse()->getContent());
-            self::assertCacheControlHasDirectives($client->getResponse()->headers->get('Cache-Control'), 'public', 'max-age=300');
+            self::assertCacheControlHasDirectives(
+                $client->getResponse()->headers->get('Cache-Control'),
+                'public',
+                'max-age=0',
+                'must-revalidate',
+            );
+            $inlineImageEtag = (string) $client->getResponse()->headers->get('ETag');
+            self::assertNotSame('', $inlineImageEtag);
             self::assertSame('nosniff', $client->getResponse()->headers->get('X-Content-Type-Options'));
+
+            $client->request(
+                'GET',
+                '/content-inline-images/'.$newsId,
+                server: ['HTTP_IF_NONE_MATCH' => $inlineImageEtag],
+            );
+            self::assertResponseStatusCodeSame(Response::HTTP_NOT_MODIFIED);
+            self::assertSame('', $client->getResponse()->getContent());
 
             $client->request('GET', '/news/category/'.$news->getSlug());
             self::assertResponseIsSuccessful();
@@ -108,7 +123,9 @@ final class ContentInlineImageFlowTest extends WebTestCase
             self::assertIsString($openGraphDescription);
             self::assertStringNotContainsString('alert(', $metaDescription);
             self::assertStringNotContainsString('alert(', $openGraphDescription);
-            self::assertStringNotContainsString($unreferencedVideoId, $client->getResponse()->getContent());
+            $newsCategoryResponseContent = $client->getResponse()->getContent();
+            self::assertIsString($newsCategoryResponseContent);
+            self::assertStringNotContainsString($unreferencedVideoId, $newsCategoryResponseContent);
 
             $client->request('GET', '/videos/category/'.$video->getSlug());
             self::assertResponseIsSuccessful();
@@ -118,6 +135,19 @@ final class ContentInlineImageFlowTest extends WebTestCase
             // The News category's raw description references this Video-owned image, but that reference is not rendered and grants no access.
             $client->request('GET', '/content-inline-images/'.$unreferencedVideoId);
             self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+
+            $entityManager->getConnection()->executeStatement(
+                'UPDATE content_categories SET description = :description WHERE id = :id',
+                ['description' => '<p>Removed inline image.</p>', 'id' => $news->getId()],
+            );
+            $entityManager->clear();
+            $client->request(
+                'GET',
+                '/content-inline-images/'.$newsId,
+                server: ['HTTP_IF_NONE_MATCH' => $inlineImageEtag],
+            );
+            self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+            self::assertTrue($client->getResponse()->headers->getCacheControlDirective('no-store'));
         } finally {
             $entityManager->getConnection()->executeStatement('DELETE FROM content_categories WHERE id IN (:news, :video)', [
                 'news' => $news->getId(),

@@ -1067,13 +1067,12 @@ final class NewsArticleHistoryFlowTest extends WebTestCase
         }
     }
 
-    /** @return array{cookies: array<Cookie>, token: TokenInterface, session: SessionInterface, has_security_token: bool, security_token: mixed} */
+    /** @return array{cookies: array<Cookie>, token: ?TokenInterface, session: SessionInterface, has_security_token: bool, security_token: mixed} */
     private function suspendAdminIdentity(KernelBrowser $client): array
     {
         $tokenStorage = $client->getContainer()->get(TokenStorageInterface::class);
         self::assertInstanceOf(TokenStorageInterface::class, $tokenStorage);
         $token = $tokenStorage->getToken();
-        self::assertInstanceOf(TokenInterface::class, $token);
         $session = $client->getRequest()->getSession();
         $hasSecurityToken = $session->has('_security_main');
         $identity = [
@@ -1092,7 +1091,7 @@ final class NewsArticleHistoryFlowTest extends WebTestCase
         return $identity;
     }
 
-    /** @param array{cookies: array<Cookie>, token: TokenInterface, session: SessionInterface, has_security_token: bool, security_token: mixed} $identity */
+    /** @param array{cookies: array<Cookie>, token: ?TokenInterface, session: SessionInterface, has_security_token: bool, security_token: mixed} $identity */
     private function restoreAdminIdentity(KernelBrowser $client, array $identity): void
     {
         foreach ($identity['cookies'] as $cookie) {

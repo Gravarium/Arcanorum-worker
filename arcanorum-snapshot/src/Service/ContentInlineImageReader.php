@@ -7,6 +7,7 @@ namespace App\Service;
 use App\Entity\ContentInlineImage;
 use App\Platform\Hosting\PrivateObjectStorageInterface;
 use App\Platform\Hosting\PrivateStorageOperationFailed;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 final readonly class ContentInlineImageReader
@@ -22,7 +23,7 @@ final readonly class ContentInlineImageReader
     {
     }
 
-    public function response(ContentInlineImage $image, bool $private): Response
+    public function response(ContentInlineImage $image, bool $private, Request $request): Response
     {
         $objectId = $image->getId();
         $mimeType = $image->getMimeType();
@@ -60,15 +61,22 @@ final readonly class ContentInlineImageReader
             return new Response('', Response::HTTP_SERVICE_UNAVAILABLE, ['Cache-Control' => 'no-store']);
         }
 
-        return new Response($contents, Response::HTTP_OK, [
+        $response = new Response($contents, Response::HTTP_OK, [
             'Content-Type' => $detectedMimeType,
             'Content-Length' => (string) $size,
-            'Cache-Control' => $private ? 'private, no-store' : 'public, max-age=300',
+            'Cache-Control' => $private ? 'private, no-store' : 'public, max-age=0, must-revalidate',
             'X-Content-Type-Options' => 'nosniff',
             'Content-Disposition' => 'inline',
             'Content-Security-Policy' => "default-src 'none'; sandbox; frame-ancestors 'none'; base-uri 'none'",
             'Cross-Origin-Resource-Policy' => 'same-origin',
             'Referrer-Policy' => 'no-referrer',
         ]);
+
+        if (!$private) {
+            $response->setEtag($sha256);
+            $response->isNotModified($request);
+        }
+
+        return $response;
     }
 }
