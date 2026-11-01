@@ -502,6 +502,22 @@ final class NewsArticleHistoryFlowTest extends WebTestCase
             self::assertSame('Page SEO summary', $page->getMetaDescription());
             self::assertSame('Page Editor', $page->getAuthorName());
             self::assertTrue($page->isShownInMenu());
+            $client->request('GET', '/admin/pages/new');
+            $duplicatePageToken = (string) $client->getCrawler()->filter('form.admin-form input[name="_token"]')->attr('value');
+            $client->request('POST', '/admin/pages/new', [
+                '_token' => $duplicatePageToken,
+                'title' => 'Duplicate editorial page '.$suffix,
+                'slug' => $pageSlug,
+                'summary' => '',
+                'body' => '<p>Duplicate page</p>',
+                'status' => 'draft',
+                'meta_keywords' => '',
+                'meta_description' => '',
+                'author_name' => 'Page Editor',
+            ]);
+            self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+            self::assertSelectorTextContains('body', 'Für diesen Permalink gibt es bereits eine Seite.');
+            self::assertInstanceOf(StaticPage::class, $pages->findOneBySlug($pageSlug));
             $client->request('GET', '/pages/'.$pageSlug);
             self::assertResponseIsSuccessful();
             self::assertSelectorExists('.article-body p strong');

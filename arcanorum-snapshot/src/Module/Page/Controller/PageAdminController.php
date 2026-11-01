@@ -10,6 +10,7 @@ use App\Repository\ContentInlineImageRepository;
 use App\Repository\StaticPageRepository;
 use App\Service\ContentInlineImageManager;
 use App\Service\RichTextSanitizer;
+use App\Service\StaticPageSlugLock;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\InputBag;
@@ -46,8 +47,9 @@ final class PageAdminController extends AbstractController
         RichTextSanitizer $richText,
         ContentInlineImageRepository $inlineImages,
         ContentInlineImageManager $inlineImageManager,
+        StaticPageSlugLock $slugLock,
     ): Response {
-        return $this->editForm($request, null, $pages, $entityManager, $translator, $richText, $inlineImages, $inlineImageManager);
+        return $this->editForm($request, null, $pages, $entityManager, $translator, $richText, $inlineImages, $inlineImageManager, $slugLock);
     }
 
     #[Route(
@@ -65,13 +67,14 @@ final class PageAdminController extends AbstractController
         RichTextSanitizer $richText,
         ContentInlineImageRepository $inlineImages,
         ContentInlineImageManager $inlineImageManager,
+        StaticPageSlugLock $slugLock,
     ): Response {
         $page = $pages->find($id);
         if (!$page instanceof StaticPage) {
             throw $this->createNotFoundException('Seite wurde nicht gefunden.');
         }
 
-        return $this->editForm($request, $page, $pages, $entityManager, $translator, $richText, $inlineImages, $inlineImageManager);
+        return $this->editForm($request, $page, $pages, $entityManager, $translator, $richText, $inlineImages, $inlineImageManager, $slugLock);
     }
 
     private function editForm(
@@ -83,6 +86,7 @@ final class PageAdminController extends AbstractController
         RichTextSanitizer $richText,
         ContentInlineImageRepository $inlineImages,
         ContentInlineImageManager $inlineImageManager,
+        StaticPageSlugLock $slugLock,
     ): Response {
         $values = [
             'title' => $page?->getTitle() ?? '',
@@ -194,7 +198,7 @@ final class PageAdminController extends AbstractController
             }
 
             if ([] === $errors) {
-                $entityManager->getConnection()->transactional(function () use ($entityManager, &$page, $pages, $values, $slug, $status, $inlineImageIds, $inlineImageManager): void {
+                $pageSaved = $entityManager->getConnection()->transactional(function () use ($entityManager, &$page, $pages, $values, $slug, $status, $inlineImageIds, $inlineImageManager, $slugLock): bool {
                     if (null !== $page) {
                         $lockedPage = $pages->findByIdForUpdate($page->getId());
                         if (!$lockedPage instanceof StaticPage) {
@@ -202,6 +206,14 @@ final class PageAdminController extends AbstractController
                         }
                         $page = $lockedPage;
                         $entityManager->refresh($page, \Doctrine\DBAL\LockMode::PESSIMISTIC_WRITE);
+                    }
+
+                    $slugLock->lock($entityManager->getConnection(), $slug);
+                    $existingSlugPage = $pages->findOneBySlug($slug);
+                    if ($existingSlugPage instanceof StaticPage
+                        && (null === $page || $existingSlugPage->getId() !== $page->getId())
+                    ) {
+                        return false;
                     }
 
                     if (null === $page) {
@@ -234,10 +246,17 @@ final class PageAdminController extends AbstractController
                     $entityManager->flush();
                     $inlineImageManager->removeUnusedPageImages($page, $inlineImageIds);
                     $entityManager->flush();
-                });
-                $this->addFlash('success', $translator->trans('Seite wurde gespeichert.'));
 
-                return $this->redirectToRoute('admin_page_index');
+                    return true;
+                });
+
+                if ($pageSaved) {
+                    $this->addFlash('success', $translator->trans('Seite wurde gespeichert.'));
+
+                    return $this->redirectToRoute('admin_page_index');
+                }
+
+                $errors[] = $translator->trans('Für diesen Permalink gibt es bereits eine Seite.');
             }
         }
 
