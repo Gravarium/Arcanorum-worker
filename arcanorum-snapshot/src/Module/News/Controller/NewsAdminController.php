@@ -597,6 +597,7 @@ final class NewsAdminController extends AbstractController
                         $entityManager->flush();
                         $inlineImageManager->removeUnusedNewsImages($article, $inlineImageIds);
                         $entityManager->flush();
+
                         return true;
                     });
                 } catch (\Throwable $exception) {
