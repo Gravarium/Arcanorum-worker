@@ -5460,6 +5460,127 @@ final class AdminDashboardTest extends WebTestCase
         }
     }
 
+    public function testAdminTagCreateAndRenameRejectNormalizedDuplicates(): void
+    {
+        $client = static::createClient();
+        $suffix = bin2hex(random_bytes(6));
+        $email = 'tag-admin-'.$suffix.'@example.test';
+        $password = 'Tag-Admin-'.$suffix.'-A9!';
+        $tagName = 'Admin tag '.$suffix;
+        $renamedTagName = 'Renamed admin tag '.$suffix;
+        $otherTagName = 'Other admin tag '.$suffix;
+
+        try {
+            $this->persistUser($client, $email, $password, ['ROLE_ADMIN']);
+            $this->submitLogin($client, $email, $password);
+            self::assertResponseRedirects('/admin');
+
+            $client->request('GET', '/admin/tags/new');
+            self::assertResponseIsSuccessful();
+            $createToken = (string) $client->getCrawler()->filter('input[name="_token"]')->attr('value');
+            self::assertNotSame('', $createToken);
+
+            $client->request('POST', '/admin/tags/new', ['_token' => 'invalid', 'name' => $tagName]);
+            self::assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
+            $client->request('POST', '/admin/tags/new', ['_token' => $createToken, 'name' => $tagName]);
+            self::assertResponseRedirects('/admin/tags');
+
+            $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+            self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+            $tagId = $entityManager->getConnection()->fetchOne(
+                'SELECT id FROM content_tags WHERE normalized_name = :name',
+                ['name' => mb_strtolower($tagName)],
+            );
+            self::assertIsString($tagId);
+
+            $client->request('GET', '/admin/tags/new');
+            self::assertResponseIsSuccessful();
+            $duplicateCreateToken = (string) $client->getCrawler()->filter('input[name="_token"]')->attr('value');
+            $client->request('POST', '/admin/tags/new', [
+                '_token' => $duplicateCreateToken,
+                'name' => mb_strtolower($tagName),
+            ]);
+            self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+            self::assertSelectorTextContains('[role="alert"]', 'Dieses Schlagwort ist bereits vorhanden.');
+
+            $client->request('GET', '/admin/tags/'.$tagId.'/edit');
+            self::assertResponseIsSuccessful();
+            $editToken = (string) $client->getCrawler()->filter('input[name="_token"]')->attr('value');
+            $client->request('POST', '/admin/tags/'.$tagId.'/edit', [
+                '_token' => $editToken,
+                'name' => $renamedTagName,
+            ]);
+            self::assertResponseRedirects('/admin/tags');
+            self::assertSame($renamedTagName, $entityManager->getConnection()->fetchOne(
+                'SELECT name FROM content_tags WHERE id = :id',
+                ['id' => $tagId],
+            ));
+
+            $client->request('GET', '/admin/tags/new');
+            self::assertResponseIsSuccessful();
+            $secondCreateToken = (string) $client->getCrawler()->filter('input[name="_token"]')->attr('value');
+            $client->request('POST', '/admin/tags/new', ['_token' => $secondCreateToken, 'name' => $otherTagName]);
+            self::assertResponseRedirects('/admin/tags');
+            $otherTagId = $entityManager->getConnection()->fetchOne(
+                'SELECT id FROM content_tags WHERE normalized_name = :name',
+                ['name' => mb_strtolower($otherTagName)],
+            );
+            self::assertIsString($otherTagId);
+
+            $client->request('GET', '/admin/tags/'.$otherTagId.'/edit');
+            self::assertResponseIsSuccessful();
+            $conflictEditToken = (string) $client->getCrawler()->filter('input[name="_token"]')->attr('value');
+            $client->request('POST', '/admin/tags/'.$otherTagId.'/edit', [
+                '_token' => $conflictEditToken,
+                'name' => mb_strtolower($renamedTagName),
+            ]);
+            self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+            self::assertSame($otherTagName, $entityManager->getConnection()->fetchOne(
+                'SELECT name FROM content_tags WHERE id = :id',
+                ['id' => $otherTagId],
+            ));
+
+            $client->request('GET', '/admin/tags');
+            self::assertResponseIsSuccessful();
+            $deleteForm = $client->getCrawler()->filter('form[action="/admin/tags/'.$tagId.'/delete"]');
+            self::assertCount(1, $deleteForm);
+            $deleteToken = (string) $deleteForm->filter('input[name="_token"]')->attr('value');
+            $client->request('POST', '/admin/tags/'.$tagId.'/delete', ['_token' => 'invalid']);
+            self::assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
+            $client->request('POST', '/admin/tags/'.$tagId.'/delete', ['_token' => $deleteToken]);
+            self::assertResponseRedirects('/admin/tags');
+            self::assertFalse($entityManager->getConnection()->fetchOne(
+                'SELECT id FROM content_tags WHERE id = :id',
+                ['id' => $tagId],
+            ));
+
+            $client->request('GET', '/admin/tags/new');
+            self::assertResponseIsSuccessful();
+            $invalidNameToken = (string) $client->getCrawler()->filter('input[name="_token"]')->attr('value');
+            $client->request('POST', '/admin/tags/new', [
+                '_token' => $invalidNameToken,
+                'name' => "Invalid\nname",
+            ]);
+            self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+        } finally {
+            $cleanupManager = $client->getContainer()->get(EntityManagerInterface::class);
+            self::assertInstanceOf(EntityManagerInterface::class, $cleanupManager);
+            $cleanupManager->getConnection()->executeStatement(
+                'DELETE FROM content_tags WHERE normalized_name IN (:tag, :renamed, :other)',
+                [
+                    'tag' => mb_strtolower($tagName),
+                    'renamed' => mb_strtolower($renamedTagName),
+                    'other' => mb_strtolower($otherTagName),
+                ],
+            );
+            $cleanupManager->getConnection()->executeStatement(
+                'DELETE FROM admin_activity_entries WHERE actor_id = (SELECT id FROM admin_users WHERE email = :email)',
+                ['email' => $email],
+            );
+            $this->removeUser($client, $email);
+        }
+    }
+
     public function testAdminCanManageCommentFilterTermsAndSeeMatchedComments(): void
     {
         $client = static::createClient();

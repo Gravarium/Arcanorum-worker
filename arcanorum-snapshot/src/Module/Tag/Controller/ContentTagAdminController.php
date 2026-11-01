@@ -6,6 +6,7 @@ namespace App\Module\Tag\Controller;
 
 use App\Entity\ContentTag;
 use App\Repository\ContentTagRepository;
+use App\Service\ContentTagNameLock;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\InputBag;
@@ -38,6 +39,7 @@ final class ContentTagAdminController extends AbstractController
         Request $request,
         ContentTagRepository $tags,
         EntityManagerInterface $entityManager,
+        ContentTagNameLock $nameLock,
     ): Response {
         $values = ['name' => ''];
         $errors = [];
@@ -49,7 +51,7 @@ final class ContentTagAdminController extends AbstractController
             }
 
             $name = trim(self::input($request->request, 'name'));
-            if ('' === $name || mb_strlen($name) > 100) {
+            if (!self::isValidName($name)) {
                 $errors[] = 'Der Schlagwortname ist erforderlich und darf höchstens 100 Zeichen lang sein.';
             }
             if ('' !== $name && null !== $tags->findByNormalizedName($name)) {
@@ -58,11 +60,25 @@ final class ContentTagAdminController extends AbstractController
 
             if ([] === $errors) {
                 $tag = new ContentTag($name);
-                $entityManager->persist($tag);
-                $entityManager->flush();
-                $this->addFlash('success', 'Schlagwort wurde angelegt.');
+                $created = $entityManager->getConnection()->transactional(function () use ($entityManager, $nameLock, $tags, $name, $tag): bool {
+                    $nameLock->lockNames($entityManager->getConnection(), [$name]);
+                    if (null !== $tags->findByNormalizedName($name)) {
+                        return false;
+                    }
 
-                return $this->redirectToRoute('admin_tag_index');
+                    $entityManager->persist($tag);
+                    $entityManager->flush();
+
+                    return true;
+                });
+
+                if ($created) {
+                    $this->addFlash('success', 'Schlagwort wurde angelegt.');
+
+                    return $this->redirectToRoute('admin_tag_index');
+                }
+
+                $errors[] = 'Dieses Schlagwort ist bereits vorhanden.';
             }
 
             $values['name'] = $name;
@@ -86,6 +102,7 @@ final class ContentTagAdminController extends AbstractController
         Request $request,
         ContentTagRepository $tags,
         EntityManagerInterface $entityManager,
+        ContentTagNameLock $nameLock,
     ): Response {
         $tag = $tags->find($id);
         if (!$tag instanceof ContentTag) {
@@ -101,7 +118,7 @@ final class ContentTagAdminController extends AbstractController
             }
 
             $name = trim(self::input($request->request, 'name'));
-            if ('' === $name || mb_strlen($name) > 100) {
+            if (!self::isValidName($name)) {
                 $errors[] = 'Der Schlagwortname ist erforderlich und darf höchstens 100 Zeichen lang sein.';
             }
 
@@ -111,11 +128,31 @@ final class ContentTagAdminController extends AbstractController
             }
 
             if ([] === $errors) {
-                $tag->rename($name);
-                $entityManager->flush();
-                $this->addFlash('success', 'Schlagwort wurde gespeichert.');
+                $saved = $entityManager->getConnection()->transactional(function () use ($entityManager, $nameLock, $tags, &$tag, $name): bool {
+                    $nameLock->lockNames($entityManager->getConnection(), [$name]);
+                    $lockedTag = $tags->findForUpdate($tag->getId());
+                    if (!$lockedTag instanceof ContentTag) {
+                        throw new \RuntimeException('Das Schlagwort wurde während der Bearbeitung entfernt.');
+                    }
+                    $existing = $tags->findByNormalizedName($name);
+                    if (null !== $existing && $existing->getId() !== $lockedTag->getId()) {
+                        return false;
+                    }
 
-                return $this->redirectToRoute('admin_tag_index');
+                    $tag = $lockedTag;
+                    $tag->rename($name);
+                    $entityManager->flush();
+
+                    return true;
+                });
+
+                if ($saved) {
+                    $this->addFlash('success', 'Schlagwort wurde gespeichert.');
+
+                    return $this->redirectToRoute('admin_tag_index');
+                }
+
+                $errors[] = 'Dieses Schlagwort ist bereits vorhanden.';
             }
 
             $values['name'] = $name;
@@ -139,6 +176,7 @@ final class ContentTagAdminController extends AbstractController
         Request $request,
         ContentTagRepository $tags,
         EntityManagerInterface $entityManager,
+        ContentTagNameLock $nameLock,
     ): Response {
         $tag = $tags->find($id);
         if (!$tag instanceof ContentTag) {
@@ -156,8 +194,27 @@ final class ContentTagAdminController extends AbstractController
             return $this->redirectToRoute('admin_tag_index');
         }
 
-        $entityManager->remove($tag);
-        $entityManager->flush();
+        $deleted = $entityManager->getConnection()->transactional(function () use ($entityManager, $nameLock, $tags, $tag): bool {
+            $nameLock->lockNames($entityManager->getConnection(), [$tag->getName()]);
+            $lockedTag = $tags->findForUpdate($tag->getId());
+            if (!$lockedTag instanceof ContentTag) {
+                throw $this->createNotFoundException('Schlagwort wurde nicht gefunden.');
+            }
+            if ($tags->countUsage($lockedTag) > 0) {
+                return false;
+            }
+
+            $entityManager->remove($lockedTag);
+            $entityManager->flush();
+
+            return true;
+        });
+        if (!$deleted) {
+            $this->addFlash('error', 'Das Schlagwort wird noch verwendet und kann nicht gelöscht werden.');
+
+            return $this->redirectToRoute('admin_tag_index');
+        }
+
         $this->addFlash('success', 'Schlagwort wurde gelöscht.');
 
         return $this->redirectToRoute('admin_tag_index');
@@ -173,5 +230,13 @@ final class ContentTagAdminController extends AbstractController
         $value = $bag->get($key);
 
         return is_string($value) ? $value : '';
+    }
+
+    private static function isValidName(string $name): bool
+    {
+        return '' !== $name
+            && 1 === preg_match('//u', $name)
+            && mb_strlen($name, 'UTF-8') <= 100
+            && 1 !== preg_match('/[\x00-\x1F\x7F]/u', $name);
     }
 }

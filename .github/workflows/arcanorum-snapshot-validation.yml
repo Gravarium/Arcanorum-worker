@@ -2193,6 +2193,11 @@ jobs:
           php -l src/Service/ContentCategoryIdentityLock.php
           php -l tests/Service/ContentCategoryIdentityLockTest.php
           php -l tests/Controller/AdminDashboardTest.php
+          php -l src/Module/Tag/Controller/ContentTagAdminController.php
+          php -l src/Repository/ContentTagRepository.php
+          php -l src/Service/ContentTagManager.php
+          php -l src/Service/ContentTagNameLock.php
+          php -l tests/Service/ContentTagNameLockTest.php
 
       - name: Prepare PostgreSQL schema and validate Doctrine mapping
         run: |
@@ -2222,6 +2227,11 @@ jobs:
           src/Service/ContentCategoryIdentityLock.php
           tests/Service/ContentCategoryIdentityLockTest.php
           tests/Controller/AdminDashboardTest.php
+          src/Module/Tag/Controller/ContentTagAdminController.php
+          src/Repository/ContentTagRepository.php
+          src/Service/ContentTagManager.php
+          src/Service/ContentTagNameLock.php
+          tests/Service/ContentTagNameLockTest.php
 
       - name: PHP CS Fixer on affected PHP files
         run: >-
@@ -2245,6 +2255,11 @@ jobs:
           src/Service/ContentCategoryIdentityLock.php
           tests/Service/ContentCategoryIdentityLockTest.php
           tests/Controller/AdminDashboardTest.php
+          src/Module/Tag/Controller/ContentTagAdminController.php
+          src/Repository/ContentTagRepository.php
+          src/Service/ContentTagManager.php
+          src/Service/ContentTagNameLock.php
+          tests/Service/ContentTagNameLockTest.php
 
       - name: Rector dry run on affected PHP files
         run: >-
@@ -2265,6 +2280,11 @@ jobs:
           src/Service/ContentCategoryIdentityLock.php
           tests/Service/ContentCategoryIdentityLockTest.php
           tests/Controller/AdminDashboardTest.php
+          src/Module/Tag/Controller/ContentTagAdminController.php
+          src/Repository/ContentTagRepository.php
+          src/Service/ContentTagManager.php
+          src/Service/ContentTagNameLock.php
+          tests/Service/ContentTagNameLockTest.php
           --config=rector.php
           --dry-run
           --no-progress-bar
@@ -2281,12 +2301,13 @@ jobs:
             --fail-on-risky --fail-on-warning --fail-on-deprecation \
             --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
             --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
-            --filter='testThumbnailUploadLocksCurrentVideoStateBeforeReplacingThumbnail|testAdminVideoEditLocksCurrentPrivateMediaBeforeReplacement|testAdminCanUploadPreviewAndRemoveVideoThumbnail|testAdministratorCanImportAValidatedProviderThumbnailForAnExistingVideo|testProviderImportDiscardsThumbnailWhenVideoSourceChangesDuringFetch|testNewsEditReportsConcurrentSlugClaimAndCleansUploadedThumbnail|testSlugLockIsHeldUntilTransactionCommits|testSlugLocksRequireTransactionAndRejectMalformedSlugs|testMalformedSlugIsRejectedBeforeLockAcquisition|testStaticPageSlugLockIsHeldUntilTransactionCommits|testStaticPageSlugLockRequiresTransaction|testMalformedStaticPageSlugIsRejectedBeforeLockAcquisition|testLocksNormalizedNameAndSlugWithinTheirContentTypeUntilCommit|testIdentityLocksRequireAnActiveTransaction|testIdentityLockRejectsInvalidNamesAndSlugs|testAdminCanCreateCategoryAndDuplicateNamesAreRejected|testAdministratorCreatesVersionedNewsWithEscapedAuthorAndPrivateHistory' \
+            --filter='testThumbnailUploadLocksCurrentVideoStateBeforeReplacingThumbnail|testAdminVideoEditLocksCurrentPrivateMediaBeforeReplacement|testAdminCanUploadPreviewAndRemoveVideoThumbnail|testAdministratorCanImportAValidatedProviderThumbnailForAnExistingVideo|testProviderImportDiscardsThumbnailWhenVideoSourceChangesDuringFetch|testNewsEditReportsConcurrentSlugClaimAndCleansUploadedThumbnail|testSlugLockIsHeldUntilTransactionCommits|testSlugLocksRequireTransactionAndRejectMalformedSlugs|testMalformedSlugIsRejectedBeforeLockAcquisition|testStaticPageSlugLockIsHeldUntilTransactionCommits|testStaticPageSlugLockRequiresTransaction|testMalformedStaticPageSlugIsRejectedBeforeLockAcquisition|testLocksNormalizedNameAndSlugWithinTheirContentTypeUntilCommit|testIdentityLocksRequireAnActiveTransaction|testIdentityLockRejectsInvalidNamesAndSlugs|testAdminCanCreateCategoryAndDuplicateNamesAreRejected|testNormalizedNameLocksAreHeldUntilCommitAndAcquiredInStableOrder|testLockNamesRequiresATransactionAndRejectsInvalidNames|testManagerDeduplicatesEquivalentPendingNamesInsideTransaction|testAdminTagCreateAndRenameRejectNormalizedDuplicates|testAdministratorCreatesVersionedNewsWithEscapedAuthorAndPrivateHistory' \
             tests/Controller/AdminVideoThumbnailFlowTest.php \
             tests/Controller/NewsArticleHistoryFlowTest.php \
             tests/Service/NewsArticleSlugLockTest.php \
             tests/Service/StaticPageSlugLockTest.php \
             tests/Service/ContentCategoryIdentityLockTest.php \
+            tests/Service/ContentTagNameLockTest.php \
             tests/Controller/AdminDashboardTest.php
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
 

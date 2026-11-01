@@ -8,6 +8,7 @@ use App\Entity\ContentTag;
 use App\Entity\PublishingStatus;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\LockMode;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -96,6 +97,22 @@ final class ContentTagRepository extends ServiceEntityRepository
     public function findByNormalizedName(string $normalizedName): ?ContentTag
     {
         $tag = $this->findOneBy(['normalizedName' => mb_strtolower(trim($normalizedName))]);
+
+        return $tag instanceof ContentTag ? $tag : null;
+    }
+
+    public function findForUpdate(string $id): ?ContentTag
+    {
+        $tag = $this->createQueryBuilder('tag')
+            ->andWhere('tag.id = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->setLockMode(LockMode::PESSIMISTIC_WRITE)
+            ->getOneOrNullResult();
+
+        if ($tag instanceof ContentTag) {
+            $this->getEntityManager()->refresh($tag, LockMode::PESSIMISTIC_WRITE);
+        }
 
         return $tag instanceof ContentTag ? $tag : null;
     }

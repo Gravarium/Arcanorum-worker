@@ -17,6 +17,7 @@ final readonly class ContentTagManager
     public function __construct(
         private ContentTagRepository $tags,
         private EntityManagerInterface $entityManager,
+        private ContentTagNameLock $nameLock,
     ) {
     }
 
@@ -64,15 +65,23 @@ final readonly class ContentTagManager
      */
     public function resolve(array $names): array
     {
+        $connection = $this->entityManager->getConnection();
+        $this->nameLock->lockNames($connection, $names);
+
         $resolved = [];
+        $resolvedByName = [];
         foreach ($names as $name) {
-            $tag = $this->tags->findByNormalizedName($name);
-            if (null === $tag) {
-                $tag = new ContentTag($name);
-                $this->entityManager->persist($tag);
+            $normalizedName = mb_strtolower(trim($name), 'UTF-8');
+            if (!isset($resolvedByName[$normalizedName])) {
+                $tag = $this->tags->findByNormalizedName($name);
+                if (null === $tag) {
+                    $tag = new ContentTag($name);
+                    $this->entityManager->persist($tag);
+                }
+                $resolvedByName[$normalizedName] = $tag;
             }
 
-            $resolved[] = $tag;
+            $resolved[] = $resolvedByName[$normalizedName];
         }
 
         return $resolved;
