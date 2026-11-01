@@ -12,6 +12,7 @@ use App\Entity\VideoPopularitySort;
 use App\Entity\VideoSourceType;
 use App\Module\Automation\Application\ExternalVideoSourceStore;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\LockMode;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
@@ -72,6 +73,22 @@ final class VideoRepository extends ServiceEntityRepository implements ExternalV
             ->select('COUNT(DISTINCT video.id)')
             ->getQuery()
             ->getSingleScalarResult();
+    }
+
+    public function findByIdForUpdate(string $id): ?Video
+    {
+        $video = $this->createQueryBuilder('video')
+            ->andWhere('video.id = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->setLockMode(LockMode::PESSIMISTIC_WRITE)
+            ->getOneOrNullResult();
+
+        if ($video instanceof Video) {
+            $this->getEntityManager()->refresh($video, LockMode::PESSIMISTIC_WRITE);
+        }
+
+        return $video instanceof Video ? $video : null;
     }
 
     private function createAdminQueryBuilder(

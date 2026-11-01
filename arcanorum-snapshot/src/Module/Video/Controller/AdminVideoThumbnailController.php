@@ -165,6 +165,9 @@ final class AdminVideoThumbnailController extends AbstractController
             return $this->redirectToRoute('admin_video_edit', ['id' => $video->getId()]);
         }
 
+        $sourceType = $video->getSourceType();
+        $sourceUrl = $video->getSourceUrl();
+
         if (!$importRateLimitCache->usesRedisPool()) {
             $this->addFlash('error', 'Der gemeinsame Importschutz ist nicht verfügbar. Das Provider-Vorschaubild wurde nicht abgerufen.');
 
@@ -187,7 +190,7 @@ final class AdminVideoThumbnailController extends AbstractController
 
         try {
             $metadata = $providerImport->metadataForSourceUrl(
-                $video->getSourceUrl(),
+                $sourceUrl,
                 $siteSettings->current()->getProviderThumbnailResolution(),
             );
         } catch (VideoProviderImportException) {
@@ -214,10 +217,34 @@ final class AdminVideoThumbnailController extends AbstractController
             return $this->redirectToRoute('admin_video_edit', ['id' => $video->getId()]);
         }
 
-        $previousObjectId = $video->getThumbnailObjectId();
+        $previousObjectId = null;
+        $sourceChangedDuringImport = false;
         try {
-            $video->attachThumbnail($thumbnail['object_id'], $thumbnail['mime_type'], $thumbnail['size']);
-            $entityManager->flush();
+            $entityManager->getConnection()->transactional(function () use (
+                $id,
+                $sourceType,
+                $sourceUrl,
+                $thumbnail,
+                $videos,
+                $entityManager,
+                &$previousObjectId,
+                &$sourceChangedDuringImport,
+            ): void {
+                $currentVideo = $videos->findByIdForUpdate($id);
+                if (!$currentVideo instanceof Video) {
+                    throw $this->createNotFoundException('Video wurde nicht gefunden.');
+                }
+
+                if ($sourceType !== $currentVideo->getSourceType() || $sourceUrl !== $currentVideo->getSourceUrl()) {
+                    $sourceChangedDuringImport = true;
+
+                    return;
+                }
+
+                $previousObjectId = $currentVideo->getThumbnailObjectId();
+                $currentVideo->attachThumbnail($thumbnail['object_id'], $thumbnail['mime_type'], $thumbnail['size']);
+                $entityManager->flush();
+            });
         } catch (\Throwable $exception) {
             try {
                 $thumbnailImports->delete($thumbnail['object_id']);
@@ -226,6 +253,17 @@ final class AdminVideoThumbnailController extends AbstractController
             }
 
             throw $exception;
+        }
+
+        if ($sourceChangedDuringImport) {
+            try {
+                $thumbnailImports->delete($thumbnail['object_id']);
+            } catch (PrivateStorageOperationFailed|\InvalidArgumentException) {
+                $this->addFlash('warning', 'Das Provider-Vorschaubild konnte nach einer Quellenänderung nicht bereinigt werden.');
+            }
+            $this->addFlash('error', 'Die Videoquelle wurde während des Imports geändert. Bitte starte den Import erneut.');
+
+            return $this->redirectToRoute('admin_video_edit', ['id' => $id]);
         }
 
         if (null !== $previousObjectId && $previousObjectId !== $thumbnail['object_id']) {

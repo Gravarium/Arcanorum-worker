@@ -16,6 +16,7 @@ use App\Platform\Security\RuntimeAttestationReportProviderInterface;
 use App\Platform\Security\TotpVerifier;
 use App\Service\ExternalVideoEmbedResolver;
 use App\Service\VideoProviderImportService;
+use App\Service\VideoSocialPreviewGenerator;
 use App\Service\VideoThumbnailImportService;
 use App\Service\VideoThumbnailUploadService;
 use App\Tests\Support\VerifiedRuntimeAttestationReportProvider;
@@ -189,6 +190,127 @@ final class AdminVideoThumbnailFlowTest extends WebTestCase
                 $entityManager->getConnection()->executeStatement('DELETE FROM videos WHERE id = :id', ['id' => $videoToDelete->getId()]);
             }
             $entityManager->getConnection()->executeStatement('DELETE FROM admin_users WHERE email = :email', ['email' => $email]);
+        }
+    }
+
+    public function testProviderImportDiscardsThumbnailWhenVideoSourceChangesDuringFetch(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $client->getContainer()->set(
+            RuntimeAttestationReportProviderInterface::class,
+            new VerifiedRuntimeAttestationReportProvider(),
+        );
+
+        $suffix = bin2hex(random_bytes(8));
+        $email = 'provider-thumbnail-race-'.$suffix.'@example.test';
+        $password = 'ProviderThumbnailRace-'.$suffix.'-G4!';
+        $sourceUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+        $changedSourceUrl = 'https://www.youtube.com/watch?v=5NV6Rdv1a3I';
+        $video = new Video(
+            'Provider thumbnail race '.$suffix,
+            'A draft video used to check source changes during provider thumbnail import.',
+            null,
+            VideoSourceType::Embed,
+            $sourceUrl,
+            PublishingStatus::Draft,
+            false,
+            true,
+        );
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        $connection = $entityManager->getConnection();
+
+        try {
+            $entityManager->persist($video);
+            $entityManager->flush();
+
+            $providerPayload = json_encode([
+                'items' => [[
+                    'id' => 'dQw4w9WgXcQ',
+                    'snippet' => [
+                        'title' => 'Safe provider thumbnail video',
+                        'description' => 'Metadata from the fixed provider API.',
+                        'thumbnails' => [
+                            'medium' => ['url' => 'https://i.ytimg.com/vi/dQw4w9WgXcQ/mqdefault.jpg', 'width' => 320],
+                        ],
+                    ],
+                    'contentDetails' => ['duration' => 'PT90S'],
+                    'status' => ['privacyStatus' => 'public', 'embeddable' => true],
+                ]],
+            ], JSON_THROW_ON_ERROR);
+            $providerRequestCount = 0;
+            $providerImport = new VideoProviderImportService(
+                new MockHttpClient(static function () use (&$providerRequestCount, $providerPayload, $connection, $video, $changedSourceUrl): MockResponse {
+                    ++$providerRequestCount;
+                    $connection->executeStatement(
+                        'UPDATE videos SET source_url = :source WHERE id = :id',
+                        ['source' => $changedSourceUrl, 'id' => $video->getId()],
+                    );
+
+                    return new MockResponse($providerPayload, ['http_code' => Response::HTTP_OK]);
+                }),
+                new ExternalVideoEmbedResolver(),
+                'test-provider-api-key',
+            );
+            $client->getContainer()->set(VideoProviderImportService::class, $providerImport);
+
+            $thumbnailPng = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/WioAAAAASUVORK5CYII=', true);
+            self::assertIsString($thumbnailPng);
+            $storedObjectId = null;
+            $deletedObjectIds = [];
+            $privateStorage = $this->createMock(PrivateObjectStorageInterface::class);
+            $privateStorage->expects(self::once())->method('write')->willReturnCallback(
+                static function (string $objectId, string $contents) use (&$storedObjectId, $thumbnailPng): void {
+                    self::assertMatchesRegularExpression('/\A[a-f0-9]{64}\z/D', $objectId);
+                    self::assertSame($thumbnailPng, $contents);
+                    $storedObjectId = $objectId;
+                },
+            );
+            $privateStorage->expects(self::exactly(2))->method('delete')->willReturnCallback(
+                static function (string $objectId) use (&$deletedObjectIds): void {
+                    $deletedObjectIds[] = $objectId;
+                },
+            );
+            $client->getContainer()->set(PrivateObjectStorageInterface::class, $privateStorage);
+            $client->getContainer()->set(VideoThumbnailImportService::class, new VideoThumbnailImportService(
+                new MockHttpClient(static fn (): MockResponse => new MockResponse($thumbnailPng, ['http_code' => Response::HTTP_OK])),
+                new VideoThumbnailUploadService($privateStorage),
+            ));
+
+            $admin = $this->persistAdministrator($client, $email, $password);
+            $importPath = '/admin/videos/'.$video->getId().'/thumbnail/provider-import';
+            $editPath = '/admin/videos/'.$video->getId().'/edit';
+            $this->submitLogin($client, $admin, $password);
+            self::assertResponseRedirects('/admin');
+
+            $client->request('GET', $editPath);
+            self::assertResponseIsSuccessful();
+            $token = $client->getCrawler()
+                ->filter('form[action="'.$importPath.'"] input[name="_token"]')
+                ->attr('value');
+            self::assertIsString($token);
+            self::assertNotSame('', $token);
+
+            $client->request('POST', $importPath, ['_token' => $token, 'action' => 'provider_import']);
+            self::assertResponseRedirects($editPath);
+            self::assertSame(1, $providerRequestCount);
+            self::assertIsString($storedObjectId);
+
+            $client->followRedirect();
+            self::assertSelectorTextContains('.flash-message.is-error', 'Videoquelle wurde während des Imports geändert');
+            $entityManager->clear();
+            $storedVideo = $entityManager->getRepository(Video::class)->find($video->getId());
+            self::assertInstanceOf(Video::class, $storedVideo);
+            self::assertSame($changedSourceUrl, $storedVideo->getSourceUrl());
+            self::assertNull($storedVideo->getThumbnailObjectId());
+            self::assertSame([
+                VideoSocialPreviewGenerator::cacheObjectIdForSourceObjectId($storedObjectId),
+                $storedObjectId,
+            ], $deletedObjectIds);
+        } finally {
+            $connection->executeStatement('DELETE FROM videos WHERE id = :id', ['id' => $video->getId()]);
+            $connection->executeStatement('DELETE FROM admin_users WHERE email = :email', ['email' => $email]);
         }
     }
 
