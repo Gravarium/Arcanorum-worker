@@ -3990,15 +3990,6 @@ final class AdminDashboardTest extends WebTestCase
             self::assertResponseStatusCodeSame(Response::HTTP_NOT_MODIFIED);
             self::assertSame('', $client->getResponse()->getContent());
 
-            $uploadedVideoEntity = $entityManager->getRepository(Video::class)->find($uploadedVideoId);
-            self::assertInstanceOf(Video::class, $uploadedVideoEntity);
-            $uploadedVideoEntity->setPublishingStatus(PublishingStatus::Draft);
-            $entityManager->flush();
-            $client->request('GET', '/videos/'.$uploadedVideoId.'/media', server: ['HTTP_IF_NONE_MATCH' => $mediaEtag]);
-            self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
-            $uploadedVideoEntity->setPublishingStatus(PublishingStatus::Published);
-            $entityManager->flush();
-
             $client->request('GET', '/videos/'.$uploadedVideoId.'/media', [], [], ['HTTP_RANGE' => 'bytes=2-5']);
             self::assertResponseStatusCodeSame(Response::HTTP_PARTIAL_CONTENT);
             self::assertSame('bytes 2-5/'.strlen($videoBytes), $client->getResponse()->headers->get('Content-Range'));
@@ -4149,6 +4140,13 @@ final class AdminDashboardTest extends WebTestCase
                 'SELECT COUNT(*) FROM videos WHERE title = :title',
                 ['title' => $invalidEmbedAdminTitle],
             ));
+
+            $uploadedVideoEntity = $entityManager->getRepository(Video::class)->find($uploadedVideoId);
+            self::assertInstanceOf(Video::class, $uploadedVideoEntity);
+            $uploadedVideoEntity->setPublishingStatus(PublishingStatus::Draft);
+            $entityManager->flush();
+            $client->request('GET', '/videos/'.$uploadedVideoId.'/media', server: ['HTTP_IF_NONE_MATCH' => $mediaEtag]);
+            self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
         } finally {
             $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
             if ($entityManager instanceof EntityManagerInterface) {
