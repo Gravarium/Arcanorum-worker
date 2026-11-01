@@ -124,6 +124,7 @@ final class VideoSocialPreviewFlowTest extends WebTestCase
 
             $published->setPublishingStatus(PublishingStatus::Draft);
             $entityManager->flush();
+            $entityManager->clear();
             $client->request('GET', '/videos/'.$published->getId().'/social-preview/'.$version, server: ['HTTP_IF_NONE_MATCH' => $previewEtag]);
             self::assertResponseStatusCodeSame(404);
             $client->request('GET', '/videos/'.$published->getId().'/thumbnail', server: ['HTTP_IF_NONE_MATCH' => $thumbnailEtag]);
