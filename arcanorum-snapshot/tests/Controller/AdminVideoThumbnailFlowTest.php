@@ -25,6 +25,7 @@ use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
@@ -311,6 +312,114 @@ final class AdminVideoThumbnailFlowTest extends WebTestCase
         } finally {
             $connection->executeStatement('DELETE FROM videos WHERE id = :id', ['id' => $video->getId()]);
             $connection->executeStatement('DELETE FROM admin_users WHERE email = :email', ['email' => $email]);
+        }
+    }
+
+    public function testThumbnailUploadLocksCurrentVideoStateBeforeReplacingThumbnail(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $client->getContainer()->set(
+            RuntimeAttestationReportProviderInterface::class,
+            new VerifiedRuntimeAttestationReportProvider(),
+        );
+
+        $suffix = bin2hex(random_bytes(8));
+        $email = 'thumbnail-upload-race-'.$suffix.'@example.test';
+        $password = 'ThumbnailUploadRace-'.$suffix.'-G4!';
+        $video = new Video(
+            'Thumbnail upload race '.$suffix,
+            'A draft video used to check concurrent thumbnail replacement.',
+            null,
+            VideoSourceType::Url,
+            'https://video.example.test/'.$suffix.'.mp4',
+            PublishingStatus::Draft,
+            false,
+            true,
+        );
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        $connection = $entityManager->getConnection();
+        $temporaryPath = tempnam(sys_get_temp_dir(), 'arcanorum-thumbnail-race-');
+        self::assertIsString($temporaryPath);
+        $thumbnailPng = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/WioAAAAASUVORK5CYII=', true);
+        self::assertIsString($thumbnailPng);
+        self::assertSame(strlen($thumbnailPng), file_put_contents($temporaryPath, $thumbnailPng));
+        $concurrentObjectId = str_repeat('b', 64);
+        $storedObjectId = null;
+        $deletedObjectIds = [];
+        $privateStorage = $this->createMock(PrivateObjectStorageInterface::class);
+        $privateStorage->expects(self::once())->method('write')->willReturnCallback(
+            static function (string $objectId, string $contents) use (
+                &$storedObjectId,
+                $thumbnailPng,
+                $connection,
+                $video,
+                $concurrentObjectId,
+            ): void {
+                self::assertSame($thumbnailPng, $contents);
+                $storedObjectId = $objectId;
+                $connection->executeStatement(
+                    'UPDATE videos SET thumbnail_object_id = :object_id, thumbnail_mime_type = :mime_type, thumbnail_size = :size WHERE id = :video_id',
+                    [
+                        'object_id' => $concurrentObjectId,
+                        'mime_type' => 'image/png',
+                        'size' => strlen($thumbnailPng),
+                        'video_id' => $video->getId(),
+                    ],
+                );
+            },
+        );
+        $privateStorage->expects(self::exactly(2))->method('delete')->willReturnCallback(
+            static function (string $objectId) use (&$deletedObjectIds): void {
+                $deletedObjectIds[] = $objectId;
+            },
+        );
+        $client->getContainer()->set(VideoThumbnailUploadService::class, new VideoThumbnailUploadService($privateStorage));
+        $entityManager->persist($video);
+        $entityManager->flush();
+
+        try {
+            $admin = $this->persistAdministrator($client, $email, $password);
+            $this->submitLogin($client, $admin, $password);
+            self::assertResponseRedirects('/admin');
+
+            $editPath = '/admin/videos/'.$video->getId().'/edit';
+            $uploadPath = '/admin/videos/'.$video->getId().'/thumbnail';
+            $client->request('GET', $editPath);
+            self::assertResponseIsSuccessful();
+            $token = $client->getCrawler()
+                ->filter('form[action="'.$uploadPath.'"] input[name="_token"]')
+                ->eq(0)
+                ->attr('value');
+            self::assertIsString($token);
+
+            $client->request(
+                'POST',
+                $uploadPath,
+                ['_token' => $token, 'action' => 'upload'],
+                ['thumbnail_file' => new UploadedFile($temporaryPath, 'thumbnail.png', 'image/png', null, true)],
+            );
+            self::assertResponseRedirects($editPath);
+            self::assertIsString($storedObjectId);
+
+            $entityManager->clear();
+            $storedVideo = $entityManager->getRepository(Video::class)->find($video->getId());
+            self::assertInstanceOf(Video::class, $storedVideo);
+            self::assertSame($storedObjectId, $storedVideo->getThumbnailObjectId());
+            self::assertSame(
+                [
+                    VideoSocialPreviewGenerator::cacheObjectIdForSourceObjectId($concurrentObjectId),
+                    $concurrentObjectId,
+                ],
+                $deletedObjectIds,
+            );
+        } finally {
+            $connection->executeStatement('DELETE FROM videos WHERE id = :id', ['id' => $video->getId()]);
+            $connection->executeStatement('DELETE FROM admin_users WHERE email = :email', ['email' => $email]);
+            if (is_file($temporaryPath)) {
+                unlink($temporaryPath);
+            }
         }
     }
 

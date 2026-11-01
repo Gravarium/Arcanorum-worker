@@ -57,14 +57,29 @@ final class AdminVideoThumbnailController extends AbstractController
                 return $this->redirectToRoute('admin_video_edit', ['id' => $video->getId()]);
             }
 
-            $previousObjectId = $video->removeThumbnail();
+            $previousObjectId = null;
+            $entityManager->getConnection()->transactional(function () use (
+                $id,
+                $videos,
+                $entityManager,
+                &$previousObjectId,
+            ): void {
+                $currentVideo = $videos->findByIdForUpdate($id);
+                if (!$currentVideo instanceof Video) {
+                    throw $this->createNotFoundException('Video wurde nicht gefunden.');
+                }
+
+                $previousObjectId = $currentVideo->removeThumbnail();
+                if (null !== $previousObjectId) {
+                    $entityManager->flush();
+                }
+            });
             if (null === $previousObjectId) {
                 $this->addFlash('error', 'Für dieses Video ist kein Vorschaubild gespeichert.');
 
                 return $this->redirectToRoute('admin_video_edit', ['id' => $video->getId()]);
             }
 
-            $entityManager->flush();
             try {
                 $thumbnails->delete($previousObjectId);
             } catch (PrivateStorageOperationFailed|\InvalidArgumentException) {
@@ -100,10 +115,24 @@ final class AdminVideoThumbnailController extends AbstractController
             return $this->redirectToRoute('admin_video_edit', ['id' => $video->getId()]);
         }
 
-        $previousObjectId = $video->getThumbnailObjectId();
-        $video->attachThumbnail($thumbnail['object_id'], $thumbnail['mime_type'], $thumbnail['size']);
+        $previousObjectId = null;
         try {
-            $entityManager->flush();
+            $entityManager->getConnection()->transactional(function () use (
+                $id,
+                $videos,
+                $entityManager,
+                $thumbnail,
+                &$previousObjectId,
+            ): void {
+                $currentVideo = $videos->findByIdForUpdate($id);
+                if (!$currentVideo instanceof Video) {
+                    throw $this->createNotFoundException('Video wurde nicht gefunden.');
+                }
+
+                $previousObjectId = $currentVideo->getThumbnailObjectId();
+                $currentVideo->attachThumbnail($thumbnail['object_id'], $thumbnail['mime_type'], $thumbnail['size']);
+                $entityManager->flush();
+            });
         } catch (\Throwable $exception) {
             try {
                 $thumbnails->delete($thumbnail['object_id']);
