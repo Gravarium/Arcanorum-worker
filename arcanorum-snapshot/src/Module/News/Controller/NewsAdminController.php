@@ -22,10 +22,10 @@ use App\Repository\NewsArticleRevisionRepository;
 use App\Repository\PrivateObjectDeletionJobRepository;
 use App\Service\ContentInlineImageManager;
 use App\Service\ContentTagManager;
+use App\Service\NewsArticleSlugLock;
 use App\Service\RichTextSanitizer;
 use App\Service\SiteSettingsProvider;
 use App\Service\VideoThumbnailUploadService;
-use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
@@ -257,8 +257,9 @@ final class NewsAdminController extends AbstractController
         RichTextSanitizer $richText,
         ContentInlineImageRepository $inlineImages,
         ContentInlineImageManager $inlineImageManager,
+        NewsArticleSlugLock $slugLock,
     ): Response {
-        return $this->editForm($request, null, $articles, $categories, $tagManager, $entityManager, $siteSettings, $revisions, $richText, $inlineImages, $inlineImageManager);
+        return $this->editForm($request, null, $articles, $categories, $tagManager, $entityManager, $siteSettings, $revisions, $richText, $inlineImages, $inlineImageManager, $slugLock);
     }
 
     #[Route(
@@ -279,13 +280,14 @@ final class NewsAdminController extends AbstractController
         RichTextSanitizer $richText,
         ContentInlineImageRepository $inlineImages,
         ContentInlineImageManager $inlineImageManager,
+        NewsArticleSlugLock $slugLock,
     ): Response {
         $article = $articles->find($id);
         if (!$article instanceof NewsArticle) {
             throw $this->createNotFoundException('News-Beitrag wurde nicht gefunden.');
         }
 
-        return $this->editForm($request, $article, $articles, $categories, $tagManager, $entityManager, $siteSettings, $revisions, $richText, $inlineImages, $inlineImageManager);
+        return $this->editForm($request, $article, $articles, $categories, $tagManager, $entityManager, $siteSettings, $revisions, $richText, $inlineImages, $inlineImageManager, $slugLock);
     }
 
     #[Route(
@@ -336,6 +338,7 @@ final class NewsAdminController extends AbstractController
         RichTextSanitizer $richText,
         ContentInlineImageRepository $inlineImages,
         ContentInlineImageManager $inlineImageManager,
+        NewsArticleSlugLock $slugLock,
     ): Response {
         $siteTimezone = new \DateTimeZone($siteSettings->current()->getTimezone());
         $existingPublicationAt = $article?->getPublishedAt();
@@ -533,7 +536,7 @@ final class NewsAdminController extends AbstractController
 
                 $originalArticleId = $article?->getId();
                 try {
-                    $entityManager->getConnection()->transactional(function () use ($entityManager, &$article, $articles, $tagManager, $tagNames, $values, $slug, $status, $publicationAt, $revisions, $editor, $storedThumbnail, $removeThumbnail, $inlineImageIds, $inlineImageManager): void {
+                    $articleSaved = $entityManager->getConnection()->transactional(function () use ($entityManager, &$article, $articles, $tagManager, $tagNames, $values, $slug, $slugLock, $status, $publicationAt, $revisions, $editor, $storedThumbnail, $removeThumbnail, $inlineImageIds, $inlineImageManager): bool {
                         if (null !== $article) {
                             $lockedArticle = $articles->findByIdForUpdate($article->getId());
                             if (!$lockedArticle instanceof NewsArticle) {
@@ -541,6 +544,14 @@ final class NewsAdminController extends AbstractController
                             }
                             $article = $lockedArticle;
                             $entityManager->refresh($article, LockMode::PESSIMISTIC_WRITE);
+                        }
+
+                        $slugLock->lock($entityManager->getConnection(), $slug);
+                        $existingSlugArticle = $articles->findOneBySlug($slug);
+                        if ($existingSlugArticle instanceof NewsArticle
+                            && (null === $article || $existingSlugArticle->getId() !== $article->getId())
+                        ) {
+                            return false;
                         }
 
                         if (null === $article) {
@@ -586,6 +597,7 @@ final class NewsAdminController extends AbstractController
                         $entityManager->flush();
                         $inlineImageManager->removeUnusedNewsImages($article, $inlineImageIds);
                         $entityManager->flush();
+                        return true;
                     });
                 } catch (\Throwable $exception) {
                     $entityManagerOpen = $entityManager->isOpen();
@@ -604,13 +616,13 @@ final class NewsAdminController extends AbstractController
                         throw $this->createNotFoundException('News-Beitrag wurde zwischenzeitlich entfernt.');
                     }
 
-                    if (!$entityManagerOpen
-                        || !$exception instanceof UniqueConstraintViolationException
-                        || !str_contains($exception->getMessage(), 'uniq_news_articles_slug')
-                    ) {
-                        throw $exception;
-                    }
+                    throw $exception;
+                }
 
+                if (!$articleSaved) {
+                    if (null !== $storedThumbnail) {
+                        self::cleanupUploadedThumbnail($storedThumbnail['object_id'], $this->thumbnailUploads, $this->deletionJobs, $entityManager, $this->logger);
+                    }
                     $errors[] = 'Für diesen Permalink gibt es bereits einen Beitrag.';
                 }
 

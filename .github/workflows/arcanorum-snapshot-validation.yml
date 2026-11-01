@@ -2184,6 +2184,8 @@ jobs:
           php -l tests/Controller/AdminVideoThumbnailFlowTest.php
           php -l src/Module/News/Controller/NewsAdminController.php
           php -l tests/Controller/NewsArticleHistoryFlowTest.php
+          php -l src/Service/NewsArticleSlugLock.php
+          php -l tests/Service/NewsArticleSlugLockTest.php
 
       - name: Prepare PostgreSQL schema and validate Doctrine mapping
         run: |
@@ -2204,6 +2206,8 @@ jobs:
           tests/Controller/AdminVideoThumbnailFlowTest.php
           src/Module/News/Controller/NewsAdminController.php
           tests/Controller/NewsArticleHistoryFlowTest.php
+          src/Service/NewsArticleSlugLock.php
+          tests/Service/NewsArticleSlugLockTest.php
 
       - name: PHP CS Fixer on affected PHP files
         run: >-
@@ -2218,6 +2222,8 @@ jobs:
           tests/Controller/AdminVideoThumbnailFlowTest.php
           src/Module/News/Controller/NewsAdminController.php
           tests/Controller/NewsArticleHistoryFlowTest.php
+          src/Service/NewsArticleSlugLock.php
+          tests/Service/NewsArticleSlugLockTest.php
 
       - name: Rector dry run on affected PHP files
         run: >-
@@ -2229,6 +2235,8 @@ jobs:
           tests/Controller/AdminVideoThumbnailFlowTest.php
           src/Module/News/Controller/NewsAdminController.php
           tests/Controller/NewsArticleHistoryFlowTest.php
+          src/Service/NewsArticleSlugLock.php
+          tests/Service/NewsArticleSlugLockTest.php
           --config=rector.php
           --dry-run
           --no-progress-bar
@@ -2245,9 +2253,10 @@ jobs:
             --fail-on-risky --fail-on-warning --fail-on-deprecation \
             --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
             --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
-            --filter='testThumbnailUploadLocksCurrentVideoStateBeforeReplacingThumbnail|testAdminVideoEditLocksCurrentPrivateMediaBeforeReplacement|testAdminCanUploadPreviewAndRemoveVideoThumbnail|testAdministratorCanImportAValidatedProviderThumbnailForAnExistingVideo|testProviderImportDiscardsThumbnailWhenVideoSourceChangesDuringFetch|testNewsEditReportsConcurrentSlugClaimAndCleansUploadedThumbnail' \
+            --filter='testThumbnailUploadLocksCurrentVideoStateBeforeReplacingThumbnail|testAdminVideoEditLocksCurrentPrivateMediaBeforeReplacement|testAdminCanUploadPreviewAndRemoveVideoThumbnail|testAdministratorCanImportAValidatedProviderThumbnailForAnExistingVideo|testProviderImportDiscardsThumbnailWhenVideoSourceChangesDuringFetch|testNewsEditReportsConcurrentSlugClaimAndCleansUploadedThumbnail|testSlugLockIsHeldUntilTransactionCommits|testSlugLocksRequireTransactionAndRejectMalformedSlugs|testMalformedSlugIsRejectedBeforeLockAcquisition' \
             tests/Controller/AdminVideoThumbnailFlowTest.php \
             tests/Controller/NewsArticleHistoryFlowTest.php \
+            tests/Service/NewsArticleSlugLockTest.php \
             tests/Controller/AdminDashboardTest.php
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
 
