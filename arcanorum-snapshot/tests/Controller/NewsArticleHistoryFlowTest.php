@@ -24,6 +24,7 @@ use App\Repository\NewsArticleRevisionRepository;
 use App\Repository\StaticPageRepository;
 use App\Service\SiteSettingsManager;
 use App\Service\SiteSettingsProvider;
+use App\Service\VideoSocialPreviewGenerator;
 use App\Service\VideoThumbnailUploadService;
 use App\Tests\Support\VerifiedRuntimeAttestationReportProvider;
 use Doctrine\ORM\EntityManagerInterface;
@@ -104,6 +105,7 @@ final class NewsArticleHistoryFlowTest extends WebTestCase
         self::assertIsString($temporaryPath);
         self::assertSame(strlen($png), file_put_contents($temporaryPath, $png));
         $storedObjectId = null;
+        $deletedObjectIds = [];
         $storage = $this->createMock(PrivateObjectStorageInterface::class);
         $storage->expects(self::once())->method('write')->willReturnCallback(
             static function (string $objectId, string $contents) use (
@@ -122,10 +124,9 @@ final class NewsArticleHistoryFlowTest extends WebTestCase
                 ));
             },
         );
-        $storage->expects(self::once())->method('delete')->willReturnCallback(
-            static function (string $objectId) use (&$storedObjectId): void {
-                self::assertIsString($storedObjectId);
-                self::assertSame($storedObjectId, $objectId);
+        $storage->expects(self::exactly(2))->method('delete')->willReturnCallback(
+            static function (string $objectId) use (&$deletedObjectIds): void {
+                $deletedObjectIds[] = $objectId;
             },
         );
         $client->getContainer()->set(PrivateObjectStorageInterface::class, $storage);
@@ -187,6 +188,11 @@ final class NewsArticleHistoryFlowTest extends WebTestCase
                 'SELECT slug FROM news_articles WHERE id = :id',
                 ['id' => $otherArticle->getId()],
             ));
+            self::assertIsString($storedObjectId);
+            self::assertSame([
+                VideoSocialPreviewGenerator::cacheObjectIdForSourceObjectId($storedObjectId),
+                $storedObjectId,
+            ], $deletedObjectIds);
         } finally {
             $connection->executeStatement('DELETE FROM news_articles WHERE id = :id', ['id' => $article->getId()]);
             $connection->executeStatement('DELETE FROM news_articles WHERE id = :id', ['id' => $otherArticle->getId()]);
