@@ -369,7 +369,7 @@ final class PublicSeriesFlowTest extends WebTestCase
             self::assertStringContainsString("media-src 'self' https://media.example.org", (string) $client->getResponse()->headers->get('Content-Security-Policy-Report-Only'));
             self::assertStringContainsString('https://cdn.example.net', (string) $client->getResponse()->headers->get('Content-Security-Policy-Report-Only'));
             self::assertFalse($client->getResponse()->headers->has('Content-Security-Policy'));
-            self::assertStringContainsString('no-store', $client->getResponse()->headers->get('Cache-Control'));
+            self::assertStringContainsString('no-store', (string) $client->getResponse()->headers->get('Cache-Control'));
 
             $client->request('GET', '/series/'.$seriesSlug.'/season/1/episode/7');
             self::assertResponseIsSuccessful();
@@ -383,7 +383,7 @@ final class PublicSeriesFlowTest extends WebTestCase
             ]);
             self::assertStringContainsString("connect-src 'self' https://media.example.org", (string) $client->getResponse()->headers->get('Content-Security-Policy-Report-Only'));
             self::assertFalse($client->getResponse()->headers->has('Content-Security-Policy'));
-            self::assertStringContainsString('no-store', $client->getResponse()->headers->get('Cache-Control'));
+            self::assertStringContainsString('no-store', (string) $client->getResponse()->headers->get('Cache-Control'));
 
             $client->request('GET', '/series/'.$seriesSlug.'/season/1/episode/6');
             self::assertResponseIsSuccessful();

@@ -9,6 +9,7 @@ use App\Entity\ContentCategoryType;
 use App\Platform\Hosting\PrivateObjectStorageInterface;
 use App\Platform\Hosting\PrivateStorageOperationFailed;
 use App\Repository\ContentCategoryRepository;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -30,7 +31,7 @@ final readonly class VideoCategoryArtworkController
         methods: ['GET'],
         stateless: true,
     )]
-    public function show(string $slug, ContentCategoryRepository $categories): Response
+    public function show(string $slug, Request $request, ContentCategoryRepository $categories): Response
     {
         $category = $categories->findForTypeAndSlug(ContentCategoryType::Video, $slug);
         if (!$category instanceof ContentCategory) {
@@ -76,14 +77,19 @@ final readonly class VideoCategoryArtworkController
             return self::unavailable();
         }
 
-        return new Response($contents, Response::HTTP_OK, [
+        $response = new Response($contents, Response::HTTP_OK, [
             'Content-Type' => $expectedMimeType,
             'Content-Length' => (string) strlen($contents),
             'Content-Disposition' => 'inline',
-            'Cache-Control' => 'public, max-age=300',
+            'Cache-Control' => 'public, max-age=0, must-revalidate',
             'Cross-Origin-Resource-Policy' => 'same-origin',
             'X-Content-Type-Options' => 'nosniff',
         ]);
+
+        $response->setEtag($expectedSha256);
+        $response->isNotModified($request);
+
+        return $response;
     }
 
     private static function notFound(): Response

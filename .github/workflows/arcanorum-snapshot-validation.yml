@@ -623,6 +623,7 @@ jobs:
             php -l src/Module/Content/Controller/ContentInlineImageController.php
             php -l src/Module/Content/Controller/AdminContentInlineImageController.php
             php -l src/Module/Series/Controller/SeriesArtworkController.php
+            php -l src/Module/Video/Controller/VideoCategoryArtworkController.php
             php -l src/Service/ContentInlineImageReader.php
             php -l src/Module/Video/Controller/VideoSubtitleController.php
             php -l tests/Controller/NewsArticleHistoryFlowTest.php
@@ -630,6 +631,7 @@ jobs:
             php -l tests/Controller/ContentInlineImageFlowTest.php
             php -l tests/Controller/PublicSeriesFlowTest.php
             php -l tests/Controller/SeriesArtworkCacheFlowTest.php
+            php -l tests/Controller/VideoCategoryArtworkCacheFlowTest.php
             php -l tests/Controller/VideoSubtitleCacheFlowTest.php
           fi
 
@@ -652,6 +654,7 @@ jobs:
               src/Module/Content/Controller/ContentInlineImageController.php \
               src/Module/Content/Controller/AdminContentInlineImageController.php \
               src/Module/Series/Controller/SeriesArtworkController.php \
+              src/Module/Video/Controller/VideoCategoryArtworkController.php \
               src/Service/ContentInlineImageReader.php \
               src/Module/Video/Controller/VideoSubtitleController.php \
               tests/Controller/NewsArticleHistoryFlowTest.php \
@@ -659,6 +662,7 @@ jobs:
               tests/Controller/ContentInlineImageFlowTest.php \
               tests/Controller/PublicSeriesFlowTest.php \
               tests/Controller/SeriesArtworkCacheFlowTest.php \
+              tests/Controller/VideoCategoryArtworkCacheFlowTest.php \
               tests/Controller/VideoSubtitleCacheFlowTest.php
           fi
 
@@ -674,6 +678,7 @@ jobs:
               src/Module/Content/Controller/ContentInlineImageController.php \
               src/Module/Content/Controller/AdminContentInlineImageController.php \
               src/Module/Series/Controller/SeriesArtworkController.php \
+              src/Module/Video/Controller/VideoCategoryArtworkController.php \
               src/Service/ContentInlineImageReader.php \
               src/Module/Video/Controller/VideoSubtitleController.php \
               tests/Controller/NewsArticleHistoryFlowTest.php \
@@ -681,6 +686,7 @@ jobs:
               tests/Controller/ContentInlineImageFlowTest.php \
               tests/Controller/PublicSeriesFlowTest.php \
               tests/Controller/SeriesArtworkCacheFlowTest.php \
+              tests/Controller/VideoCategoryArtworkCacheFlowTest.php \
               tests/Controller/VideoSubtitleCacheFlowTest.php
           fi
 
@@ -697,6 +703,7 @@ jobs:
               src/Module/Content/Controller/ContentInlineImageController.php \
               src/Module/Content/Controller/AdminContentInlineImageController.php \
               src/Module/Series/Controller/SeriesArtworkController.php \
+              src/Module/Video/Controller/VideoCategoryArtworkController.php \
               src/Service/ContentInlineImageReader.php \
               src/Module/Video/Controller/VideoSubtitleController.php \
               tests/Controller/NewsArticleHistoryFlowTest.php \
@@ -704,6 +711,7 @@ jobs:
               tests/Controller/ContentInlineImageFlowTest.php \
               tests/Controller/PublicSeriesFlowTest.php \
               tests/Controller/SeriesArtworkCacheFlowTest.php \
+              tests/Controller/VideoCategoryArtworkCacheFlowTest.php \
               tests/Controller/VideoSubtitleCacheFlowTest.php \
               --config=rector.php --dry-run --no-progress-bar
           fi
@@ -721,6 +729,7 @@ jobs:
               src/Module/Content/Controller/ContentInlineImageController.php \
               src/Module/Content/Controller/AdminContentInlineImageController.php \
               src/Module/Series/Controller/SeriesArtworkController.php \
+              src/Module/Video/Controller/VideoCategoryArtworkController.php \
               src/Service/ContentInlineImageReader.php \
               src/Module/Video/Controller/VideoSubtitleController.php \
               tests/Controller/NewsArticleHistoryFlowTest.php \
@@ -728,6 +737,7 @@ jobs:
               tests/Controller/ContentInlineImageFlowTest.php \
               tests/Controller/PublicSeriesFlowTest.php \
               tests/Controller/SeriesArtworkCacheFlowTest.php \
+              tests/Controller/VideoCategoryArtworkCacheFlowTest.php \
               tests/Controller/VideoSubtitleCacheFlowTest.php
           fi
 
@@ -745,7 +755,7 @@ jobs:
               --fail-on-risky --fail-on-warning --fail-on-deprecation \
               --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
               --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
-              --filter='testAdministratorCreatesVersionedNewsWithEscapedAuthorAndPrivateHistory|testPublicThumbnailRevalidatesBeforeServingAndAfterMembershipChange|testPublishedSubtitleRevalidatesAndIsDeniedAfterUnpublish|testPublicCategoryRichTextIsSanitizedAndOnlyOwnReferencedImagesAreOutput|testNewsEditorCanUploadOnlyNewsCategoryImagesAndUnusedImagesAreQueuedForDeletion|testOnlyPublishedSeriesAndEpisodesAppearOnPublicPages|testPublishedArtworkRevalidatesAndIsDeniedAfterUnpublish' \
+              --filter='testAdministratorCreatesVersionedNewsWithEscapedAuthorAndPrivateHistory|testPublicThumbnailRevalidatesBeforeServingAndAfterMembershipChange|testPublishedSubtitleRevalidatesAndIsDeniedAfterUnpublish|testPublicCategoryRichTextIsSanitizedAndOnlyOwnReferencedImagesAreOutput|testNewsEditorCanUploadOnlyNewsCategoryImagesAndUnusedImagesAreQueuedForDeletion|testOnlyPublishedSeriesAndEpisodesAppearOnPublicPages|testPublishedArtworkRevalidatesAndIsDeniedAfterUnpublish|testCategoryArtworkRevalidatesAfterReplacementIsRemoved' \
               tests/Controller
           fi
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
