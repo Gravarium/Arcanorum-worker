@@ -12,6 +12,7 @@ use App\Platform\Hosting\PrivateStorageOperationFailed;
 use App\Repository\VideoRepository;
 use App\Repository\VideoSubtitleTrackRepository;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -34,6 +35,7 @@ final readonly class VideoSubtitleController
     public function show(
         string $videoId,
         string $trackId,
+        Request $request,
         VideoRepository $videos,
         VideoSubtitleTrackRepository $tracks,
     ): Response {
@@ -77,8 +79,8 @@ final readonly class VideoSubtitleController
             return self::unavailable();
         }
 
-        return new Response($contents, Response::HTTP_OK, [
-            'Cache-Control' => 'public, max-age=300',
+        $response = new Response($contents, Response::HTTP_OK, [
+            'Cache-Control' => 'public, max-age=0, must-revalidate',
             'Content-Disposition' => 'inline',
             'Content-Length' => (string) strlen($contents),
             'Content-Security-Policy' => "default-src 'none'; base-uri 'none'; frame-ancestors 'none'",
@@ -87,6 +89,11 @@ final readonly class VideoSubtitleController
             'Referrer-Policy' => 'no-referrer',
             'X-Content-Type-Options' => 'nosniff',
         ]);
+
+        $response->setEtag($sha256);
+        $response->isNotModified($request);
+
+        return $response;
     }
 
     private static function notFound(): Response

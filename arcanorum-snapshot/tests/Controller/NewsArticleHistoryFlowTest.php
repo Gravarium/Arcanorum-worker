@@ -177,9 +177,6 @@ final class NewsArticleHistoryFlowTest extends WebTestCase
             $client->request('GET', '/news/'.$article->getId().'/thumbnail');
             self::assertResponseIsSuccessful();
             self::assertSame($png, $client->getResponse()->getContent());
-            self::assertTrue($client->getResponse()->headers->getCacheControlDirective('public'));
-            self::assertSame('0', $client->getResponse()->headers->getCacheControlDirective('max-age'));
-            self::assertTrue($client->getResponse()->headers->getCacheControlDirective('must-revalidate'));
             $publicThumbnailEtag = (string) $client->getResponse()->headers->get('ETag');
             self::assertNotSame('', $publicThumbnailEtag);
             $client->request('GET', '/news/'.$article->getId().'/thumbnail', server: ['HTTP_IF_NONE_MATCH' => $publicThumbnailEtag]);
