@@ -279,7 +279,7 @@ final class ContentInlineImageFlowTest extends WebTestCase
             self::assertResponseIsSuccessful();
             $cacheControl = $client->getResponse()->headers->get('Cache-Control');
             self::assertIsString($cacheControl);
-            self::assertCacheControlHasDirectives($cacheControl, 'public', 'max-age=300');
+            self::assertCacheControlHasDirectives($cacheControl, 'public', 'max-age=0', 'must-revalidate');
             self::assertStringNotContainsString('private', $cacheControl);
 
             $client->request('GET', '/admin/categories/'.$news->getId().'/edit');

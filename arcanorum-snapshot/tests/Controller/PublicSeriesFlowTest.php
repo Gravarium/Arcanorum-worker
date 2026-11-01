@@ -18,6 +18,7 @@ use App\Service\SiteSettingsManager;
 use App\Service\SiteSettingsProvider;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\HttpFoundation\Response;
 
 final class PublicSeriesFlowTest extends WebTestCase
 {
@@ -273,8 +274,20 @@ final class PublicSeriesFlowTest extends WebTestCase
             self::assertResponseIsSuccessful();
             self::assertResponseHeaderSame('Content-Type', 'image/png');
             self::assertResponseHeaderSame('X-Content-Type-Options', 'nosniff');
-            self::assertSame('max-age=300, public', $client->getResponse()->headers->get('Cache-Control'));
+            $artworkCacheControl = $client->getResponse()->headers;
+            self::assertTrue($artworkCacheControl->getCacheControlDirective('public'));
+            self::assertSame('0', $artworkCacheControl->getCacheControlDirective('max-age'));
+            self::assertTrue($artworkCacheControl->getCacheControlDirective('must-revalidate'));
             self::assertSame($artwork, $client->getResponse()->getContent());
+            $artworkEtag = (string) $client->getResponse()->headers->get('ETag');
+            self::assertNotSame('', $artworkEtag);
+            $client->request(
+                'GET',
+                '/series/'.$seriesSlug.'/artwork',
+                server: ['HTTP_IF_NONE_MATCH' => $artworkEtag],
+            );
+            self::assertResponseStatusCodeSame(Response::HTTP_NOT_MODIFIED);
+            self::assertSame('', $client->getResponse()->getContent());
 
             $connection = $entityManager->getConnection();
             $connection->beginTransaction();
@@ -383,6 +396,19 @@ final class PublicSeriesFlowTest extends WebTestCase
 
             $client->request('GET', '/series/'.$draftSeriesSlug);
             self::assertResponseStatusCodeSame(404);
+
+            $connection->executeStatement(
+                'UPDATE content_series SET status = :status, published_at = NULL WHERE id = :id',
+                ['status' => PublishingStatus::Draft->value, 'id' => $series->getId()],
+            );
+            $entityManager->clear();
+            $client->request(
+                'GET',
+                '/series/'.$seriesSlug.'/artwork',
+                server: ['HTTP_IF_NONE_MATCH' => $artworkEtag],
+            );
+            self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+            self::assertTrue($client->getResponse()->headers->getCacheControlDirective('no-store'));
         } finally {
             $settingsManager->updateContentOptions([
                 'video_player_aspect_ratio' => $originalPlayerRatio,

@@ -54,9 +54,19 @@ final class SeriesArtworkCacheFlowTest extends WebTestCase
             self::assertResponseStatusCodeSame(Response::HTTP_NOT_MODIFIED);
             self::assertSame('', $client->getResponse()->getContent());
 
-            $series->revise($series->getTitle(), $series->getSlug(), $series->getDescription(), PublishingStatus::Draft);
-            $entityManager->flush();
-            $entityManager->clear();
+            $activeEntityManager = $client->getContainer()->get(EntityManagerInterface::class);
+            self::assertInstanceOf(EntityManagerInterface::class, $activeEntityManager);
+            $activeEntityManager->clear();
+            $storedSeries = $activeEntityManager->find(ContentSeries::class, $series->getId());
+            self::assertInstanceOf(ContentSeries::class, $storedSeries);
+            $storedSeries->revise(
+                $storedSeries->getTitle(),
+                $storedSeries->getSlug(),
+                $storedSeries->getDescription(),
+                PublishingStatus::Draft,
+            );
+            $activeEntityManager->flush();
+            $activeEntityManager->clear();
 
             $client->request('GET', $path, server: ['HTTP_IF_NONE_MATCH' => $etag]);
             self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);

@@ -628,6 +628,7 @@ jobs:
             php -l tests/Controller/NewsArticleHistoryFlowTest.php
             php -l tests/Controller/NewsArticleThumbnailCacheFlowTest.php
             php -l tests/Controller/ContentInlineImageFlowTest.php
+            php -l tests/Controller/PublicSeriesFlowTest.php
             php -l tests/Controller/SeriesArtworkCacheFlowTest.php
             php -l tests/Controller/VideoSubtitleCacheFlowTest.php
           fi
@@ -656,6 +657,7 @@ jobs:
               tests/Controller/NewsArticleHistoryFlowTest.php \
               tests/Controller/NewsArticleThumbnailCacheFlowTest.php \
               tests/Controller/ContentInlineImageFlowTest.php \
+              tests/Controller/PublicSeriesFlowTest.php \
               tests/Controller/SeriesArtworkCacheFlowTest.php \
               tests/Controller/VideoSubtitleCacheFlowTest.php
           fi
@@ -677,6 +679,7 @@ jobs:
               tests/Controller/NewsArticleHistoryFlowTest.php \
               tests/Controller/NewsArticleThumbnailCacheFlowTest.php \
               tests/Controller/ContentInlineImageFlowTest.php \
+              tests/Controller/PublicSeriesFlowTest.php \
               tests/Controller/SeriesArtworkCacheFlowTest.php \
               tests/Controller/VideoSubtitleCacheFlowTest.php
           fi
@@ -699,6 +702,7 @@ jobs:
               tests/Controller/NewsArticleHistoryFlowTest.php \
               tests/Controller/NewsArticleThumbnailCacheFlowTest.php \
               tests/Controller/ContentInlineImageFlowTest.php \
+              tests/Controller/PublicSeriesFlowTest.php \
               tests/Controller/SeriesArtworkCacheFlowTest.php \
               tests/Controller/VideoSubtitleCacheFlowTest.php \
               --config=rector.php --dry-run --no-progress-bar
@@ -722,6 +726,7 @@ jobs:
               tests/Controller/NewsArticleHistoryFlowTest.php \
               tests/Controller/NewsArticleThumbnailCacheFlowTest.php \
               tests/Controller/ContentInlineImageFlowTest.php \
+              tests/Controller/PublicSeriesFlowTest.php \
               tests/Controller/SeriesArtworkCacheFlowTest.php \
               tests/Controller/VideoSubtitleCacheFlowTest.php
           fi
@@ -740,7 +745,7 @@ jobs:
               --fail-on-risky --fail-on-warning --fail-on-deprecation \
               --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
               --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
-              --filter='testAdministratorCreatesVersionedNewsWithEscapedAuthorAndPrivateHistory|testPublicThumbnailRevalidatesBeforeServingAndAfterMembershipChange|testPublishedSubtitleRevalidatesAndIsDeniedAfterUnpublish|testPublicCategoryRichTextIsSanitizedAndOnlyOwnReferencedImagesAreOutput|testNewsEditorCanUploadOnlyNewsCategoryImagesAndUnusedImagesAreQueuedForDeletion|testPublishedArtworkRevalidatesAndIsDeniedAfterUnpublish' \
+              --filter='testAdministratorCreatesVersionedNewsWithEscapedAuthorAndPrivateHistory|testPublicThumbnailRevalidatesBeforeServingAndAfterMembershipChange|testPublishedSubtitleRevalidatesAndIsDeniedAfterUnpublish|testPublicCategoryRichTextIsSanitizedAndOnlyOwnReferencedImagesAreOutput|testNewsEditorCanUploadOnlyNewsCategoryImagesAndUnusedImagesAreQueuedForDeletion|testOnlyPublishedSeriesAndEpisodesAppearOnPublicPages|testPublishedArtworkRevalidatesAndIsDeniedAfterUnpublish' \
               tests/Controller
           fi
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
