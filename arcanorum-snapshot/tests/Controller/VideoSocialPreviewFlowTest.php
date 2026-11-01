@@ -122,14 +122,14 @@ final class VideoSocialPreviewFlowTest extends WebTestCase
             self::assertResponseStatusCodeSame(503);
             self::assertTrue($client->getResponse()->headers->getCacheControlDirective('no-store'));
 
-            $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
-            self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
-            $entityManager->clear();
-            $unpublished = $entityManager->find(Video::class, $published->getId());
+            $activeEntityManager = $client->getContainer()->get(EntityManagerInterface::class);
+            self::assertInstanceOf(EntityManagerInterface::class, $activeEntityManager);
+            $activeEntityManager->clear();
+            $unpublished = $activeEntityManager->find(Video::class, $published->getId());
             self::assertInstanceOf(Video::class, $unpublished);
             $unpublished->setPublishingStatus(PublishingStatus::Draft);
-            $entityManager->flush();
-            $entityManager->clear();
+            $activeEntityManager->flush();
+            $activeEntityManager->clear();
             $client->request('GET', '/videos/'.$published->getId().'/social-preview/'.$version, server: ['HTTP_IF_NONE_MATCH' => $previewEtag]);
             self::assertResponseStatusCodeSame(404);
             $client->request('GET', '/videos/'.$published->getId().'/thumbnail', server: ['HTTP_IF_NONE_MATCH' => $thumbnailEtag]);
