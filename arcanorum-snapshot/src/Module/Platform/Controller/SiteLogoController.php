@@ -9,6 +9,7 @@ use App\Platform\Hosting\PrivateStorageOperationFailed;
 use App\Service\SiteSettingsProvider;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Component\Routing\Attribute\Route;
@@ -28,7 +29,7 @@ final class SiteLogoController extends AbstractController
         requirements: ['sha256' => '[a-f0-9]{64}'],
         methods: ['GET'],
     )]
-    public function show(string $sha256, SiteSettingsProvider $settings): Response
+    public function show(string $sha256, Request $request, SiteSettingsProvider $settings): Response
     {
         $current = $settings->current();
         $objectId = $current->getSiteLogoObjectId();
@@ -82,8 +83,8 @@ final class SiteLogoController extends AbstractController
             ]);
         }
 
-        return new Response($contents, Response::HTTP_OK, [
-            'Cache-Control' => 'public, max-age=300',
+        $response = new Response($contents, Response::HTTP_OK, [
+            'Cache-Control' => 'public, max-age=0, must-revalidate',
             'Content-Disposition' => 'inline',
             'Content-Length' => (string) strlen($contents),
             'Content-Security-Policy' => "default-src 'none'; frame-ancestors 'none'; base-uri 'none'",
@@ -92,6 +93,11 @@ final class SiteLogoController extends AbstractController
             'Referrer-Policy' => 'no-referrer',
             'X-Content-Type-Options' => 'nosniff',
         ]);
+
+        $response->setEtag($digest);
+        $response->isNotModified($request);
+
+        return $response;
     }
 
     private function notFound(): Response

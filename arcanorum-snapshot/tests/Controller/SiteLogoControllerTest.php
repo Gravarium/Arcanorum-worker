@@ -26,7 +26,7 @@ final class SiteLogoControllerTest extends WebTestCase
         $objectId = str_repeat('a', 64);
         $sha256 = hash('sha256', $contents);
         $storage = $this->createMock(PrivateObjectStorageInterface::class);
-        $storage->expects(self::once())->method('read')->with($objectId, strlen($contents))->willReturn($contents);
+        $storage->expects(self::exactly(2))->method('read')->with($objectId, strlen($contents))->willReturn($contents);
         $client->getContainer()->set(PrivateObjectStorageInterface::class, $storage);
         $settings = $this->settings($client);
         $settings->attachSiteLogo($objectId, 'image/png', strlen($contents), $sha256);
@@ -42,8 +42,14 @@ final class SiteLogoControllerTest extends WebTestCase
             self::assertSame('nosniff', $client->getResponse()->headers->get('X-Content-Type-Options'));
             $cacheControl = (string) $client->getResponse()->headers->get('Cache-Control');
             self::assertStringContainsString('public', $cacheControl);
-            self::assertStringContainsString('max-age=300', $cacheControl);
+            self::assertStringContainsString('max-age=0', $cacheControl);
+            self::assertStringContainsString('must-revalidate', $cacheControl);
             self::assertSame('same-origin', $client->getResponse()->headers->get('Cross-Origin-Resource-Policy'));
+            self::assertSame('"'.$sha256.'"', $client->getResponse()->headers->get('ETag'));
+
+            $client->request('GET', '/site-logo/'.$sha256, server: ['HTTP_IF_NONE_MATCH' => '"'.$sha256.'"']);
+            self::assertResponseStatusCodeSame(304);
+            self::assertSame('', $client->getResponse()->getContent());
 
             $client->request('GET', '/site-logo/'.str_repeat('c', 64));
             self::assertResponseStatusCodeSame(404);

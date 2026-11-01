@@ -227,7 +227,7 @@ final class AdminDesignSettingsControllerTest extends WebTestCase
             ->willReturnCallback(static function (string $storedId, string $storedContents) use ($storageCapture): void {
                 $storageCapture->store($storedId, $storedContents);
             });
-        $storage->expects(self::exactly(2))->method('read')
+        $storage->expects(self::exactly(3))->method('read')
             ->willReturnCallback(static function (string $requestedId, int $maximumBytes) use ($storageCapture): string {
                 $contents = $storageCapture->contents($requestedId);
                 self::assertSame(strlen($contents), $maximumBytes);
@@ -286,6 +286,13 @@ final class AdminDesignSettingsControllerTest extends WebTestCase
             self::assertResponseIsSuccessful();
             self::assertSame($storageCapture->contents($firstObjectId), $client->getResponse()->getContent());
             self::assertSame('nosniff', $client->getResponse()->headers->get('X-Content-Type-Options'));
+            $firstEtag = (string) $client->getResponse()->headers->get('ETag');
+            self::assertNotSame('', $firstEtag);
+            self::assertStringContainsString('must-revalidate', (string) $client->getResponse()->headers->get('Cache-Control'));
+
+            $client->request('GET', '/site-logo/'.$firstSha256, server: ['HTTP_IF_NONE_MATCH' => $firstEtag]);
+            self::assertResponseStatusCodeSame(304);
+            self::assertSame('', $client->getResponse()->getContent());
 
             $replacementPath = tempnam(sys_get_temp_dir(), 'arcanorum-admin-logo-');
             $uploadPaths[] = $replacementPath;
@@ -306,8 +313,9 @@ final class AdminDesignSettingsControllerTest extends WebTestCase
             self::assertIsString($currentSha256);
             self::assertNotSame($firstSha256, $currentSha256);
 
-            $client->request('GET', '/site-logo/'.$firstSha256);
+            $client->request('GET', '/site-logo/'.$firstSha256, server: ['HTTP_IF_NONE_MATCH' => $firstEtag]);
             self::assertResponseStatusCodeSame(404);
+            self::assertTrue($client->getResponse()->headers->getCacheControlDirective('no-store'));
             $client->request('GET', '/site-logo/'.$currentSha256);
             self::assertResponseIsSuccessful();
             self::assertSame($storageCapture->contents($currentObjectId), $client->getResponse()->getContent());

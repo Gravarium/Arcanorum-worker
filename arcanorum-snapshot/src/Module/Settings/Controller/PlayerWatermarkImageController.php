@@ -10,6 +10,7 @@ use App\Platform\Hosting\PrivateStorageOperationFailed;
 use App\Service\SiteSettingsProvider;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -28,14 +29,14 @@ final class PlayerWatermarkImageController extends AbstractController
         requirements: ['sha256' => '[a-f0-9]{64}'],
         methods: ['GET'],
     )]
-    public function show(string $sha256, SiteSettingsProvider $settings): Response
+    public function show(string $sha256, Request $request, SiteSettingsProvider $settings): Response
     {
         $current = $settings->current();
         if (!$current->isVideoPlayerWatermarkEnabled()) {
             return new Response('', Response::HTTP_NOT_FOUND, ['Cache-Control' => 'no-store']);
         }
 
-        return $this->imageResponse($current, $sha256, false);
+        return $this->imageResponse($current, $sha256, $request, false);
     }
 
     #[Route(
@@ -45,12 +46,12 @@ final class PlayerWatermarkImageController extends AbstractController
         methods: ['GET'],
     )]
     #[IsGranted('ROLE_ADMIN')]
-    public function preview(string $sha256, SiteSettingsProvider $settings): Response
+    public function preview(string $sha256, Request $request, SiteSettingsProvider $settings): Response
     {
-        return $this->imageResponse($settings->current(), $sha256, true);
+        return $this->imageResponse($settings->current(), $sha256, $request, true);
     }
 
-    private function imageResponse(SiteSettings $settings, string $requestedSha256, bool $private): Response
+    private function imageResponse(SiteSettings $settings, string $requestedSha256, Request $request, bool $private): Response
     {
         $objectId = $settings->getVideoPlayerWatermarkObjectId();
         $mimeType = $settings->getVideoPlayerWatermarkMimeType();
@@ -96,8 +97,8 @@ final class PlayerWatermarkImageController extends AbstractController
             return new Response('', Response::HTTP_SERVICE_UNAVAILABLE, ['Cache-Control' => 'no-store']);
         }
 
-        return new Response($contents, Response::HTTP_OK, [
-            'Cache-Control' => $private ? 'private, no-store' : 'public, max-age=300',
+        $response = new Response($contents, Response::HTTP_OK, [
+            'Cache-Control' => $private ? 'private, no-store' : 'public, max-age=0, must-revalidate',
             'Content-Disposition' => 'inline',
             'Content-Length' => (string) strlen($contents),
             'Content-Security-Policy' => "default-src 'none'; frame-ancestors 'none'; base-uri 'none'",
@@ -106,5 +107,12 @@ final class PlayerWatermarkImageController extends AbstractController
             'Referrer-Policy' => 'no-referrer',
             'X-Content-Type-Options' => 'nosniff',
         ]);
+
+        if (!$private) {
+            $response->setEtag($sha256);
+            $response->isNotModified($request);
+        }
+
+        return $response;
     }
 }

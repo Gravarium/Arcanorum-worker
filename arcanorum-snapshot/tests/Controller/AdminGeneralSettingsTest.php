@@ -1143,7 +1143,7 @@ final class AdminGeneralSettingsTest extends WebTestCase
                 $objectContents = $storedContents;
             },
         );
-        $storage->expects(self::exactly(2))->method('read')->willReturnCallback(
+        $storage->expects(self::exactly(3))->method('read')->willReturnCallback(
             static function (string $requestedId, int $maximumBytes) use (&$objectId, &$objectContents, $contents): string {
                 self::assertSame($objectId, $requestedId);
                 self::assertIsString($objectContents);
@@ -1207,9 +1207,16 @@ final class AdminGeneralSettingsTest extends WebTestCase
             $client->request('GET', '/_assets/player-watermark/'.$storedHash);
             self::assertResponseIsSuccessful();
             self::assertStringContainsString('public', (string) $client->getResponse()->headers->get('Cache-Control'));
-            self::assertStringContainsString('max-age=300', (string) $client->getResponse()->headers->get('Cache-Control'));
+            self::assertStringContainsString('max-age=0', (string) $client->getResponse()->headers->get('Cache-Control'));
+            self::assertStringContainsString('must-revalidate', (string) $client->getResponse()->headers->get('Cache-Control'));
+            $publicEtag = (string) $client->getResponse()->headers->get('ETag');
+            self::assertSame('"'.$storedHash.'"', $publicEtag);
             self::assertSame('image/png', $client->getResponse()->headers->get('Content-Type'));
             self::assertSame('nosniff', $client->getResponse()->headers->get('X-Content-Type-Options'));
+
+            $client->request('GET', '/_assets/player-watermark/'.$storedHash, server: ['HTTP_IF_NONE_MATCH' => $publicEtag]);
+            self::assertResponseStatusCodeSame(Response::HTTP_NOT_MODIFIED);
+            self::assertSame('', $client->getResponse()->getContent());
 
             $client->request('POST', '/admin/settings/content/watermark/remove', ['_token' => $token]);
             self::assertResponseRedirects('/admin/settings/content');
@@ -1221,8 +1228,9 @@ final class AdminGeneralSettingsTest extends WebTestCase
             self::assertNull($removedSettings->getVideoPlayerWatermarkObjectId());
             self::assertNull($removedSettings->getVideoPlayerWatermarkSha256());
             self::assertSame(1, $deletedObjects);
-            $client->request('GET', '/_assets/player-watermark/'.$storedHash);
+            $client->request('GET', '/_assets/player-watermark/'.$storedHash, server: ['HTTP_IF_NONE_MATCH' => $publicEtag]);
             self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+            self::assertTrue($client->getResponse()->headers->getCacheControlDirective('no-store'));
         } finally {
             if (is_file($path)) {
                 unlink($path);

@@ -622,15 +622,20 @@ jobs:
             php -l src/Module/News/Controller/NewsArticleThumbnailController.php
             php -l src/Module/Content/Controller/ContentInlineImageController.php
             php -l src/Module/Content/Controller/AdminContentInlineImageController.php
+            php -l src/Module/Platform/Controller/SiteLogoController.php
             php -l src/Module/Series/Controller/SeriesArtworkController.php
+            php -l src/Module/Settings/Controller/PlayerWatermarkImageController.php
             php -l src/Module/Video/Controller/VideoCategoryArtworkController.php
             php -l src/Service/ContentInlineImageReader.php
             php -l src/Module/Video/Controller/VideoSubtitleController.php
+            php -l tests/Controller/AdminDesignSettingsControllerTest.php
+            php -l tests/Controller/AdminGeneralSettingsTest.php
             php -l tests/Controller/NewsArticleHistoryFlowTest.php
             php -l tests/Controller/NewsArticleThumbnailCacheFlowTest.php
             php -l tests/Controller/ContentInlineImageFlowTest.php
             php -l tests/Controller/PublicSeriesFlowTest.php
             php -l tests/Controller/SeriesArtworkCacheFlowTest.php
+            php -l tests/Controller/SiteLogoControllerTest.php
             php -l tests/Controller/VideoCategoryArtworkCacheFlowTest.php
             php -l tests/Controller/VideoSubtitleCacheFlowTest.php
           fi
@@ -653,15 +658,20 @@ jobs:
               src/Module/News/Controller/NewsArticleThumbnailController.php \
               src/Module/Content/Controller/ContentInlineImageController.php \
               src/Module/Content/Controller/AdminContentInlineImageController.php \
+              src/Module/Platform/Controller/SiteLogoController.php \
               src/Module/Series/Controller/SeriesArtworkController.php \
+              src/Module/Settings/Controller/PlayerWatermarkImageController.php \
               src/Module/Video/Controller/VideoCategoryArtworkController.php \
               src/Service/ContentInlineImageReader.php \
               src/Module/Video/Controller/VideoSubtitleController.php \
+              tests/Controller/AdminDesignSettingsControllerTest.php \
+              tests/Controller/AdminGeneralSettingsTest.php \
               tests/Controller/NewsArticleHistoryFlowTest.php \
               tests/Controller/NewsArticleThumbnailCacheFlowTest.php \
               tests/Controller/ContentInlineImageFlowTest.php \
               tests/Controller/PublicSeriesFlowTest.php \
               tests/Controller/SeriesArtworkCacheFlowTest.php \
+              tests/Controller/SiteLogoControllerTest.php \
               tests/Controller/VideoCategoryArtworkCacheFlowTest.php \
               tests/Controller/VideoSubtitleCacheFlowTest.php
           fi
@@ -677,15 +687,20 @@ jobs:
               src/Module/News/Controller/NewsArticleThumbnailController.php \
               src/Module/Content/Controller/ContentInlineImageController.php \
               src/Module/Content/Controller/AdminContentInlineImageController.php \
+              src/Module/Platform/Controller/SiteLogoController.php \
               src/Module/Series/Controller/SeriesArtworkController.php \
+              src/Module/Settings/Controller/PlayerWatermarkImageController.php \
               src/Module/Video/Controller/VideoCategoryArtworkController.php \
               src/Service/ContentInlineImageReader.php \
               src/Module/Video/Controller/VideoSubtitleController.php \
+              tests/Controller/AdminDesignSettingsControllerTest.php \
+              tests/Controller/AdminGeneralSettingsTest.php \
               tests/Controller/NewsArticleHistoryFlowTest.php \
               tests/Controller/NewsArticleThumbnailCacheFlowTest.php \
               tests/Controller/ContentInlineImageFlowTest.php \
               tests/Controller/PublicSeriesFlowTest.php \
               tests/Controller/SeriesArtworkCacheFlowTest.php \
+              tests/Controller/SiteLogoControllerTest.php \
               tests/Controller/VideoCategoryArtworkCacheFlowTest.php \
               tests/Controller/VideoSubtitleCacheFlowTest.php
           fi
@@ -702,15 +717,20 @@ jobs:
               src/Module/News/Controller/NewsArticleThumbnailController.php \
               src/Module/Content/Controller/ContentInlineImageController.php \
               src/Module/Content/Controller/AdminContentInlineImageController.php \
+              src/Module/Platform/Controller/SiteLogoController.php \
               src/Module/Series/Controller/SeriesArtworkController.php \
+              src/Module/Settings/Controller/PlayerWatermarkImageController.php \
               src/Module/Video/Controller/VideoCategoryArtworkController.php \
               src/Service/ContentInlineImageReader.php \
               src/Module/Video/Controller/VideoSubtitleController.php \
+              tests/Controller/AdminDesignSettingsControllerTest.php \
+              tests/Controller/AdminGeneralSettingsTest.php \
               tests/Controller/NewsArticleHistoryFlowTest.php \
               tests/Controller/NewsArticleThumbnailCacheFlowTest.php \
               tests/Controller/ContentInlineImageFlowTest.php \
               tests/Controller/PublicSeriesFlowTest.php \
               tests/Controller/SeriesArtworkCacheFlowTest.php \
+              tests/Controller/SiteLogoControllerTest.php \
               tests/Controller/VideoCategoryArtworkCacheFlowTest.php \
               tests/Controller/VideoSubtitleCacheFlowTest.php \
               --config=rector.php --dry-run --no-progress-bar
@@ -728,15 +748,20 @@ jobs:
               src/Module/News/Controller/NewsArticleThumbnailController.php \
               src/Module/Content/Controller/ContentInlineImageController.php \
               src/Module/Content/Controller/AdminContentInlineImageController.php \
+              src/Module/Platform/Controller/SiteLogoController.php \
               src/Module/Series/Controller/SeriesArtworkController.php \
+              src/Module/Settings/Controller/PlayerWatermarkImageController.php \
               src/Module/Video/Controller/VideoCategoryArtworkController.php \
               src/Service/ContentInlineImageReader.php \
               src/Module/Video/Controller/VideoSubtitleController.php \
+              tests/Controller/AdminDesignSettingsControllerTest.php \
+              tests/Controller/AdminGeneralSettingsTest.php \
               tests/Controller/NewsArticleHistoryFlowTest.php \
               tests/Controller/NewsArticleThumbnailCacheFlowTest.php \
               tests/Controller/ContentInlineImageFlowTest.php \
               tests/Controller/PublicSeriesFlowTest.php \
               tests/Controller/SeriesArtworkCacheFlowTest.php \
+              tests/Controller/SiteLogoControllerTest.php \
               tests/Controller/VideoCategoryArtworkCacheFlowTest.php \
               tests/Controller/VideoSubtitleCacheFlowTest.php
           fi
@@ -755,7 +780,7 @@ jobs:
               --fail-on-risky --fail-on-warning --fail-on-deprecation \
               --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
               --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
-              --filter='testAdministratorCreatesVersionedNewsWithEscapedAuthorAndPrivateHistory|testPublicThumbnailRevalidatesBeforeServingAndAfterMembershipChange|testPublishedSubtitleRevalidatesAndIsDeniedAfterUnpublish|testPublicCategoryRichTextIsSanitizedAndOnlyOwnReferencedImagesAreOutput|testNewsEditorCanUploadOnlyNewsCategoryImagesAndUnusedImagesAreQueuedForDeletion|testOnlyPublishedSeriesAndEpisodesAppearOnPublicPages|testPublishedArtworkRevalidatesAndIsDeniedAfterUnpublish|testCategoryArtworkRevalidatesAfterReplacementIsRemoved' \
+              --filter='testAdministratorCreatesVersionedNewsWithEscapedAuthorAndPrivateHistory|testPublicThumbnailRevalidatesBeforeServingAndAfterMembershipChange|testPublishedSubtitleRevalidatesAndIsDeniedAfterUnpublish|testPublicCategoryRichTextIsSanitizedAndOnlyOwnReferencedImagesAreOutput|testNewsEditorCanUploadOnlyNewsCategoryImagesAndUnusedImagesAreQueuedForDeletion|testOnlyPublishedSeriesAndEpisodesAppearOnPublicPages|testPublishedArtworkRevalidatesAndIsDeniedAfterUnpublish|testCategoryArtworkRevalidatesAfterReplacementIsRemoved|testServesOnlyTheCurrentSanitizedLogoWithSafeHeaders|testAdministratorCanUploadAndRemoveSanitizedLogoWithCsrfAndPrivateStorage|testAdministratorCanUploadPreviewAndRemovePrivatePlayerWatermark' \
               tests/Controller
           fi
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
