@@ -1124,6 +1124,7 @@ final class AdminGeneralSettingsTest extends WebTestCase
     {
         $client = static::createClient();
         $client->disableReboot();
+        $client->getContainer()->set('logger', new NullLogger());
         $client->getContainer()->set(
             RuntimeAttestationReportProviderInterface::class,
             new VerifiedRuntimeAttestationReportProvider(),
