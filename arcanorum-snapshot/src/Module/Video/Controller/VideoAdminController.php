@@ -370,7 +370,7 @@ final class VideoAdminController extends AbstractController
             $results[] = ['video' => $video, 'source_url' => $sourceUrl, 'available' => $available, 'failed' => false];
         }
 
-        /** @var array{checked: int, unavailable: int, unsupported: int, failed: int, changed: int} $summary */
+        /** @var array{checked: int<0, max>, unavailable: int<0, max>, unsupported: int<0, max>, failed: int<0, max>, changed: int<0, max>} $summary */
         $summary = $entityManager->getConnection()->transactional(function () use ($entityManager, $videos, $results, $attemptedAt): array {
             $summary = ['checked' => 0, 'unavailable' => 0, 'unsupported' => 0, 'failed' => 0, 'changed' => 0];
 
