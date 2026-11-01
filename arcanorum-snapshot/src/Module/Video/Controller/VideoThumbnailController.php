@@ -9,6 +9,7 @@ use App\Platform\Hosting\PrivateObjectStorageInterface;
 use App\Platform\Hosting\PrivateStorageOperationFailed;
 use App\Repository\VideoRepository;
 use App\Service\VideoSocialPreviewGenerator;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -27,14 +28,14 @@ final readonly class VideoThumbnailController
     }
 
     #[Route('/videos/{id}/thumbnail', name: 'video_thumbnail', requirements: ['id' => '[a-f0-9]{32}'], methods: ['GET'])]
-    public function show(string $id, VideoRepository $videos): Response
+    public function show(string $id, Request $request, VideoRepository $videos): Response
     {
         $video = $videos->findPublishedById($id);
         if (!$video instanceof Video) {
             return new Response('', Response::HTTP_NOT_FOUND, ['Cache-Control' => 'no-store']);
         }
 
-        return $this->imageResponse($video, false);
+        return $this->imageResponse($video, false, $request);
     }
 
     #[Route(
@@ -43,7 +44,7 @@ final readonly class VideoThumbnailController
         requirements: ['id' => '[a-f0-9]{32}', 'version' => '[a-f0-9]{64}'],
         methods: ['GET'],
     )]
-    public function socialPreview(string $id, string $version, VideoRepository $videos): Response
+    public function socialPreview(string $id, string $version, Request $request, VideoRepository $videos): Response
     {
         $video = $videos->findPublishedById($id);
         if (!$video instanceof Video) {
@@ -68,27 +69,31 @@ final readonly class VideoThumbnailController
             return new Response('', Response::HTTP_SERVICE_UNAVAILABLE, ['Cache-Control' => 'no-store']);
         }
 
-        return new Response($contents, Response::HTTP_OK, [
+        $response = new Response($contents, Response::HTTP_OK, [
             'Content-Type' => 'image/jpeg',
             'Content-Length' => (string) strlen($contents),
-            'Cache-Control' => 'public, max-age=86400, immutable',
+            'Cache-Control' => 'public, max-age=0, must-revalidate',
             'X-Content-Type-Options' => 'nosniff',
         ]);
+        $response->setEtag(hash('sha256', $contents));
+        $response->isNotModified($request);
+
+        return $response;
     }
 
     #[Route('/admin/videos/{id}/thumbnail', name: 'admin_video_thumbnail_preview', requirements: ['id' => '[a-f0-9]{32}'], methods: ['GET'])]
     #[IsGranted('ROLE_ADMIN')]
-    public function preview(string $id, VideoRepository $videos): Response
+    public function preview(string $id, Request $request, VideoRepository $videos): Response
     {
         $video = $videos->find($id);
         if (!$video instanceof Video) {
             return new Response('', Response::HTTP_NOT_FOUND, ['Cache-Control' => 'no-store']);
         }
 
-        return $this->imageResponse($video, true);
+        return $this->imageResponse($video, true, $request);
     }
 
-    private function imageResponse(Video $video, bool $private): Response
+    private function imageResponse(Video $video, bool $private, Request $request): Response
     {
         $objectId = $video->getThumbnailObjectId();
         $expectedMimeType = $video->getThumbnailMimeType();
@@ -118,11 +123,18 @@ final readonly class VideoThumbnailController
             return new Response('', Response::HTTP_SERVICE_UNAVAILABLE, ['Cache-Control' => 'no-store']);
         }
 
-        return new Response($contents, Response::HTTP_OK, [
+        $response = new Response($contents, Response::HTTP_OK, [
             'Content-Type' => $detectedMimeType,
             'Content-Length' => (string) strlen($contents),
-            'Cache-Control' => $private ? 'private, no-store' : 'public, max-age=300',
+            'Cache-Control' => $private ? 'private, no-store' : 'public, max-age=0, must-revalidate',
             'X-Content-Type-Options' => 'nosniff',
         ]);
+
+        if (!$private) {
+            $response->setEtag(hash('sha256', $contents));
+            $response->isNotModified($request);
+        }
+
+        return $response;
     }
 }

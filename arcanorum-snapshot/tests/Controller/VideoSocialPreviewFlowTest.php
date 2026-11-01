@@ -84,14 +84,33 @@ final class VideoSocialPreviewFlowTest extends WebTestCase
             self::assertSame('image/jpeg', $client->getResponse()->headers->get('Content-Type'));
             self::assertSame('nosniff', $client->getResponse()->headers->get('X-Content-Type-Options'));
             self::assertTrue($client->getResponse()->headers->getCacheControlDirective('public'));
-            self::assertSame('86400', $client->getResponse()->headers->getCacheControlDirective('max-age'));
-            self::assertTrue($client->getResponse()->headers->getCacheControlDirective('immutable'));
+            self::assertSame('0', $client->getResponse()->headers->getCacheControlDirective('max-age'));
+            self::assertTrue($client->getResponse()->headers->getCacheControlDirective('must-revalidate'));
+            self::assertFalse((bool) $client->getResponse()->headers->getCacheControlDirective('immutable'));
+            $previewEtag = (string) $client->getResponse()->headers->get('ETag');
+            self::assertNotSame('', $previewEtag);
             $preview = (string) $client->getResponse()->getContent();
             self::assertSame('image/jpeg', new \finfo(FILEINFO_MIME_TYPE)->buffer($preview));
             $imageInfo = getimagesizefromstring($preview);
             self::assertIsArray($imageInfo);
             self::assertSame(1200, $imageInfo[0]);
             self::assertSame(630, $imageInfo[1]);
+
+            $client->request('GET', '/videos/'.$published->getId().'/social-preview/'.$version, server: ['HTTP_IF_NONE_MATCH' => $previewEtag]);
+            self::assertResponseStatusCodeSame(304);
+            self::assertSame('', $client->getResponse()->getContent());
+
+            $client->request('GET', '/videos/'.$published->getId().'/thumbnail');
+            self::assertResponseIsSuccessful();
+            $thumbnailCacheControl = $client->getResponse()->headers;
+            self::assertTrue($thumbnailCacheControl->getCacheControlDirective('public'));
+            self::assertSame('0', $thumbnailCacheControl->getCacheControlDirective('max-age'));
+            self::assertTrue($thumbnailCacheControl->getCacheControlDirective('must-revalidate'));
+            $thumbnailEtag = (string) $client->getResponse()->headers->get('ETag');
+            self::assertNotSame('', $thumbnailEtag);
+            $client->request('GET', '/videos/'.$published->getId().'/thumbnail', server: ['HTTP_IF_NONE_MATCH' => $thumbnailEtag]);
+            self::assertResponseStatusCodeSame(304);
+            self::assertSame('', $client->getResponse()->getContent());
 
             $client->request('GET', '/videos/'.$published->getId().'/social-preview/'.str_repeat('0', 64));
             self::assertResponseStatusCodeSame(404);
@@ -102,6 +121,13 @@ final class VideoSocialPreviewFlowTest extends WebTestCase
             $client->request('GET', '/videos/'.$missing->getId().'/social-preview/'.VideoSocialPreviewGenerator::versionForSourceObjectId($missingObjectId));
             self::assertResponseStatusCodeSame(503);
             self::assertTrue($client->getResponse()->headers->getCacheControlDirective('no-store'));
+
+            $published->setPublishingStatus(PublishingStatus::Draft);
+            $entityManager->flush();
+            $client->request('GET', '/videos/'.$published->getId().'/social-preview/'.$version, server: ['HTTP_IF_NONE_MATCH' => $previewEtag]);
+            self::assertResponseStatusCodeSame(404);
+            $client->request('GET', '/videos/'.$published->getId().'/thumbnail', server: ['HTTP_IF_NONE_MATCH' => $thumbnailEtag]);
+            self::assertResponseStatusCodeSame(404);
         } finally {
             if ($entityManager->getConnection()->isTransactionActive()) {
                 $entityManager->getConnection()->rollBack();
