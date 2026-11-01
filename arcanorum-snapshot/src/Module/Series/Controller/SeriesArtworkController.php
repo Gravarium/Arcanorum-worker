@@ -8,6 +8,7 @@ use App\Entity\ContentSeries;
 use App\Platform\Hosting\PrivateObjectStorageInterface;
 use App\Platform\Hosting\PrivateStorageOperationFailed;
 use App\Repository\ContentSeriesRepository;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -30,14 +31,14 @@ final readonly class SeriesArtworkController
         methods: ['GET'],
         stateless: true,
     )]
-    public function show(string $slug, ContentSeriesRepository $series): Response
+    public function show(string $slug, Request $request, ContentSeriesRepository $series): Response
     {
         $item = $series->findPublishedBySlug($slug);
         if (!$item instanceof ContentSeries) {
             return new Response('', Response::HTTP_NOT_FOUND, ['Cache-Control' => 'no-store']);
         }
 
-        return $this->imageResponse($item, false);
+        return $this->imageResponse($item, false, $request);
     }
 
     #[Route(
@@ -47,17 +48,17 @@ final readonly class SeriesArtworkController
         methods: ['GET'],
     )]
     #[IsGranted('ROLE_ADMIN')]
-    public function preview(string $id, ContentSeriesRepository $series): Response
+    public function preview(string $id, Request $request, ContentSeriesRepository $series): Response
     {
         $item = $series->find($id);
         if (!$item instanceof ContentSeries) {
             return new Response('', Response::HTTP_NOT_FOUND, ['Cache-Control' => 'no-store']);
         }
 
-        return $this->imageResponse($item, true);
+        return $this->imageResponse($item, true, $request);
     }
 
-    private function imageResponse(ContentSeries $series, bool $private): Response
+    private function imageResponse(ContentSeries $series, bool $private, Request $request): Response
     {
         $objectId = $series->getArtworkObjectId();
         $expectedMimeType = $series->getArtworkMimeType();
@@ -87,11 +88,18 @@ final readonly class SeriesArtworkController
             return new Response('', Response::HTTP_SERVICE_UNAVAILABLE, ['Cache-Control' => 'no-store']);
         }
 
-        return new Response($contents, Response::HTTP_OK, [
+        $response = new Response($contents, Response::HTTP_OK, [
             'Content-Type' => $detectedMimeType,
             'Content-Length' => (string) strlen($contents),
-            'Cache-Control' => $private ? 'private, no-store' : 'public, max-age=300',
+            'Cache-Control' => $private ? 'private, no-store' : 'public, max-age=0, must-revalidate',
             'X-Content-Type-Options' => 'nosniff',
         ]);
+
+        if (!$private) {
+            $response->setEtag(hash('sha256', $contents));
+            $response->isNotModified($request);
+        }
+
+        return $response;
     }
 }

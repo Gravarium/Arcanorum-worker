@@ -1,0 +1,75 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Tests\Controller;
+
+use App\Entity\ContentSeries;
+use App\Entity\PublishingStatus;
+use App\Platform\Hosting\PrivateObjectStorageInterface;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\HttpFoundation\Response;
+
+final class SeriesArtworkCacheFlowTest extends WebTestCase
+{
+    public function testPublishedArtworkRevalidatesAndIsDeniedAfterUnpublish(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        $storage = $client->getContainer()->get(PrivateObjectStorageInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        self::assertInstanceOf(PrivateObjectStorageInterface::class, $storage);
+
+        $contents = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/WioAAAAASUVORK5CYII=', true);
+        self::assertIsString($contents);
+        $suffix = bin2hex(random_bytes(6));
+        $series = new ContentSeries(
+            'Artwork cache '.$suffix,
+            'artwork-cache-'.$suffix,
+            'Public series artwork cache fixture.',
+            PublishingStatus::Published,
+        );
+        $objectId = bin2hex(random_bytes(32));
+        $series->attachArtwork($objectId, 'image/png', strlen($contents));
+
+        try {
+            $storage->write($objectId, $contents);
+            $entityManager->persist($series);
+            $entityManager->flush();
+
+            $path = '/series/'.$series->getSlug().'/artwork';
+            $client->request('GET', $path);
+            self::assertResponseIsSuccessful();
+            self::assertSame($contents, $client->getResponse()->getContent());
+            $cacheControl = $client->getResponse()->headers;
+            self::assertTrue($cacheControl->getCacheControlDirective('public'));
+            self::assertSame('0', $cacheControl->getCacheControlDirective('max-age'));
+            self::assertTrue($cacheControl->getCacheControlDirective('must-revalidate'));
+            $etag = (string) $client->getResponse()->headers->get('ETag');
+            self::assertNotSame('', $etag);
+
+            $client->request('GET', $path, server: ['HTTP_IF_NONE_MATCH' => $etag]);
+            self::assertResponseStatusCodeSame(Response::HTTP_NOT_MODIFIED);
+            self::assertSame('', $client->getResponse()->getContent());
+
+            $series->revise($series->getTitle(), $series->getSlug(), $series->getDescription(), PublishingStatus::Draft);
+            $entityManager->flush();
+            $entityManager->clear();
+
+            $client->request('GET', $path, server: ['HTTP_IF_NONE_MATCH' => $etag]);
+            self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+            self::assertTrue($client->getResponse()->headers->getCacheControlDirective('no-store'));
+        } finally {
+            $cleanupEntityManager = $client->getContainer()->get(EntityManagerInterface::class);
+            if ($cleanupEntityManager instanceof EntityManagerInterface) {
+                $cleanupEntityManager->getConnection()->executeStatement(
+                    'DELETE FROM content_series WHERE id = :id',
+                    ['id' => $series->getId()],
+                );
+            }
+            $storage->delete($objectId);
+        }
+    }
+}

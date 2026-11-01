@@ -124,7 +124,6 @@ final class ContentInlineImageFlowTest extends WebTestCase
             self::assertStringNotContainsString('alert(', $metaDescription);
             self::assertStringNotContainsString('alert(', $openGraphDescription);
             $newsCategoryResponseContent = $client->getResponse()->getContent();
-            self::assertIsString($newsCategoryResponseContent);
             self::assertStringNotContainsString($unreferencedVideoId, $newsCategoryResponseContent);
 
             $client->request('GET', '/videos/category/'.$video->getSlug());
