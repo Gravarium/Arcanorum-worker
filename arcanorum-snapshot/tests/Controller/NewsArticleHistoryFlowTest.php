@@ -256,7 +256,9 @@ final class NewsArticleHistoryFlowTest extends WebTestCase
             self::assertTrue($client->getResponse()->headers->getCacheControlDirective('no-store'));
             self::assertSame('noindex, nofollow', $client->getResponse()->headers->get('X-Robots-Tag'));
             self::assertSelectorTextContains('main', '<p>First <strong>version</strong></p>');
-            self::assertStringNotContainsString('<script>alert(1)', $client->getResponse()->getContent());
+            $historyResponseContent = $client->getResponse()->getContent();
+            self::assertIsString($historyResponseContent);
+            self::assertStringNotContainsString('<script>alert(1)', $historyResponseContent);
             self::assertSelectorTextContains('main', $email);
             self::assertSelectorTextContains('main', 'Jordan O’Reilly & Co.');
             self::assertSelectorTextContains('main', 'News Desk');
@@ -267,21 +269,27 @@ final class NewsArticleHistoryFlowTest extends WebTestCase
             self::assertResponseIsSuccessful();
             self::assertSelectorTextContains('main', 'Von News Desk');
             self::assertSelectorTextContains('main', 'Mitgliedern vorbehalten');
-            self::assertStringNotContainsString('Private phrase', $client->getResponse()->getContent());
-            self::assertStringNotContainsString('Second license', $client->getResponse()->getContent());
-            self::assertStringNotContainsString($email, $client->getResponse()->getContent());
+            $membersOnlyArticleContent = $client->getResponse()->getContent();
+            self::assertIsString($membersOnlyArticleContent);
+            self::assertStringNotContainsString('Private phrase', $membersOnlyArticleContent);
+            self::assertStringNotContainsString('Second license', $membersOnlyArticleContent);
+            self::assertStringNotContainsString($email, $membersOnlyArticleContent);
 
             $client->request('GET', '/news/revised-news-'.$suffix);
             self::assertResponseIsSuccessful();
             self::assertSelectorTextContains('main', 'Second version summary.');
             self::assertSelectorTextContains('main', 'Mitgliedern vorbehalten');
-            self::assertStringNotContainsString('Private phrase', $client->getResponse()->getContent());
-            self::assertStringNotContainsString('Second license', $client->getResponse()->getContent());
-            self::assertStringNotContainsString('/news/'.$article->getId().'/thumbnail', $client->getResponse()->getContent());
+            $secondMembersOnlyArticleContent = $client->getResponse()->getContent();
+            self::assertIsString($secondMembersOnlyArticleContent);
+            self::assertStringNotContainsString('Private phrase', $secondMembersOnlyArticleContent);
+            self::assertStringNotContainsString('Second license', $secondMembersOnlyArticleContent);
+            self::assertStringNotContainsString('/news/'.$article->getId().'/thumbnail', $secondMembersOnlyArticleContent);
             self::assertSelectorNotExists('.comment-form');
             $client->request('GET', '/search?q=Private%20phrase');
             self::assertResponseIsSuccessful();
-            self::assertStringNotContainsString('Revised news '.$suffix, $client->getResponse()->getContent());
+            $searchResponseContent = $client->getResponse()->getContent();
+            self::assertIsString($searchResponseContent);
+            self::assertStringNotContainsString('Revised news '.$suffix, $searchResponseContent);
 
             $anonymousIdentity = $this->suspendAdminIdentity($client);
             $client->request('GET', '/news/'.$article->getId().'/thumbnail', server: ['HTTP_IF_NONE_MATCH' => $publicThumbnailEtag]);
@@ -355,7 +363,9 @@ final class NewsArticleHistoryFlowTest extends WebTestCase
             self::assertSelectorExists('.article-body p strong');
             self::assertSelectorTextContains('main', 'Von Page Editor');
             self::assertSelectorExists('meta[name="keywords"][content="editorial, community"]');
-            self::assertStringNotContainsString('<script', $client->getResponse()->getContent());
+            $staticPageResponseContent = $client->getResponse()->getContent();
+            self::assertIsString($staticPageResponseContent);
+            self::assertStringNotContainsString('<script', $staticPageResponseContent);
 
             $client->request('GET', '/admin/news/'.$articleId.'/edit');
             self::assertResponseIsSuccessful();
@@ -379,7 +389,9 @@ final class NewsArticleHistoryFlowTest extends WebTestCase
                 }
             }
             self::assertResponseIsSuccessful();
-            $inlineUploadResult = json_decode($client->getResponse()->getContent(), true, 512, JSON_THROW_ON_ERROR);
+            $inlineUploadResponseContent = $client->getResponse()->getContent();
+            self::assertIsString($inlineUploadResponseContent);
+            $inlineUploadResult = json_decode($inlineUploadResponseContent, true, 512, JSON_THROW_ON_ERROR);
             self::assertIsArray($inlineUploadResult);
             $newsImageUrl = $inlineUploadResult['url'] ?? null;
             self::assertIsString($newsImageUrl);
