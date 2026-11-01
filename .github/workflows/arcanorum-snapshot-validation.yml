@@ -26,6 +26,7 @@ on:
           - admin-password-change-followup
           - video-provider-player-followup
           - video-thumbnail-concurrency-followup
+          - private-artwork-concurrency-followup
           - video-social-preview-cache-followup
           - public-media-cache-followup
           - auto-feature-threshold-followup
@@ -2229,6 +2230,212 @@ jobs:
             --filter='testThumbnailUploadLocksCurrentVideoStateBeforeReplacingThumbnail|testAdminCanUploadPreviewAndRemoveVideoThumbnail|testAdministratorCanImportAValidatedProviderThumbnailForAnExistingVideo|testProviderImportDiscardsThumbnailWhenVideoSourceChangesDuringFetch' \
             tests/Controller/AdminVideoThumbnailFlowTest.php \
             tests/Controller/AdminDashboardTest.php
+          python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
+
+  validate-private-artwork-concurrency:
+    if: github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'private-artwork-concurrency-followup'
+    name: Focused private artwork concurrency checks
+    runs-on: ubuntu-26.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: arcanorum-snapshot
+    env:
+      APP_ENV: test
+      APP_DEBUG: '0'
+      APP_SECRET: ci-only-not-a-production-secret
+      DATABASE_URL: 'postgresql://arcanorum_ci:ci-only-test-password@127.0.0.1:5432/arcanorum_test?serverVersion=18&charset=utf8'
+      REDIS_URL: 'redis://127.0.0.1:6379'
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: arcanorum_test
+          POSTGRES_USER: arcanorum_ci
+          POSTGRES_PASSWORD: ci-only-test-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U arcanorum_ci -d arcanorum_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Check out public validation branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Verify exact source commit and snapshot boundaries
+        shell: bash
+        env:
+          EXPECTED_SOURCE_SHA: ${{ inputs.source_commit }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$EXPECTED_SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo 'The source commit must be a full lowercase Git SHA.' >&2
+            exit 1
+          fi
+          printf '%s\n' "$EXPECTED_SOURCE_SHA" | cmp -s - SOURCE_BASE_SHA
+          python3 - <<'PY'
+          from pathlib import Path
+          from hashlib import sha256
+          import re
+
+          root = Path('.')
+          blocked = []
+          patterns = {
+              'private-key': re.compile(rb'-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----'),
+              'github-token': re.compile(rb'(?:gh[pousr]_[A-Za-z0-9_]{30,}|github_pat_[A-Za-z0-9_]{30,})'),
+              'aws-key': re.compile(rb'AKIA[0-9A-Z]{16}'),
+              'stripe-live': re.compile(rb'sk_live_[A-Za-z0-9]{16,}'),
+              'slack-token': re.compile(rb'xox[baprs]-[A-Za-z0-9-]{20,}'),
+          }
+          matches = []
+          for path in root.rglob('*'):
+              if path.is_symlink():
+                  raise SystemExit(f'Symbolic links are not allowed: {path.as_posix()}')
+              if not path.is_file():
+                  continue
+              relative = path.as_posix()
+              if (path.name.startswith('.env')
+                  or '/secrets/' in f'/{relative}/'
+                  or relative.startswith(('var/', 'vendor/', 'node_modules/', 'logs/', 'test-results/', 'coverage/', 'public/uploads/', 'storage/private/', 'backups/'))
+                  or path.suffix.lower() in {'.pem', '.p12', '.key', '.sql', '.dump', '.sqlite', '.db'}):
+                  blocked.append(relative)
+              if relative not in {'SOURCE_BASE_SHA', 'SOURCE_MANIFEST.sha256'}:
+                  data = path.read_bytes()
+                  for name, pattern in patterns.items():
+                      if pattern.search(data):
+                          matches.append((name, relative))
+
+          if blocked or matches:
+              for relative in blocked:
+                  print(f'Forbidden file path: {relative}')
+              for name, relative in matches:
+                  print(f'Credential pattern {name} in {relative}')
+              raise SystemExit('Snapshot security check failed.')
+
+          manifest_path = root / 'SOURCE_MANIFEST.sha256'
+          if not manifest_path.is_file() or manifest_path.is_symlink():
+              raise SystemExit('The source manifest is missing or unsafe.')
+          manifest = {}
+          for line in manifest_path.read_text(encoding='utf-8').splitlines():
+              digest, separator, relative = line.partition('  ')
+              path = Path(relative)
+              if (not separator or not re.fullmatch(r'[a-f0-9]{64}', digest)
+                      or not relative or path.is_absolute() or '..' in path.parts
+                      or relative in manifest):
+                  raise SystemExit('The source manifest contains an invalid entry.')
+              manifest[relative] = digest
+
+          actual = {}
+          for path in root.rglob('*'):
+              if path.is_symlink():
+                  raise SystemExit('The source snapshot contains a symbolic link.')
+              if path.is_file() and path.name not in {'SOURCE_BASE_SHA', 'SOURCE_MANIFEST.sha256'}:
+                  actual[path.relative_to(root).as_posix()] = sha256(path.read_bytes()).hexdigest()
+          if actual != manifest:
+              raise SystemExit('The source snapshot does not match its complete file manifest.')
+          print(f'Snapshot security and manifest checks passed: {len(actual)} files.')
+          PY
+
+      - name: Set up PHP 8.5 and extensions
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.5'
+          extensions: gd, intl, mbstring, pcov, pdo_pgsql, redis, xml, zip
+          coverage: pcov
+          tools: composer:v2
+          ini-values: memory_limit=1G
+
+      - name: Validate, install and audit locked Composer dependencies
+        run: |
+          touch .env
+          composer validate --strict --no-interaction
+          composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader
+          composer audit --locked --no-interaction
+
+      - name: Check affected PHP syntax
+        run: |
+          php -l src/Module/Series/Controller/AdminSeriesArtworkController.php
+          php -l src/Repository/ContentSeriesRepository.php
+          php -l src/Module/Settings/Controller/AdminPlayerWatermarkController.php
+          php -l src/Repository/SiteSettingsRepository.php
+          php -l tests/Controller/AdminDashboardTest.php
+          php -l tests/Controller/AdminGeneralSettingsTest.php
+
+      - name: Prepare PostgreSQL schema and validate Doctrine mapping
+        run: |
+          php bin/console doctrine:migrations:migrate --env=test --no-interaction
+          php bin/console doctrine:schema:validate --skip-sync
+
+      - name: PHPStan level 10 on affected PHP files
+        run: >-
+          vendor/bin/phpstan analyse
+          --configuration=phpstan.neon.dist
+          --no-progress
+          --error-format=table
+          --memory-limit=1G
+          src/Module/Series/Controller/AdminSeriesArtworkController.php
+          src/Repository/ContentSeriesRepository.php
+          src/Module/Settings/Controller/AdminPlayerWatermarkController.php
+          src/Repository/SiteSettingsRepository.php
+          tests/Controller/AdminDashboardTest.php
+          tests/Controller/AdminGeneralSettingsTest.php
+
+      - name: PHP CS Fixer on affected PHP files
+        run: >-
+          vendor/bin/php-cs-fixer check
+          --config=.php-cs-fixer.dist.php
+          --diff
+          --using-cache=no
+          src/Module/Series/Controller/AdminSeriesArtworkController.php
+          src/Repository/ContentSeriesRepository.php
+          src/Module/Settings/Controller/AdminPlayerWatermarkController.php
+          src/Repository/SiteSettingsRepository.php
+          tests/Controller/AdminDashboardTest.php
+          tests/Controller/AdminGeneralSettingsTest.php
+
+      - name: Rector dry run on affected PHP files
+        run: >-
+          vendor/bin/rector process
+          src/Module/Series/Controller/AdminSeriesArtworkController.php
+          src/Repository/ContentSeriesRepository.php
+          src/Module/Settings/Controller/AdminPlayerWatermarkController.php
+          src/Repository/SiteSettingsRepository.php
+          tests/Controller/AdminDashboardTest.php
+          tests/Controller/AdminGeneralSettingsTest.php
+          --config=rector.php
+          --dry-run
+          --no-progress-bar
+
+      - name: Psalm taint analysis
+        run: |
+          mkdir -p var/test-results
+          vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm.sarif
+
+      - name: Run private artwork concurrency regressions
+        run: |
+          mkdir -p var/test-results
+          php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
+            --fail-on-risky --fail-on-warning --fail-on-deprecation \
+            --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
+            --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
+            --filter='testAdminSeriesArtworkReplacementLocksAndRefreshesCurrentSeries|testAdminCanUploadPreviewAndRemoveSeriesArtwork|testAdministratorCanUploadPreviewAndRemovePrivatePlayerWatermark' \
+            tests/Controller/AdminDashboardTest.php \
+            tests/Controller/AdminGeneralSettingsTest.php
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
 
   validate-manual-video-source-check:

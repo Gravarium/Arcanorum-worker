@@ -1132,14 +1132,28 @@ final class AdminGeneralSettingsTest extends WebTestCase
         $email = 'player-watermark-'.bin2hex(random_bytes(6)).'@example.test';
         $contents = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/WioAAAAASUVORK5CYII=', true);
         self::assertIsString($contents);
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        $connection = $entityManager->getConnection();
+        $concurrentObjectId = hash('sha256', 'player-watermark-concurrent-'.$email);
         $objectId = null;
         $objectContents = null;
-        $deletedObjects = 0;
+        $deletedObjectIds = [];
         $storage = $this->createMock(PrivateObjectStorageInterface::class);
         $storage->expects(self::once())->method('write')->willReturnCallback(
-            static function (string $storedId, string $storedContents) use (&$objectId, &$objectContents, $contents): void {
+            static function (string $storedId, string $storedContents) use (&$objectId, &$objectContents, $contents, $connection, $concurrentObjectId): void {
                 self::assertMatchesRegularExpression('/\A[a-f0-9]{64}\z/D', $storedId);
                 self::assertSame($contents, $storedContents);
+                self::assertSame(1, $connection->executeStatement(
+                    'UPDATE site_settings SET video_player_watermark_object_id = :object_id, video_player_watermark_mime_type = :mime_type, video_player_watermark_size = :size, video_player_watermark_sha256 = :sha256 WHERE id = :id',
+                    [
+                        'object_id' => $concurrentObjectId,
+                        'mime_type' => 'image/png',
+                        'size' => strlen($contents),
+                        'sha256' => hash('sha256', $contents),
+                        'id' => SiteSettings::SINGLETON_ID,
+                    ],
+                ));
                 $objectId = $storedId;
                 $objectContents = $storedContents;
             },
@@ -1153,10 +1167,9 @@ final class AdminGeneralSettingsTest extends WebTestCase
                 return $objectContents;
             },
         );
-        $storage->expects(self::once())->method('delete')->willReturnCallback(
-            static function (string $deletedId) use (&$objectId, &$deletedObjects): void {
-                self::assertSame($objectId, $deletedId);
-                ++$deletedObjects;
+        $storage->expects(self::exactly(2))->method('delete')->willReturnCallback(
+            static function (string $deletedId) use (&$deletedObjectIds): void {
+                $deletedObjectIds[] = $deletedId;
             },
         );
         $client->getContainer()->set(PrivateObjectStorageInterface::class, $storage);
@@ -1191,6 +1204,8 @@ final class AdminGeneralSettingsTest extends WebTestCase
             self::assertInstanceOf(SiteSettings::class, $settings);
             $storedHash = $settings->getVideoPlayerWatermarkSha256();
             self::assertNotNull($settings->getVideoPlayerWatermarkObjectId());
+            self::assertSame($objectId, $settings->getVideoPlayerWatermarkObjectId());
+            self::assertNotSame($concurrentObjectId, $settings->getVideoPlayerWatermarkObjectId());
             self::assertSame(hash('sha256', $contents), $storedHash);
             $client->request('GET', '/admin/settings/content');
             self::assertResponseIsSuccessful();
@@ -1233,7 +1248,7 @@ final class AdminGeneralSettingsTest extends WebTestCase
             self::assertInstanceOf(SiteSettings::class, $removedSettings);
             self::assertNull($removedSettings->getVideoPlayerWatermarkObjectId());
             self::assertNull($removedSettings->getVideoPlayerWatermarkSha256());
-            self::assertSame(1, $deletedObjects);
+            self::assertSame([$concurrentObjectId, $objectId], $deletedObjectIds);
             $client->request('GET', '/_assets/player-watermark/'.$storedHash, server: ['HTTP_IF_NONE_MATCH' => $publicEtag]);
             self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
             self::assertTrue($client->getResponse()->headers->getCacheControlDirective('no-store'));

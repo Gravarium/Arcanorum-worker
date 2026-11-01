@@ -7,6 +7,7 @@ namespace App\Repository;
 use App\Entity\ContentSeries;
 use App\Entity\PublishingStatus;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\LockMode;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -17,6 +18,22 @@ final class ContentSeriesRepository extends ServiceEntityRepository
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, ContentSeries::class);
+    }
+
+    public function findByIdForUpdate(string $id): ?ContentSeries
+    {
+        $series = $this->createQueryBuilder('series')
+            ->andWhere('series.id = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->setLockMode(LockMode::PESSIMISTIC_WRITE)
+            ->getOneOrNullResult();
+
+        if ($series instanceof ContentSeries) {
+            $this->getEntityManager()->refresh($series, LockMode::PESSIMISTIC_WRITE);
+        }
+
+        return $series instanceof ContentSeries ? $series : null;
     }
 
     /** @return list<ContentSeries> */

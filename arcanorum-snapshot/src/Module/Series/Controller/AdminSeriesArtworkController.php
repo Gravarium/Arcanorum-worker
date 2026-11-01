@@ -57,14 +57,29 @@ final class AdminSeriesArtworkController extends AbstractController
                 return $this->redirectToRoute('admin_series_edit', ['id' => $item->getId()]);
             }
 
-            $previousObjectId = $item->removeArtwork();
+            $previousObjectId = $entityManager->getConnection()->transactional(function () use (
+                $id,
+                $series,
+                $entityManager,
+            ): ?string {
+                $currentSeries = $series->findByIdForUpdate($id);
+                if (!$currentSeries instanceof ContentSeries) {
+                    throw $this->createNotFoundException($this->translator->trans('Serie wurde nicht gefunden.'));
+                }
+
+                $objectId = $currentSeries->removeArtwork();
+                if (null !== $objectId) {
+                    $entityManager->flush();
+                }
+
+                return $objectId;
+            });
             if (null === $previousObjectId) {
                 $this->addFlash('error', $this->translator->trans('Für diese Serie ist kein Bild gespeichert.'));
 
                 return $this->redirectToRoute('admin_series_edit', ['id' => $item->getId()]);
             }
 
-            $entityManager->flush();
             try {
                 $artworks->delete($previousObjectId);
             } catch (PrivateStorageOperationFailed|\InvalidArgumentException) {
@@ -106,10 +121,24 @@ final class AdminSeriesArtworkController extends AbstractController
             return $this->redirectToRoute('admin_series_edit', ['id' => $item->getId()]);
         }
 
-        $previousObjectId = $item->getArtworkObjectId();
-        $item->attachArtwork($artwork['object_id'], $artwork['mime_type'], $artwork['size']);
+        $previousObjectId = null;
         try {
-            $entityManager->flush();
+            $entityManager->getConnection()->transactional(function () use (
+                $id,
+                $series,
+                $entityManager,
+                $artwork,
+                &$previousObjectId,
+            ): void {
+                $currentSeries = $series->findByIdForUpdate($id);
+                if (!$currentSeries instanceof ContentSeries) {
+                    throw $this->createNotFoundException($this->translator->trans('Serie wurde nicht gefunden.'));
+                }
+
+                $previousObjectId = $currentSeries->getArtworkObjectId();
+                $currentSeries->attachArtwork($artwork['object_id'], $artwork['mime_type'], $artwork['size']);
+                $entityManager->flush();
+            });
         } catch (\Throwable $exception) {
             try {
                 $artworks->delete($artwork['object_id']);

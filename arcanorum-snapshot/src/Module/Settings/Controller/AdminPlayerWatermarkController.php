@@ -59,17 +59,23 @@ final class AdminPlayerWatermarkController extends AbstractController
             return $this->privateResponse($this->redirectToRoute('admin_content_settings_index'));
         }
 
-        $settings = $settingsRepository->findCurrent();
-        $isNew = null === $settings;
-        $settings ??= new SiteSettings();
-        $previousObjectId = $settings->getVideoPlayerWatermarkObjectId();
-        $settings->attachVideoPlayerWatermark($asset['object_id'], $asset['mime_type'], $asset['size'], $asset['sha256']);
-        if ($isNew) {
-            $entityManager->persist($settings);
-        }
-
+        $previousObjectId = null;
         try {
-            $entityManager->flush();
+            $entityManager->getConnection()->transactional(function () use (
+                $settingsRepository,
+                $entityManager,
+                $asset,
+                &$previousObjectId,
+            ): void {
+                $settings = $settingsRepository->findCurrentForUpdate();
+                if (!$settings instanceof SiteSettings) {
+                    throw new \RuntimeException('Die Site-Einstellungen sind nicht verfügbar.');
+                }
+
+                $previousObjectId = $settings->getVideoPlayerWatermarkObjectId();
+                $settings->attachVideoPlayerWatermark($asset['object_id'], $asset['mime_type'], $asset['size'], $asset['sha256']);
+                $entityManager->flush();
+            });
         } catch (\Throwable $exception) {
             $logger->error('Player-Wasserzeichen konnte nicht gespeichert werden.', ['failure_type' => $exception::class]);
             try {
@@ -120,16 +126,22 @@ final class AdminPlayerWatermarkController extends AbstractController
             return $this->privateResponse($this->redirectToRoute('admin_content_settings_index'));
         }
 
-        $settings = $settingsRepository->findCurrent();
-        if (!$settings instanceof SiteSettings || null === $settings->getVideoPlayerWatermarkObjectId()) {
-            $this->addFlash('error', 'Es ist kein Wasserzeichenbild gespeichert.');
-
-            return $this->privateResponse($this->redirectToRoute('admin_content_settings_index'));
-        }
-
-        $objectId = $settings->removeVideoPlayerWatermark();
+        $objectId = null;
         try {
-            $entityManager->flush();
+            $objectId = $entityManager->getConnection()->transactional(function () use (
+                $settingsRepository,
+                $entityManager,
+            ): ?string {
+                $settings = $settingsRepository->findCurrentForUpdate();
+                if (!$settings instanceof SiteSettings || null === $settings->getVideoPlayerWatermarkObjectId()) {
+                    return null;
+                }
+
+                $objectId = $settings->removeVideoPlayerWatermark();
+                $entityManager->flush();
+
+                return $objectId;
+            });
         } catch (\Throwable $exception) {
             $logger->error('Player-Wasserzeichen konnte nicht entfernt werden.', ['failure_type' => $exception::class]);
             $this->addFlash('error', 'Das Wasserzeichen konnte nicht entfernt werden.');
@@ -137,15 +149,19 @@ final class AdminPlayerWatermarkController extends AbstractController
             return $this->privateResponse($this->redirectToRoute('admin_content_settings_index'));
         }
 
-        if (null !== $objectId) {
-            try {
-                $watermarks->delete($objectId);
-            } catch (PrivateStorageOperationFailed|\InvalidArgumentException $exception) {
-                $logger->warning('Entferntes Player-Wasserzeichen konnte im privaten Speicher nicht bereinigt werden.', [
-                    'failure_type' => $exception::class,
-                ]);
-                $this->addFlash('warning', 'Das Wasserzeichen wurde entfernt; die private Datei konnte nicht bereinigt werden.');
-            }
+        if (null === $objectId) {
+            $this->addFlash('error', 'Es ist kein Wasserzeichenbild gespeichert.');
+
+            return $this->privateResponse($this->redirectToRoute('admin_content_settings_index'));
+        }
+
+        try {
+            $watermarks->delete($objectId);
+        } catch (PrivateStorageOperationFailed|\InvalidArgumentException $exception) {
+            $logger->warning('Entferntes Player-Wasserzeichen konnte im privaten Speicher nicht bereinigt werden.', [
+                'failure_type' => $exception::class,
+            ]);
+            $this->addFlash('warning', 'Das Wasserzeichen wurde entfernt; die private Datei konnte nicht bereinigt werden.');
         }
 
         $this->addFlash('success', 'Das Player-Wasserzeichen wurde entfernt.');

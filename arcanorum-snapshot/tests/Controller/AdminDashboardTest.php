@@ -4948,6 +4948,97 @@ final class AdminDashboardTest extends WebTestCase
         }
     }
 
+    public function testAdminSeriesArtworkReplacementLocksAndRefreshesCurrentSeries(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $client->getContainer()->set(
+            RuntimeAttestationReportProviderInterface::class,
+            new VerifiedRuntimeAttestationReportProvider(),
+        );
+
+        $suffix = bin2hex(random_bytes(8));
+        $email = 'series-artwork-race-'.$suffix.'@example.test';
+        $password = 'Series-Artwork-Race-'.$suffix.'-K8!';
+        $series = new ContentSeries(
+            'Series artwork race '.$suffix,
+            'series-artwork-race-'.$suffix,
+            'Concurrency regression for private series artwork replacement.',
+            PublishingStatus::Draft,
+        );
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        $connection = $entityManager->getConnection();
+        $entityManager->persist($series);
+        $entityManager->flush();
+
+        $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/WioAAAAASUVORK5CYII=', true);
+        self::assertIsString($png);
+        $concurrentObjectId = hash('sha256', 'series-artwork-race-'.$suffix);
+        $storedObjectId = null;
+        $storage = $this->createMock(PrivateObjectStorageInterface::class);
+        $storage->expects(self::once())->method('write')->willReturnCallback(
+            static function (string $objectId, string $contents) use ($connection, $concurrentObjectId, $png, $series, &$storedObjectId): void {
+                self::assertMatchesRegularExpression('/\A[a-f0-9]{64}\z/D', $objectId);
+                self::assertSame($png, $contents);
+                $storedObjectId = $objectId;
+                $connection->executeStatement(
+                    'UPDATE content_series SET artwork_object_id = :object_id, artwork_mime_type = :mime_type, artwork_size = :size WHERE id = :id',
+                    [
+                        'object_id' => $concurrentObjectId,
+                        'mime_type' => 'image/png',
+                        'size' => strlen($png),
+                        'id' => $series->getId(),
+                    ],
+                );
+            },
+        );
+        $storage->expects(self::once())->method('delete')->with($concurrentObjectId);
+        $storage->expects(self::never())->method('read');
+        $client->getContainer()->set(PrivateObjectStorageInterface::class, $storage);
+
+        $temporaryPath = tempnam(sys_get_temp_dir(), 'arcanorum-series-artwork-race-');
+        self::assertIsString($temporaryPath);
+        self::assertSame(strlen($png), file_put_contents($temporaryPath, $png));
+
+        try {
+            $this->persistUser($client, $email, $password, ['ROLE_ADMIN']);
+            $this->submitLogin($client, $email, $password);
+            self::assertResponseRedirects('/admin');
+
+            $artworkPath = '/admin/series/'.$series->getId().'/artwork';
+            $client->request('GET', '/admin/series/'.$series->getId().'/edit');
+            self::assertResponseIsSuccessful();
+            $csrfToken = $client->getCrawler()
+                ->filter('form[action="'.$artworkPath.'"] input[name="_token"]')
+                ->eq(0)
+                ->attr('value');
+            self::assertIsString($csrfToken);
+            self::assertNotSame('', $csrfToken);
+
+            $client->request(
+                'POST',
+                $artworkPath,
+                ['_token' => $csrfToken, 'action' => 'upload'],
+                ['artwork_file' => new UploadedFile($temporaryPath, 'series-artwork.png', 'image/png', null, true)],
+            );
+
+            self::assertResponseRedirects('/admin/series/'.$series->getId().'/edit');
+            self::assertIsString($storedObjectId);
+            self::assertNotSame($concurrentObjectId, $storedObjectId);
+            $entityManager->clear();
+            $currentSeries = $entityManager->getRepository(ContentSeries::class)->find($series->getId());
+            self::assertInstanceOf(ContentSeries::class, $currentSeries);
+            self::assertSame($storedObjectId, $currentSeries->getArtworkObjectId());
+        } finally {
+            $connection->executeStatement('DELETE FROM content_series WHERE id = :id', ['id' => $series->getId()]);
+            $this->removeUser($client, $email);
+            if (is_file($temporaryPath)) {
+                unlink($temporaryPath);
+            }
+        }
+    }
+
     public function testAdminCanCreateCategoryAndDuplicateNamesAreRejected(): void
     {
         $client = static::createClient();
