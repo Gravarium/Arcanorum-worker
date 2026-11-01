@@ -816,12 +816,12 @@ final class VideoAdminController extends AbstractController
                         }
                     }
 
-                    $errors[] = match ($saveResult) {
+                    $errorMessages = [
                         'duplicate_source' => 'Diese Videoquelle ist bereits vorhanden.',
                         'missing_media' => 'Für einen Datei-Upload ist weiterhin eine geprüfte Mediendatei erforderlich.',
                         'missing_video' => 'Das Video wurde zwischenzeitlich entfernt. Bitte lade die Seite neu.',
-                        default => 'Das Video konnte nicht sicher gespeichert werden.',
-                    };
+                    ];
+                    $errors[] = $errorMessages[$saveResult] ?? 'Das Video konnte nicht sicher gespeichert werden.';
                 } else {
                     $mediaCleanupFailed = false;
                     if (null !== $previousObjectId && $previousObjectId !== $video->getUploadedObjectId()) {
