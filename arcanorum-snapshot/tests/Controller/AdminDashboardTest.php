@@ -2107,6 +2107,16 @@ final class AdminDashboardTest extends WebTestCase
             false,
             true,
         );
+        $changedDuringCheckVideo = new Video(
+            'Changed source '.$suffix,
+            'A provider result must not be stored after its source URL changes during the request.',
+            null,
+            VideoSourceType::Embed,
+            'https://youtu.be/aqz-KE-bpKQ',
+            PublishingStatus::Draft,
+            false,
+            true,
+        );
         $directUrl = new Video(
             'Direct URL '.$suffix,
             'Direct media URLs must not be fetched by source checks.',
@@ -2131,14 +2141,14 @@ final class AdminDashboardTest extends WebTestCase
         $failureConstraintInstalled = false;
 
         try {
-            foreach ([$availableVideo, $failedVideo, $unsupportedEmbed, $directUrl, $databaseFailureVideo] as $video) {
+            foreach ([$availableVideo, $failedVideo, $unsupportedEmbed, $changedDuringCheckVideo, $directUrl, $databaseFailureVideo] as $video) {
                 $entityManager->persist($video);
             }
             $entityManager->flush();
 
             $providerRequestCount = 0;
             $providerImport = new VideoProviderImportService(
-                new MockHttpClient(static function (string $method, string $url, array $options) use (&$providerRequestCount): MockResponse {
+                new MockHttpClient(static function (string $method, string $url, array $options) use (&$providerRequestCount, $changedDuringCheckVideo, $connection): MockResponse {
                     ++$providerRequestCount;
                     self::assertSame('GET', $method);
                     self::assertSame(0, $options['max_redirects'] ?? null);
@@ -2152,6 +2162,26 @@ final class AdminDashboardTest extends WebTestCase
                     self::assertIsString($videoId);
 
                     if ('dQw4w9WgXcQ' === $videoId) {
+                        return new MockResponse(json_encode([
+                            'items' => [[
+                                'id' => $videoId,
+                                'status' => ['privacyStatus' => 'public', 'embeddable' => true],
+                            ]],
+                        ], JSON_THROW_ON_ERROR), ['http_code' => Response::HTTP_OK]);
+                    }
+
+                    if ('aqz-KE-bpKQ' === $videoId) {
+                        $connection->executeStatement(
+                            'UPDATE videos
+                            SET source_url = :source_url,
+                                external_source_status = NULL,
+                                external_source_checked_at = NULL,
+                                external_source_check_failed = FALSE,
+                                updated_at = CURRENT_TIMESTAMP
+                            WHERE id = :id',
+                            ['source_url' => 'https://youtu.be/jfKfPfyJRdk', 'id' => $changedDuringCheckVideo->getId()],
+                        );
+
                         return new MockResponse(json_encode([
                             'items' => [[
                                 'id' => $videoId,
@@ -2179,7 +2209,7 @@ final class AdminDashboardTest extends WebTestCase
 
             $validSelection = [
                 'action' => 'check_source_status',
-                'ids' => [$availableVideo->getId(), $failedVideo->getId(), $unsupportedEmbed->getId(), $directUrl->getId()],
+                'ids' => [$availableVideo->getId(), $failedVideo->getId(), $unsupportedEmbed->getId(), $changedDuringCheckVideo->getId(), $directUrl->getId()],
             ];
             $client->request('POST', '/admin/videos/bulk', ['_token' => 'invalid'] + $validSelection);
             self::assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
@@ -2196,14 +2226,18 @@ final class AdminDashboardTest extends WebTestCase
 
             $client->request('POST', '/admin/videos/bulk', ['_token' => $csrf] + $validSelection);
             self::assertResponseRedirects('/admin/videos');
-            self::assertSame(2, $providerRequestCount);
+            self::assertSame(3, $providerRequestCount);
 
             self::assertSame('available', $connection->fetchOne('SELECT external_source_status FROM videos WHERE id = :id', ['id' => $availableVideo->getId()]));
             self::assertNull($connection->fetchOne('SELECT external_source_status FROM videos WHERE id = :id', ['id' => $failedVideo->getId()]));
             self::assertTrue(in_array($connection->fetchOne('SELECT external_source_check_failed FROM videos WHERE id = :id', ['id' => $failedVideo->getId()]), [true, 1, '1', 't'], true));
             self::assertSame('unsupported', $connection->fetchOne('SELECT external_source_status FROM videos WHERE id = :id', ['id' => $unsupportedEmbed->getId()]));
+            self::assertSame('https://youtu.be/jfKfPfyJRdk', $connection->fetchOne('SELECT source_url FROM videos WHERE id = :id', ['id' => $changedDuringCheckVideo->getId()]));
+            self::assertNull($connection->fetchOne('SELECT external_source_status FROM videos WHERE id = :id', ['id' => $changedDuringCheckVideo->getId()]));
+            self::assertNull($connection->fetchOne('SELECT external_source_checked_at FROM videos WHERE id = :id', ['id' => $changedDuringCheckVideo->getId()]));
+            self::assertFalse(in_array($connection->fetchOne('SELECT external_source_check_failed FROM videos WHERE id = :id', ['id' => $changedDuringCheckVideo->getId()]), [true, 1, '1', 't'], true));
             self::assertNull($connection->fetchOne('SELECT external_source_status FROM videos WHERE id = :id', ['id' => $directUrl->getId()]));
-            foreach ([$availableVideo, $failedVideo, $unsupportedEmbed, $directUrl] as $video) {
+            foreach ([$availableVideo, $failedVideo, $unsupportedEmbed, $changedDuringCheckVideo, $directUrl] as $video) {
                 self::assertSame(PublishingStatus::Draft->value, $connection->fetchOne('SELECT status FROM videos WHERE id = :id', ['id' => $video->getId()]));
             }
 
@@ -2230,7 +2264,7 @@ final class AdminDashboardTest extends WebTestCase
                 'ids' => [$availableVideo->getId(), $databaseFailureVideo->getId()],
             ]);
             self::assertResponseStatusCodeSame(Response::HTTP_INTERNAL_SERVER_ERROR);
-            self::assertSame(4, $providerRequestCount);
+            self::assertSame(5, $providerRequestCount);
             $connection->executeStatement('ALTER TABLE videos DROP CONSTRAINT chk_test_video_source_check_rollback');
             $failureConstraintInstalled = false;
 
@@ -2250,7 +2284,7 @@ final class AdminDashboardTest extends WebTestCase
             if ($failureConstraintInstalled) {
                 $connection->executeStatement('ALTER TABLE videos DROP CONSTRAINT IF EXISTS chk_test_video_source_check_rollback');
             }
-            foreach ([$availableVideo, $failedVideo, $unsupportedEmbed, $directUrl, $databaseFailureVideo] as $video) {
+            foreach ([$availableVideo, $failedVideo, $unsupportedEmbed, $changedDuringCheckVideo, $directUrl, $databaseFailureVideo] as $video) {
                 $connection->executeStatement('DELETE FROM videos WHERE id = :id', ['id' => $video->getId()]);
             }
             $registry = $client->getContainer()->get(ManagerRegistry::class);

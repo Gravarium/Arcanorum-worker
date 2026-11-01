@@ -515,6 +515,27 @@ final class VideoRepository extends ServiceEntityRepository implements ExternalV
         return $videos;
     }
 
+    public function lockExternalSourceUrlForStatusCheck(string $videoId): ?string
+    {
+        $connection = $this->getEntityManager()->getConnection();
+        if (!$connection->isTransactionActive()) {
+            throw new \LogicException('Die Quellenprüfung benötigt eine aktive Transaktion.');
+        }
+
+        $sourceUrl = $connection->fetchOne(
+            'SELECT source_url FROM videos WHERE id = :id AND source_type = :source_type FOR UPDATE',
+            ['id' => $videoId, 'source_type' => VideoSourceType::Embed->value],
+        );
+        if (false === $sourceUrl) {
+            return null;
+        }
+        if (!is_string($sourceUrl) || '' === $sourceUrl) {
+            throw new \RuntimeException('Die aktuelle Videoquelle konnte nicht sicher gelesen werden.');
+        }
+
+        return $sourceUrl;
+    }
+
     /** @return list<Video> */
     public function findUnavailableExternalSources(int $limit = 100): array
     {

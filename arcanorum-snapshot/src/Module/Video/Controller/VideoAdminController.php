@@ -217,6 +217,7 @@ final class VideoAdminController extends AbstractController
         if ('check_source_status' === $action) {
             return $this->checkSourceStatus(
                 $items,
+                $videos,
                 $entityManager,
                 $providerImport,
                 $rateLimitCache,
@@ -317,6 +318,7 @@ final class VideoAdminController extends AbstractController
     /** @param list<Video> $items */
     private function checkSourceStatus(
         array $items,
+        VideoRepository $videos,
         EntityManagerInterface $entityManager,
         VideoProviderImportService $providerImport,
         HostingCachePoolProvider $rateLimitCache,
@@ -353,36 +355,36 @@ final class VideoAdminController extends AbstractController
         }
 
         $attemptedAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
-        /** @var list<array{video: Video, available: bool|null, failed: bool}> $results */
+        /** @var list<array{video: Video, source_url: string, available: bool|null, failed: bool}> $results */
         $results = [];
-        $unavailableCount = 0;
-        $unsupportedCount = 0;
-        $failedCount = 0;
         foreach ($embeddedItems as $video) {
+            $sourceUrl = $video->getSourceUrl();
             try {
-                $available = $providerImport->checkSourceAvailability($video->getSourceUrl());
+                $available = $providerImport->checkSourceAvailability($sourceUrl);
             } catch (VideoProviderImportException) {
-                ++$failedCount;
-                $results[] = ['video' => $video, 'available' => null, 'failed' => true];
+                $results[] = ['video' => $video, 'source_url' => $sourceUrl, 'available' => null, 'failed' => true];
 
                 continue;
             }
 
-            $status = null === $available
-                ? ExternalVideoSourceStatus::Unsupported
-                : ($available ? ExternalVideoSourceStatus::Available : ExternalVideoSourceStatus::Unavailable);
-            if (ExternalVideoSourceStatus::Unavailable === $status) {
-                ++$unavailableCount;
-            } elseif (ExternalVideoSourceStatus::Unsupported === $status) {
-                ++$unsupportedCount;
-            }
-            $results[] = ['video' => $video, 'available' => $available, 'failed' => false];
+            $results[] = ['video' => $video, 'source_url' => $sourceUrl, 'available' => $available, 'failed' => false];
         }
 
-        $entityManager->getConnection()->transactional(function () use ($entityManager, $results, $attemptedAt): void {
+        /** @var array{checked: int, unavailable: int, unsupported: int, failed: int, changed: int} $summary */
+        $summary = $entityManager->getConnection()->transactional(function () use ($entityManager, $videos, $results, $attemptedAt): array {
+            $summary = ['checked' => 0, 'unavailable' => 0, 'unsupported' => 0, 'failed' => 0, 'changed' => 0];
+
             foreach ($results as $result) {
+                if ($videos->lockExternalSourceUrlForStatusCheck($result['video']->getId()) !== $result['source_url']) {
+                    ++$summary['changed'];
+
+                    continue;
+                }
+
+                ++$summary['checked'];
                 if ($result['failed']) {
                     $result['video']->markExternalSourceCheckFailed($attemptedAt);
+                    ++$summary['failed'];
                 } else {
                     $status = match ($result['available']) {
                         true => ExternalVideoSourceStatus::Available,
@@ -390,17 +392,27 @@ final class VideoAdminController extends AbstractController
                         null => ExternalVideoSourceStatus::Unsupported,
                     };
                     $result['video']->markExternalSourceStatus($status, $attemptedAt);
+                    if (ExternalVideoSourceStatus::Unavailable === $status) {
+                        ++$summary['unavailable'];
+                    } elseif (ExternalVideoSourceStatus::Unsupported === $status) {
+                        ++$summary['unsupported'];
+                    }
                 }
             }
             $entityManager->flush();
+
+            return $summary;
         });
 
         $this->addFlash('success', $translator->trans('Quellenprüfung abgeschlossen: %checked% geprüft, %unavailable% nicht verfügbar, %unsupported% nicht unterstützt und %failed% fehlgeschlagen.', [
-            '%checked%' => count($results),
-            '%unavailable%' => $unavailableCount,
-            '%unsupported%' => $unsupportedCount,
-            '%failed%' => $failedCount,
+            '%checked%' => $summary['checked'],
+            '%unavailable%' => $summary['unavailable'],
+            '%unsupported%' => $summary['unsupported'],
+            '%failed%' => $summary['failed'],
         ]));
+        if ($summary['changed'] > 0) {
+            $this->addFlash('warning', $translator->trans('Die Quellenprüfung wurde für während des Prüflaufs geänderte Videoquellen verworfen.'));
+        }
 
         return $this->redirectToRoute('admin_video_index');
     }

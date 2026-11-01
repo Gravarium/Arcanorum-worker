@@ -2111,3 +2111,4 @@ Admin: Administration
 "Schwelle für automatische Video-Hervorhebung": "Automatic video highlight threshold"
 "Gezählte öffentliche Aufrufe bis zur einmaligen Hervorhebung; 0 deaktiviert die automatische Hervorhebung.": "Counted public views before a video is highlighted once; 0 disables automatic highlighting."
 "Die Schwelle für die automatische Hervorhebung muss eine ganze Zahl von 0 bis 2147483647 sein.": "The automatic highlight threshold must be a whole number from 0 to 2147483647."
+"Die Quellenprüfung wurde für während des Prüflaufs geänderte Videoquellen verworfen.": "The source check result was discarded because the video source changed while it was being checked."
