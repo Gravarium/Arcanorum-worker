@@ -7,6 +7,7 @@ namespace App\Tests\Controller;
 use App\Entity\PublishingStatus;
 use App\Entity\Video;
 use App\Entity\VideoSourceType;
+use App\Platform\Hosting\PrivateObjectStorageInterface;
 use App\Service\VideoSocialPreviewGenerator;
 use App\Service\VideoThumbnailUploadService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -14,6 +15,53 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class VideoSocialPreviewFlowTest extends WebTestCase
 {
+    public function testPublicThumbnailRejectsOutOfRangeImageBeforeMatchingEtagCanReturnNotModified(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        $storage = $client->getContainer()->get(PrivateObjectStorageInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        self::assertInstanceOf(PrivateObjectStorageInterface::class, $storage);
+
+        $suffix = bin2hex(random_bytes(8));
+        $contents = $this->createPng(4097, 1);
+        $imageInfo = getimagesizefromstring($contents);
+        self::assertIsArray($imageInfo);
+        self::assertSame(4097, $imageInfo[0]);
+        $objectId = bin2hex(random_bytes(32));
+        $video = new Video(
+            'Out-of-range thumbnail '.$suffix,
+            'A stored image outside the upload dimension limit must not be served.',
+            null,
+            VideoSourceType::Url,
+            'https://media.example.test/'.$suffix.'.mp4',
+            PublishingStatus::Published,
+            false,
+            true,
+        );
+        $video->attachThumbnail($objectId, 'image/png', strlen($contents));
+
+        try {
+            $storage->write($objectId, $contents);
+            $entityManager->persist($video);
+            $entityManager->flush();
+
+            $client->request(
+                'GET',
+                '/videos/'.$video->getId().'/thumbnail',
+                server: ['HTTP_IF_NONE_MATCH' => '"'.hash('sha256', $contents).'"'],
+            );
+
+            self::assertResponseStatusCodeSame(503);
+            self::assertTrue($client->getResponse()->headers->getCacheControlDirective('no-store'));
+            self::assertFalse($client->getResponse()->headers->has('ETag'));
+        } finally {
+            $entityManager->getConnection()->executeStatement('DELETE FROM videos WHERE id = :id', ['id' => $video->getId()]);
+            $storage->delete($objectId);
+        }
+    }
+
     public function testPublishedVideoReceivesVersionedPublicPreviewAndDraftsStayPrivate(): void
     {
         $client = static::createClient();

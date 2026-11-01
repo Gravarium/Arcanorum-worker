@@ -17,6 +17,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 final readonly class VideoThumbnailController
 {
     private const int MAX_FILE_BYTES = 4194304;
+    private const int MAX_DIMENSION = 4096;
 
     /** @var list<string> */
     private const array ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -116,9 +117,16 @@ final readonly class VideoThumbnailController
         }
 
         $detectedMimeType = new \finfo(FILEINFO_MIME_TYPE)->buffer($contents);
+        $imageInfo = @getimagesizefromstring($contents);
         if (strlen($contents) !== $expectedSize
             || !is_string($detectedMimeType)
             || $detectedMimeType !== $expectedMimeType
+            || false === $imageInfo
+            || $detectedMimeType !== $imageInfo['mime']
+            || $imageInfo[0] < 1
+            || $imageInfo[1] < 1
+            || $imageInfo[0] > self::MAX_DIMENSION
+            || $imageInfo[1] > self::MAX_DIMENSION
         ) {
             return new Response('', Response::HTTP_SERVICE_UNAVAILABLE, ['Cache-Control' => 'no-store']);
         }

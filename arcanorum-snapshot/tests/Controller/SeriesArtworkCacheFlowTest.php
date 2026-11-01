@@ -13,6 +13,52 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class SeriesArtworkCacheFlowTest extends WebTestCase
 {
+    public function testPublishedArtworkRejectsOutOfRangeImageBeforeMatchingEtagCanReturnNotModified(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        $storage = $client->getContainer()->get(PrivateObjectStorageInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        self::assertInstanceOf(PrivateObjectStorageInterface::class, $storage);
+
+        $suffix = bin2hex(random_bytes(6));
+        $contents = $this->createPng(4097, 1);
+        $imageInfo = getimagesizefromstring($contents);
+        self::assertIsArray($imageInfo);
+        self::assertSame(4097, $imageInfo[0]);
+        $series = new ContentSeries(
+            'Out-of-range artwork '.$suffix,
+            'out-of-range-artwork-'.$suffix,
+            'A stored image outside the upload dimension limit must not be served.',
+            PublishingStatus::Published,
+        );
+        $objectId = bin2hex(random_bytes(32));
+        $series->attachArtwork($objectId, 'image/png', strlen($contents));
+
+        try {
+            $storage->write($objectId, $contents);
+            $entityManager->persist($series);
+            $entityManager->flush();
+
+            $client->request(
+                'GET',
+                '/series/'.$series->getSlug().'/artwork',
+                server: ['HTTP_IF_NONE_MATCH' => '"'.hash('sha256', $contents).'"'],
+            );
+
+            self::assertResponseStatusCodeSame(Response::HTTP_SERVICE_UNAVAILABLE);
+            self::assertTrue($client->getResponse()->headers->getCacheControlDirective('no-store'));
+            self::assertFalse($client->getResponse()->headers->has('ETag'));
+        } finally {
+            $entityManager->getConnection()->executeStatement(
+                'DELETE FROM content_series WHERE id = :id',
+                ['id' => $series->getId()],
+            );
+            $storage->delete($objectId);
+        }
+    }
+
     public function testPublishedArtworkRevalidatesAndIsDeniedAfterUnpublish(): void
     {
         $client = static::createClient();
@@ -81,5 +127,24 @@ final class SeriesArtworkCacheFlowTest extends WebTestCase
             }
             $storage->delete($objectId);
         }
+    }
+
+    private function createPng(int $width, int $height): string
+    {
+        $image = imagecreatetruecolor($width, $height);
+        self::assertInstanceOf(\GdImage::class, $image);
+        imagefill($image, 0, 0, 0x1A70B1);
+        ob_start();
+        try {
+            self::assertTrue(imagepng($image));
+            $contents = ob_get_contents();
+        } finally {
+            ob_end_clean();
+            unset($image);
+        }
+
+        self::assertIsString($contents);
+
+        return $contents;
     }
 }
