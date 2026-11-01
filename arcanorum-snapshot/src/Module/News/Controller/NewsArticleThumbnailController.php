@@ -10,6 +10,7 @@ use App\Platform\Hosting\PrivateObjectStorageInterface;
 use App\Platform\Hosting\PrivateStorageOperationFailed;
 use App\Repository\NewsArticleRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -27,29 +28,29 @@ final class NewsArticleThumbnailController extends AbstractController
     }
 
     #[Route('/news/{id}/thumbnail', name: 'news_thumbnail', requirements: ['id' => '[a-f0-9]{32}'], methods: ['GET'])]
-    public function show(string $id, NewsArticleRepository $articles, NewsArticleAccessPolicy $access): Response
+    public function show(string $id, Request $request, NewsArticleRepository $articles, NewsArticleAccessPolicy $access): Response
     {
         $article = $articles->findPublishedById($id);
         if (!$article instanceof NewsArticle || !$access->canRead($article, $this->getUser())) {
             return new Response('', Response::HTTP_NOT_FOUND, ['Cache-Control' => 'no-store']);
         }
 
-        return $this->imageResponse($article, $article->isMembersOnly());
+        return $this->imageResponse($article, $article->isMembersOnly(), $request);
     }
 
     #[Route('/admin/news/{id}/thumbnail', name: 'admin_news_thumbnail_preview', requirements: ['id' => '[a-f0-9]{32}'], methods: ['GET'])]
     #[IsGranted('ROLE_CONTENT_EDITOR')]
-    public function preview(string $id, NewsArticleRepository $articles): Response
+    public function preview(string $id, Request $request, NewsArticleRepository $articles): Response
     {
         $article = $articles->find($id);
         if (!$article instanceof NewsArticle) {
             return new Response('', Response::HTTP_NOT_FOUND, ['Cache-Control' => 'no-store']);
         }
 
-        return $this->imageResponse($article, true);
+        return $this->imageResponse($article, true, $request);
     }
 
-    private function imageResponse(NewsArticle $article, bool $private): Response
+    private function imageResponse(NewsArticle $article, bool $private, Request $request): Response
     {
         $objectId = $article->getThumbnailObjectId();
         $expectedMimeType = $article->getThumbnailMimeType();
@@ -87,12 +88,19 @@ final class NewsArticleThumbnailController extends AbstractController
             return new Response('', Response::HTTP_SERVICE_UNAVAILABLE, ['Cache-Control' => 'no-store']);
         }
 
-        return new Response($contents, Response::HTTP_OK, [
+        $response = new Response($contents, Response::HTTP_OK, [
             'Content-Type' => $detectedMimeType,
             'Content-Length' => (string) $expectedSize,
-            'Cache-Control' => $private ? 'private, no-store' : 'public, max-age=300',
+            'Cache-Control' => $private ? 'private, no-store' : 'public, max-age=0, must-revalidate',
             'X-Content-Type-Options' => 'nosniff',
             'Content-Disposition' => 'inline',
         ]);
+
+        if (!$private) {
+            $response->setEtag(hash('sha256', $contents));
+            $response->isNotModified($request);
+        }
+
+        return $response;
     }
 }

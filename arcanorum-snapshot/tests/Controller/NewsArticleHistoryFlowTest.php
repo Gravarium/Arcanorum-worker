@@ -133,7 +133,7 @@ final class NewsArticleHistoryFlowTest extends WebTestCase
                     'tags' => 'History, Editorial',
                     'summary' => 'First version summary.',
                     'body' => '<p>First <strong>version</strong></p><script>alert(1)</script>',
-                    'status' => 'draft',
+                    'status' => 'published',
                     'custom_fields_present' => '1',
                     'custom_fields' => [['key' => 'License', 'value' => 'First license']],
                 ], ['thumbnail' => new UploadedFile($thumbnailPath, 'news-thumbnail.png', 'image/png', null, true)]);
@@ -173,8 +173,19 @@ final class NewsArticleHistoryFlowTest extends WebTestCase
             self::assertResponseHeaderSame('Content-Type', 'image/png');
             self::assertTrue($client->getResponse()->headers->getCacheControlDirective('no-store'));
             self::assertSame($png, $client->getResponse()->getContent());
+            $anonymousIdentity = $this->suspendAdminIdentity($client);
             $client->request('GET', '/news/'.$article->getId().'/thumbnail');
-            self::assertResponseStatusCodeSame(404);
+            self::assertResponseIsSuccessful();
+            self::assertSame($png, $client->getResponse()->getContent());
+            self::assertTrue($client->getResponse()->headers->getCacheControlDirective('public'));
+            self::assertSame('0', $client->getResponse()->headers->getCacheControlDirective('max-age'));
+            self::assertTrue($client->getResponse()->headers->getCacheControlDirective('must-revalidate'));
+            $publicThumbnailEtag = (string) $client->getResponse()->headers->get('ETag');
+            self::assertNotSame('', $publicThumbnailEtag);
+            $client->request('GET', '/news/'.$article->getId().'/thumbnail', server: ['HTTP_IF_NONE_MATCH' => $publicThumbnailEtag]);
+            self::assertResponseStatusCodeSame(304);
+            self::assertSame('', $client->getResponse()->getContent());
+            $this->restoreAdminIdentity($client, $anonymousIdentity);
 
             $client->request('GET', '/admin/news/'.$article->getId().'/edit');
             self::assertResponseIsSuccessful();
@@ -272,8 +283,10 @@ final class NewsArticleHistoryFlowTest extends WebTestCase
             self::assertResponseIsSuccessful();
             self::assertStringNotContainsString('Revised news '.$suffix, $client->getResponse()->getContent());
 
-            $client->request('GET', '/news/'.$article->getId().'/thumbnail');
+            $anonymousIdentity = $this->suspendAdminIdentity($client);
+            $client->request('GET', '/news/'.$article->getId().'/thumbnail', server: ['HTTP_IF_NONE_MATCH' => $publicThumbnailEtag]);
             self::assertResponseStatusCodeSame(404);
+            $this->restoreAdminIdentity($client, $anonymousIdentity);
 
             $client->request('GET', '/admin/news/'.$article->getId().'/edit');
             self::assertResponseIsSuccessful();
