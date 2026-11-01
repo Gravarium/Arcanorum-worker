@@ -744,10 +744,6 @@ final class VideoAdminController extends AbstractController
                         }
 
                         if (!$isNew) {
-                            if (!$video instanceof Video) {
-                                return 'missing_video';
-                            }
-
                             $currentVideo = $videos->findByIdForUpdate($video->getId());
                             if (!$currentVideo instanceof Video) {
                                 return 'missing_video';
@@ -768,10 +764,6 @@ final class VideoAdminController extends AbstractController
                             && null === $video->getUploadedObjectId()
                         ) {
                             return 'missing_media';
-                        }
-
-                        if (!$status instanceof PublishingStatus) {
-                            return 'invalid_status';
                         }
 
                         $previousObjectId = $video->getUploadedObjectId();
@@ -828,7 +820,6 @@ final class VideoAdminController extends AbstractController
                         'duplicate_source' => 'Diese Videoquelle ist bereits vorhanden.',
                         'missing_media' => 'Für einen Datei-Upload ist weiterhin eine geprüfte Mediendatei erforderlich.',
                         'missing_video' => 'Das Video wurde zwischenzeitlich entfernt. Bitte lade die Seite neu.',
-                        'invalid_status' => 'Bitte wähle einen gültigen Veröffentlichungsstatus.',
                         default => 'Das Video konnte nicht sicher gespeichert werden.',
                     };
                 } else {
