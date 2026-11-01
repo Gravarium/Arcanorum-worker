@@ -131,6 +131,10 @@ final class SeriesArtworkCacheFlowTest extends WebTestCase
 
     private function createPng(int $width, int $height): string
     {
+        if ($width < 1 || $height < 1) {
+            throw new \InvalidArgumentException('Testbilder müssen positive Abmessungen haben.');
+        }
+
         $image = imagecreatetruecolor($width, $height);
         self::assertInstanceOf(\GdImage::class, $image);
         imagefill($image, 0, 0, 0x1A70B1);
