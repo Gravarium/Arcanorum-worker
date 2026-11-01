@@ -222,10 +222,34 @@ final class AdminDesignSettingsControllerTest extends WebTestCase
         );
         $email = 'design-logo-admin-'.bin2hex(random_bytes(6)).'@example.test';
         $storageCapture = new AdminDesignLogoStorageCapture();
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        $connection = $entityManager->getConnection();
+        $uploadConcurrentObjectId = hash('sha256', 'design-logo-upload-race-'.$email);
+        $removeConcurrentObjectId = hash('sha256', 'design-logo-remove-race-'.$email);
+        $simulateUploadRace = true;
         $storage = $this->createMock(PrivateObjectStorageInterface::class);
         $storage->expects(self::exactly(2))->method('write')
-            ->willReturnCallback(static function (string $storedId, string $storedContents) use ($storageCapture): void {
+            ->willReturnCallback(static function (string $storedId, string $storedContents) use (
+                $storageCapture,
+                $connection,
+                $uploadConcurrentObjectId,
+                &$simulateUploadRace,
+            ): void {
                 $storageCapture->store($storedId, $storedContents);
+                if ($simulateUploadRace) {
+                    $simulateUploadRace = false;
+                    self::assertSame(1, $connection->executeStatement(
+                        'UPDATE site_settings SET site_logo_object_id = :object_id, site_logo_mime_type = :mime_type, site_logo_size = :size, site_logo_sha256 = :sha256 WHERE id = :id',
+                        [
+                            'object_id' => $uploadConcurrentObjectId,
+                            'mime_type' => 'image/png',
+                            'size' => strlen($storedContents),
+                            'sha256' => hash('sha256', $storedContents),
+                            'id' => SiteSettings::SINGLETON_ID,
+                        ],
+                    ));
+                }
             });
         $storage->expects(self::exactly(3))->method('read')
             ->willReturnCallback(static function (string $requestedId, int $maximumBytes) use ($storageCapture): string {
@@ -274,11 +298,12 @@ final class AdminDesignSettingsControllerTest extends WebTestCase
             $firstObjectId = $storageCapture->objectIdAt(0);
             self::assertMatchesRegularExpression('/\A[a-f0-9]{64}\z/D', $firstObjectId);
 
-            $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
-            self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
-            $connection = $entityManager->getConnection();
             self::assertSame($firstObjectId, $connection->fetchOne('SELECT site_logo_object_id FROM site_settings WHERE id = 1'));
             self::assertSame('image/png', $connection->fetchOne('SELECT site_logo_mime_type FROM site_settings WHERE id = 1'));
+            self::assertSame('1', $connection->fetchOne(
+                'SELECT CAST(COUNT(*) AS VARCHAR) FROM private_object_deletion_jobs WHERE object_id = :object_id',
+                ['object_id' => $uploadConcurrentObjectId],
+            ));
             $firstSha256 = $connection->fetchOne('SELECT CAST(site_logo_sha256 AS VARCHAR) FROM site_settings WHERE id = 1');
             self::assertIsString($firstSha256);
 
@@ -322,12 +347,23 @@ final class AdminDesignSettingsControllerTest extends WebTestCase
 
             $client->request('POST', '/admin/settings/design/logo/remove', ['_token' => 'invalid']);
             self::assertResponseStatusCodeSame(403);
+            $concurrentlySavedContents = $storageCapture->contents($currentObjectId);
+            self::assertSame(1, $connection->executeStatement(
+                'UPDATE site_settings SET site_logo_object_id = :object_id, site_logo_mime_type = :mime_type, site_logo_size = :size, site_logo_sha256 = :sha256 WHERE id = :id',
+                [
+                    'object_id' => $removeConcurrentObjectId,
+                    'mime_type' => 'image/png',
+                    'size' => strlen($concurrentlySavedContents),
+                    'sha256' => hash('sha256', $concurrentlySavedContents),
+                    'id' => SiteSettings::SINGLETON_ID,
+                ],
+            ));
             $client->request('POST', '/admin/settings/design/logo/remove', ['_token' => $token]);
             self::assertResponseRedirects('/admin/settings/design');
             self::assertNull($connection->fetchOne('SELECT site_logo_object_id FROM site_settings WHERE id = 1'));
             self::assertSame('1', $connection->fetchOne(
                 'SELECT CAST(COUNT(*) AS VARCHAR) FROM private_object_deletion_jobs WHERE object_id = :object_id',
-                ['object_id' => $currentObjectId],
+                ['object_id' => $removeConcurrentObjectId],
             ));
 
             $client->request('GET', '/site-logo/'.$currentSha256);
@@ -341,6 +377,13 @@ final class AdminDesignSettingsControllerTest extends WebTestCase
             $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
             if ($entityManager instanceof EntityManagerInterface) {
                 foreach ($storageCapture->objectIds() as $objectId) {
+                    $entityManager->getConnection()->executeStatement(
+                        'UPDATE site_settings SET site_logo_object_id = NULL, site_logo_mime_type = NULL, site_logo_size = NULL, site_logo_sha256 = NULL WHERE site_logo_object_id = :object_id',
+                        ['object_id' => $objectId],
+                    );
+                    $entityManager->getConnection()->delete('private_object_deletion_jobs', ['object_id' => $objectId]);
+                }
+                foreach ([$uploadConcurrentObjectId, $removeConcurrentObjectId] as $objectId) {
                     $entityManager->getConnection()->executeStatement(
                         'UPDATE site_settings SET site_logo_object_id = NULL, site_logo_mime_type = NULL, site_logo_size = NULL, site_logo_sha256 = NULL WHERE site_logo_object_id = :object_id',
                         ['object_id' => $objectId],

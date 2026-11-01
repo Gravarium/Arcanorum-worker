@@ -27,6 +27,7 @@ on:
           - video-provider-player-followup
           - video-thumbnail-concurrency-followup
           - private-artwork-concurrency-followup
+          - site-logo-concurrency-followup
           - video-social-preview-cache-followup
           - public-media-cache-followup
           - auto-feature-threshold-followup
@@ -2233,8 +2234,8 @@ jobs:
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
 
   validate-private-artwork-concurrency:
-    if: github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'private-artwork-concurrency-followup'
-    name: Focused private artwork concurrency checks
+    if: github.event_name == 'workflow_dispatch' && (inputs.validation_scope == 'private-artwork-concurrency-followup' || inputs.validation_scope == 'site-logo-concurrency-followup')
+    name: Focused private media concurrency checks
     runs-on: ubuntu-26.04
     timeout-minutes: 45
     permissions:
@@ -2243,6 +2244,7 @@ jobs:
       run:
         working-directory: arcanorum-snapshot
     env:
+      VALIDATION_SCOPE: ${{ inputs.validation_scope }}
       APP_ENV: test
       APP_DEBUG: '0'
       APP_SECRET: ci-only-not-a-production-secret
@@ -2369,12 +2371,17 @@ jobs:
 
       - name: Check affected PHP syntax
         run: |
-          php -l src/Module/Series/Controller/AdminSeriesArtworkController.php
-          php -l src/Repository/ContentSeriesRepository.php
-          php -l src/Module/Settings/Controller/AdminPlayerWatermarkController.php
-          php -l src/Repository/SiteSettingsRepository.php
-          php -l tests/Controller/AdminDashboardTest.php
-          php -l tests/Controller/AdminGeneralSettingsTest.php
+          if [[ "$VALIDATION_SCOPE" == 'site-logo-concurrency-followup' ]]; then
+            php -l src/Service/SiteSettingsManager.php
+            php -l tests/Controller/AdminDesignSettingsControllerTest.php
+          else
+            php -l src/Module/Series/Controller/AdminSeriesArtworkController.php
+            php -l src/Repository/ContentSeriesRepository.php
+            php -l src/Module/Settings/Controller/AdminPlayerWatermarkController.php
+            php -l src/Repository/SiteSettingsRepository.php
+            php -l tests/Controller/AdminDashboardTest.php
+            php -l tests/Controller/AdminGeneralSettingsTest.php
+          fi
 
       - name: Prepare PostgreSQL schema and validate Doctrine mapping
         run: |
@@ -2382,44 +2389,51 @@ jobs:
           php bin/console doctrine:schema:validate --skip-sync
 
       - name: PHPStan level 10 on affected PHP files
-        run: >-
-          vendor/bin/phpstan analyse
-          --configuration=phpstan.neon.dist
-          --no-progress
-          --error-format=table
-          --memory-limit=1G
-          src/Module/Series/Controller/AdminSeriesArtworkController.php
-          src/Repository/ContentSeriesRepository.php
-          src/Module/Settings/Controller/AdminPlayerWatermarkController.php
-          src/Repository/SiteSettingsRepository.php
-          tests/Controller/AdminDashboardTest.php
-          tests/Controller/AdminGeneralSettingsTest.php
+        run: |
+          if [[ "$VALIDATION_SCOPE" == 'site-logo-concurrency-followup' ]]; then
+            vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --no-progress --error-format=table --memory-limit=1G \
+              src/Service/SiteSettingsManager.php tests/Controller/AdminDesignSettingsControllerTest.php
+          else
+            vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --no-progress --error-format=table --memory-limit=1G \
+              src/Module/Series/Controller/AdminSeriesArtworkController.php \
+              src/Repository/ContentSeriesRepository.php \
+              src/Module/Settings/Controller/AdminPlayerWatermarkController.php \
+              src/Repository/SiteSettingsRepository.php \
+              tests/Controller/AdminDashboardTest.php \
+              tests/Controller/AdminGeneralSettingsTest.php
+          fi
 
       - name: PHP CS Fixer on affected PHP files
-        run: >-
-          vendor/bin/php-cs-fixer check
-          --config=.php-cs-fixer.dist.php
-          --diff
-          --using-cache=no
-          src/Module/Series/Controller/AdminSeriesArtworkController.php
-          src/Repository/ContentSeriesRepository.php
-          src/Module/Settings/Controller/AdminPlayerWatermarkController.php
-          src/Repository/SiteSettingsRepository.php
-          tests/Controller/AdminDashboardTest.php
-          tests/Controller/AdminGeneralSettingsTest.php
+        run: |
+          if [[ "$VALIDATION_SCOPE" == 'site-logo-concurrency-followup' ]]; then
+            vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --diff --using-cache=no \
+              src/Service/SiteSettingsManager.php tests/Controller/AdminDesignSettingsControllerTest.php
+          else
+            vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --diff --using-cache=no \
+              src/Module/Series/Controller/AdminSeriesArtworkController.php \
+              src/Repository/ContentSeriesRepository.php \
+              src/Module/Settings/Controller/AdminPlayerWatermarkController.php \
+              src/Repository/SiteSettingsRepository.php \
+              tests/Controller/AdminDashboardTest.php \
+              tests/Controller/AdminGeneralSettingsTest.php
+          fi
 
       - name: Rector dry run on affected PHP files
-        run: >-
-          vendor/bin/rector process
-          src/Module/Series/Controller/AdminSeriesArtworkController.php
-          src/Repository/ContentSeriesRepository.php
-          src/Module/Settings/Controller/AdminPlayerWatermarkController.php
-          src/Repository/SiteSettingsRepository.php
-          tests/Controller/AdminDashboardTest.php
-          tests/Controller/AdminGeneralSettingsTest.php
-          --config=rector.php
-          --dry-run
-          --no-progress-bar
+        run: |
+          if [[ "$VALIDATION_SCOPE" == 'site-logo-concurrency-followup' ]]; then
+            vendor/bin/rector process src/Service/SiteSettingsManager.php \
+              tests/Controller/AdminDesignSettingsControllerTest.php \
+              --config=rector.php --dry-run --no-progress-bar
+          else
+            vendor/bin/rector process \
+              src/Module/Series/Controller/AdminSeriesArtworkController.php \
+              src/Repository/ContentSeriesRepository.php \
+              src/Module/Settings/Controller/AdminPlayerWatermarkController.php \
+              src/Repository/SiteSettingsRepository.php \
+              tests/Controller/AdminDashboardTest.php \
+              tests/Controller/AdminGeneralSettingsTest.php \
+              --config=rector.php --dry-run --no-progress-bar
+          fi
 
       - name: Psalm taint analysis
         run: |
@@ -2429,13 +2443,22 @@ jobs:
       - name: Run private artwork concurrency regressions
         run: |
           mkdir -p var/test-results
-          php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
-            --fail-on-risky --fail-on-warning --fail-on-deprecation \
-            --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
-            --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
-            --filter='testAdminSeriesArtworkReplacementLocksAndRefreshesCurrentSeries|testAdminCanUploadPreviewAndRemoveSeriesArtwork|testAdministratorCanUploadPreviewAndRemovePrivatePlayerWatermark' \
-            tests/Controller/AdminDashboardTest.php \
-            tests/Controller/AdminGeneralSettingsTest.php
+          if [[ "$VALIDATION_SCOPE" == 'site-logo-concurrency-followup' ]]; then
+            php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
+              --fail-on-risky --fail-on-warning --fail-on-deprecation \
+              --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
+              --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
+              --filter='testAdministratorCanUploadAndRemoveSanitizedLogoWithCsrfAndPrivateStorage' \
+              tests/Controller/AdminDesignSettingsControllerTest.php
+          else
+            php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
+              --fail-on-risky --fail-on-warning --fail-on-deprecation \
+              --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
+              --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
+              --filter='testAdminSeriesArtworkReplacementLocksAndRefreshesCurrentSeries|testAdminCanUploadPreviewAndRemoveSeriesArtwork|testAdministratorCanUploadPreviewAndRemovePrivatePlayerWatermark' \
+              tests/Controller/AdminDashboardTest.php \
+              tests/Controller/AdminGeneralSettingsTest.php
+          fi
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
 
   validate-manual-video-source-check:

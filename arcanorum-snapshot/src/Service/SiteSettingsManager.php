@@ -157,35 +157,37 @@ final readonly class SiteSettingsManager
 
     public function replaceSiteLogo(string $objectId, string $mimeType, int $size, string $sha256): void
     {
-        $settings = $this->settings->findCurrent();
-        $isNew = null === $settings;
-        $settings ??= new SiteSettings();
-        $previousObjectId = $settings->getSiteLogoObjectId();
-        $settings->attachSiteLogo($objectId, $mimeType, $size, $sha256);
+        $this->entityManager->getConnection()->transactional(function () use ($objectId, $mimeType, $size, $sha256): void {
+            $settings = $this->settings->findCurrentForUpdate();
+            if (!$settings instanceof SiteSettings) {
+                throw new \RuntimeException('Die Site-Einstellungen sind nicht verfügbar.');
+            }
 
-        if ($isNew) {
-            $this->entityManager->persist($settings);
-        }
-        if (null !== $previousObjectId && !hash_equals($previousObjectId, $objectId)) {
-            $this->entityManager->persist(new PrivateObjectDeletionJob($previousObjectId));
-        }
+            $previousObjectId = $settings->getSiteLogoObjectId();
+            $settings->attachSiteLogo($objectId, $mimeType, $size, $sha256);
+            if (null !== $previousObjectId && !hash_equals($previousObjectId, $objectId)) {
+                $this->entityManager->persist(new PrivateObjectDeletionJob($previousObjectId));
+            }
 
-        $this->entityManager->flush();
+            $this->entityManager->flush();
+        });
     }
 
     public function removeSiteLogo(): void
     {
-        $settings = $this->settings->findCurrent();
-        if (null === $settings) {
-            return;
-        }
+        $this->entityManager->getConnection()->transactional(function (): void {
+            $settings = $this->settings->findCurrentForUpdate();
+            if (!$settings instanceof SiteSettings) {
+                return;
+            }
 
-        $previousObjectId = $settings->removeSiteLogo();
-        if (null === $previousObjectId) {
-            return;
-        }
+            $previousObjectId = $settings->removeSiteLogo();
+            if (null === $previousObjectId) {
+                return;
+            }
 
-        $this->entityManager->persist(new PrivateObjectDeletionJob($previousObjectId));
-        $this->entityManager->flush();
+            $this->entityManager->persist(new PrivateObjectDeletionJob($previousObjectId));
+            $this->entityManager->flush();
+        });
     }
 }
