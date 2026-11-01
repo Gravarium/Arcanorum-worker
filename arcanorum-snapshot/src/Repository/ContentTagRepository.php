@@ -7,8 +7,8 @@ namespace App\Repository;
 use App\Entity\ContentTag;
 use App\Entity\PublishingStatus;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\LockMode;
 use Doctrine\DBAL\Types\Types;
-use Doctrine\ORM\LockMode;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
