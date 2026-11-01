@@ -136,7 +136,7 @@ final class PublicSeriesFlowTest extends WebTestCase
 
         $artworkStorage = $this->createMock(PrivateObjectStorageInterface::class);
         $artworkStorage
-            ->expects($this->once())
+            ->expects($this->exactly(2))
             ->method('read')
             ->with($publishedArtworkId, strlen($artwork))
             ->willReturn($artwork);
