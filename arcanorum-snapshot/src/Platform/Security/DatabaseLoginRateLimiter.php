@@ -173,7 +173,7 @@ final readonly class DatabaseLoginRateLimiter implements RequestRateLimiterInter
 
     /**
      * @param array<string, array{count: int, started_at: \DateTimeImmutable}> $windows
-     * @param array<string, int>                                                $keyLimits
+     * @param array<string, int>                                               $keyLimits
      */
     private function rateLimit(array $windows, array $keyLimits, \DateTimeImmutable $now): RateLimit
     {
