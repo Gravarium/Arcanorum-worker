@@ -217,6 +217,11 @@ final class AdminDashboardTest extends WebTestCase
             $this->submitLogin($client, $email, 'VideoModerator!2026');
             self::assertResponseRedirects('/admin');
 
+            $client->request('GET', '/videos');
+            self::assertResponseIsSuccessful();
+            self::assertSelectorTextContains('.public-account-menu a[href="/admin"]', 'Verwaltung öffnen');
+            self::assertSelectorNotExists('.public-account-menu a[href="/admin/login"]');
+
             $client->request('GET', '/admin');
             self::assertResponseRedirects('/admin/video-submissions');
 
