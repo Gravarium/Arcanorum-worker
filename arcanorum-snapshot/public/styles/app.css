@@ -3011,6 +3011,52 @@ html[data-public-theme="arcanorum"][data-public-view="compact"] .public-navigati
     min-width: 16rem;
 }
 
+.admin-dashboard-content-list {
+    margin: 0;
+    padding: 0 1.25rem;
+    list-style: none;
+}
+
+.admin-dashboard-content-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.65rem 1rem;
+    padding: 0.65rem 0;
+    border-bottom: 1px solid #e8eaed;
+}
+
+.admin-dashboard-content-row:last-child {
+    border-bottom: 0;
+}
+
+.admin-dashboard-content-row .admin-content-title-row {
+    flex: 1 1 24rem;
+    min-width: 0;
+}
+
+.admin-dashboard-content-row .admin-content-title-row > a {
+    overflow-wrap: anywhere;
+}
+
+.admin-dashboard-content-row > time {
+    color: #5f6368;
+    font-size: 0.82rem;
+    text-align: right;
+}
+
+@media (max-width: 48rem) {
+    .admin-dashboard-content-row {
+        flex-wrap: wrap;
+        justify-content: flex-start;
+    }
+
+    .admin-dashboard-content-row > time {
+        margin-left: 5.65rem;
+        text-align: left;
+    }
+}
+
 .admin-content-title-row {
     display: flex;
     align-items: center;

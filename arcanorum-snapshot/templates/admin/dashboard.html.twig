@@ -105,10 +105,17 @@
         {% if latest_videos is empty %}
             <p>{{ 'Noch keine Videos. Füge die erste Videoquelle hinzu.'|trans }}</p>
         {% else %}
-            <ul>
+            <ul class="admin-dashboard-content-list">
                 {% for video in latest_videos %}
-                    <li>
-                        <a href="{{ path('admin_video_edit', {id: video.id}) }}">{{ video.title }}</a>
+                    <li class="admin-dashboard-content-row">
+                        <span class="admin-content-title-row">
+                            {% if video.thumbnailObjectId %}
+                                <img class="admin-content-list-thumbnail" src="{{ path('admin_video_thumbnail_preview', {id: video.id}) }}" alt="" loading="lazy" decoding="async">
+                            {% else %}
+                                <span class="admin-content-thumbnail-placeholder" aria-hidden="true">▸</span>
+                            {% endif %}
+                            <a href="{{ path('admin_video_edit', {id: video.id}) }}">{{ video.title }}</a>
+                        </span>
                         <span class="status-pill {{ video.status.cssClass }}">{{ video.status.label|trans }}</span>
                         <time datetime="{{ video.createdAt|date('c', 'UTC') }}">{{ 'Erstellt am %date% UTC'|trans({'%date%': video.createdAt|date(app.request.locale starts with 'en' ? 'Y-m-d H:i' : 'd.m.Y H:i', 'UTC')}) }}</time>
                     </li>
@@ -126,10 +133,17 @@
             {% if latest_articles is empty %}
                 <p>{{ 'Noch keine Artikel vorhanden.'|trans }}</p>
             {% else %}
-                <ul>
+                <ul class="admin-dashboard-content-list">
                     {% for article in latest_articles %}
-                        <li>
-                            <a href="{{ path('admin_news_edit', {id: article.id}) }}">{{ article.title }}</a>
+                        <li class="admin-dashboard-content-row">
+                            <span class="admin-content-title-row">
+                                {% if article.thumbnailObjectId %}
+                                    <img class="admin-content-list-thumbnail" src="{{ path('admin_news_thumbnail_preview', {id: article.id}) }}" alt="" loading="lazy" decoding="async">
+                                {% else %}
+                                    <span class="admin-content-thumbnail-placeholder" aria-hidden="true">▤</span>
+                                {% endif %}
+                                <a href="{{ path('admin_news_edit', {id: article.id}) }}">{{ article.title }}</a>
+                            </span>
                             <span class="status-pill {{ article.status.cssClass }}">{{ article.status.label|trans }}</span>
                             <time datetime="{{ article.createdAt|date('c', 'UTC') }}">{{ 'Erstellt am %date% UTC'|trans({'%date%': article.createdAt|date(app.request.locale starts with 'en' ? 'Y-m-d H:i' : 'd.m.Y H:i', 'UTC')}) }}</time>
                         </li>

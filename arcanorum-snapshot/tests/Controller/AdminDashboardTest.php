@@ -120,6 +120,92 @@ final class AdminDashboardTest extends WebTestCase
         self::assertResponseRedirects('/admin/login');
     }
 
+    public function testDashboardLatestContentShowsProtectedThumbnailPreviews(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $client->getContainer()->set(
+            RuntimeAttestationReportProviderInterface::class,
+            new VerifiedRuntimeAttestationReportProvider(),
+        );
+
+        $suffix = bin2hex(random_bytes(6));
+        $email = 'dashboard-preview-'.$suffix.'@example.test';
+        $password = 'Dashboard-Preview-'.$suffix.'-K8!';
+        $video = new Video(
+            'Dashboard preview video '.$suffix,
+            'Dashboard thumbnail preview test.',
+            null,
+            VideoSourceType::Url,
+            'https://videos.example.test/dashboard-preview-'.$suffix.'.mp4',
+            PublishingStatus::Draft,
+            false,
+            true,
+        );
+        $article = new NewsArticle(
+            'Dashboard preview article '.$suffix,
+            'dashboard-preview-'.$suffix,
+            null,
+            'Dashboard preview summary.',
+            '<p>Dashboard preview body.</p>',
+            PublishingStatus::Draft,
+            false,
+            true,
+        );
+        $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/WioAAAAASUVORK5CYII=', true);
+        self::assertIsString($png);
+        $objectId = hash('sha256', $png);
+        $video->attachThumbnail($objectId, 'image/png', strlen($png));
+        $article->attachThumbnail($objectId, 'image/png', strlen($png));
+
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        $storage = $client->getContainer()->get(PrivateObjectStorageInterface::class);
+        self::assertInstanceOf(PrivateObjectStorageInterface::class, $storage);
+
+        try {
+            $storage->write($objectId, $png);
+            $entityManager->persist($video);
+            $entityManager->persist($article);
+            $entityManager->flush();
+
+            $client->request('GET', '/admin/videos/'.$video->getId().'/thumbnail');
+            self::assertResponseRedirects('/admin/login');
+            $client->request('GET', '/admin/news/'.$article->getId().'/thumbnail');
+            self::assertResponseRedirects('/admin/login');
+
+            $this->persistUser($client, $email, $password, ['ROLE_ADMIN']);
+            $this->submitLogin($client, $email, $password);
+            self::assertResponseRedirects('/admin');
+            $client->request('GET', '/admin');
+            self::assertResponseIsSuccessful();
+            self::assertSelectorExists('section[data-dashboard-latest-videos] img.admin-content-list-thumbnail[src="/admin/videos/'.$video->getId().'/thumbnail"][alt=""]');
+            self::assertSelectorExists('section[data-dashboard-latest-videos] .admin-content-title-row a[href="/admin/videos/'.$video->getId().'/edit"]');
+            self::assertSelectorExists('section[data-dashboard-latest-articles] img.admin-content-list-thumbnail[src="/admin/news/'.$article->getId().'/thumbnail"][alt=""]');
+            self::assertSelectorExists('section[data-dashboard-latest-articles] .admin-content-title-row a[href="/admin/news/'.$article->getId().'/edit"]');
+
+            foreach ([
+                '/admin/videos/'.$video->getId().'/thumbnail',
+                '/admin/news/'.$article->getId().'/thumbnail',
+            ] as $path) {
+                $client->request('GET', $path);
+                self::assertResponseIsSuccessful();
+                self::assertSame($png, $client->getResponse()->getContent());
+                $cacheControl = (string) $client->getResponse()->headers->get('Cache-Control');
+                self::assertStringContainsString('private', $cacheControl);
+                self::assertStringContainsString('no-store', $cacheControl);
+            }
+        } finally {
+            $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+            self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+            $connection = $entityManager->getConnection();
+            $connection->executeStatement('DELETE FROM news_articles WHERE id = :id', ['id' => $article->getId()]);
+            $connection->executeStatement('DELETE FROM videos WHERE id = :id', ['id' => $video->getId()]);
+            $this->removeUser($client, $email);
+            $storage->delete($objectId);
+        }
+    }
+
     public function testVideoModeratorIsLimitedToAssignedVideoQueues(): void
     {
         $client = static::createClient();
