@@ -2870,13 +2870,17 @@ html[data-public-theme="arcanorum"] .video-stage {
 
 .admin-table th,
 .admin-table td {
-    padding: 0.72rem 0.9rem;
+    padding: 0.55rem 0.75rem;
     border-bottom-color: #e8eaed;
 }
 
 .admin-table thead th {
-    background: #f8f9fa;
+    background: #fff;
     color: #5f6368;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
 }
 
 .dashboard-metric-card {
@@ -3000,6 +3004,49 @@ html[data-public-theme="arcanorum"][data-public-view="compact"] .public-navigati
 .admin-page h1 {
     font-size: 1.5rem;
     letter-spacing: -0.02em;
+}
+
+.admin-video-title-cell {
+    width: 18rem !important;
+    min-width: 16rem;
+}
+
+.admin-video-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    min-width: 15rem;
+}
+
+.admin-video-title-row > a {
+    color: #202124;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.admin-video-title-row > a:hover,
+.admin-video-title-row > a:focus-visible {
+    color: #174ea6;
+    text-decoration: underline;
+}
+
+.admin-video-list-thumbnail,
+.admin-video-thumbnail-placeholder {
+    flex: 0 0 5rem;
+    width: 5rem;
+    height: 2.8rem;
+    margin: 0;
+    border-radius: 0.15rem;
+    background: #f1f3f4;
+    object-fit: cover;
+}
+
+.admin-video-thumbnail-placeholder {
+    display: grid;
+    place-items: center;
+    border: 1px solid #dadce0;
+    color: #5f6368;
+    font-size: 1.1rem;
 }
 
 .admin-toolbar {

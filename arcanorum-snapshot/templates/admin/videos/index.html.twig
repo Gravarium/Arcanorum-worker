@@ -136,7 +136,16 @@
                     {% for video in videos %}
                         <tr>
                             <td><input type="checkbox" name="ids[]" value="{{ video.id }}" aria-label="{{ 'Video auswählen: %title%'|trans({'%title%': video.title}) }}"></td>
-                            <th scope="row">{{ video.title }}</th>
+                            <th scope="row" class="admin-video-title-cell">
+                                <span class="admin-video-title-row">
+                                    {% if video.thumbnailObjectId %}
+                                        <img class="admin-video-list-thumbnail" src="{{ path('admin_video_thumbnail_preview', {id: video.id}) }}" alt="" loading="lazy" decoding="async">
+                                    {% else %}
+                                        <span class="admin-video-thumbnail-placeholder" aria-hidden="true">▸</span>
+                                    {% endif %}
+                                    <a href="{{ path('admin_video_edit', {id: video.id}) }}">{{ video.title }}</a>
+                                </span>
+                            </th>
                             <td>{{ video.sourceType.label|trans }} · {{ video.sourceHost }}</td>
                             <td>
                                 {% if video.sourceType.value == 'embed' %}

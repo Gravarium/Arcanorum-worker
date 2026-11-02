@@ -2013,8 +2013,17 @@ final class AdminDashboardTest extends WebTestCase
             false,
             true,
         );
+        $thumbnailPng = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/WioAAAAASUVORK5CYII=', true);
+        self::assertIsString($thumbnailPng);
+        $thumbnailObjectId = hash('sha256', $thumbnailPng);
+        $thumbnailStorage = $client->getContainer()->get(PrivateObjectStorageInterface::class);
+        self::assertInstanceOf(PrivateObjectStorageInterface::class, $thumbnailStorage);
+        $thumbnailStored = false;
 
         try {
+            $thumbnailStorage->write($thumbnailObjectId, $thumbnailPng);
+            $thumbnailStored = true;
+            $video->attachThumbnail($thumbnailObjectId, 'image/png', strlen($thumbnailPng));
             $entityManager->persist($videoCategory);
             $entityManager->persist($newsCategory);
             $entityManager->persist($video);
@@ -2028,8 +2037,15 @@ final class AdminDashboardTest extends WebTestCase
             self::assertResponseRedirects('/admin');
             $client->request('GET', '/admin/videos');
             self::assertResponseIsSuccessful();
+            self::assertSelectorExists('img.admin-video-list-thumbnail[src="/admin/videos/'.$video->getId().'/thumbnail"][alt=""]');
             self::assertSelectorExists('form.admin-bulk-form option[value="'.$videoCategory->getId().'"]');
             $csrf = (string) $client->getCrawler()->filter('form.admin-bulk-form input[name="_token"]')->attr('value');
+            $client->request('GET', '/admin/videos/'.$video->getId().'/thumbnail');
+            self::assertResponseIsSuccessful();
+            self::assertSame('private, no-store', $client->getResponse()->headers->get('Cache-Control'));
+            self::assertSame('image/png', $client->getResponse()->headers->get('Content-Type'));
+            $client->request('GET', '/admin/videos');
+            self::assertResponseIsSuccessful();
             $payload = [
                 'action' => 'move',
                 'ids' => [$video->getId()],
@@ -2055,6 +2071,9 @@ final class AdminDashboardTest extends WebTestCase
             self::assertResponseRedirects('/admin/videos');
             self::assertNull($connection->fetchOne('SELECT category FROM videos WHERE id = :id', ['id' => $video->getId()]));
         } finally {
+            if ($thumbnailStored) {
+                $thumbnailStorage->delete($thumbnailObjectId);
+            }
             $cleanupManager = $client->getContainer()->get(EntityManagerInterface::class);
             if ($cleanupManager instanceof EntityManagerInterface) {
                 $cleanupManager->getConnection()->executeStatement('DELETE FROM videos WHERE id = :id', ['id' => $video->getId()]);
