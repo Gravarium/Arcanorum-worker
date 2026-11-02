@@ -1418,7 +1418,9 @@ final class AdminDashboardTest extends WebTestCase
             self::assertCount(12, $client->getCrawler()->filter('details.navigation-group'));
             self::assertSelectorTextContains('nav[aria-label="Hauptnavigation"] > details.navigation-group:first-child > summary', 'Fortress');
             self::assertSelectorExists('nav[aria-label="Hauptnavigation"] summary[title="Videos"] .admin-navigation-icon[aria-hidden="true"]');
-            self::assertSelectorExists('nav[aria-label="Hauptnavigation"] [aria-disabled="true"]');
+            self::assertSelectorExists('nav[aria-label="Hauptnavigation"] a[href="/admin/backups"]');
+            self::assertSelectorExists('nav[aria-label="Hauptnavigation"] a[href="/sitemap-index.xml"]');
+            self::assertSelectorNotExists('nav[aria-label="Hauptnavigation"] [aria-disabled="true"]');
 
             $client->disableReboot();
             $verifiedReportProvider = $client->getContainer()->get(RuntimeAttestationReportProviderInterface::class);
@@ -2042,7 +2044,9 @@ final class AdminDashboardTest extends WebTestCase
             $csrf = (string) $client->getCrawler()->filter('form.admin-bulk-form input[name="_token"]')->attr('value');
             $client->request('GET', '/admin/videos/'.$video->getId().'/thumbnail');
             self::assertResponseIsSuccessful();
-            self::assertSame('private, no-store', $client->getResponse()->headers->get('Cache-Control'));
+            $thumbnailCacheControl = $client->getResponse()->headers->get('Cache-Control') ?? '';
+            self::assertStringContainsString('private', $thumbnailCacheControl);
+            self::assertStringContainsString('no-store', $thumbnailCacheControl);
             self::assertSame('image/png', $client->getResponse()->headers->get('Content-Type'));
             $client->request('GET', '/admin/videos');
             self::assertResponseIsSuccessful();

@@ -57,10 +57,8 @@
                         <div class="navigation-items">
                             <a class="navigation-link{% if current_route == 'admin_dashboard' %} is-active{% endif %}" href="{{ path('admin_dashboard') }}" data-admin-shortcut="g d"{% if current_route == 'admin_dashboard' %} aria-current="page"{% endif %}>{{ 'Übersicht'|trans }}</a>
                             <a class="navigation-link{% if current_route == 'admin_system_index' %} is-active{% endif %}" href="{{ path('admin_system_index') }}"{% if current_route == 'admin_system_index' %} aria-current="page"{% endif %}>{{ 'Hosting und System'|trans }}</a>
-                            <span class="navigation-link is-disabled" aria-disabled="true">{{ 'Sicherheit und Nachweise'|trans }}</span>
                             <a class="navigation-link{% if current_route in ['admin_staff_index', 'admin_staff_role_update'] %} is-active{% endif %}" href="{{ path('admin_staff_index') }}"{% if current_route in ['admin_staff_index', 'admin_staff_role_update'] %} aria-current="page"{% endif %}>{{ 'Rollen und Rechte'|trans }}</a>
                             <a class="navigation-link{% if current_route in ['admin_module_settings_index', 'admin_module_settings_update'] %} is-active{% endif %}" href="{{ path('admin_module_settings_index') }}"{% if current_route in ['admin_module_settings_index', 'admin_module_settings_update'] %} aria-current="page"{% endif %}>{{ 'Module und Fähigkeiten'|trans }}</a>
-                            <span class="navigation-link is-disabled" aria-disabled="true">{{ 'Schnittstellen'|trans }}</span>
                             <a class="navigation-link{% if current_route starts with 'admin_database_backup_' %} is-active{% endif %}" href="{{ path('admin_database_backup_index') }}"{% if current_route starts with 'admin_database_backup_' %} aria-current="page"{% endif %}>{{ 'Datenbanksicherungen'|trans }}</a>
                         </div>
                     </details>
@@ -147,8 +145,6 @@
                         <div class="navigation-items">
                             <a class="navigation-link{% if current_route == 'admin_statistics_index' %} is-active{% endif %}" href="{{ path('admin_statistics_index') }}"{% if current_route == 'admin_statistics_index' %} aria-current="page"{% endif %}>{{ 'Inhaltsstatistik'|trans }}</a>
                             {% if module_enabled('search') %}<a class="navigation-link{% if current_route in ['admin_search_statistics_index', 'admin_search_statistics_clear'] %} is-active{% endif %}" href="{{ path('admin_search_statistics_index') }}"{% if current_route in ['admin_search_statistics_index', 'admin_search_statistics_clear'] %} aria-current="page"{% endif %}>{{ 'Suchanfragen'|trans }}</a>{% endif %}
-                            <span class="navigation-link is-disabled" aria-disabled="true">{{ 'Sicherheitsprotokoll'|trans }}</span>
-                            <span class="navigation-link is-disabled" aria-disabled="true">{{ 'Systeminformationen'|trans }}</span>
                         </div>
                     </details>
 
@@ -170,8 +166,8 @@
                             <a class="navigation-link{% if current_route in ['admin_email_settings_index', 'admin_email_settings_update', 'admin_email_settings_test'] %} is-active{% endif %}" href="{{ path('admin_email_settings_index') }}"{% if current_route in ['admin_email_settings_index', 'admin_email_settings_update', 'admin_email_settings_test'] %} aria-current="page"{% endif %}>{{ 'E-Mail'|trans }}</a>
                             <a class="navigation-link{% if current_route == 'admin_password_change' %} is-active{% endif %}" href="{{ path('admin_password_change') }}"{% if current_route == 'admin_password_change' %} aria-current="page"{% endif %}>{{ 'Administratorpasswort ändern'|trans }}</a>
                             <a class="navigation-link{% if current_route in ['admin_design_settings_index', 'admin_design_settings_update'] %} is-active{% endif %}" href="{{ path('admin_design_settings_index') }}"{% if current_route in ['admin_design_settings_index', 'admin_design_settings_update'] %} aria-current="page"{% endif %}>{{ 'Theme und Layout'|trans }}</a>
-                            <span class="navigation-link is-disabled" aria-disabled="true">{{ 'Sitemaps'|trans }}</span>
-                            <span class="navigation-link is-disabled" aria-disabled="true">{{ 'Sicherungen'|trans }}</span>
+                            <a class="navigation-link{% if current_route == 'sitemap_index' %} is-active{% endif %}" href="{{ path('sitemap_index') }}"{% if current_route == 'sitemap_index' %} aria-current="page"{% endif %}>{{ 'Sitemaps'|trans }}</a>
+                            <a class="navigation-link{% if current_route starts with 'admin_database_backup_' %} is-active{% endif %}" href="{{ path('admin_database_backup_index') }}"{% if current_route starts with 'admin_database_backup_' %} aria-current="page"{% endif %}>{{ 'Datenbanksicherungen'|trans }}</a>
                         </div>
                     </details>
                     {% elseif is_granted('ROLE_CONTENT_EDITOR') %}
