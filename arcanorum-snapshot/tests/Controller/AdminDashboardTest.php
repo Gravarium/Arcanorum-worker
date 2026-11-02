@@ -1146,7 +1146,7 @@ final class AdminDashboardTest extends WebTestCase
         self::assertNull($repository->findOneByEmail($email));
     }
 
-    public function testFailClosedLoginResponseRetainsBaselineSecurityHeaders(): void
+    public function testLoginDoesNotRequireRedisAndRetainsBaselineSecurityHeaders(): void
     {
         $previousProcessRedisUrl = getenv('REDIS_URL');
         $hadEnvRedisUrl = array_key_exists('REDIS_URL', $_ENV);
@@ -1163,7 +1163,7 @@ final class AdminDashboardTest extends WebTestCase
             $client = static::createClient();
             $client->request('POST', '/admin/login');
 
-            self::assertResponseStatusCodeSame(503);
+            self::assertResponseStatusCodeSame(Response::HTTP_FOUND);
 
             $headers = $client->getResponse()->headers;
             self::assertSame('nosniff', $headers->get('X-Content-Type-Options'));
