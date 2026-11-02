@@ -299,6 +299,8 @@ services:
         arguments:
             $base64MasterKey: '%env(string:ADMIN_MFA_ENCRYPTION_KEY)%'
 
+            $applicationSecret: '%env(string:APP_SECRET)%'
+
     App\Platform\Security\ContentSecurityPolicyReportOnlySubscriber:
         arguments:
             $routePolicies: '%app.security.csp_report_only_route_policies%'

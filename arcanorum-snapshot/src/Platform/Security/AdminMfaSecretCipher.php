@@ -8,19 +8,37 @@ final readonly class AdminMfaSecretCipher
 {
     private const string CIPHER_PREFIX = 'v1.';
     private const int MASTER_KEY_BYTES = 32;
-    private const string INVALID_KEY_MESSAGE = 'ADMIN_MFA_ENCRYPTION_KEY muss ein Base64-kodierter 32-Byte-Schlüssel sein.';
+    private const string INVALID_KEY_MESSAGE = 'Die Admin-MFA-Verschlüsselung ist nicht sicher konfiguriert.';
 
     private ?string $encryptionKey;
     private ?string $recoveryHashKey;
 
-    public function __construct(string $base64MasterKey)
+    public function __construct(string $base64MasterKey, string $applicationSecret = '')
     {
-        $key = base64_decode(trim($base64MasterKey), true);
-        if (false === $key || self::MASTER_KEY_BYTES !== strlen($key) || base64_encode($key) !== trim($base64MasterKey)) {
-            $this->encryptionKey = null;
-            $this->recoveryHashKey = null;
+        $configuredKey = trim($base64MasterKey);
+        if ('' !== $configuredKey) {
+            $key = base64_decode($configuredKey, true);
+            if (false === $key || self::MASTER_KEY_BYTES !== strlen($key) || base64_encode($key) !== $configuredKey) {
+                $this->encryptionKey = null;
+                $this->recoveryHashKey = null;
 
-            return;
+                return;
+            }
+        } else {
+            $applicationSecret = trim($applicationSecret);
+            if (!self::isUsableApplicationSecret($applicationSecret)) {
+                $this->encryptionKey = null;
+                $this->recoveryHashKey = null;
+
+                return;
+            }
+
+            $key = hash_hkdf(
+                'sha256',
+                $applicationSecret,
+                self::MASTER_KEY_BYTES,
+                'arcanorum/admin-mfa/master-key/v1',
+            );
         }
 
         $this->encryptionKey = hash_hkdf(
@@ -35,6 +53,22 @@ final readonly class AdminMfaSecretCipher
             32,
             'arcanorum/admin-mfa/recovery-code-hmac/v1',
         );
+    }
+
+    private static function isUsableApplicationSecret(string $secret): bool
+    {
+        if (32 > strlen($secret)) {
+            return false;
+        }
+
+        $normalized = strtolower($secret);
+        foreach (['placeholder', 'change-me', 'changeme', 'replace-me', 'example'] as $marker) {
+            if (str_contains($normalized, $marker)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public function encrypt(string $secret): string

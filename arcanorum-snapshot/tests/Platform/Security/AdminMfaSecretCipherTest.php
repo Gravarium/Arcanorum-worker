@@ -43,7 +43,7 @@ final class AdminMfaSecretCipherTest extends TestCase
                 self::fail('Encryption must remain disabled without a valid key.');
             } catch (\InvalidArgumentException $exception) {
                 self::assertSame(
-                    'ADMIN_MFA_ENCRYPTION_KEY muss ein Base64-kodierter 32-Byte-Schlüssel sein.',
+                    'Die Admin-MFA-Verschlüsselung ist nicht sicher konfiguriert.',
                     $exception->getMessage(),
                 );
             }
@@ -53,11 +53,42 @@ final class AdminMfaSecretCipherTest extends TestCase
                 self::fail('Recovery-code verification must remain disabled without a valid key.');
             } catch (\InvalidArgumentException $exception) {
                 self::assertSame(
-                    'ADMIN_MFA_ENCRYPTION_KEY muss ein Base64-kodierter 32-Byte-Schlüssel sein.',
+                    'Die Admin-MFA-Verschlüsselung ist nicht sicher konfiguriert.',
                     $exception->getMessage(),
                 );
             }
         }
+    }
+
+    public function testApplicationSecretProvidesDefaultKeysWhenDedicatedKeyIsOmitted(): void
+    {
+        $applicationSecret = base64_encode(random_bytes(32));
+        $cipher = new AdminMfaSecretCipher('', $applicationSecret);
+        $secret = random_bytes(20);
+        $recoveryCode = $cipher->generateRecoveryCode();
+
+        self::assertTrue($cipher->isConfigured());
+        $encrypted = $cipher->encrypt($secret);
+        $secondCipher = new AdminMfaSecretCipher('', $applicationSecret);
+
+        self::assertSame($secret, $cipher->decrypt($encrypted));
+        self::assertSame($secret, $secondCipher->decrypt($encrypted));
+        self::assertSame($cipher->hashRecoveryCode($recoveryCode), $secondCipher->hashRecoveryCode($recoveryCode));
+        self::assertMatchesRegularExpression('/\\A[a-f0-9]{64}\\z/', $cipher->hashRecoveryCode($recoveryCode));
+    }
+
+    public function testDedicatedInvalidKeyDoesNotFallBackToApplicationSecret(): void
+    {
+        $cipher = new AdminMfaSecretCipher('not-base64!', base64_encode(random_bytes(32)));
+
+        self::assertFalse($cipher->isConfigured());
+    }
+
+    public function testKnownApplicationSecretPlaceholdersRemainUnavailable(): void
+    {
+        $cipher = new AdminMfaSecretCipher('', 'development-placeholder-not-a-secret-change-before-deployment');
+
+        self::assertFalse($cipher->isConfigured());
     }
 
     public function testValidEncryptionKeyIsReportedAsConfigured(): void
@@ -70,7 +101,7 @@ final class AdminMfaSecretCipherTest extends TestCase
         $cipher = new AdminMfaSecretCipher('');
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('ADMIN_MFA_ENCRYPTION_KEY muss ein Base64-kodierter 32-Byte-Schlüssel sein.');
+        $this->expectExceptionMessage('Die Admin-MFA-Verschlüsselung ist nicht sicher konfiguriert.');
         $cipher->decrypt('v1.invalid');
     }
 
