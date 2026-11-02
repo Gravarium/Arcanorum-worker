@@ -1,12 +1,6 @@
 name: Arcanorum snapshot validation
 
 on:
-  push:
-    branches:
-      - codex/arcanorum-snapshot-validation-sync-20261029
-    paths:
-      - 'arcanorum-snapshot/**'
-      - '.github/workflows/arcanorum-snapshot-validation.yml'
   workflow_dispatch:
     inputs:
       source_commit:
@@ -66,7 +60,7 @@ concurrency:
 
 jobs:
   validate:
-    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'full')
+    if: github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'full'
     name: PHP 8.5, Symfony, PostgreSQL 18, Redis 8 and JavaScript
     runs-on: ubuntu-26.04
     timeout-minutes: 60
@@ -113,14 +107,9 @@ jobs:
       - name: Verify exact source commit and exclude credentials
         shell: bash
         env:
-          SOURCE_COMMIT: ${{ inputs.source_commit }}
+          EXPECTED_SOURCE_SHA: ${{ inputs.source_commit }}
         run: |
           set -euo pipefail
-          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
-            EXPECTED_SOURCE_SHA="$SOURCE_COMMIT"
-          else
-            EXPECTED_SOURCE_SHA="$(<SOURCE_BASE_SHA)"
-          fi
           if [[ ! "$EXPECTED_SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
             echo 'The source commit must be a full lowercase Git SHA.' >&2
             exit 1
