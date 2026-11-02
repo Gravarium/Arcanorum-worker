@@ -53,7 +53,16 @@
                     {% for item in series %}
                         {% set episode_count = episode_counts[item.id] ?? 0 %}
                         <tr>
-                            <th scope="row">{{ item.title }}</th>
+                            <th scope="row" class="admin-content-title-cell">
+                                <span class="admin-content-title-row">
+                                    {% if item.artworkObjectId %}
+                                        <img class="admin-content-list-thumbnail" src="{{ path('admin_series_artwork_preview', {id: item.id}) }}" alt="" loading="lazy" decoding="async">
+                                    {% else %}
+                                        <span class="admin-content-thumbnail-placeholder" aria-hidden="true">▧</span>
+                                    {% endif %}
+                                    <a href="{{ path('admin_series_edit', {id: item.id}) }}">{{ item.title }}</a>
+                                </span>
+                            </th>
                             <td>{{ item.slug }}</td>
                             <td><span class="status-pill {{ item.status.cssClass }}">{{ item.status.label|trans }}</span></td>
                             <td>{{ episode_count }}</td>

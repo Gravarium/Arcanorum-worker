@@ -43,7 +43,16 @@
                         <tr>
                             <th scope="row">{{ episode.series.title }}</th>
                             <td>{{ episode.seasonNumber }} / {{ episode.episodeNumber }}</td>
-                            <td>{{ episode.title }}</td>
+                            <td>
+                                <span class="admin-content-title-row">
+                                    {% if episode.video.thumbnailObjectId %}
+                                        <img class="admin-content-list-thumbnail" src="{{ path('admin_video_thumbnail_preview', {id: episode.video.id}) }}" alt="" loading="lazy" decoding="async">
+                                    {% else %}
+                                        <span class="admin-content-thumbnail-placeholder" aria-hidden="true">▸</span>
+                                    {% endif %}
+                                    <a href="{{ path('admin_video_edit', {id: episode.video.id}) }}">{{ episode.title }}</a>
+                                </span>
+                            </td>
                             <td>
                                 <span class="status-pill {{ episode.status.cssClass }}">{{ episode.status.label|trans }}</span>
                                 <small>{{ 'Video: %status%'|trans({'%status%': episode.video.status.label|trans}) }}</small>

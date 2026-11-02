@@ -4854,6 +4854,99 @@ final class AdminDashboardTest extends WebTestCase
         throw new \UnexpectedValueException('A subtitle database value did not contain an integer.');
     }
 
+    public function testSeriesAndEpisodeAdminListsShowProtectedArtworkAndVideoThumbnails(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $client->getContainer()->set(
+            RuntimeAttestationReportProviderInterface::class,
+            new VerifiedRuntimeAttestationReportProvider(),
+        );
+
+        $suffix = bin2hex(random_bytes(6));
+        $email = 'catalogue-preview-'.$suffix.'@example.test';
+        $password = 'Catalogue-Preview-'.$suffix.'-K8!';
+        $series = new ContentSeries(
+            'Catalogue series '.$suffix,
+            'catalogue-series-'.$suffix,
+            'Admin catalogue artwork preview test.',
+            PublishingStatus::Draft,
+        );
+        $video = new Video(
+            'Catalogue episode '.$suffix,
+            'Admin catalogue thumbnail preview test.',
+            null,
+            VideoSourceType::Url,
+            'https://videos.example.test/'.$suffix.'.mp4',
+            PublishingStatus::Draft,
+            false,
+            true,
+        );
+        $episode = new SeriesEpisode($series, $video, 1, 1, status: PublishingStatus::Draft);
+        $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/WioAAAAASUVORK5CYII=', true);
+        self::assertIsString($png);
+        $objectId = hash('sha256', $png);
+        $series->attachArtwork($objectId, 'image/png', strlen($png));
+        $video->attachThumbnail($objectId, 'image/png', strlen($png));
+
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        $storage = $client->getContainer()->get(PrivateObjectStorageInterface::class);
+        self::assertInstanceOf(PrivateObjectStorageInterface::class, $storage);
+
+        try {
+            $storage->write($objectId, $png);
+            $entityManager->persist($series);
+            $entityManager->persist($video);
+            $entityManager->persist($episode);
+            $entityManager->flush();
+
+            $client->request('GET', '/admin/series');
+            self::assertResponseRedirects('/admin/login');
+            $client->request('GET', '/admin/series/'.$series->getId().'/artwork');
+            self::assertResponseRedirects('/admin/login');
+            $client->request('GET', '/admin/videos/'.$video->getId().'/thumbnail');
+            self::assertResponseRedirects('/admin/login');
+
+            $this->persistUser($client, $email, $password, ['ROLE_ADMIN']);
+            $this->submitLogin($client, $email, $password);
+            self::assertResponseRedirects('/admin');
+
+            $client->request('GET', '/admin/series');
+            self::assertResponseIsSuccessful();
+            self::assertSelectorExists('img.admin-content-list-thumbnail[src="/admin/series/'.$series->getId().'/artwork"][alt=""]');
+            self::assertSelectorExists('a[href="/admin/series/'.$series->getId().'/edit"]');
+
+            $client->request('GET', '/admin/episodes');
+            self::assertResponseIsSuccessful();
+            self::assertSelectorExists('img.admin-content-list-thumbnail[src="/admin/videos/'.$video->getId().'/thumbnail"][alt=""]');
+            self::assertSelectorExists('a[href="/admin/videos/'.$video->getId().'/edit"]');
+
+            $client->request('GET', '/admin/series/'.$series->getId().'/artwork');
+            self::assertResponseIsSuccessful();
+            self::assertSame($png, $client->getResponse()->getContent());
+            $seriesCacheControl = (string) $client->getResponse()->headers->get('Cache-Control');
+            self::assertStringContainsString('private', $seriesCacheControl);
+            self::assertStringContainsString('no-store', $seriesCacheControl);
+
+            $client->request('GET', '/admin/videos/'.$video->getId().'/thumbnail');
+            self::assertResponseIsSuccessful();
+            self::assertSame($png, $client->getResponse()->getContent());
+            $videoCacheControl = (string) $client->getResponse()->headers->get('Cache-Control');
+            self::assertStringContainsString('private', $videoCacheControl);
+            self::assertStringContainsString('no-store', $videoCacheControl);
+        } finally {
+            $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+            self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+            $connection = $entityManager->getConnection();
+            $connection->executeStatement('DELETE FROM series_episodes WHERE id = :id', ['id' => $episode->getId()]);
+            $connection->executeStatement('DELETE FROM content_series WHERE id = :id', ['id' => $series->getId()]);
+            $connection->executeStatement('DELETE FROM videos WHERE id = :id', ['id' => $video->getId()]);
+            $this->removeUser($client, $email);
+            $storage->delete($objectId);
+        }
+    }
+
     public function testAdminCanUploadPreviewAndRemoveSeriesArtwork(): void
     {
         $client = static::createClient();
