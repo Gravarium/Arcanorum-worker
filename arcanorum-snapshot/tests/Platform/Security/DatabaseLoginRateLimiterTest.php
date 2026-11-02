@@ -14,8 +14,8 @@ use Symfony\Component\Security\Http\SecurityRequestAttributes;
 
 final class DatabaseLoginRateLimiterTest extends KernelTestCase
 {
-    private Connection $connection;
-    private DatabaseLoginRateLimiter $limiter;
+    private ?Connection $connection = null;
+    private ?DatabaseLoginRateLimiter $limiter = null;
 
     protected function setUp(): void
     {
@@ -29,7 +29,7 @@ final class DatabaseLoginRateLimiterTest extends KernelTestCase
 
     protected function tearDown(): void
     {
-        if (isset($this->connection) && $this->connection->isConnected()) {
+        if (null !== $this->connection && $this->connection->isConnected()) {
             $this->connection->executeStatement('DELETE FROM authentication_login_rate_limits');
         }
 
@@ -39,10 +39,10 @@ final class DatabaseLoginRateLimiterTest extends KernelTestCase
     public function testUsernameAndIpLimitIsSharedAcrossLimiterInstances(): void
     {
         $request = $this->loginRequest('admin_login', 'Administrator', '192.0.2.10');
-        $secondProcess = new DatabaseLoginRateLimiter($this->connection, new RateLimitKeyFactory('test-login-rate-limit-secret'));
+        $secondProcess = new DatabaseLoginRateLimiter($this->connection(), new RateLimitKeyFactory('test-login-rate-limit-secret'));
 
         for ($attempt = 1; $attempt <= 5; ++$attempt) {
-            $limit = 1 === $attempt % 2 ? $this->limiter->consume($request) : $secondProcess->consume($request);
+            $limit = 1 === $attempt % 2 ? $this->limiter()->consume($request) : $secondProcess->consume($request);
             self::assertInstanceOf(RateLimit::class, $limit);
             self::assertTrue($limit->isAccepted());
         }
@@ -53,70 +53,83 @@ final class DatabaseLoginRateLimiterTest extends KernelTestCase
     public function testIpLimitCoversManyDifferentUsernamesInOneFirewall(): void
     {
         for ($attempt = 0; $attempt < 25; ++$attempt) {
-            self::assertTrue($this->limiter->consume($this->loginRequest('admin_login', 'person-'.$attempt, '192.0.2.20'))->isAccepted());
+            self::assertTrue($this->limiter()->consume($this->loginRequest('admin_login', 'person-'.$attempt, '192.0.2.20'))->isAccepted());
         }
 
-        self::assertFalse($this->limiter->consume($this->loginRequest('admin_login', 'another-person', '192.0.2.20'))->isAccepted());
+        self::assertFalse($this->limiter()->consume($this->loginRequest('admin_login', 'another-person', '192.0.2.20'))->isAccepted());
     }
 
     public function testAdminAndMemberLoginUseSeparateLimiterScopes(): void
     {
         for ($attempt = 0; $attempt < 5; ++$attempt) {
-            self::assertTrue($this->limiter->consume($this->loginRequest('admin_login', 'same-user', '192.0.2.21'))->isAccepted());
+            self::assertTrue($this->limiter()->consume($this->loginRequest('admin_login', 'same-user', '192.0.2.21'))->isAccepted());
         }
 
-        self::assertTrue($this->limiter->consume($this->loginRequest('member_login', 'same-user', '192.0.2.21'))->isAccepted());
+        self::assertTrue($this->limiter()->consume($this->loginRequest('member_login', 'same-user', '192.0.2.21'))->isAccepted());
     }
 
     public function testSuccessfulAuthenticationReleasesOnlyItsReservedAttempt(): void
     {
         $request = $this->loginRequest('admin_login', 'Administrator', '192.0.2.30');
         for ($attempt = 0; $attempt < 4; ++$attempt) {
-            self::assertTrue($this->limiter->consume($request)->isAccepted());
+            self::assertTrue($this->limiter()->consume($request)->isAccepted());
         }
 
-        self::assertTrue($this->limiter->consume($request)->isAccepted());
-        $this->limiter->reset($request);
-        self::assertTrue($this->limiter->consume($request)->isAccepted());
-        self::assertFalse($this->limiter->consume($request)->isAccepted());
+        self::assertTrue($this->limiter()->consume($request)->isAccepted());
+        $this->limiter()->reset($request);
+        self::assertTrue($this->limiter()->consume($request)->isAccepted());
+        self::assertFalse($this->limiter()->consume($request)->isAccepted());
     }
 
     public function testUnrelatedSuccessfulAuthenticationCannotClearLoginFailures(): void
     {
         $loginRequest = $this->loginRequest('member_login', 'person@example.test', '192.0.2.31');
         for ($attempt = 0; $attempt < 4; ++$attempt) {
-            self::assertTrue($this->limiter->consume($loginRequest)->isAccepted());
+            self::assertTrue($this->limiter()->consume($loginRequest)->isAccepted());
         }
 
         $registrationRequest = $this->loginRequest('member_register', 'person@example.test', '192.0.2.31');
-        $this->limiter->reset($registrationRequest);
-        self::assertTrue($this->limiter->consume($loginRequest)->isAccepted());
-        self::assertFalse($this->limiter->consume($loginRequest)->isAccepted());
+        $this->limiter()->reset($registrationRequest);
+        self::assertTrue($this->limiter()->consume($loginRequest)->isAccepted());
+        self::assertFalse($this->limiter()->consume($loginRequest)->isAccepted());
     }
 
     public function testUsernameCaseDoesNotCreateSeparateBuckets(): void
     {
         for ($attempt = 0; $attempt < 5; ++$attempt) {
             $username = 0 === $attempt % 2 ? 'Administrator' : 'administrator';
-            self::assertTrue($this->limiter->consume($this->loginRequest('admin_login', $username, '192.0.2.40'))->isAccepted());
+            self::assertTrue($this->limiter()->consume($this->loginRequest('admin_login', $username, '192.0.2.40'))->isAccepted());
         }
 
-        self::assertFalse($this->limiter->consume($this->loginRequest('admin_login', 'ADMINISTRATOR', '192.0.2.40'))->isAccepted());
+        self::assertFalse($this->limiter()->consume($this->loginRequest('admin_login', 'ADMINISTRATOR', '192.0.2.40'))->isAccepted());
     }
 
     public function testStoredBucketKeysDoNotContainUsernamesOrAddresses(): void
     {
         $username = 'private-user@example.test';
         $address = '198.51.100.48';
-        $this->limiter->consume($this->loginRequest('member_login', $username, $address));
-        $keys = $this->connection->fetchFirstColumn('SELECT key_hash FROM authentication_login_rate_limits ORDER BY key_hash');
+        $this->limiter()->consume($this->loginRequest('member_login', $username, $address));
+        $keys = $this->connection()->fetchFirstColumn('SELECT key_hash FROM authentication_login_rate_limits ORDER BY key_hash');
 
         self::assertCount(2, $keys);
         foreach ($keys as $key) {
-            self::assertMatchesRegularExpression('/\A[a-f0-9]{64}\z/', (string) $key);
-            self::assertStringNotContainsString($username, (string) $key);
-            self::assertStringNotContainsString($address, (string) $key);
+            if (!is_string($key)) {
+                throw new \UnexpectedValueException('A persisted rate-limit key must be a string.');
+            }
+            self::assertMatchesRegularExpression('/\A[a-f0-9]{64}\z/', $key);
+            self::assertStringNotContainsString($username, $key);
+            self::assertStringNotContainsString($address, $key);
         }
+    }
+
+    private function connection(): Connection
+    {
+        return $this->connection ?? throw new \LogicException('The test database connection was not initialized.');
+    }
+
+    private function limiter(): DatabaseLoginRateLimiter
+    {
+        return $this->limiter ?? throw new \LogicException('The login rate limiter was not initialized.');
     }
 
     private function loginRequest(string $route, string $username, string $address): Request

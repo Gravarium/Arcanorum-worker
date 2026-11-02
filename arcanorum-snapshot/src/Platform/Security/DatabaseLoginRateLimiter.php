@@ -76,8 +76,13 @@ final readonly class DatabaseLoginRateLimiter implements RequestRateLimiterInter
         $keys = array_keys($keyLimits);
         sort($keys, SORT_STRING);
         $reservedKeys = $reservation;
+        if (count(array_filter($reservedKeys, 'is_string')) !== count($reservedKeys)) {
+            return;
+        }
+        /** @var list<string> $reservedKeys */
+        $reservedKeys = array_values($reservedKeys);
         sort($reservedKeys, SORT_STRING);
-        if ($keys !== $reservedKeys || 2 !== count(array_filter($reservedKeys, 'is_string'))) {
+        if ($keys !== $reservedKeys) {
             return;
         }
 
@@ -137,11 +142,7 @@ final readonly class DatabaseLoginRateLimiter implements RequestRateLimiterInter
         ];
     }
 
-    /**
-     * @param array<string, int> $keyLimits
-     *
-     * @return array<string, array{count: int, started_at: \DateTimeImmutable}>
-     */
+    /** @return array{count: int, started_at: \DateTimeImmutable} */
     private function incrementWindow(Connection $connection, string $key, int $limit, string $now, string $resetBefore): array
     {
         $row = $connection->fetchAssociative(
