@@ -75,12 +75,14 @@ final readonly class DatabaseLoginRateLimiter implements RequestRateLimiterInter
         $resetBefore = $now->modify('-'.self::WINDOW_SECONDS.' seconds')->format('Y-m-d H:i:s');
         $keys = array_keys($keyLimits);
         sort($keys, SORT_STRING);
-        $reservedKeys = $reservation;
-        if (count(array_filter($reservedKeys, 'is_string')) !== count($reservedKeys)) {
-            return;
+        $reservedKeys = [];
+        foreach ($reservation as $reservedKey) {
+            if (!is_string($reservedKey)) {
+                return;
+            }
+
+            $reservedKeys[] = $reservedKey;
         }
-        /** @var list<string> $reservedKeys */
-        $reservedKeys = array_values($reservedKeys);
         sort($reservedKeys, SORT_STRING);
         if ($keys !== $reservedKeys) {
             return;
