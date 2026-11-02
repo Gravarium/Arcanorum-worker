@@ -31,10 +31,47 @@ final class AdminMfaSecretCipherTest extends TestCase
         $cipher->decrypt($tampered);
     }
 
-    public function testRejectsMissingOrMalformedEncryptionKey(): void
+    public function testCryptoOperationsFailClosedForMissingOrMalformedEncryptionKeys(): void
     {
+        foreach (['', 'not-base64!', base64_encode(str_repeat('K', 31))] as $key) {
+            $cipher = new AdminMfaSecretCipher($key);
+
+            self::assertFalse($cipher->isConfigured());
+
+            try {
+                $cipher->encrypt(random_bytes(20));
+                self::fail('Encryption must remain disabled without a valid key.');
+            } catch (\InvalidArgumentException $exception) {
+                self::assertSame(
+                    'ADMIN_MFA_ENCRYPTION_KEY muss ein Base64-kodierter 32-Byte-Schlüssel sein.',
+                    $exception->getMessage(),
+                );
+            }
+
+            try {
+                $cipher->hashRecoveryCode($cipher->generateRecoveryCode());
+                self::fail('Recovery-code verification must remain disabled without a valid key.');
+            } catch (\InvalidArgumentException $exception) {
+                self::assertSame(
+                    'ADMIN_MFA_ENCRYPTION_KEY muss ein Base64-kodierter 32-Byte-Schlüssel sein.',
+                    $exception->getMessage(),
+                );
+            }
+        }
+    }
+
+    public function testValidEncryptionKeyIsReportedAsConfigured(): void
+    {
+        self::assertTrue((new AdminMfaSecretCipher(base64_encode(str_repeat('K', 32))))->isConfigured());
+    }
+
+    public function testDecryptionFailsClosedWithoutAnEncryptionKey(): void
+    {
+        $cipher = new AdminMfaSecretCipher('');
+
         $this->expectException(\InvalidArgumentException::class);
-        new AdminMfaSecretCipher('');
+        $this->expectExceptionMessage('ADMIN_MFA_ENCRYPTION_KEY muss ein Base64-kodierter 32-Byte-Schlüssel sein.');
+        $cipher->decrypt('v1.invalid');
     }
 
     public function testRecoveryCodesAreKeyedAndFormattingIndependent(): void

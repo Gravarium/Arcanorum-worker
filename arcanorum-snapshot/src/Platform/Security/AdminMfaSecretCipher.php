@@ -8,15 +8,19 @@ final readonly class AdminMfaSecretCipher
 {
     private const string CIPHER_PREFIX = 'v1.';
     private const int MASTER_KEY_BYTES = 32;
+    private const string INVALID_KEY_MESSAGE = 'ADMIN_MFA_ENCRYPTION_KEY muss ein Base64-kodierter 32-Byte-Schlüssel sein.';
 
-    private string $encryptionKey;
-    private string $recoveryHashKey;
+    private ?string $encryptionKey;
+    private ?string $recoveryHashKey;
 
     public function __construct(string $base64MasterKey)
     {
         $key = base64_decode(trim($base64MasterKey), true);
         if (false === $key || self::MASTER_KEY_BYTES !== strlen($key) || base64_encode($key) !== trim($base64MasterKey)) {
-            throw new \InvalidArgumentException('ADMIN_MFA_ENCRYPTION_KEY muss ein Base64-kodierter 32-Byte-Schlüssel sein.');
+            $this->encryptionKey = null;
+            $this->recoveryHashKey = null;
+
+            return;
         }
 
         $this->encryptionKey = hash_hkdf(
@@ -39,14 +43,16 @@ final readonly class AdminMfaSecretCipher
             throw new \InvalidArgumentException('Das TOTP-Geheimnis hat eine ungültige Länge.');
         }
 
+        $encryptionKey = $this->requireEncryptionKey();
         $nonce = random_bytes(SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
-        $ciphertext = sodium_crypto_secretbox($secret, $nonce, $this->encryptionKey);
+        $ciphertext = sodium_crypto_secretbox($secret, $nonce, $encryptionKey);
 
         return self::CIPHER_PREFIX.base64_encode($nonce.$ciphertext);
     }
 
     public function decrypt(string $encryptedSecret): string
     {
+        $encryptionKey = $this->requireEncryptionKey();
         if (!str_starts_with($encryptedSecret, self::CIPHER_PREFIX)) {
             throw new \UnexpectedValueException('Das gespeicherte TOTP-Geheimnis hat eine unbekannte Version.');
         }
@@ -62,7 +68,7 @@ final readonly class AdminMfaSecretCipher
 
         $nonce = substr($payload, 0, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
         $ciphertext = substr($payload, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
-        $secret = sodium_crypto_secretbox_open($ciphertext, $nonce, $this->encryptionKey);
+        $secret = sodium_crypto_secretbox_open($ciphertext, $nonce, $encryptionKey);
         if (false === $secret || strlen($secret) < 20 || strlen($secret) > 64) {
             throw new \UnexpectedValueException('Das gespeicherte TOTP-Geheimnis kann nicht entschlüsselt werden.');
         }
@@ -83,6 +89,23 @@ final readonly class AdminMfaSecretCipher
             throw new \InvalidArgumentException('Der Wiederherstellungscode hat ein ungültiges Format.');
         }
 
-        return hash_hmac('sha256', $normalized, $this->recoveryHashKey);
+        return hash_hmac('sha256', $normalized, $this->requireRecoveryHashKey());
+    }
+
+    public function isConfigured(): bool
+    {
+        return null !== $this->encryptionKey && null !== $this->recoveryHashKey;
+    }
+
+    private function requireEncryptionKey(): string
+    {
+        return $this->encryptionKey
+            ?? throw new \InvalidArgumentException(self::INVALID_KEY_MESSAGE);
+    }
+
+    private function requireRecoveryHashKey(): string
+    {
+        return $this->recoveryHashKey
+            ?? throw new \InvalidArgumentException(self::INVALID_KEY_MESSAGE);
     }
 }
