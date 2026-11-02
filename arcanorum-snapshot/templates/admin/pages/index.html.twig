@@ -54,7 +54,12 @@
                 <tbody>
                     {% for page in pages %}
                         <tr>
-                            <th scope="row">{{ page.title }}</th>
+                            <th scope="row" class="admin-content-title-cell">
+                                <span class="admin-content-title-row">
+                                    <span class="admin-content-thumbnail-placeholder" aria-hidden="true">▤</span>
+                                    <a href="{{ path('admin_page_edit', {id: page.id}) }}">{{ page.title }}</a>
+                                </span>
+                            </th>
                             <td><code>/pages/{{ page.slug }}</code></td>
                             <td>{{ page.authorName }}</td>
                             <td>{{ page.isShownInMenu ? ('Ja'|trans) : ('Nein'|trans) }}</td>
