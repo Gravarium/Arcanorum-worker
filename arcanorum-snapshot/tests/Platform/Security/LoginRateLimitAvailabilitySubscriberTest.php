@@ -4,72 +4,115 @@ declare(strict_types=1);
 
 namespace App\Tests\Platform\Security;
 
-use App\Platform\Hosting\ArrayCachePoolAdapter;
-use App\Platform\Hosting\HostingAdapterSelector;
-use App\Platform\Hosting\HostingCachePoolProvider;
-use App\Platform\Hosting\HostingProfileDetector;
-use App\Platform\Hosting\RedisCachePoolAdapter;
-use App\Platform\Hosting\RedisCapabilityProbe;
-use App\Platform\Hosting\RedisServerVersionProviderInterface;
+use App\Platform\Security\DatabaseLoginRateLimiter;
 use App\Platform\Security\LoginRateLimitAvailabilitySubscriber;
+use App\Platform\Security\RateLimitKeyFactory;
 use App\Platform\Security\RuntimeAttestationActionGuard;
 use App\Platform\Security\RuntimeAttestationIncidentReporterInterface;
 use App\Platform\Security\RuntimeAttestationReportProviderInterface;
 use App\Platform\Security\RuntimeAttestationRequestGuardSubscriber;
 use App\Platform\Security\RuntimeAttestationRequestPolicy;
+use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\KernelEvents;
 
 final class LoginRateLimitAvailabilitySubscriberTest extends TestCase
 {
-    public function testGetLoginPageRemainsAvailableWhenRedisIsUnverified(): void
+    public function testAdminAndMemberLoginUseTheDatabaseStoreWithoutRequiringRedis(): void
     {
-        $event = $this->requestEvent('/admin/login', Request::METHOD_GET);
+        foreach (['/admin/login', '/konto/anmelden'] as $path) {
+            $connection = $this->createMock(Connection::class);
+            $connection->expects(self::once())
+                ->method('fetchOne')
+                ->with(
+                    "SELECT to_regclass('authentication_login_rate_limits') IS NOT NULL "
+                        ."AND has_table_privilege(current_user, 'authentication_login_rate_limits', 'SELECT') "
+                        ."AND has_table_privilege(current_user, 'authentication_login_rate_limits', 'INSERT') "
+                        ."AND has_table_privilege(current_user, 'authentication_login_rate_limits', 'UPDATE') "
+                        ."AND has_table_privilege(current_user, 'authentication_login_rate_limits', 'DELETE')",
+                )
+                ->willReturn(true);
 
-        $this->subscriber()->onKernelRequest($event);
+            $event = $this->requestEvent($path, Request::METHOD_POST);
+            $this->subscriber($connection)->onKernelRequest($event);
+
+            self::assertNull($event->getResponse());
+        }
+    }
+
+    public function testGetLoginPageDoesNotDependOnRateLimitStorage(): void
+    {
+        $connection = $this->createMock(Connection::class);
+        $connection->expects(self::never())->method('fetchOne');
+
+        $event = $this->requestEvent('/admin/login', Request::METHOD_GET);
+        $this->subscriber($connection)->onKernelRequest($event);
 
         self::assertNull($event->getResponse());
     }
 
-    public function testPostLoginFailsClosedWhenSharedRedisIsUnverified(): void
+    public function testPostLoginFailsClosedWhenDatabaseRateLimitStorageIsUnavailable(): void
     {
-        $event = $this->requestEvent('/admin/login', Request::METHOD_POST);
+        $connection = $this->createMock(Connection::class);
+        $connection->expects(self::once())
+            ->method('fetchOne')
+            ->willThrowException(new \RuntimeException('database unavailable'));
 
-        $this->subscriber()->onKernelRequest($event);
+        $event = $this->requestEvent('/admin/login', Request::METHOD_POST);
+        $this->subscriber($connection)->onKernelRequest($event);
 
         $response = $event->getResponse();
-        self::assertNotNull($response);
-        self::assertSame(503, $response->getStatusCode());
+        self::assertInstanceOf(Response::class, $response);
+        self::assertSame(Response::HTTP_SERVICE_UNAVAILABLE, $response->getStatusCode());
         self::assertSame('60', $response->headers->get('Retry-After'));
         self::assertStringContainsString('no-store', (string) $response->headers->get('Cache-Control'));
         self::assertStringStartsWith('text/plain', (string) $response->headers->get('Content-Type'));
     }
 
-    public function testEncodedPostLoginFailsClosedWhenSharedRedisIsUnverified(): void
+    public function testPostLoginFailsClosedWhenDatabaseRoleCannotMaintainRateLimitCounters(): void
     {
-        foreach (['/admin%2Flogin', '/%61dmin/login'] as $path) {
+        $connection = $this->createMock(Connection::class);
+        $connection->expects(self::once())
+            ->method('fetchOne')
+            ->willReturn(false);
+
+        $event = $this->requestEvent('/admin/login', Request::METHOD_POST);
+        $this->subscriber($connection)->onKernelRequest($event);
+
+        self::assertSame(Response::HTTP_SERVICE_UNAVAILABLE, $event->getResponse()?->getStatusCode());
+    }
+
+    public function testEncodedLoginPathsAlsoRequireDatabaseRateLimitStorage(): void
+    {
+        foreach (['/admin%2Flogin', '/%61dmin/login', '/konto%2Fanmelden'] as $path) {
+            $connection = $this->createMock(Connection::class);
+            $connection->expects(self::once())
+                ->method('fetchOne')
+                ->willThrowException(new \RuntimeException('database unavailable'));
+
             $event = $this->requestEvent($path, Request::METHOD_POST);
+            $this->subscriber($connection)->onKernelRequest($event);
 
-            $this->subscriber()->onKernelRequest($event);
-
-            $response = $event->getResponse();
-            self::assertNotNull($response);
-            self::assertSame(503, $response->getStatusCode());
+            self::assertSame(Response::HTTP_SERVICE_UNAVAILABLE, $event->getResponse()?->getStatusCode());
         }
     }
 
-    public function testUnverifiedSharedRedisBlocksLoginBeforeRemoteAttestation(): void
+    public function testUnavailableDatabaseBlocksLoginBeforeRuntimeAttestation(): void
     {
+        $connection = $this->createMock(Connection::class);
+        $connection->expects(self::once())
+            ->method('fetchOne')
+            ->willThrowException(new \RuntimeException('database unavailable'));
         $reportProvider = $this->createMock(RuntimeAttestationReportProviderInterface::class);
         $reportProvider->expects(self::never())->method('verifyCurrent');
 
         $dispatcher = new EventDispatcher();
-        $dispatcher->addSubscriber($this->subscriber());
+        $dispatcher->addSubscriber($this->subscriber($connection));
         $dispatcher->addSubscriber(new RuntimeAttestationRequestGuardSubscriber(
             $reportProvider,
             new RuntimeAttestationActionGuard(),
@@ -80,36 +123,14 @@ final class LoginRateLimitAvailabilitySubscriberTest extends TestCase
         $event = $this->requestEvent('/admin/login', Request::METHOD_POST);
         $dispatcher->dispatch($event, KernelEvents::REQUEST);
 
-        $response = $event->getResponse();
-        self::assertNotNull($response);
-        self::assertSame(503, $response->getStatusCode());
+        self::assertSame(Response::HTTP_SERVICE_UNAVAILABLE, $event->getResponse()?->getStatusCode());
     }
 
-    private function subscriber(): LoginRateLimitAvailabilitySubscriber
+    private function subscriber(Connection $connection): LoginRateLimitAvailabilitySubscriber
     {
-        $dsn = 'redis://127.0.0.1:6379';
-        $redisProbe = new RedisCapabilityProbe($dsn, new class implements RedisServerVersionProviderInterface {
-            public function serverVersion(string $dsn): ?string
-            {
-                return null;
-            }
-        });
-        $fallback = new ArrayCachePoolAdapter();
-        $provider = new HostingCachePoolProvider(
-            'login-rate-limit-test',
-            new HostingAdapterSelector([
-                new RedisCachePoolAdapter($dsn),
-                $fallback,
-            ]),
-            new HostingProfileDetector([$redisProbe]),
-            $fallback,
+        return new LoginRateLimitAvailabilitySubscriber(
+            new DatabaseLoginRateLimiter($connection, new RateLimitKeyFactory('test-application-secret')),
         );
-        $services = new ServiceLocator([
-            HostingCachePoolProvider::class => static fn (): HostingCachePoolProvider => $provider,
-            RedisCapabilityProbe::class => static fn (): RedisCapabilityProbe => $redisProbe,
-        ]);
-
-        return new LoginRateLimitAvailabilitySubscriber($services);
     }
 
     private function requestEvent(string $path, string $method): RequestEvent

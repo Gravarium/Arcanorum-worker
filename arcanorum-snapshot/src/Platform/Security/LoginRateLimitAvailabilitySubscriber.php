@@ -4,12 +4,6 @@ declare(strict_types=1);
 
 namespace App\Platform\Security;
 
-use App\Platform\Hosting\CapabilityStatus;
-use App\Platform\Hosting\HostingCachePoolProvider;
-use App\Platform\Hosting\HostingCapability;
-use App\Platform\Hosting\RedisCapabilityProbe;
-use Psr\Container\ContainerInterface;
-use Symfony\Component\DependencyInjection\Attribute\AutowireLocator;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -19,18 +13,14 @@ use Symfony\Component\HttpKernel\KernelEvents;
 final readonly class LoginRateLimitAvailabilitySubscriber implements EventSubscriberInterface
 {
     public function __construct(
-        #[AutowireLocator([
-            HostingCachePoolProvider::class,
-            RedisCapabilityProbe::class,
-        ])]
-        private ContainerInterface $services,
+        private DatabaseLoginRateLimiter $limiter,
     ) {
     }
 
     public static function getSubscribedEvents(): array
     {
         return [
-            // Fehlendes Shared Redis vor der externen Attestierungsprüfung fail-closed behandeln.
+            // Fehlenden gemeinsamen DB-Zähler vor Authentifizierung und optionaler Attestierung fail-closed behandeln.
             KernelEvents::REQUEST => ['onKernelRequest', 21],
         ];
     }
@@ -43,11 +33,11 @@ final readonly class LoginRateLimitAvailabilitySubscriber implements EventSubscr
 
         $request = $event->getRequest();
         $path = AdminAreaRequestPath::decode($request->getPathInfo());
-        if (Request::METHOD_POST !== $request->getMethod() || '/admin/login' !== $path) {
+        if (Request::METHOD_POST !== $request->getMethod() || !in_array($path, ['/admin/login', '/konto/anmelden'], true)) {
             return;
         }
 
-        if ($this->hasSharedLimiterStorage()) {
+        if ($this->limiter->isStorageAvailable()) {
             return;
         }
 
@@ -60,33 +50,5 @@ final readonly class LoginRateLimitAvailabilitySubscriber implements EventSubscr
                 'Content-Type' => 'text/plain; charset=UTF-8',
             ],
         ));
-    }
-
-    private function hasSharedLimiterStorage(): bool
-    {
-        try {
-            /** @var HostingCachePoolProvider $cachePool */
-            $cachePool = $this->services->get(HostingCachePoolProvider::class);
-            if (!$cachePool->usesRedisPool()) {
-                return false;
-            }
-
-            /** @var RedisCapabilityProbe $redisProbe */
-            $redisProbe = $this->services->get(RedisCapabilityProbe::class);
-            $statuses = [];
-            foreach ($redisProbe->probe() as $evidence) {
-                $key = $evidence->capability->value;
-                if (array_key_exists($key, $statuses)) {
-                    return false;
-                }
-
-                $statuses[$key] = $evidence->effectiveStatus();
-            }
-
-            return CapabilityStatus::Verified === ($statuses[HostingCapability::RedisServer8->value] ?? null)
-                && CapabilityStatus::Verified === ($statuses[HostingCapability::RedisPrivateEndpoint->value] ?? null);
-        } catch (\Throwable) {
-            return false;
-        }
     }
 }

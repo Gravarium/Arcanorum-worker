@@ -131,9 +131,7 @@ security:
                 enable_csrf: true
                 default_target_path: /konto/profil
             login_throttling:
-                max_attempts: 5
-                interval: '15 minutes'
-                cache_pool: cache.app
+                limiter: App\Platform\Security\DatabaseLoginRateLimiter
             logout:
                 path: member_logout
                 target: member_login
@@ -148,9 +146,7 @@ security:
                 - App\Platform\Security\AdminMfaLoginAuthenticator
             entry_point: App\Platform\Security\AdminMfaLoginAuthenticator
             login_throttling:
-                max_attempts: 5
-                interval: '15 minutes'
-                cache_pool: cache.app
+                limiter: App\Platform\Security\DatabaseLoginRateLimiter
             logout:
                 path: admin_logout
                 target: admin_login
