@@ -30,6 +30,7 @@ final class AdminSystemController extends AbstractController
             'notices' => [...$system['notices'], ...$php['notices']],
             'system_events' => [...$system['events'], ...$php['events']],
             'checks' => $system['checks'],
+            'runtime_attestation_required' => $system['runtime_attestation_required'],
             ...$php,
         ]);
         $response->headers->set('Cache-Control', 'private, no-store');

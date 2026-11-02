@@ -14,6 +14,7 @@ use App\Platform\Security\InteractiveConsoleTerminalInterface;
 use App\Platform\Security\RuntimeAttestationActionGuard;
 use App\Platform\Security\RuntimeAttestationIncidentReporterInterface;
 use App\Platform\Security\RuntimeAttestationReportProviderInterface;
+use App\Platform\Security\UnconfiguredRuntimeAttestationReportProvider;
 use App\Repository\AdminUserRepository;
 use App\Tests\Support\VerifiedRuntimeAttestationReportProvider;
 use Doctrine\ORM\EntityManagerInterface;
@@ -153,6 +154,89 @@ final class AdminMfaProvisioningCommandTest extends KernelTestCase
                 $entityManager->flush();
             }
         }
+    }
+
+    public function testStandardHostingCanCreateAndProvisionAdminMfaWithoutRemoteAttestation(): void
+    {
+        $users = $this->userRepository();
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        $email = 'standard-hosting-admin-'.bin2hex(random_bytes(6)).'@example.test';
+        $password = 'StandardHostingAdmin!2026';
+        $terminal = self::createStub(InteractiveConsoleTerminalInterface::class);
+        $terminal->method('isAttachedToTerminal')->willReturn(true);
+        $reportProvider = $this->createMock(RuntimeAttestationReportProviderInterface::class);
+        $reportProvider->expects(self::never())->method('verifyCurrent');
+        $incidentReporter = self::createMock(RuntimeAttestationIncidentReporterInterface::class);
+        $incidentReporter->expects(self::never())->method('report');
+
+        try {
+            $createCommand = new CreateAdminUserCommand(
+                $users,
+                $this->passwordHasher(),
+                $this->mfaProvisioner($users),
+                $reportProvider,
+                new RuntimeAttestationActionGuard(),
+                $incidentReporter,
+                $terminal,
+                false,
+            );
+            $createTester = new CommandTester($createCommand);
+            $createTester->setInputs([$email, $password, $password]);
+
+            self::assertSame(Command::SUCCESS, $createTester->execute([], ['interactive' => true]));
+            self::assertStringContainsString('Administratorkonto wurde angelegt und MFA aktiviert.', $createTester->getDisplay());
+
+            $admin = $users->findOneByEmail($email);
+            self::assertInstanceOf(AdminUser::class, $admin);
+            self::assertNotNull($admin->getMfaSecretCiphertext());
+
+            $provisionCommand = new ProvisionAdminMfaCommand(
+                $users,
+                $this->mfaProvisioner($users),
+                $reportProvider,
+                new RuntimeAttestationActionGuard(),
+                $incidentReporter,
+                $terminal,
+                false,
+            );
+            $provisionTester = new CommandTester($provisionCommand);
+            $provisionTester->setInputs([$email, $email]);
+
+            self::assertSame(Command::SUCCESS, $provisionTester->execute([], ['interactive' => true]));
+        } finally {
+            $admin = $users->findOneByEmail($email);
+            if ($admin instanceof AdminUser) {
+                $entityManager->remove($admin);
+                $entityManager->flush();
+            }
+        }
+    }
+
+    public function testStrictHostingStillBlocksAdminCreationWhenAttestationIsUnknown(): void
+    {
+        $users = $this->userRepository();
+        $terminal = self::createStub(InteractiveConsoleTerminalInterface::class);
+        $terminal->method('isAttachedToTerminal')->willReturn(true);
+        $incidentReporter = $this->createMock(RuntimeAttestationIncidentReporterInterface::class);
+        $incidentReporter
+            ->expects(self::once())
+            ->method('report');
+
+        $command = new CreateAdminUserCommand(
+            $users,
+            $this->passwordHasher(),
+            $this->mfaProvisioner($users),
+            new UnconfiguredRuntimeAttestationReportProvider(),
+            new RuntimeAttestationActionGuard(),
+            $incidentReporter,
+            $terminal,
+            true,
+        );
+        $tester = new CommandTester($command);
+
+        self::assertSame(Command::FAILURE, $tester->execute([], ['interactive' => true]));
+        self::assertStringContainsString('wegen fehlender Sicherheitsnachweise derzeit gesperrt', $tester->getDisplay());
     }
 
     private function userRepository(): AdminUserRepository

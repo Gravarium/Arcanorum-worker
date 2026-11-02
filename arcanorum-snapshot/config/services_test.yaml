@@ -1,3 +1,6 @@
+parameters:
+    env(RUNTIME_ATTESTATION_REQUIRED): 'true'
+
 services:
     App\Module\Advertising\Application\ClickTokenSigner:
         arguments:

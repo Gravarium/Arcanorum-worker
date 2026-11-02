@@ -285,11 +285,19 @@
     <section class="admin-panel" aria-labelledby="webserver-integrity-heading">
         <header class="panel-heading">
             <div>
-                <h2 id="webserver-integrity-heading">{{ 'Webserver-Integrität'|trans }}</h2>
-                <p>{{ 'Der Status beschreibt die tatsächlich eingerichtete unabhängige Prüfung.'|trans }}</p>
+                <h2 id="webserver-integrity-heading">{{ 'Unabhängige Host-Prüfung'|trans }}</h2>
+                <p>{{ 'Zusätzliche Sicherheitsstufe für Anbieter mit unabhängiger Prüfinstanz.'|trans }}</p>
             </div>
-            <span class="status-pill is-unknown">{{ 'Nicht eingerichtet'|trans }}</span>
+            {% if runtime_attestation_required %}
+                <span class="status-pill is-verified">{{ 'Für diese Anfrage bestätigt'|trans }}</span>
+            {% else %}
+                <span class="status-pill is-unknown">{{ 'Optionale Stufe nicht aktiviert'|trans }}</span>
+            {% endif %}
         </header>
-        <p>{{ 'Die B/C-Kontrollmatrix enthält Anforderungen, aber keinen Laufzeitnachweis. Ein unabhängiger Attestor, aktive B→C-Erkennung und unabhängige Alarmierung sind derzeit nicht eingerichtet.'|trans }}</p>
+        {% if runtime_attestation_required %}
+            <p>{{ 'Diese Anfrage wurde erst nach einer erfolgreichen unabhängigen Prüfung freigegeben. Weitere Hostgrenzen werden in der Fähigkeitstabelle separat ausgewiesen.'|trans }}</p>
+        {% else %}
+            <p>{{ 'Für diese Installation liegt kein unabhängiger Host-Nachweis vor. Das blockiert den normalen CMS- und Adminbetrieb nicht. Anwendungsseitige Anmeldung, MFA, Rollen, CSRF, Sitzungs- und Eingabeschutz bleiben aktiv; Funktionen mit fehlender Hostfähigkeit werden einzeln eingeschränkt.'|trans }}</p>
+        {% endif %}
     </section>
 {% endblock %}

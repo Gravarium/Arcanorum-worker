@@ -28,6 +28,7 @@ final class SystemCapabilitySummaryTest extends TestCase
         $result = new SystemCapabilitySummary(new HostingProfileDetector([$probe]), $translator)->current();
 
         self::assertCount(1, $result['events']);
+        self::assertFalse($result['runtime_attestation_required']);
         self::assertCount(1, $result['notices']);
         self::assertSame(AdminSystemEventSeverity::Critical, $result['events'][0]->severity);
         self::assertSame('PHP-Laufzeit: Fehlgeschlagen.', $result['events'][0]->message);
@@ -36,6 +37,16 @@ final class SystemCapabilitySummaryTest extends TestCase
         $serialized = json_encode($result['events'][0], JSON_THROW_ON_ERROR);
         self::assertStringNotContainsString('/private/config', $serialized);
         self::assertStringNotContainsString('private diagnostic detail', $serialized);
+    }
+
+    public function testReportsWhenIndependentRuntimeAttestationIsEnabled(): void
+    {
+        $translator = self::createStub(TranslatorInterface::class);
+        $translator->method('trans')->willReturnArgument(0);
+
+        $result = new SystemCapabilitySummary(new HostingProfileDetector([]), $translator, true)->current();
+
+        self::assertTrue($result['runtime_attestation_required']);
     }
 }
 

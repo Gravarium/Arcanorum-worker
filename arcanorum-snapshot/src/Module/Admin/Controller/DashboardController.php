@@ -68,6 +68,7 @@ final class DashboardController extends AbstractController
 
         $response = $this->render('admin/dashboard.html.twig', [
             'capability_checks' => $system['checks'],
+            'runtime_attestation_required' => $system['runtime_attestation_required'],
             'system_notices' => [...$system['notices'], ...$phpRuntime['notices']],
             'latest_videos' => $this->videos->findForAdmin('', null, 5),
             'latest_articles' => $this->newsArticles->findForAdmin('', null, 5),

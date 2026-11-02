@@ -45,6 +45,7 @@ final class CreateAdminUserCommand extends Command
         private readonly RuntimeAttestationActionGuard $runtimeAttestationActionGuard,
         private readonly RuntimeAttestationIncidentReporterInterface $incidentReporter,
         private readonly InteractiveConsoleTerminalInterface $interactiveTerminal,
+        private readonly bool $runtimeAttestationRequired = true,
     ) {
         parent::__construct();
     }
@@ -155,6 +156,10 @@ final class CreateAdminUserCommand extends Command
     /** @phpstan-impure */
     private function hasRequiredRuntimeAttestation(): bool
     {
+        if (!$this->runtimeAttestationRequired) {
+            return true;
+        }
+
         try {
             $report = $this->runtimeAttestationReportProvider->verifyCurrent();
             $this->runtimeAttestationActionGuard->requireVerified($report, ...self::REQUIRED_CONTROL_IDS);

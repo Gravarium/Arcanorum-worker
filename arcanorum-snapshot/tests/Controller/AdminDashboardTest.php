@@ -1597,10 +1597,8 @@ final class AdminDashboardTest extends WebTestCase
             self::assertSelectorExists('section[aria-labelledby="dashboard-open-heading"] a[href="/admin/comments"]');
             self::assertSelectorExists('section[aria-labelledby="dashboard-open-heading"] a[href="/admin/contact-messages"]');
             self::assertSelectorTextContains('section[aria-labelledby="dashboard-open-heading"]', (string) $expectedMetrics['submissions']['pending'].' Videoeinreichungen prüfen');
-            self::assertSelectorTextContains('section[aria-labelledby="webserver-integrity-heading"]', 'Webserver-Integrität');
-            self::assertSelectorTextContains('section[aria-labelledby="webserver-integrity-heading"]', 'Anforderungen, aber keinen Laufzeitnachweis');
-            self::assertSelectorTextContains('section[aria-labelledby="webserver-integrity-heading"]', 'B→C-Erkennung');
-            self::assertSelectorTextContains('section[aria-labelledby="webserver-integrity-heading"]', 'Nicht eingerichtet');
+            self::assertSelectorTextContains('section[aria-labelledby="webserver-integrity-heading"]', 'Unabhängige Host-Prüfung');
+            self::assertSelectorTextContains('section[aria-labelledby="webserver-integrity-heading"]', 'Für diese Anfrage bestätigt');
             self::assertSelectorExists('aside.admin-sidebar nav[aria-label="Hauptnavigation"] a[aria-current="page"]');
             self::assertSelectorTextContains('nav[aria-label="Hauptnavigation"]', 'Videos');
             self::assertSelectorTextContains('nav[aria-label="Hauptnavigation"]', 'News');

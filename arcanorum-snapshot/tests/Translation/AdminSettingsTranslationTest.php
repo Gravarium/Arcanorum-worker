@@ -397,7 +397,7 @@ final class AdminSettingsTranslationTest extends KernelTestCase
 
         $messages = [
             'Ausgewählte Laufzeitwerte und aktuelle Systemhinweise. Geheimnisse, Umgebungsvariablen und Konfigurationspfade werden nicht angezeigt.' => 'Selected runtime values and current system notices. Secrets, environment variables, and configuration paths are not displayed.',
-            'Die Prüfung der Fähigkeiten ersetzt keine unabhängige Sicherheitsattestierung.' => 'Capability checks do not replace independent security attestation.',
+            'Unabhängige Host-Prüfung ist eine zusätzliche Sicherheitsstufe. Ihr Fehlen blockiert den normalen CMS-Betrieb nicht; Funktionen mit besonderen Hostanforderungen werden einzeln eingeschränkt.' => 'Independent host verification is an additional security tier. Its absence does not block normal CMS operation; features with specific host requirements are restricted individually.',
             'Hosting-Fähigkeiten' => 'Hosting capabilities',
             'Fähigkeit' => 'Capability',
             'PHP-Konfiguration' => 'PHP configuration',
@@ -1119,7 +1119,12 @@ final class AdminSettingsTranslationTest extends KernelTestCase
             'CMS-Verwaltung' => 'CMS administration',
             'Inhalte, Freigaben und Systemstatus auf einen Blick.' => 'Content, approvals, and system status at a glance.',
             'Warteschlange öffnen' => 'Open queue',
-            'Die B/C-Kontrollmatrix enthält Anforderungen, aber keinen Laufzeitnachweis. Ein unabhängiger Attestor, aktive B→C-Erkennung und unabhängige Alarmierung sind derzeit nicht eingerichtet.' => 'The B/C control matrix defines requirements but has no runtime evidence. An independent attestor, active B-to-C detection, and independent alerting are not currently configured.',
+            'Unabhängige Host-Prüfung' => 'Independent host verification',
+            'Zusätzliche Sicherheitsstufe für Anbieter mit unabhängiger Prüfinstanz.' => 'Additional security tier for providers with an independent verifier.',
+            'Für diese Anfrage bestätigt' => 'Verified for this request',
+            'Optionale Stufe nicht aktiviert' => 'Optional tier not enabled',
+            'Diese Anfrage wurde erst nach einer erfolgreichen unabhängigen Prüfung freigegeben. Weitere Hostgrenzen werden in der Fähigkeitstabelle separat ausgewiesen.' => 'This request was allowed only after successful independent verification. Other host limits are listed separately in the capability table.',
+            'Für diese Installation liegt kein unabhängiger Host-Nachweis vor. Das blockiert den normalen CMS- und Adminbetrieb nicht. Anwendungsseitige Anmeldung, MFA, Rollen, CSRF, Sitzungs- und Eingabeschutz bleiben aktiv; Funktionen mit fehlender Hostfähigkeit werden einzeln eingeschränkt.' => 'This installation has no independent host evidence. This does not block normal CMS and admin use. Application sign-in, MFA, roles, CSRF, session, and input protections remain active; features that need unavailable host capabilities are restricted individually.',
             'Erfolgreiche Änderungen im Verwaltungsbereich. Inhalte aus Formularen, Netzwerkadressen und Geheimnisse werden nicht gespeichert.' => 'Successful changes in the administration area. Form contents, network addresses, and secrets are not stored.',
             'Der Aktivitätsverlauf ist leer.' => 'The activity history is empty.',
             'Entfernter Administrator' => 'Removed administrator',

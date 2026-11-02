@@ -2,6 +2,7 @@ parameters:
     env(TRUSTED_PROXIES): ''
     env(ADMIN_MFA_ENCRYPTION_KEY): ''
     env(RUNTIME_ATTESTATION_TARGET_ID): ''
+    env(RUNTIME_ATTESTATION_REQUIRED): 'false'
     env(RUNTIME_ATTESTATION_ALERT_URL): ''
     env(RUNTIME_ATTESTATION_ALERT_BEARER_TOKEN): ''
     env(RUNTIME_ATTESTATION_REPLAY_URL): ''
@@ -399,6 +400,22 @@ services:
 
     App\Platform\Security\RuntimeAttestationReportProviderInterface:
         alias: App\Platform\Security\HttpRuntimeAttestationReportProvider
+
+    App\Platform\Security\RuntimeAttestationRequestGuardSubscriber:
+        arguments:
+            $runtimeAttestationRequired: '%env(bool:RUNTIME_ATTESTATION_REQUIRED)%'
+
+    App\Command\CreateAdminUserCommand:
+        arguments:
+            $runtimeAttestationRequired: '%env(bool:RUNTIME_ATTESTATION_REQUIRED)%'
+
+    App\Command\ProvisionAdminMfaCommand:
+        arguments:
+            $runtimeAttestationRequired: '%env(bool:RUNTIME_ATTESTATION_REQUIRED)%'
+
+    App\Service\SystemCapabilitySummary:
+        arguments:
+            $runtimeAttestationRequired: '%env(bool:RUNTIME_ATTESTATION_REQUIRED)%'
 
     App\Platform\Security\InteractiveConsoleTerminalInterface:
         alias: App\Platform\Security\NativeInteractiveConsoleTerminal

@@ -13,6 +13,7 @@ final readonly class SystemCapabilitySummary
     public function __construct(
         private HostingProfileDetector $detector,
         private TranslatorInterface $translator,
+        private bool $runtimeAttestationRequired = false,
     ) {
     }
 
@@ -20,7 +21,8 @@ final readonly class SystemCapabilitySummary
      * @return array{
      *     checks: list<array{label: string, status: string, status_class: string, details: string}>,
      *     notices: list<string>,
-     *     events: list<AdminSystemEvent>
+     *     events: list<AdminSystemEvent>,
+     *     runtime_attestation_required: bool
      * }
      */
     public function current(): array
@@ -57,6 +59,11 @@ final readonly class SystemCapabilitySummary
             }
         }
 
-        return ['checks' => $checks, 'notices' => $notices, 'events' => $events];
+        return [
+            'checks' => $checks,
+            'notices' => $notices,
+            'events' => $events,
+            'runtime_attestation_required' => $this->runtimeAttestationRequired,
+        ];
     }
 }

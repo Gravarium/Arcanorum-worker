@@ -34,6 +34,22 @@ final class RuntimeAttestationRequestGuardSubscriberTest extends TestCase
         self::assertStringNotContainsString('Unabhängige Laufzeitattestierung', (string) $response->getContent());
     }
 
+    public function testStandardHostingKeepsAdminRoutesAvailableWithoutRemoteAttestation(): void
+    {
+        $provider = self::createMock(RuntimeAttestationReportProviderInterface::class);
+        $provider->expects(self::never())->method('verifyCurrent');
+        $reporter = self::createMock(RuntimeAttestationIncidentReporterInterface::class);
+        $reporter->expects(self::never())->method('report');
+
+        foreach ([['/admin', Request::METHOD_GET], ['/admin/videos', Request::METHOD_POST]] as [$path, $method]) {
+            $event = $this->requestEvent($path, $method);
+
+            $this->subscriber($provider, $reporter, false)->onKernelRequest($event);
+
+            self::assertNull($event->getResponse());
+        }
+    }
+
     public function testUnknownAttestationIsReportedWithoutProviderDetails(): void
     {
         $event = $this->requestEvent('/admin', Request::METHOD_GET);
@@ -159,6 +175,7 @@ final class RuntimeAttestationRequestGuardSubscriberTest extends TestCase
     private function subscriber(
         RuntimeAttestationReportProviderInterface $reportProvider,
         ?RuntimeAttestationIncidentReporterInterface $incidentReporter = null,
+        bool $runtimeAttestationRequired = true,
     ): RuntimeAttestationRequestGuardSubscriber {
         $incidentReporter ??= self::createStub(RuntimeAttestationIncidentReporterInterface::class);
 
@@ -167,6 +184,7 @@ final class RuntimeAttestationRequestGuardSubscriberTest extends TestCase
             new RuntimeAttestationActionGuard(),
             new RuntimeAttestationRequestPolicy(),
             $incidentReporter,
+            $runtimeAttestationRequired,
         );
     }
 

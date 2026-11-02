@@ -16,6 +16,7 @@ final readonly class RuntimeAttestationRequestGuardSubscriber implements EventSu
         private RuntimeAttestationActionGuard $actionGuard,
         private RuntimeAttestationRequestPolicy $requestPolicy,
         private RuntimeAttestationIncidentReporterInterface $incidentReporter,
+        private bool $runtimeAttestationRequired = true,
     ) {
     }
 
@@ -28,6 +29,10 @@ final readonly class RuntimeAttestationRequestGuardSubscriber implements EventSu
 
     public function onKernelRequest(RequestEvent $event): void
     {
+        if (!$this->runtimeAttestationRequired) {
+            return;
+        }
+
         $requiredControlIds = $this->requestPolicy->requiredControlIdsFor($event->getRequest());
         if (null === $requiredControlIds) {
             return;
