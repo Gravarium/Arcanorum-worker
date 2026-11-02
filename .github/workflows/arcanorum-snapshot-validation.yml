@@ -2249,6 +2249,7 @@ jobs:
             tests/Controller/HomePageTest.php
             tests/Controller/MemberAccountFlowTest.php
             tests/Controller/MemberExternalLoginFlowTest.php
+            tests/Controller/NewsArticleHistoryFlowTest.php
           )
           for file in "${test_files[@]}"; do php -l "$file"; done
           php bin/console lint:container --env=dev

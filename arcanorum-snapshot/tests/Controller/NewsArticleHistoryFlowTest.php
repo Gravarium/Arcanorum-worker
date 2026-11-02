@@ -315,6 +315,11 @@ final class NewsArticleHistoryFlowTest extends WebTestCase
             self::assertSame($admin->getId(), $firstRevision->getEditor()?->getId());
             self::assertSame($article->getThumbnailObjectId(), $firstRevision->getThumbnailObjectId());
 
+            $client->request('GET', '/admin/news');
+            self::assertResponseIsSuccessful();
+            self::assertSelectorExists('img.admin-content-list-thumbnail[src="/admin/news/'.$article->getId().'/thumbnail"][alt=""]');
+            self::assertSelectorExists('.admin-content-title-row a[href="/admin/news/'.$article->getId().'/edit"]');
+
             $client->request('GET', '/admin/news/'.$article->getId().'/thumbnail');
             self::assertResponseIsSuccessful();
             self::assertResponseHeaderSame('Content-Type', 'image/png');

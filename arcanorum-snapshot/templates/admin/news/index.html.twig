@@ -111,7 +111,16 @@
                     {% for article in articles %}
                         <tr>
                             <td><input type="checkbox" name="ids[]" value="{{ article.id }}" aria-label="{{ '%title% auswählen'|trans({'%title%': article.title}) }}"></td>
-                            <th scope="row">{{ article.title }}</th>
+                            <th scope="row" class="admin-content-title-cell">
+                                <span class="admin-content-title-row">
+                                    {% if article.thumbnailObjectId %}
+                                        <img class="admin-content-list-thumbnail" src="{{ path('admin_news_thumbnail_preview', {id: article.id}) }}" alt="" loading="lazy" decoding="async">
+                                    {% else %}
+                                        <span class="admin-content-thumbnail-placeholder" aria-hidden="true">▤</span>
+                                    {% endif %}
+                                    <a href="{{ path('admin_news_edit', {id: article.id}) }}">{{ article.title }}</a>
+                                </span>
+                            </th>
                             <td>{{ article.category ?? '—' }}</td>
                             <td>{% for content_tag in article.tags %}{{ content_tag.name }}{% if not loop.last %}, {% endif %}{% else %}—{% endfor %}</td>
                             <td>{% if article.membersOnly %}<span class="status-pill is-later">{{ 'Nur für Mitglieder'|trans }}</span>{% else %}{{ 'Öffentlich'|trans }}{% endif %}</td>

@@ -2039,7 +2039,7 @@ final class AdminDashboardTest extends WebTestCase
             self::assertResponseRedirects('/admin');
             $client->request('GET', '/admin/videos');
             self::assertResponseIsSuccessful();
-            self::assertSelectorExists('img.admin-video-list-thumbnail[src="/admin/videos/'.$video->getId().'/thumbnail"][alt=""]');
+            self::assertSelectorExists('img.admin-content-list-thumbnail[src="/admin/videos/'.$video->getId().'/thumbnail"][alt=""]');
             self::assertSelectorExists('form.admin-bulk-form option[value="'.$videoCategory->getId().'"]');
             $csrf = (string) $client->getCrawler()->filter('form.admin-bulk-form input[name="_token"]')->attr('value');
             $client->request('GET', '/admin/videos/'.$video->getId().'/thumbnail');

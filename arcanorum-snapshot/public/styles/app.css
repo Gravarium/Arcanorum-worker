@@ -3006,32 +3006,32 @@ html[data-public-theme="arcanorum"][data-public-view="compact"] .public-navigati
     letter-spacing: -0.02em;
 }
 
-.admin-video-title-cell {
+.admin-content-title-cell {
     width: 18rem !important;
     min-width: 16rem;
 }
 
-.admin-video-title-row {
+.admin-content-title-row {
     display: flex;
     align-items: center;
     gap: 0.65rem;
     min-width: 15rem;
 }
 
-.admin-video-title-row > a {
+.admin-content-title-row > a {
     color: #202124;
     font-weight: 600;
     text-decoration: none;
 }
 
-.admin-video-title-row > a:hover,
-.admin-video-title-row > a:focus-visible {
+.admin-content-title-row > a:hover,
+.admin-content-title-row > a:focus-visible {
     color: #174ea6;
     text-decoration: underline;
 }
 
-.admin-video-list-thumbnail,
-.admin-video-thumbnail-placeholder {
+.admin-content-list-thumbnail,
+.admin-content-thumbnail-placeholder {
     flex: 0 0 5rem;
     width: 5rem;
     height: 2.8rem;
@@ -3041,7 +3041,7 @@ html[data-public-theme="arcanorum"][data-public-view="compact"] .public-navigati
     object-fit: cover;
 }
 
-.admin-video-thumbnail-placeholder {
+.admin-content-thumbnail-placeholder {
     display: grid;
     place-items: center;
     border: 1px solid #dadce0;
