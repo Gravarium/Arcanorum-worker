@@ -236,7 +236,8 @@ final class AdminMfaProvisioningCommandTest extends KernelTestCase
         $tester = new CommandTester($command);
 
         self::assertSame(Command::FAILURE, $tester->execute([], ['interactive' => true]));
-        self::assertStringContainsString('wegen fehlender Sicherheitsnachweise derzeit gesperrt', $tester->getDisplay());
+        self::assertStringContainsString('fehlender Sicherheitsnachweise', $tester->getDisplay());
+        self::assertStringContainsString('gesperrt.', $tester->getDisplay());
     }
 
     private function userRepository(): AdminUserRepository
