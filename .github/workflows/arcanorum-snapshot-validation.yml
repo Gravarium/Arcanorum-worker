@@ -48,6 +48,7 @@ on:
           - rollback-guard-migration-lock-audit-followup
           - rollback-guard-final-pending-gates
           - rollback-guard-advertising-assertion-retry
+          - admin-login-mfa-configuration-followup
 
 permissions:
   contents: read
@@ -797,6 +798,193 @@ jobs:
               --filter='testAdministratorCreatesVersionedNewsWithEscapedAuthorAndPrivateHistory|testPublicThumbnailRevalidatesBeforeServingAndAfterMembershipChange|testPublishedSubtitleRevalidatesAndIsDeniedAfterUnpublish|testPublicCategoryRichTextIsSanitizedAndOnlyOwnReferencedImagesAreOutput|testNewsEditorCanUploadOnlyNewsCategoryImagesAndUnusedImagesAreQueuedForDeletion|testOnlyPublishedSeriesAndEpisodesAppearOnPublicPages|testPublishedArtworkRevalidatesAndIsDeniedAfterUnpublish|testPublishedArtworkRejectsOutOfRangeImageBeforeMatchingEtagCanReturnNotModified|testCategoryArtworkRevalidatesAfterReplacementIsRemoved|testServesOnlyTheCurrentSanitizedLogoWithSafeHeaders|testInvalidPrivateLogoBytesFailClosed|testAdministratorCanUploadAndRemoveSanitizedLogoWithCsrfAndPrivateStorage|testAdministratorCanUploadPreviewAndRemovePrivatePlayerWatermark|testEmojiCatalogRevalidatesWhenCommentsModuleIsDisabled' \
               tests/Controller
           fi
+          python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
+
+  validate-admin-login-mfa-configuration:
+    if: github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'admin-login-mfa-configuration-followup'
+    name: Focused admin login configuration checks
+    runs-on: ubuntu-26.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: arcanorum-snapshot
+    env:
+      APP_ENV: test
+      APP_DEBUG: '0'
+      APP_SECRET: ci-only-not-a-production-secret
+      DATABASE_URL: 'postgresql://arcanorum_ci:ci-only-test-password@127.0.0.1:5432/arcanorum_test?serverVersion=18&charset=utf8'
+      REDIS_URL: 'redis://127.0.0.1:6379'
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: arcanorum_test
+          POSTGRES_USER: arcanorum_ci
+          POSTGRES_PASSWORD: ci-only-test-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U arcanorum_ci -d arcanorum_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Check out public validation branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Verify exact source snapshot and exclude credentials
+        shell: bash
+        env:
+          EXPECTED_SOURCE_SHA: ${{ inputs.source_commit }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$EXPECTED_SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo 'The source commit must be a full lowercase Git SHA.' >&2
+            exit 1
+          fi
+          printf '%s\n' "$EXPECTED_SOURCE_SHA" | cmp -s - SOURCE_BASE_SHA
+          python3 - <<'PY'
+          from hashlib import sha256
+          from pathlib import Path
+          import re
+
+          root = Path('.')
+          blocked = []
+          secret_patterns = {
+              'private-key': re.compile(rb'-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----'),
+              'github-token': re.compile(rb'(?:gh[pousr]_[A-Za-z0-9_]{30,}|github_pat_[A-Za-z0-9_]{30,})'),
+              'aws-key': re.compile(rb'AKIA[0-9A-Z]{16}'),
+              'stripe-live': re.compile(rb'sk_live_[A-Za-z0-9]{16,}'),
+              'slack-token': re.compile(rb'xox[baprs]-[A-Za-z0-9-]{20,}'),
+          }
+          matches = []
+          for path in root.rglob('*'):
+              if path.is_symlink():
+                  blocked.append(path.as_posix())
+                  continue
+              if not path.is_file():
+                  continue
+              relative = path.relative_to(root).as_posix()
+              if (path.name.startswith('.env')
+                  or '/secrets/' in f'/{relative}/'
+                  or relative.startswith(('var/', 'vendor/', 'node_modules/', 'logs/', 'test-results/', 'coverage/', 'public/uploads/', 'storage/private/', 'backups/'))
+                  or path.suffix.lower() in {'.pem', '.p12', '.key', '.sql', '.dump', '.sqlite', '.db'}):
+                  blocked.append(relative)
+              data = path.read_bytes()
+              for name, pattern in secret_patterns.items():
+                  if pattern.search(data):
+                      matches.append((name, relative))
+
+          if blocked or matches:
+              for relative in blocked:
+                  print(f'Forbidden file path: {relative}')
+              for name, relative in matches:
+                  print(f'Credential pattern {name} in {relative}')
+              raise SystemExit('Snapshot security check failed.')
+
+          manifest_path = root / 'SOURCE_MANIFEST.sha256'
+          if not manifest_path.is_file() or manifest_path.is_symlink():
+              raise SystemExit('The source manifest is missing or unsafe.')
+          expected = {}
+          for line in manifest_path.read_text(encoding='utf-8').splitlines():
+              digest, separator, relative = line.partition('  ')
+              path = Path(relative)
+              if (not separator or not re.fullmatch(r'[a-f0-9]{64}', digest)
+                  or not relative or path.is_absolute() or '..' in path.parts
+                  or relative in expected):
+                  raise SystemExit('The source manifest contains an invalid entry.')
+              expected[relative] = digest
+
+          actual = {}
+          for path in root.rglob('*'):
+              if path.is_file() and path.name not in {'SOURCE_BASE_SHA', 'SOURCE_MANIFEST.sha256'}:
+                  actual[path.relative_to(root).as_posix()] = sha256(path.read_bytes()).hexdigest()
+          if actual != expected:
+              raise SystemExit('The source snapshot does not match its complete file manifest.')
+          print(f'Source snapshot passed: {len(actual)} manifested files, no forbidden paths or credential patterns.')
+          PY
+
+      - name: Set up PHP 8.5 and extensions
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.5'
+          extensions: gd, intl, mbstring, pdo_pgsql, redis, sodium, xml, zip
+          tools: composer:v2
+          ini-values: memory_limit=1G
+
+      - name: Validate and install locked dependencies
+        run: |
+          composer validate --strict --no-interaction
+          composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader
+          composer audit --locked --no-interaction
+
+      - name: Check affected PHP syntax
+        run: |
+          php -l src/Platform/Security/AdminMfaSecretCipher.php
+          php -l tests/Platform/Security/AdminMfaSecretCipherTest.php
+          php -l tests/Platform/Security/AdminLoginMfaConfigurationTest.php
+
+      - name: Validate Symfony and PostgreSQL configuration
+        run: |
+          touch .env
+          php bin/console lint:container --env=dev
+          APP_ENV=prod APP_DEBUG=0 php bin/console lint:container --env=prod
+          php bin/console lint:yaml config
+          php bin/console doctrine:migrations:migrate --env=test --no-interaction
+          php bin/console doctrine:schema:validate --skip-sync
+
+      - name: PHPStan on the affected code and regressions
+        run: >-
+          vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --no-progress
+          --error-format=github --memory-limit=1G
+          src/Platform/Security/AdminMfaSecretCipher.php
+          tests/Platform/Security/AdminMfaSecretCipherTest.php
+          tests/Platform/Security/AdminLoginMfaConfigurationTest.php
+
+      - name: PHP CS Fixer on affected files
+        run: >-
+          vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --diff --using-cache=no
+          src/Platform/Security/AdminMfaSecretCipher.php
+          tests/Platform/Security/AdminMfaSecretCipherTest.php
+          tests/Platform/Security/AdminLoginMfaConfigurationTest.php
+
+      - name: Rector dry run on affected files
+        run: >-
+          vendor/bin/rector process --config=rector.php --dry-run --no-progress-bar --output-format=github
+          src/Platform/Security/AdminMfaSecretCipher.php
+          tests/Platform/Security/AdminMfaSecretCipherTest.php
+          tests/Platform/Security/AdminLoginMfaConfigurationTest.php
+
+      - name: Psalm taint analysis on affected files
+        run: |
+          mkdir -p var/test-results
+          vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm.sarif \
+            src/Platform/Security/AdminMfaSecretCipher.php \
+            tests/Platform/Security/AdminMfaSecretCipherTest.php \
+            tests/Platform/Security/AdminLoginMfaConfigurationTest.php
+
+      - name: Run affected PHPUnit regressions with strict failures
+        run: |
+          mkdir -p var/test-results
+          php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
+            --fail-on-risky --fail-on-warning --fail-on-deprecation \
+            --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
+            --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
+            tests/Platform/Security/AdminMfaSecretCipherTest.php \
+            tests/Platform/Security/AdminLoginMfaConfigurationTest.php
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
 
   validate-automation-focused:

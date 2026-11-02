@@ -62,7 +62,7 @@ final class AdminMfaSecretCipherTest extends TestCase
 
     public function testValidEncryptionKeyIsReportedAsConfigured(): void
     {
-        self::assertTrue((new AdminMfaSecretCipher(base64_encode(str_repeat('K', 32))))->isConfigured());
+        self::assertTrue(new AdminMfaSecretCipher(base64_encode(str_repeat('K', 32)))->isConfigured());
     }
 
     public function testDecryptionFailsClosedWithoutAnEncryptionKey(): void
