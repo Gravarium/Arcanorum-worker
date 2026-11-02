@@ -6,17 +6,7 @@
 {% block social_metadata %}{% if category_page and category_canonical_url %}{% set category_social_description = category_page.metaDescription ?: category_page.description|rich_text|striptags|slice(0, 500) %}<link rel="canonical" href="{{ category_canonical_url }}"><meta property="og:type" content="website"><meta property="og:url" content="{{ category_canonical_url }}"><meta property="og:title" content="{{ category_page.metaTitle ?? category_page.name }}"><meta property="og:description" content="{{ category_social_description }}">{% endif %}{% endblock %}
 
 {% block body %}
-    <header class="public-header">
-        {{ include('partials/public_brand.html.twig') }}
-        <nav class="public-navigation" aria-label="{{ 'Hauptnavigation'|trans }}">
-            <a href="{{ path('video_index') }}" aria-current="page">{{ 'Videos'|trans }}</a>
-            {% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}{% if module_enabled('series') %}<a href="{{ path('series_index') }}">{{ 'Serien'|trans }}</a>{% endif %}
-            {% if module_enabled('search') %}<a href="{{ path('public_search') }}">{{ 'Suche'|trans }}</a>{% endif %}
-            {% if module_enabled('pages') %}<a href="{{ path('page_index') }}">{{ 'Seiten'|trans }}</a>{% endif %}
-            <a href="{{ path('content_sitemap') }}"{{ 'Sitemap'|trans }}</a>
-            {{ include('partials/public_navigation_links.html.twig') }}
-        </nav>
-    </header>
+    {{ include('partials/public_site_header.html.twig') }}
     <main class="public-main">
         <section class="public-page-heading">
             <p class="eyebrow">{{ 'Videokatalog'|trans }}</p><h1>{% if category_page %}{{ category_page.name }}{% else %}{{ (popular ? 'Beliebte Videos' : 'Videos entdecken')|trans }}{% endif %}</h1>

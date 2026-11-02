@@ -1,11 +1,3 @@
-{% if module_enabled('pages') %}
-    {% for menu_page in public_menu_pages() %}
-        <a href="{{ path('page_show', {slug: menu_page.slug}) }}">{{ menu_page.title }}</a>
-    {% endfor %}
-{% endif %}
-{% if show_member_directory is not defined or show_member_directory %}
-    <a href="{{ path('public_member_index') }}">{{ 'Mitglieder'|trans }}</a>
-{% endif %}
 {% if is_granted('ROLE_MEMBER') %}
     <a href="{{ path('member_profile') }}">{{ 'Mein Profil'|trans }}</a>
     <a href="{{ path('member_password') }}">{{ 'Passwort ändern'|trans }}</a>

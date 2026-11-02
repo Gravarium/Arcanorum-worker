@@ -36,6 +36,7 @@ on:
           - public-share-widget-testfix-followup
           - video-report-heading-testfix-followup
           - admin-design-settings-followup
+          - classic-public-shell-followup
           - manual-video-source-check-followup
           - historical-core-data-rollback-testfix
           - historical-rollback-pending-gates
@@ -1467,7 +1468,7 @@ jobs:
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
 
   validate-member-activity-focused:
-    if: github.event_name == 'workflow_dispatch' && (inputs.validation_scope == 'member-activity-focused' || inputs.validation_scope == 'member-activity-followup' || inputs.validation_scope == 'dashboard-latest-content' || inputs.validation_scope == 'dashboard-latest-content-followup' || inputs.validation_scope == 'admin-password-change-followup' || inputs.validation_scope == 'video-provider-player-followup' || inputs.validation_scope == 'auto-feature-threshold-followup' || inputs.validation_scope == 'public-share-widget-followup' || inputs.validation_scope == 'public-share-widget-testfix-followup' || inputs.validation_scope == 'video-report-heading-testfix-followup' || inputs.validation_scope == 'admin-design-settings-followup')
+    if: github.event_name == 'workflow_dispatch' && (inputs.validation_scope == 'member-activity-focused' || inputs.validation_scope == 'member-activity-followup' || inputs.validation_scope == 'dashboard-latest-content' || inputs.validation_scope == 'dashboard-latest-content-followup' || inputs.validation_scope == 'admin-password-change-followup' || inputs.validation_scope == 'video-provider-player-followup' || inputs.validation_scope == 'auto-feature-threshold-followup' || inputs.validation_scope == 'public-share-widget-followup' || inputs.validation_scope == 'public-share-widget-testfix-followup' || inputs.validation_scope == 'video-report-heading-testfix-followup' || inputs.validation_scope == 'admin-design-settings-followup' || inputs.validation_scope == 'classic-public-shell-followup')
     name: Focused regression checks
     runs-on: ubuntu-26.04
     timeout-minutes: 45
@@ -1514,7 +1515,7 @@ jobs:
       - name: Verify exact source commit and exclude credentials
         shell: bash
         env:
-          EXPECTED_SOURCE_SHA: 'c96df1383aa1377bba3cf7ac3016a4ea5eb3742c'
+          EXPECTED_SOURCE_SHA: ${{ inputs.validation_scope == 'classic-public-shell-followup' && inputs.source_commit || 'c96df1383aa1377bba3cf7ac3016a4ea5eb3742c' }}
         run: |
           set -euo pipefail
           printf '%s\n' "$EXPECTED_SOURCE_SHA" | cmp -s - SOURCE_BASE_SHA
@@ -1568,7 +1569,7 @@ jobs:
           ini-values: memory_limit=1G
 
       - name: Validate and install locked Composer dependencies
-        if: inputs.validation_scope == 'member-activity-focused' || inputs.validation_scope == 'admin-password-change-followup' || inputs.validation_scope == 'video-provider-player-followup' || inputs.validation_scope == 'auto-feature-threshold-followup' || inputs.validation_scope == 'admin-design-settings-followup'
+        if: inputs.validation_scope == 'member-activity-focused' || inputs.validation_scope == 'admin-password-change-followup' || inputs.validation_scope == 'video-provider-player-followup' || inputs.validation_scope == 'auto-feature-threshold-followup' || inputs.validation_scope == 'admin-design-settings-followup' || inputs.validation_scope == 'classic-public-shell-followup'
         run: |
           touch .env
           composer validate --strict --no-interaction
@@ -2235,6 +2236,33 @@ jobs:
             --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
             --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
             tests/Controller/AdminDesignSettingsControllerTest.php
+          python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
+
+      - name: Validate shared public and admin shell
+        if: inputs.validation_scope == 'classic-public-shell-followup'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test_files=(
+            tests/Controller/AdminDashboardTest.php
+            tests/Controller/AdminGeneralSettingsTest.php
+            tests/Controller/HomePageTest.php
+            tests/Controller/MemberAccountFlowTest.php
+            tests/Controller/MemberExternalLoginFlowTest.php
+          )
+          for file in "${test_files[@]}"; do php -l "$file"; done
+          php bin/console lint:container --env=dev
+          php bin/console lint:twig templates
+          vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --no-progress --error-format=github --memory-limit=1G "${test_files[@]}"
+          vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --diff --using-cache=no "${test_files[@]}"
+          vendor/bin/rector process "${test_files[@]}" --config=rector.php --dry-run --no-progress-bar --output-format=github
+          mkdir -p var/test-results
+          vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm.sarif "${test_files[@]}"
+          php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
+            --fail-on-risky --fail-on-warning --fail-on-deprecation \
+            --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
+            --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
+            "${test_files[@]}"
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
 
   validate-video-thumbnail-concurrency:

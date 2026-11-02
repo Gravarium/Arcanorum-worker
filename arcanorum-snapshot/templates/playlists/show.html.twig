@@ -3,16 +3,7 @@
 {% block title %}{{ playlist.name }} · {{ site_settings().siteName }}{% endblock %}
 
 {% block body %}
-    <header class="public-header">
-        {{ include('partials/public_brand.html.twig') }}
-        <nav class="public-navigation" aria-label="{{ 'Hauptnavigation'|trans }}">
-            <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
-            {% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}
-            <a href="{{ path('public_member_profile', {handle: playlist.owner.handle}) }}">{{ 'Kanal von %name%'|trans({'%name%': playlist.owner.displayName}) }}</a>
-            {% if module_enabled('search') %}<a href="{{ path('public_search') }}">{{ 'Suche'|trans }}</a>{% endif %}
-            {{ include('partials/public_navigation_links.html.twig') }}
-        </nav>
-    </header>
+    {{ include('partials/public_site_header.html.twig') }}
     <main class="public-main">
         <section class="public-hero" aria-labelledby="playlist-title">
             <p class="eyebrow"><a href="{{ path('public_member_profile', {handle: playlist.owner.handle}) }}">{{ playlist.owner.displayName }}</a></p>

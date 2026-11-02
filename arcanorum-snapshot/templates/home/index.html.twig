@@ -7,28 +7,12 @@
 {% endblock %}
 
 {% block body %}
-    <header class="public-header">
-        {{ include('partials/public_brand.html.twig') }}
-        <nav class="public-navigation" aria-label="{{ 'Hauptnavigation'|trans }}">
-            <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
-            {% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}
-            {% if module_enabled('pages') %}<a href="{{ path('page_index') }}">{{ 'Seiten'|trans }}</a>{% endif %}
-            {% if module_enabled('contact') %}<a href="{{ path('contact_new') }}">{{ 'Kontakt'|trans }}</a>{% endif %}
-            {{ include('partials/public_navigation_links.html.twig') }}
-            <a href="{{ path('admin_login') }}">{{ 'Admin'|trans }}</a>
-        </nav>
-    </header>
+    {{ include('partials/public_site_header.html.twig') }}
 
     <main class="public-main">
-        <section class="public-hero">
-            <p class="eyebrow">{{ 'Gaming-News und Videos'|trans }}</p>
-            <h1>{{ site_settings().siteName }}</h1>
+        <section class="public-home-heading" aria-labelledby="home-site-heading">
+            <h1 id="home-site-heading">{{ site_settings().siteName }}</h1>
             {% if site_settings().tagline is not empty %}<p>{{ site_settings().tagline }}</p>{% endif %}
-            <p class="lead">{{ 'Entdecke aktuelle Videos und redaktionelle Beiträge.'|trans }}</p>
-            <div class="public-actions">
-                <a class="button" href="{{ path('video_index') }}">{{ 'Videos entdecken'|trans }}</a>
-                {% if module_enabled('news') %}<a class="button button-secondary" href="{{ path('news_index') }}">{{ 'Alle News'|trans }}</a>{% endif %}
-            </div>
         </section>
         {{ advertising_slot('home-top') }}
 

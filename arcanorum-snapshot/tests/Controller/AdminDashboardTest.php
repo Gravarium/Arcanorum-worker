@@ -266,6 +266,7 @@ final class AdminDashboardTest extends WebTestCase
 
             $client->request('GET', '/admin/video-submissions');
             self::assertResponseIsSuccessful();
+            self::assertSelectorNotExists('.admin-quick-add');
             $client->request('GET', '/admin/comments');
             self::assertResponseIsSuccessful();
             $client->request('GET', '/admin');
@@ -300,6 +301,7 @@ final class AdminDashboardTest extends WebTestCase
 
             $client->request('GET', '/admin');
             self::assertResponseIsSuccessful();
+            self::assertSelectorExists('.admin-quick-add[href="/admin/videos/new"]');
             self::assertSelectorTextContains('#dashboard-notices-heading', 'Systemhinweise');
             self::assertSelectorTextContains('section[data-dashboard-latest-videos]', 'Neueste Videos');
             self::assertSelectorTextContains('section[data-dashboard-latest-videos]', 'Noch keine Videos. Füge die erste Videoquelle hinzu.');

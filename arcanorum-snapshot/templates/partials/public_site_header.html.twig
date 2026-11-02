@@ -1,0 +1,42 @@
+{% set site_identity = site_settings() %}
+{% set current_route = app.request.attributes.get('_route', '') %}
+<header class="public-header">
+    <div class="public-header-top">
+        {{ include('partials/public_brand.html.twig') }}
+        <form class="public-header-search" method="get" action="{{ path(module_enabled('search') ? 'public_search' : 'video_index') }}" role="search">
+            <label class="visually-hidden" for="site-header-search">{{ 'Videos suchen'|trans }}</label>
+            <input id="site-header-search" type="search" name="q" maxlength="100" value="{{ current_route == 'public_search' and query is defined ? query : '' }}" placeholder="{{ 'Suchen …'|trans }}">
+            <button type="submit" aria-label="{{ 'Suchen'|trans }}">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg>
+            </button>
+        </form>
+        <details class="public-account">
+            <summary aria-label="{{ 'Kontomenü öffnen'|trans }}">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="3.3"></circle><path d="M5.5 20c.4-3.5 2.7-5.5 6.5-5.5s6.1 2 6.5 5.5"></path></svg>
+                <span>{% if is_granted('ROLE_MEMBER') %}{{ app.user.handle }}{% else %}{{ 'Konto'|trans }}{% endif %}</span>
+            </summary>
+            <div class="public-account-menu">
+                {{ include('partials/public_navigation_links.html.twig') }}
+                <a href="{{ path(is_granted('ROLE_ADMIN') ? 'admin_dashboard' : 'admin_login') }}">{{ is_granted('ROLE_ADMIN') ? 'Verwaltung öffnen'|trans : 'Admin-Anmeldung'|trans }}</a>
+                {% if module_enabled('contact') %}<a href="{{ path('contact_new') }}">{{ 'Kontakt'|trans }}</a>{% endif %}
+                {% if site_identity.isPublicVideoSubmissionsEnabled %}<a href="{{ path('public_video_submission_new') }}">{{ 'Video einreichen'|trans }}</a>{% endif %}
+                <a href="{{ path('content_sitemap') }}">{{ 'Sitemap'|trans }}</a>
+            </div>
+        </details>
+    </div>
+
+    <nav class="public-navigation" aria-label="{{ 'Hauptnavigation'|trans }}">
+        <a href="{{ path('platform_home') }}"{% if current_route == 'platform_home' %} aria-current="page"{% endif %}>{{ 'Startseite'|trans }}</a>
+        <a href="{{ path('video_index') }}"{% if current_route == 'video_index' %} aria-current="page"{% endif %}>{{ 'Videos'|trans }}</a>
+        <a href="{{ path('video_popular') }}"{% if current_route == 'video_popular' %} aria-current="page"{% endif %}>{{ 'Beliebt'|trans }}</a>
+        <a href="{{ path('video_categories') }}"{% if current_route in ['video_categories', 'video_category'] %} aria-current="page"{% endif %}>{{ 'Kategorien'|trans }}</a>
+        {% if module_enabled('news') %}<a href="{{ path('news_index') }}"{% if current_route in ['news_index', 'news_show'] %} aria-current="page"{% endif %}>{{ 'News'|trans }}</a>{% endif %}
+        {% if module_enabled('series') %}<a href="{{ path('series_index') }}"{% if current_route starts with 'series_' %} aria-current="page"{% endif %}>{{ 'Serien'|trans }}</a>{% endif %}
+        {% if module_enabled('pages') %}
+            <a href="{{ path('page_index') }}"{% if current_route in ['page_index', 'page_show'] %} aria-current="page"{% endif %}>{{ 'Seiten'|trans }}</a>
+            {% for menu_page in public_menu_pages() %}<a href="{{ path('page_show', {slug: menu_page.slug}) }}">{{ menu_page.title }}</a>{% endfor %}
+        {% endif %}
+        {% if show_member_directory is not defined or show_member_directory %}<a href="{{ path('public_member_index') }}"{% if current_route starts with 'public_member_' %} aria-current="page"{% endif %}>{{ 'Mitglieder'|trans }}</a>{% endif %}
+        {% if module_enabled('search') %}<a href="{{ path('public_search') }}"{% if current_route == 'public_search' %} aria-current="page"{% endif %}>{{ 'Suche'|trans }}</a>{% endif %}
+    </nav>
+</header>

@@ -3,18 +3,7 @@
 {% block title %}{{ 'Videoeinreichung bearbeiten'|trans }} · {{ site_settings().siteName }}{% endblock %}
 
 {% block body %}
-    <header class="public-header">
-        {{ include('partials/public_brand.html.twig') }}
-        <nav class="public-navigation" aria-label="{{ 'Mitgliedsmenü'|trans }}">
-            <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
-            <a href="{{ path('member_profile') }}">{{ 'Mein Profil'|trans }}</a>
-            <a href="{{ path('member_submission_history') }}">{{ 'Meine Einreichungen'|trans }}</a>
-            <form action="{{ path('member_logout') }}" method="post">
-                <input type="hidden" name="_csrf_token" value="{{ csrf_token('member_logout') }}">
-                <button class="logout-button" type="submit">{{ 'Abmelden'|trans }}</button>
-            </form>
-        </nav>
-    </header>
+    {{ include('partials/public_site_header.html.twig') }}
     <main class="public-main">
         <section class="public-page-heading">
             <p class="eyebrow">{{ 'Mitgliedskonto'|trans }}</p>

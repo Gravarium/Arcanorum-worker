@@ -11,15 +11,7 @@
 {% endblock %}
 
 {% block body %}
-    <header class="public-header">
-        {{ include('partials/public_brand.html.twig') }}
-        <nav class="public-navigation" aria-label="{{ 'Hauptnavigation'|trans }}">
-            <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>{% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}{% if module_enabled('series') %}<a href="{{ path('series_index') }}">{{ 'Serien'|trans }}</a>{% endif %}
-            {% if site_settings().isPublicVideoSubmissionsEnabled %}<a href="{{ path('public_video_submission_new') }}">{{ 'Video einreichen'|trans }}</a>{% endif %}
-            {% if module_enabled('search') %}<a href="{{ path('public_search') }}">{{ 'Suche'|trans }}</a>{% endif %}{% if module_enabled('pages') %}<a href="{{ path('page_index') }}">{{ 'Seiten'|trans }}</a>{% endif %}
-            {{ include('partials/public_navigation_links.html.twig') }}
-        </nav>
-    </header>
+    {{ include('partials/public_site_header.html.twig') }}
     <main class="public-main">
         <article class="public-article">
             <p class="eyebrow">{{ video.category ?? ('Video'|trans) }}</p>

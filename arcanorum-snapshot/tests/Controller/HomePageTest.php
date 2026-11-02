@@ -274,8 +274,11 @@ final class HomePageTest extends WebTestCase
             $client->request('GET', $path);
 
             self::assertResponseIsSuccessful();
-            self::assertSelectorExists('nav.public-navigation a[href="/konto/anmelden"]');
-            self::assertSelectorExists('nav.public-navigation a[href="/konto/registrieren"]');
+            self::assertSelectorExists('form.public-header-search[role="search"] input[name="q"]');
+            self::assertSelectorExists('nav.public-navigation');
+            self::assertSelectorExists('details.public-account > summary');
+            self::assertSelectorExists('.public-account-menu a[href="/konto/anmelden"]');
+            self::assertSelectorExists('.public-account-menu a[href="/konto/registrieren"]');
         }
 
         $client->request('GET', '/konto/profil');

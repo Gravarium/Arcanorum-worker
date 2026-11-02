@@ -14,6 +14,7 @@
             <div class="topbar-actions">
                 <span class="topbar-label"><span>{{ 'Verwaltung'|trans }}</span><span aria-hidden="true"> / </span><strong>{% block admin_breadcrumb %}{{ 'Übersicht'|trans }}{% endblock %}</strong></span>
                 {% if is_granted('ROLE_ADMIN') %}
+                    <a class="admin-quick-add" href="{{ path('admin_video_new') }}">{{ 'Video hinzufügen'|trans }}</a>
                     <div class="admin-shortcut-controls">
                         <button class="admin-shortcut-toggle" type="button" data-admin-shortcuts-toggle aria-label="{{ 'Tastenkürzel einschalten'|trans }}" aria-pressed="false" data-enabled-label="{{ 'Tastenkürzel aus'|trans }}" data-disabled-label="{{ 'Tastenkürzel an'|trans }}" data-enabled-accessible-label="{{ 'Tastenkürzel ausschalten'|trans }}" data-disabled-accessible-label="{{ 'Tastenkürzel einschalten'|trans }}">{{ 'Tastenkürzel an'|trans }}</button>
                         <details class="admin-shortcut-help" data-admin-shortcuts-help>

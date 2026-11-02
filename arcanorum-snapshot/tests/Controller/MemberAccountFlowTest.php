@@ -96,12 +96,12 @@ final class MemberAccountFlowTest extends WebTestCase
                 $client->request('GET', $publicPath);
                 self::assertResponseIsSuccessful();
                 $this->assertNoStorePrivateResponse($client);
-                self::assertSelectorExists('nav.public-navigation a[href="/konto/profil"]');
-                self::assertSelectorExists('nav.public-navigation a[href="/konto/passwort"]');
-                self::assertSelectorExists('nav.public-navigation a[href="/konto/wiedergabelisten"]');
-                self::assertSelectorExists('nav.public-navigation a[href="/konto/einreichungen"]');
-                self::assertSelectorExists('nav.public-navigation a[href="/konto/aktivitaeten"]');
-                self::assertSelectorExists('nav.public-navigation form[action="/konto/abmelden"] input[name="_csrf_token"]');
+                self::assertSelectorExists('.public-account-menu a[href="/konto/profil"]');
+                self::assertSelectorExists('.public-account-menu a[href="/konto/passwort"]');
+                self::assertSelectorExists('.public-account-menu a[href="/konto/wiedergabelisten"]');
+                self::assertSelectorExists('.public-account-menu a[href="/konto/einreichungen"]');
+                self::assertSelectorExists('.public-account-menu a[href="/konto/aktivitaeten"]');
+                self::assertSelectorExists('.public-account-menu form[action="/konto/abmelden"] input[name="_csrf_token"]');
             }
 
             $client->request('GET', '/konto/profil');
@@ -150,15 +150,15 @@ final class MemberAccountFlowTest extends WebTestCase
             $newsCrawler = $client->request('GET', '/news');
             self::assertResponseIsSuccessful();
             $logoutToken = (string) $newsCrawler
-                ->filter('nav.public-navigation form[action="/konto/abmelden"] input[name="_csrf_token"]')
+                ->filter('.public-account-menu form[action="/konto/abmelden"] input[name="_csrf_token"]')
                 ->attr('value');
             $client->request('POST', '/konto/abmelden', ['_csrf_token' => $logoutToken]);
             self::assertResponseRedirects('/konto/anmelden');
 
             $client->request('GET', '/news');
             self::assertResponseIsSuccessful();
-            self::assertSelectorExists('nav.public-navigation a[href="/konto/anmelden"]');
-            self::assertSelectorExists('nav.public-navigation a[href="/konto/registrieren"]');
+            self::assertSelectorExists('.public-account-menu a[href="/konto/anmelden"]');
+            self::assertSelectorExists('.public-account-menu a[href="/konto/registrieren"]');
             $client->request('GET', '/konto/profil');
             self::assertResponseRedirects('/konto/anmelden');
         } finally {

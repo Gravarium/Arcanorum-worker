@@ -3,17 +3,7 @@
 {% block title %}{{ 'Suche'|trans }} · {{ site_settings().siteName }}{% endblock %}
 
 {% block body %}
-    <header class="public-header">
-        {{ include('partials/public_brand.html.twig') }}
-        <nav class="public-navigation" aria-label="{{ 'Hauptnavigation'|trans }}">
-            <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
-            {% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}
-            {% if module_enabled('search') %}<a href="{{ path('public_search') }}" aria-current="page">{{ 'Suche'|trans }}</a>{% endif %}
-            {% if module_enabled('pages') %}<a href="{{ path('page_index') }}">{{ 'Seiten'|trans }}</a>{% endif %}
-            <a href="{{ path('content_sitemap') }}">{{ 'Sitemap'|trans }}</a>
-            {{ include('partials/public_navigation_links.html.twig') }}
-        </nav>
-    </header>
+    {{ include('partials/public_site_header.html.twig') }}
     <main class="public-main">
         <section class="public-page-heading">
             <p class="eyebrow">{{ 'Entdecken'|trans }}</p>

@@ -318,7 +318,7 @@ final class MemberExternalLoginFlowTest extends WebTestCase
             self::assertResponseRedirects('/konto/profil');
             $client->followRedirect();
             self::assertResponseIsSuccessful();
-            self::assertSelectorExists('nav.public-navigation a[href="/konto/profil"]');
+            self::assertSelectorExists('.public-account-menu a[href="/konto/profil"]');
             $verifiedMember = $entityManager->getRepository(MemberAccount::class)->findOneBy(['email' => $email]);
             self::assertInstanceOf(MemberAccount::class, $verifiedMember);
             self::assertTrue($verifiedMember->isEmailVerified());

@@ -66,26 +66,7 @@
             </section>
         </main>
     {% elseif page == 'profile' %}
-        <header class="public-header">
-            {{ include('partials/public_brand.html.twig') }}
-            <nav class="public-navigation" aria-label="{{ 'Mitgliedsmenü'|trans }}">
-                <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
-                {% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}
-                <a href="{{ path('public_member_index') }}">{{ 'Mitglieder'|trans }}</a>
-                <a href="{{ path('member_profile') }}" aria-current="page">{{ 'Mein Profil'|trans }}</a>
-                <a href="{{ path('member_password') }}">{{ 'Passwort ändern'|trans }}</a>
-                <a href="{{ path('member_playlist_index') }}">{{ 'Wiedergabelisten'|trans }}</a>
-                <a href="{{ path('member_video_library_index') }}">{{ 'Meine Bibliothek'|trans }}</a>
-                <a href="{{ path('member_submission_history') }}">{{ 'Meine Einreichungen'|trans }}</a>
-                <a href="{{ path('member_activity_index') }}">{{ 'Meine Aktivitäten'|trans }}</a>
-                <a href="{{ path('member_follow_index') }}">{{ 'Mitglieder folgen'|trans }}</a>
-                {% if member.publicProfile %}<a href="{{ path('public_member_profile', {handle: member.handle}) }}">{{ 'Mein Kanal'|trans }}</a>{% endif %}
-                <form action="{{ path('member_logout') }}" method="post">
-                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('member_logout') }}">
-                    <button class="logout-button" type="submit">{{ 'Abmelden'|trans }}</button>
-                </form>
-            </nav>
-        </header>
+        {{ include('partials/public_site_header.html.twig') }}
         <main class="public-main">
             <section class="public-section" aria-labelledby="member-profile-heading">
                 <p class="eyebrow">{{ 'Mitgliedskonto'|trans }}</p>
@@ -153,26 +134,7 @@
             </section>
         </main>
     {% elseif page == 'password' %}
-        <header class="public-header">
-            {{ include('partials/public_brand.html.twig') }}
-            <nav class="public-navigation" aria-label="{{ 'Mitgliedsmenü'|trans }}">
-                <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
-                {% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}
-                <a href="{{ path('public_member_index') }}">{{ 'Mitglieder'|trans }}</a>
-                <a href="{{ path('member_profile') }}">{{ 'Mein Profil'|trans }}</a>
-                <a href="{{ path('member_password') }}" aria-current="page">{{ 'Passwort ändern'|trans }}</a>
-                <a href="{{ path('member_playlist_index') }}">{{ 'Wiedergabelisten'|trans }}</a>
-                <a href="{{ path('member_video_library_index') }}">{{ 'Meine Bibliothek'|trans }}</a>
-                <a href="{{ path('member_submission_history') }}">{{ 'Meine Einreichungen'|trans }}</a>
-                <a href="{{ path('member_activity_index') }}">{{ 'Meine Aktivitäten'|trans }}</a>
-                <a href="{{ path('member_follow_index') }}">{{ 'Mitglieder folgen'|trans }}</a>
-                {% if member.publicProfile %}<a href="{{ path('public_member_profile', {handle: member.handle}) }}">{{ 'Mein Kanal'|trans }}</a>{% endif %}
-                <form action="{{ path('member_logout') }}" method="post">
-                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('member_logout') }}">
-                    <button class="logout-button" type="submit">{{ 'Abmelden'|trans }}</button>
-                </form>
-            </nav>
-        </header>
+        {{ include('partials/public_site_header.html.twig') }}
         <main class="public-main">
             <section class="public-section" aria-labelledby="member-password-heading">
                 <p class="eyebrow">{{ 'Mitgliedskonto'|trans }}</p>
@@ -195,15 +157,7 @@
             </section>
         </main>
     {% else %}
-        <header class="public-header">
-            {{ include('partials/public_brand.html.twig') }}
-            <nav class="public-navigation" aria-label="Hauptnavigation">
-                <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
-                {% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}
-                <a href="{{ path('public_member_index') }}">{{ 'Mitglieder'|trans }}</a>
-                <a href="{{ path('member_login') }}">{{ 'Mitgliedskonto'|trans }}</a>
-            </nav>
-        </header>
+        {{ include('partials/public_site_header.html.twig') }}
         <main class="public-main">
             <section class="public-hero" aria-labelledby="public-member-heading">
                 {% for message in app.flashes('member_success') %}<p class="flash-message is-success" role="status">{{ message|trans }}</p>{% endfor %}

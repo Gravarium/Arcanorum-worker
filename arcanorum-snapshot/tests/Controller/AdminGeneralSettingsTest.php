@@ -681,15 +681,15 @@ final class AdminGeneralSettingsTest extends WebTestCase
             self::assertSelectorNotExists('a[href="/konto/registrieren"]');
             $client->request('GET', '/news');
             self::assertResponseIsSuccessful();
-            self::assertSelectorExists('nav.public-navigation a[href="/konto/anmelden"]');
-            self::assertSelectorNotExists('nav.public-navigation a[href="/konto/registrieren"]');
+            self::assertSelectorExists('.public-account-menu a[href="/konto/anmelden"]');
+            self::assertSelectorNotExists('.public-account-menu a[href="/konto/registrieren"]');
 
             $client->request('GET', '/admin/settings/general');
             $token = (string) $client->getCrawler()->filter('form input[name="token"]')->attr('value');
             $client->request('POST', '/admin/settings/general', [...$settingsInput, 'token' => $token]);
             self::assertResponseRedirects('/admin/settings/general');
             $client->request('GET', '/news');
-            self::assertSelectorExists('nav.public-navigation a[href="/konto/registrieren"]');
+            self::assertSelectorExists('.public-account-menu a[href="/konto/registrieren"]');
         } finally {
             $entityManager->getConnection()->executeStatement('DELETE FROM member_accounts WHERE id = :id', ['id' => $memberId]);
             $this->restoreDefaults($client, $email);
