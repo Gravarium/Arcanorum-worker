@@ -19,19 +19,23 @@
                 <p class="login-error" role="alert">{{ 'Die Anmeldung ist fehlgeschlagen. Prüfe deine Angaben und versuche es erneut.'|trans }}</p>
             {% endif %}
 
-            <form class="login-form" action="{{ path('admin_login') }}" method="post">
-                <label for="username">{{ 'E-Mail-Adresse'|trans }}</label>
-                <input id="username" name="_username" type="email" value="{{ last_username }}" autocomplete="username" autocapitalize="none" required autofocus>
+            {% if mfa_login_available %}
+                <form class="login-form" action="{{ path('admin_login') }}" method="post">
+                    <label for="username">{{ 'E-Mail-Adresse'|trans }}</label>
+                    <input id="username" name="_username" type="email" value="{{ last_username }}" autocomplete="username" autocapitalize="none" required autofocus>
 
-                <label for="password">{{ 'Passwort'|trans }}</label>
-                <input id="password" name="_password" type="password" autocomplete="current-password" required>
+                    <label for="password">{{ 'Passwort'|trans }}</label>
+                    <input id="password" name="_password" type="password" autocomplete="current-password" required>
 
-                <label for="mfa-code">{{ 'Authenticator- oder Wiederherstellungscode'|trans }}</label>
-                <input id="mfa-code" name="_mfa_code" type="text" autocomplete="one-time-code" autocapitalize="characters" maxlength="64" required>
+                    <label for="mfa-code">{{ 'Authenticator- oder Wiederherstellungscode'|trans }}</label>
+                    <input id="mfa-code" name="_mfa_code" type="text" autocomplete="one-time-code" autocapitalize="characters" maxlength="64" required>
 
-                <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
-                <button class="button login-submit" type="submit">{{ 'Anmelden'|trans }}</button>
-            </form>
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+                    <button class="button login-submit" type="submit">{{ 'Anmelden'|trans }}</button>
+                </form>
+            {% else %}
+                <p class="login-error" role="status">{{ 'Die Verwaltungsanmeldung ist vorübergehend nicht verfügbar. Die erforderliche Sicherheitskonfiguration ist nicht eingerichtet.'|trans }}</p>
+            {% endif %}
 
             <a class="login-home" href="{{ path('platform_home') }}">{{ 'Zur Plattform'|trans }}</a>
         </section>

@@ -933,6 +933,7 @@ jobs:
 
       - name: Check affected PHP syntax
         run: |
+          php -l src/Module/Admin/Controller/LoginController.php
           php -l src/Platform/Security/AdminMfaSecretCipher.php
           php -l tests/Platform/Security/AdminMfaSecretCipherTest.php
           php -l tests/Platform/Security/AdminLoginMfaConfigurationTest.php
@@ -943,6 +944,8 @@ jobs:
           php bin/console lint:container --env=dev
           APP_ENV=prod APP_DEBUG=0 php bin/console lint:container --env=prod
           php bin/console lint:yaml config
+          php bin/console lint:yaml translations
+          php bin/console lint:twig templates/admin/login.html.twig
           php bin/console doctrine:migrations:migrate --env=test --no-interaction
           php bin/console doctrine:schema:validate --skip-sync
 
@@ -950,6 +953,7 @@ jobs:
         run: >-
           vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --no-progress
           --error-format=github --memory-limit=1G
+          src/Module/Admin/Controller/LoginController.php
           src/Platform/Security/AdminMfaSecretCipher.php
           tests/Platform/Security/AdminMfaSecretCipherTest.php
           tests/Platform/Security/AdminLoginMfaConfigurationTest.php
@@ -957,6 +961,7 @@ jobs:
       - name: PHP CS Fixer on affected files
         run: >-
           vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --diff --using-cache=no
+          src/Module/Admin/Controller/LoginController.php
           src/Platform/Security/AdminMfaSecretCipher.php
           tests/Platform/Security/AdminMfaSecretCipherTest.php
           tests/Platform/Security/AdminLoginMfaConfigurationTest.php
@@ -964,6 +969,7 @@ jobs:
       - name: Rector dry run on affected files
         run: >-
           vendor/bin/rector process --config=rector.php --dry-run --no-progress-bar --output-format=github
+          src/Module/Admin/Controller/LoginController.php
           src/Platform/Security/AdminMfaSecretCipher.php
           tests/Platform/Security/AdminMfaSecretCipherTest.php
           tests/Platform/Security/AdminLoginMfaConfigurationTest.php
@@ -972,6 +978,7 @@ jobs:
         run: |
           mkdir -p var/test-results
           vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm.sarif \
+            src/Module/Admin/Controller/LoginController.php \
             src/Platform/Security/AdminMfaSecretCipher.php \
             tests/Platform/Security/AdminMfaSecretCipherTest.php \
             tests/Platform/Security/AdminLoginMfaConfigurationTest.php

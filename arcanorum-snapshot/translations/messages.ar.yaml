@@ -173,3 +173,4 @@
 "Externe Teilen-Links erfordern eine konfigurierte öffentliche Website-Adresse.": "تتطلب روابط المشاركة الخارجية إعداد عنوان عام للموقع."
 "Beim Öffnen eines Teilen-Links wird die Seitenadresse an den gewählten Dienst übermittelt. Diese Seite lädt dafür keine externen Skripte.": "عند فتح رابط مشاركة، يُرسل عنوان هذه الصفحة إلى الخدمة المختارة. لا يحمّل هذا الموقع نصوصًا برمجية خارجية للمشاركة."
 "Die Quellenprüfung wurde für während des Prüflaufs geänderte Videoquellen verworfen.": "تم تجاهل نتيجة فحص المصدر لأن مصدر الفيديو تغيّر أثناء الفحص."
+"Die Verwaltungsanmeldung ist vorübergehend nicht verfügbar. Die erforderliche Sicherheitskonfiguration ist nicht eingerichtet.": "تسجيل دخول الإدارة غير متاح مؤقتًا لأن إعدادات الأمان المطلوبة غير مكتملة."

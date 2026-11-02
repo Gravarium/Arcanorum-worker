@@ -922,6 +922,7 @@ Admin: Administration
 "Private Plattform": "Private platform"
 "Verwaltungszugang": "Administration sign-in"
 "Melde dich mit einem Administratorkonto an, um die Verwaltung zu öffnen.": "Sign in with an administrator account to open the administration area."
+"Die Verwaltungsanmeldung ist vorübergehend nicht verfügbar. Die erforderliche Sicherheitskonfiguration ist nicht eingerichtet.": "Administration sign-in is temporarily unavailable because required security settings are not configured."
 "Authenticator- oder Wiederherstellungscode": "Authenticator or recovery code"
 "Zugriff verweigert": "Access denied"
 "HTTP 403": "HTTP 403"

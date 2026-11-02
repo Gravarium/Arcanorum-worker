@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Module\Admin\Controller;
 
+use App\Platform\Security\AdminMfaSecretCipher;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -12,7 +13,7 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 final class LoginController extends AbstractController
 {
     #[Route('/admin/login', name: 'admin_login', methods: ['GET', 'POST'])]
-    public function login(AuthenticationUtils $authenticationUtils): Response
+    public function login(AuthenticationUtils $authenticationUtils, AdminMfaSecretCipher $mfaSecretCipher): Response
     {
         if ($this->isGranted('ROLE_ADMIN')) {
             return $this->redirectToRoute('admin_dashboard');
@@ -30,6 +31,7 @@ final class LoginController extends AbstractController
         return $this->render('admin/login.html.twig', [
             'last_username' => $authenticationUtils->getLastUsername(),
             'login_error' => null !== $authenticationUtils->getLastAuthenticationError(),
+            'mfa_login_available' => $mfaSecretCipher->isConfigured(),
         ]);
     }
 
