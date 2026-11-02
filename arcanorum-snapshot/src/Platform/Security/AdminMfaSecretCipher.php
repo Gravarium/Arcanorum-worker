@@ -62,13 +62,11 @@ final readonly class AdminMfaSecretCipher
         }
 
         $normalized = strtolower($secret);
-        foreach (['placeholder', 'change-me', 'changeme', 'replace-me', 'example'] as $marker) {
-            if (str_contains($normalized, $marker)) {
-                return false;
-            }
-        }
 
-        return true;
+        return array_all(
+            ['placeholder', 'change-me', 'changeme', 'replace-me', 'example'],
+            static fn (string $marker): bool => !str_contains($normalized, $marker),
+        );
     }
 
     public function encrypt(string $secret): string
