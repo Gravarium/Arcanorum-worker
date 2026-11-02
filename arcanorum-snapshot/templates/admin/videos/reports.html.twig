@@ -10,7 +10,11 @@
             <h1 id="seitenueberschrift">{{ 'Videomeldungen'|trans }}</h1>
             <p class="muted">{{ 'Eingehende Meldungen prüfen und Videos bei Bedarf aus der öffentlichen Ausgabe nehmen.'|trans }}</p>
         </div>
-        <a class="button button-secondary" href="{{ path('admin_video_index') }}">{{ 'Zum Videokatalog'|trans }}</a>
+        {% if is_granted('ROLE_ADMIN') %}
+            <a class="button button-secondary" href="{{ path('admin_video_index') }}">{{ 'Zum Videokatalog'|trans }}</a>
+        {% else %}
+            <a class="button button-secondary" href="{{ path('admin_video_submission_index') }}">{{ 'Videoeinreichungen'|trans }}</a>
+        {% endif %}
     </div>
 
     <section class="admin-panel" aria-labelledby="video-report-list-heading">
@@ -39,7 +43,8 @@
         </form>
 
         <div class="table-wrap">
-            <table>
+            <table class="admin-table">
+                <caption class="visually-hidden">{{ 'Videomeldungen'|trans }}</caption>
                 <thead>
                     <tr>
                         <th scope="col">{{ 'Eingegangen'|trans }}</th>
@@ -53,7 +58,18 @@
                     {% for report in reports %}
                         <tr>
                             <td><time datetime="{{ report.createdAt|date('c') }}">{{ report.createdAt|date('d.m.Y H:i') }}</time></td>
-                            <td><a href="{{ path('admin_video_edit', {id: report.video.id}) }}">{{ report.video.title }}</a></td>
+                            <th scope="row" class="admin-content-title-cell">
+                                <span class="admin-content-title-row">
+                                    <span class="admin-content-thumbnail-placeholder" aria-hidden="true">▸</span>
+                                    {% if is_granted('ROLE_ADMIN') %}
+                                        <a href="{{ path('admin_video_edit', {id: report.video.id}) }}">{{ report.video.title }}</a>
+                                    {% elseif report.video.status.value == 'published' %}
+                                        <a href="{{ path('video_show', {id: report.video.id}) }}">{{ report.video.title }}</a>
+                                    {% else %}
+                                        <span>{{ report.video.title }}</span>
+                                    {% endif %}
+                                </span>
+                            </th>
                             <td>{{ report.reason.label|trans }}</td>
                             <td>{{ report.details is empty ? '–' : report.details }}</td>
                             <td>

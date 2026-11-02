@@ -10,7 +10,11 @@
             <h1 id="seitenueberschrift">{{ 'Videoeinreichungen'|trans }}</h1>
             <p class="muted">{{ 'Eingereichte Videos bleiben privat, bis du sie freigibst.'|trans }}</p>
         </div>
-        <a class="button button-secondary" href="{{ path('admin_video_index') }}">{{ 'Zum Videokatalog'|trans }}</a>
+        {% if is_granted('ROLE_ADMIN') %}
+            <a class="button button-secondary" href="{{ path('admin_video_index') }}">{{ 'Zum Videokatalog'|trans }}</a>
+        {% else %}
+            <a class="button button-secondary" href="{{ path('admin_video_report_index') }}">{{ 'Videomeldungen'|trans }}</a>
+        {% endif %}
     </div>
 
     <section class="admin-panel" aria-labelledby="video-submission-list-heading">
@@ -23,6 +27,7 @@
 
         <div class="table-wrap">
             <table class="admin-table">
+                <caption class="visually-hidden">{{ 'Videoeinreichungen'|trans }}</caption>
                 <thead>
                     <tr>
                         <th scope="col">{{ 'Eingegangen'|trans }}</th>
@@ -35,8 +40,15 @@
                     {% for submission in submissions %}
                         <tr>
                             <td><time datetime="{{ submission.createdAt|date('c') }}">{{ submission.createdAt|date('d.m.Y H:i') }}</time></td>
-                            <td>
-                                <a href="{{ path('admin_video_edit', {id: submission.video.id}) }}">{{ submission.video.title }}</a>
+                            <th scope="row" class="admin-content-title-cell">
+                                <span class="admin-content-title-row">
+                                    <span class="admin-content-thumbnail-placeholder" aria-hidden="true">▸</span>
+                                    {% if is_granted('ROLE_ADMIN') %}
+                                        <a href="{{ path('admin_video_edit', {id: submission.video.id}) }}">{{ submission.video.title }}</a>
+                                    {% else %}
+                                        <span>{{ submission.video.title }}</span>
+                                    {% endif %}
+                                </span>
                                 <p class="muted">{{ submission.video.category ?? ('Ohne Kategorie'|trans) }}</p>
                                 {% if submission.video.sourceType.value == 'file' %}
                                     {% if submission.video.isAudio %}
@@ -53,7 +65,7 @@
                                 {% else %}
                                     <span class="muted">{{ 'Für diese Videoquelle ist keine direkte Vorschau verfügbar.'|trans }}</span>
                                 {% endif %}
-                            </td>
+                            </th>
                             <td>{{ submission.video.description is empty ? '–' : submission.video.description }}</td>
                             <td>
                                 <form class="video-submission-actions" action="{{ path('admin_video_submission_review', {id: submission.id}) }}" method="post">

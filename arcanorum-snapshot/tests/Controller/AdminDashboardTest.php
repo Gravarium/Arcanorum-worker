@@ -225,8 +225,21 @@ final class AdminDashboardTest extends WebTestCase
             $html = (string) $client->getResponse()->getContent();
             self::assertStringContainsString('Videoeinreichungen', $html);
             self::assertStringContainsString('/admin/video-reports', $html);
+            self::assertStringNotContainsString('href="/admin/videos"', $html);
+            self::assertStringContainsString('<table class="admin-table">', $html);
+            self::assertStringContainsString('<caption class="visually-hidden">Videoeinreichungen</caption>', $html);
             self::assertStringNotContainsString('Hosting und System', $html);
             self::assertStringNotContainsString('Videos verwalten', $html);
+
+            $client->request('GET', '/admin/videos');
+            self::assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
+
+            $client->request('GET', '/admin/video-reports');
+            self::assertResponseIsSuccessful();
+            $reportsHtml = (string) $client->getResponse()->getContent();
+            self::assertStringNotContainsString('href="/admin/videos"', $reportsHtml);
+            self::assertStringContainsString('<table class="admin-table">', $reportsHtml);
+            self::assertStringContainsString('<caption class="visually-hidden">Videomeldungen</caption>', $reportsHtml);
 
             $client->request('GET', '/admin/comments');
             self::assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
@@ -240,6 +253,93 @@ final class AdminDashboardTest extends WebTestCase
             $client->request('GET', '/admin/video-submissions');
             self::assertResponseRedirects('/admin/login');
         } finally {
+            $this->removeUser($client, $email);
+        }
+    }
+
+    public function testVideoModeratorCanReviewReportsWithoutAdministratorOnlyVideoLinks(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $client->getContainer()->set(
+            RuntimeAttestationReportProviderInterface::class,
+            new VerifiedRuntimeAttestationReportProvider(),
+        );
+        $email = 'video-report-moderator-'.bin2hex(random_bytes(6)).'@example.test';
+        $password = 'VideoReportModerator!2026';
+        $suffix = bin2hex(random_bytes(6));
+        $publishedVideo = new Video(
+            'Published report target '.$suffix,
+            'A public video that can be inspected by its public page.',
+            null,
+            VideoSourceType::Url,
+            'https://video.example.test/public-report-'.$suffix,
+            PublishingStatus::Published,
+            false,
+            true,
+        );
+        $draftVideo = new Video(
+            'Private report target '.$suffix,
+            'A private video that must not be linked to an administrator page.',
+            null,
+            VideoSourceType::Url,
+            'https://video.example.test/private-report-'.$suffix,
+            PublishingStatus::Draft,
+            false,
+            true,
+        );
+        $publishedReport = new VideoReport($publishedVideo, VideoReportReason::Inappropriate, 'Public report details');
+        $draftReport = new VideoReport($draftVideo, VideoReportReason::Copyright, 'Private report details');
+
+        try {
+            $this->persistUser($client, $email, $password, [AdminRole::VideoModerator->value]);
+            $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+            self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+            $entityManager->persist($publishedVideo);
+            $entityManager->persist($draftVideo);
+            $entityManager->persist($publishedReport);
+            $entityManager->persist($draftReport);
+            $entityManager->flush();
+
+            $this->submitLogin($client, $email, $password);
+            self::assertResponseRedirects('/admin');
+
+            $client->request('GET', '/admin/video-reports');
+            self::assertResponseIsSuccessful();
+            $reportsHtml = (string) $client->getResponse()->getContent();
+            $publicVideoPath = '/videos/'.$publishedVideo->getId();
+            $privateVideoPath = '/videos/'.$draftVideo->getId();
+            $administratorEditPath = '/admin/videos/'.$publishedVideo->getId().'/edit';
+            self::assertStringContainsString('href="'.$publicVideoPath.'"', $reportsHtml);
+            self::assertStringNotContainsString('href="'.$privateVideoPath.'"', $reportsHtml);
+            self::assertStringNotContainsString($administratorEditPath, $reportsHtml);
+            self::assertStringContainsString($publishedVideo->getTitle(), $reportsHtml);
+            self::assertStringContainsString($draftVideo->getTitle(), $reportsHtml);
+
+            $client->request('GET', '/admin/video-submissions');
+            self::assertResponseIsSuccessful();
+            self::assertStringNotContainsString('href="/admin/videos"', (string) $client->getResponse()->getContent());
+            self::assertStringNotContainsString($administratorEditPath, (string) $client->getResponse()->getContent());
+
+            $client->request('GET', $administratorEditPath);
+            self::assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
+        } finally {
+            $cleanupManager = $client->getContainer()->get(EntityManagerInterface::class);
+            if ($cleanupManager instanceof EntityManagerInterface) {
+                foreach ([$publishedReport->getId(), $draftReport->getId()] as $reportId) {
+                    $storedReport = $cleanupManager->getRepository(VideoReport::class)->find($reportId);
+                    if ($storedReport instanceof VideoReport) {
+                        $cleanupManager->remove($storedReport);
+                    }
+                }
+                foreach ([$publishedVideo->getId(), $draftVideo->getId()] as $videoId) {
+                    $storedVideo = $cleanupManager->getRepository(Video::class)->find($videoId);
+                    if ($storedVideo instanceof Video) {
+                        $cleanupManager->remove($storedVideo);
+                    }
+                }
+                $cleanupManager->flush();
+            }
             $this->removeUser($client, $email);
         }
     }
@@ -6131,6 +6231,7 @@ final class AdminDashboardTest extends WebTestCase
             $client->request('GET', '/admin/video-reports');
             self::assertResponseIsSuccessful();
             self::assertSelectorTextContains('table', $video->getTitle());
+            self::assertSelectorExists(sprintf('a[href="/admin/videos/%s/edit"]', $video->getId()));
 
             $token = $client->getCrawler()
                 ->filter('form.video-report-actions input[name="_token"]')
