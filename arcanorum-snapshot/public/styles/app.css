@@ -2612,8 +2612,8 @@ html[data-public-theme="arcanorum"] .video-stage {
 
 /* Verwaltungsseiten mit hellen Flächen und klaren Tabellen */
 .admin-shell {
-    grid-template-columns: 15rem minmax(0, 1fr);
-    grid-template-rows: 3.75rem minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
     background: #fff;
 }
 
@@ -2686,6 +2686,164 @@ html[data-public-theme="arcanorum"] .video-stage {
     border-radius: 0;
     background: #e8f0fe;
     color: #174ea6;
+}
+
+@media (min-width: 48.001rem) {
+    .admin-shell {
+        grid-template-columns: 15rem minmax(0, 1fr);
+        grid-template-rows: 3.75rem minmax(0, 1fr);
+    }
+}
+
+@supports selector(.admin-shell:has(.navigation-group[open])) {
+    @media (min-width: 48.001rem) {
+        .admin-shell {
+            grid-template-columns: 4.25rem minmax(0, 1fr);
+        }
+
+        .admin-shell:has(.admin-sidebar .navigation-group[open]) {
+            grid-template-columns: 15rem minmax(0, 1fr);
+        }
+
+        .admin-sidebar {
+            padding: 0.75rem 0.3rem;
+        }
+
+        .admin-sidebar > .brand {
+            align-items: center;
+            padding: 0.45rem 0 0.7rem;
+        }
+
+        .admin-sidebar .brand-name,
+        .admin-sidebar .brand-caption,
+        .admin-sidebar .brand-tagline {
+            display: none;
+        }
+
+        .admin-brand-mark {
+            display: grid;
+            width: 2.25rem;
+            height: 2.25rem;
+            place-items: center;
+            border: 1px solid #dadce0;
+            border-radius: 50%;
+            background: #f8f9fa;
+            color: #202124;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .admin-navigation {
+            gap: 0.25rem;
+            margin-top: 0.65rem;
+        }
+
+        .navigation-group > summary {
+            width: 2.8rem;
+            min-height: 2.7rem;
+            justify-content: center;
+            margin: 0 auto;
+            padding: 0.3rem;
+            font-size: 0;
+        }
+
+        .admin-navigation-icon {
+            display: grid;
+            width: 2.1rem;
+            height: 2.1rem;
+            place-items: center;
+            border-radius: 0.2rem;
+            color: #5f6368;
+            font-family: Arial, sans-serif;
+            font-size: 1.05rem;
+            font-variant-emoji: text;
+        }
+
+        .navigation-group > summary::after {
+            display: none;
+        }
+
+        .navigation-group:has(.navigation-link.is-active) > summary .admin-navigation-icon {
+            background: #e8f0fe;
+            color: #174ea6;
+        }
+
+        .admin-sidebar:has(.navigation-group[open]) {
+            padding: 1.15rem 0.75rem 0.75rem;
+        }
+
+        .admin-sidebar:has(.navigation-group[open]) > .brand {
+            align-items: flex-start;
+            padding: 0 0.55rem 1rem;
+        }
+
+        .admin-sidebar:has(.navigation-group[open]) .brand-name {
+            display: inline;
+        }
+
+        .admin-sidebar:has(.navigation-group[open]) .brand-caption,
+        .admin-sidebar:has(.navigation-group[open]) .brand-tagline {
+            display: block;
+        }
+
+        .admin-sidebar:has(.navigation-group[open]) .admin-brand-mark {
+            display: none;
+        }
+
+        .admin-sidebar:not(:has(.navigation-group[open])) .sidebar-footer {
+            display: none;
+        }
+
+        .admin-sidebar:has(.navigation-group[open]) .navigation-group > summary {
+            width: auto;
+            min-height: 2.2rem;
+            justify-content: flex-start;
+            margin: 0;
+            padding: 0.58rem 0.7rem;
+            font-size: 0.86rem;
+        }
+
+        .admin-sidebar:has(.navigation-group[open]) .admin-navigation-icon {
+            width: 1.6rem;
+            height: 1.6rem;
+            margin-inline-end: 0.45rem;
+            font-size: 0.95rem;
+        }
+
+        .admin-sidebar:has(.navigation-group[open]) .navigation-group > summary::after {
+            display: inline;
+            margin-inline-start: auto;
+        }
+    }
+}
+
+@media (max-width: 48rem) {
+    .admin-topbar {
+        grid-column: 1;
+        grid-row: 1;
+        min-height: 4rem;
+        padding-inline: 1rem;
+    }
+
+    .admin-sidebar {
+        position: static;
+        grid-column: 1;
+        grid-row: 2;
+        height: auto;
+        max-height: none;
+        overflow: visible;
+        padding: 0.2rem 1rem;
+        border: 0;
+        border-bottom: 1px solid #e1e3e5;
+        background: #fff;
+        color: #202124;
+        box-shadow: none;
+    }
+
+    .admin-main {
+        grid-column: 1;
+        grid-row: 3;
+    }
 }
 
 .sidebar-footer {
@@ -2837,6 +2995,11 @@ html[data-public-theme="arcanorum"][data-public-view="compact"] .public-navigati
     max-width: 58rem;
     color: #596783;
     line-height: 1.6;
+}
+
+.admin-page h1 {
+    font-size: 1.5rem;
+    letter-spacing: -0.02em;
 }
 
 .admin-toolbar {

@@ -1417,6 +1417,7 @@ final class AdminDashboardTest extends WebTestCase
             self::assertSelectorTextContains('nav[aria-label="Hauptnavigation"]', 'Einstellungen');
             self::assertCount(12, $client->getCrawler()->filter('details.navigation-group'));
             self::assertSelectorTextContains('nav[aria-label="Hauptnavigation"] > details.navigation-group:first-child > summary', 'Fortress');
+            self::assertSelectorExists('nav[aria-label="Hauptnavigation"] summary[title="Videos"] .admin-navigation-icon[aria-hidden="true"]');
             self::assertSelectorExists('nav[aria-label="Hauptnavigation"] [aria-disabled="true"]');
 
             $client->disableReboot();
