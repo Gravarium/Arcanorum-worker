@@ -17,7 +17,7 @@
             </summary>
             <div class="public-account-menu">
                 {{ include('partials/public_navigation_links.html.twig') }}
-                <a href="{{ path(is_granted('ROLE_ADMIN_STAFF') ? 'admin_dashboard' : 'admin_login') }}">{{ is_granted('ROLE_ADMIN_STAFF') ? 'Verwaltung öffnen'|trans : 'Admin-Anmeldung'|trans }}</a>
+                <a href="{{ path('admin_dashboard') }}">{{ 'Verwaltung'|trans }}</a>
                 {% if module_enabled('contact') %}<a href="{{ path('contact_new') }}">{{ 'Kontakt'|trans }}</a>{% endif %}
                 {% if site_identity.isPublicVideoSubmissionsEnabled %}<a href="{{ path('public_video_submission_new') }}">{{ 'Video einreichen'|trans }}</a>{% endif %}
                 <a href="{{ path('content_sitemap') }}">{{ 'Sitemap'|trans }}</a>

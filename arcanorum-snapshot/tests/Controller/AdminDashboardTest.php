@@ -219,7 +219,7 @@ final class AdminDashboardTest extends WebTestCase
 
             $client->request('GET', '/videos');
             self::assertResponseIsSuccessful();
-            self::assertSelectorTextContains('.public-account-menu a[href="/admin"]', 'Verwaltung öffnen');
+            self::assertSelectorTextContains('.public-account-menu a[href="/admin"]', 'Verwaltung');
             self::assertSelectorNotExists('.public-account-menu a[href="/admin/login"]');
 
             $client->request('GET', '/admin');

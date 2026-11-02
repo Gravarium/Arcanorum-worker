@@ -279,7 +279,7 @@ final class HomePageTest extends WebTestCase
             self::assertSelectorExists('details.public-account > summary');
             self::assertSelectorExists('.public-account-menu a[href="/konto/anmelden"]');
             self::assertSelectorExists('.public-account-menu a[href="/konto/registrieren"]');
-            self::assertSelectorExists('.public-account-menu a[href="/admin/login"]');
+            self::assertSelectorTextContains('.public-account-menu a[href="/admin"]', 'Verwaltung');
         }
 
         $client->request('GET', '/konto/profil');
