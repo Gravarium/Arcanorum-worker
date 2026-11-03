@@ -55,6 +55,8 @@ final class InstallerAdministratorControllerTest extends WebTestCase
 
         try {
             $client->request('GET', '/install/administrator');
+            self::assertTrue($connection->isTransactionActive(), 'The database transaction must remain active across the first installer request.');
+            self::assertSame(0, $adminUsers->countAdministratorsForRoleManagement(), 'The first installer request must still observe the transactionally cleared admin table.');
             self::assertResponseIsSuccessful();
             self::assertStringContainsString('private', strtolower((string) $client->getResponse()->headers->get('Cache-Control')));
             self::assertStringContainsString('no-store', strtolower((string) $client->getResponse()->headers->get('Cache-Control')));
@@ -181,6 +183,8 @@ final class InstallerAdministratorControllerTest extends WebTestCase
 
         try {
             $client->request('GET', '/install/administrator');
+            self::assertTrue($connection->isTransactionActive(), 'The database transaction must remain active across the first installer request.');
+            self::assertSame(0, $adminUsers->countAdministratorsForRoleManagement(), 'The first installer request must still observe the transactionally cleared admin table.');
             self::assertResponseIsSuccessful();
             $token = $this->csrfToken($client);
             $password = bin2hex(random_bytes(12)).'Aa!';
