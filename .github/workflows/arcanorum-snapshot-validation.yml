@@ -23,6 +23,7 @@ on:
           - installer-bootstrap-focused
           - hosting-security-selection-focused
           - hosting-security-selection-tests-only
+          - hosting-security-selection-test-quality-only
           - p01-p03-focused
           - automation-focused
           - analytics-focused
@@ -473,7 +474,7 @@ jobs:
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit-installer-bootstrap.xml
 
   validate-hosting-security-selection-focused:
-    if: github.event_name == 'workflow_dispatch' && (inputs.validation_scope == 'hosting-security-selection-focused' || inputs.validation_scope == 'hosting-security-selection-tests-only')
+    if: github.event_name == 'workflow_dispatch' && (inputs.validation_scope == 'hosting-security-selection-focused' || inputs.validation_scope == 'hosting-security-selection-tests-only' || inputs.validation_scope == 'hosting-security-selection-test-quality-only')
     name: Focused hosting security selection and adapter checks
     runs-on: ubuntu-26.04
     timeout-minutes: 30
@@ -606,26 +607,32 @@ jobs:
 
       - name: Run focused hosting adapter quality gates
         if: inputs.validation_scope != 'hosting-security-selection-tests-only'
+        env:
+          HOSTING_VALIDATION_SCOPE: ${{ inputs.validation_scope }}
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p var/test-results
-          files=(
-            src/Platform/Hosting/ArrayCachePoolAdapter.php
-            src/Platform/Hosting/DoctrineHostingSecurityFeatureSelectionStore.php
-            src/Platform/Hosting/HostingAdapterDefinitionInterface.php
-            src/Platform/Hosting/HostingAdapterSelector.php
-            src/Platform/Hosting/HostingCachePoolProvider.php
-            src/Platform/Hosting/HostingSecurityFeatureSelectionStoreInterface.php
-            src/Platform/Hosting/PrivateFileStorage.php
-            src/Platform/Hosting/RedisCachePoolAdapter.php
-            tests/Platform/Hosting/DoctrineHostingSecurityFeatureSelectionStoreIntegrationTest.php
-            tests/Platform/Hosting/DoctrineHostingSecurityFeatureSelectionStoreTest.php
-            tests/Platform/Hosting/HostingAdapterSelectorTest.php
-            tests/Platform/Hosting/HostingCachePoolProviderTest.php
-            tests/Platform/Hosting/PrivateFileStorageTest.php
-            tests/Controller/HomePageTest.php
-          )
+          if [[ "$HOSTING_VALIDATION_SCOPE" == hosting-security-selection-test-quality-only ]]; then
+            files=(tests/Platform/Hosting/DoctrineHostingSecurityFeatureSelectionStoreTest.php)
+          else
+            files=(
+              src/Platform/Hosting/ArrayCachePoolAdapter.php
+              src/Platform/Hosting/DoctrineHostingSecurityFeatureSelectionStore.php
+              src/Platform/Hosting/HostingAdapterDefinitionInterface.php
+              src/Platform/Hosting/HostingAdapterSelector.php
+              src/Platform/Hosting/HostingCachePoolProvider.php
+              src/Platform/Hosting/HostingSecurityFeatureSelectionStoreInterface.php
+              src/Platform/Hosting/PrivateFileStorage.php
+              src/Platform/Hosting/RedisCachePoolAdapter.php
+              tests/Platform/Hosting/DoctrineHostingSecurityFeatureSelectionStoreIntegrationTest.php
+              tests/Platform/Hosting/DoctrineHostingSecurityFeatureSelectionStoreTest.php
+              tests/Platform/Hosting/HostingAdapterSelectorTest.php
+              tests/Platform/Hosting/HostingCachePoolProviderTest.php
+              tests/Platform/Hosting/PrivateFileStorageTest.php
+              tests/Controller/HomePageTest.php
+            )
+          fi
           for file in "${files[@]}"; do
             if ! php -l "$file" > var/test-results/php-lint.log 2>&1; then
               echo 'PHP syntax: FAIL; diagnostic output withheld.'
@@ -723,6 +730,7 @@ jobs:
           run_gate psalm-taint vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm-hosting-security-selection.sarif "${files[@]}"
 
       - name: Prepare PostgreSQL and validate the Symfony container
+        if: inputs.validation_scope != 'hosting-security-selection-test-quality-only'
         run: |
           set -euo pipefail
           touch .env
@@ -839,6 +847,7 @@ jobs:
           run_gate prod-container bash -c 'APP_ENV=prod APP_DEBUG=0 php bin/console lint:container --env=prod'
 
       - name: Run affected hosting adapter and persistence tests
+        if: inputs.validation_scope != 'hosting-security-selection-test-quality-only'
         shell: bash
         run: |
           set -euo pipefail
