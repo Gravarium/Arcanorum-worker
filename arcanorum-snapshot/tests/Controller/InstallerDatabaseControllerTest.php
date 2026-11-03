@@ -57,7 +57,7 @@ final class InstallerDatabaseControllerTest extends WebTestCase
                 'token' => $token,
             ]);
             self::assertResponseRedirects('/install/security-profile', Response::HTTP_SEE_OTHER);
-            self::assertStringContainsString('private', strtolower($client->getResponse()->headers->get('Cache-Control')));
+            $this->assertPrivateNoStore($client);
             $adminUsers = $client->getContainer()->get(AdminUserRepository::class);
             self::assertInstanceOf(AdminUserRepository::class, $adminUsers);
             self::assertSame(0, $adminUsers->countAdministratorsForRoleManagement());
