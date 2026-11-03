@@ -883,6 +883,16 @@ jobs:
                   print('JUnit summary: ' + ', '.join(counts))
                   shown = 0
                   for case in root.iter('testcase'):
+                      status = case.attrib.get('status', 'success')
+                      if status not in {'success', 'passed'}:
+                          class_name = case.attrib.get('classname', '').rsplit('\\', 1)[-1]
+                          test_name = case.attrib.get('name', '')
+                          if not re.fullmatch(r'[A-Za-z0-9_]+', class_name):
+                              class_name = 'UnknownTestClass'
+                          if not re.fullmatch(r'test[A-Za-z0-9_]+', test_name):
+                              test_name = 'unknownTest'
+                          print(f'Test status: {class_name}::{test_name} ({status})')
+                          shown += 1
                       for outcome in ('failure', 'error', 'skipped', 'risky', 'incomplete'):
                           issue = case.find(outcome)
                           if issue is None:
@@ -905,19 +915,26 @@ jobs:
                           break
                   if shown == 0:
                       print('No failed testcase identifier was present in JUnit.')
-                      log = Path('var/test-results/phpunit-hosting-security-selection.log')
-                      if log.is_file():
-                          content = log.read_text(encoding='utf-8', errors='replace')
-                          summary = re.search(r'(?m)^Tests:.*$', content)
-                          if summary:
-                              safe_counts = re.findall(r'(?:Tests|Assertions|Failures|Errors|Warnings|Deprecations|Skipped|Incomplete|Risky|PHPUnit Notices): \d+', summary.group(0))
-                              if safe_counts:
-                                  print('PHPUnit summary: ' + ', '.join(safe_counts))
-                          categories = sorted(set(re.findall(r'(?m)^There (?:was|were) \d+ (?:failure|failures|error|errors|warning|warnings|risky test|risky tests|PHPUnit notice|PHPUnit notices|deprecation|deprecations|skipped test|skipped tests|incomplete test|incomplete tests):$', content)))
-                          for category in categories[:8]:
-                              print('PHPUnit outcome: ' + category)
-                          if 'Fatal error' in content or 'Uncaught ' in content:
-                              print('PHP runtime failure occurred; raw diagnostic output withheld.')
+                  log = Path('var/test-results/phpunit-hosting-security-selection.log')
+                  if log.is_file():
+                      content = log.read_text(encoding='utf-8', errors='replace')
+                      content = re.sub(r'\x1b\[[0-9;]*m', '', content)
+                      summary = re.search(r'(?m)^Tests:.*$', content)
+                      if summary:
+                          safe_counts = re.findall(r'(?:Tests|Assertions|Failures|Errors|Warnings|Deprecations|Skipped|Incomplete|Risky|PHPUnit Notices): \d+', summary.group(0))
+                          if safe_counts:
+                              print('PHPUnit summary: ' + ', '.join(safe_counts))
+                      safe_lines = (
+                          r'OK(?:, but there were issues)?(?: \([0-9]+ tests?, [0-9]+ assertions?\))?',
+                          r'(?:FAILURES|ERRORS|WARNINGS|RISKY|INCOMPLETE)!',
+                          r'There (?:was|were) \d+ (?:failure|failures|error|errors|warning|warnings|risky test|risky tests|PHPUnit notice|PHPUnit notices|deprecation|deprecations|skipped test|skipped tests|incomplete test|incomplete tests):',
+                      )
+                      for line in content.splitlines():
+                          line = line.strip()
+                          if any(re.fullmatch(pattern, line) for pattern in safe_lines):
+                              print('PHPUnit outcome: ' + line)
+                      if 'Fatal error' in content or 'Uncaught ' in content:
+                          print('PHP runtime failure occurred; raw diagnostic output withheld.')
           PY
             exit "$status"
           fi
