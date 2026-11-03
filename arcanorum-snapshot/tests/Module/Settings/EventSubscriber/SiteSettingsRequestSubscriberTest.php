@@ -16,8 +16,8 @@ final class SiteSettingsRequestSubscriberTest extends TestCase
 {
     public function testDatabaseInstallerRouteSkipsDatabaseBackedSiteSettings(): void
     {
-        $settings = (new \ReflectionClass(SiteSettingsProvider::class))->newInstanceWithoutConstructor();
-        $twig = (new \ReflectionClass(Environment::class))->newInstanceWithoutConstructor();
+        $settings = new \ReflectionClass(SiteSettingsProvider::class)->newInstanceWithoutConstructor();
+        $twig = new \ReflectionClass(Environment::class)->newInstanceWithoutConstructor();
         self::assertInstanceOf(SiteSettingsProvider::class, $settings);
         self::assertInstanceOf(Environment::class, $twig);
 
@@ -25,7 +25,7 @@ final class SiteSettingsRequestSubscriberTest extends TestCase
         $request = Request::create('/install/database');
         $request->attributes->set('_route', 'installer_database_index');
         $event = new RequestEvent(
-            $this->createMock(HttpKernelInterface::class),
+            $this->createStub(HttpKernelInterface::class),
             $request,
             HttpKernelInterface::MAIN_REQUEST,
         );

@@ -29,7 +29,7 @@ final class InstallerDatabaseConnectionProbeTest extends TestCase
             ->method('createSchemaManager')
             ->willReturn($schemaManager);
 
-        $result = (new InstallerDatabaseConnectionProbe($this->managerRegistry($connection)))->check();
+        $result = new InstallerDatabaseConnectionProbe($this->managerRegistry($connection))->check();
 
         self::assertTrue($result->connectionAvailable);
         self::assertTrue($result->requiredTablesAvailable);
@@ -53,7 +53,7 @@ final class InstallerDatabaseConnectionProbeTest extends TestCase
             ->method('createSchemaManager')
             ->willReturn($schemaManager);
 
-        $result = (new InstallerDatabaseConnectionProbe($this->managerRegistry($connection)))->check();
+        $result = new InstallerDatabaseConnectionProbe($this->managerRegistry($connection))->check();
 
         self::assertTrue($result->connectionAvailable);
         self::assertFalse($result->requiredTablesAvailable);
@@ -67,7 +67,7 @@ final class InstallerDatabaseConnectionProbeTest extends TestCase
             ->method('getConnection')
             ->willThrowException(new \RuntimeException('database-password-must-not-leak'));
 
-        $result = (new InstallerDatabaseConnectionProbe($managerRegistry))->check();
+        $result = new InstallerDatabaseConnectionProbe($managerRegistry)->check();
 
         self::assertFalse($result->connectionAvailable);
         self::assertFalse($result->requiredTablesAvailable);
@@ -86,7 +86,7 @@ final class InstallerDatabaseConnectionProbeTest extends TestCase
             ->method('createSchemaManager')
             ->willThrowException(new \RuntimeException('metadata-error-must-not-leak'));
 
-        $result = (new InstallerDatabaseConnectionProbe($this->managerRegistry($connection)))->check();
+        $result = new InstallerDatabaseConnectionProbe($this->managerRegistry($connection))->check();
 
         self::assertTrue($result->connectionAvailable);
         self::assertFalse($result->requiredTablesAvailable);

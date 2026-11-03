@@ -17,20 +17,20 @@ final class MaintenanceModeSubscriberTest extends TestCase
 {
     public function testDatabaseInstallerRouteSkipsDatabaseBackedMaintenanceSettings(): void
     {
-        $settings = (new \ReflectionClass(SiteSettingsProvider::class))->newInstanceWithoutConstructor();
-        $twig = (new \ReflectionClass(Environment::class))->newInstanceWithoutConstructor();
+        $settings = new \ReflectionClass(SiteSettingsProvider::class)->newInstanceWithoutConstructor();
+        $twig = new \ReflectionClass(Environment::class)->newInstanceWithoutConstructor();
         self::assertInstanceOf(SiteSettingsProvider::class, $settings);
         self::assertInstanceOf(Environment::class, $twig);
 
         $subscriber = new MaintenanceModeSubscriber(
             $settings,
-            $this->createMock(AuthorizationCheckerInterface::class),
+            $this->createStub(AuthorizationCheckerInterface::class),
             $twig,
         );
         $request = Request::create('/install/database');
         $request->attributes->set('_route', 'installer_database_index');
         $event = new RequestEvent(
-            $this->createMock(HttpKernelInterface::class),
+            $this->createStub(HttpKernelInterface::class),
             $request,
             HttpKernelInterface::MAIN_REQUEST,
         );
