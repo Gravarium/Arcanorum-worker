@@ -679,25 +679,39 @@ jobs:
                 fi
               elif [[ "$label" == phpstan ]]; then
                 python3 - <<'PY'
+          import json
           import re
           from pathlib import Path
 
-          log = Path('var/test-results/phpstan.log').read_text(encoding='utf-8', errors='replace')
-          locations = sorted(set(re.findall(r'(?:file=)?((?:src|tests)/[^,\s:]+\.php)(?:,line=|:)(\d+)', log)))
-          for file_name, line_number in locations[:12]:
-              print(f'PHPStan finding location: {Path(file_name).name}:{line_number}')
-          categories = (
-              ('undefined method', r'undefined method'),
-              ('unknown class or symbol', r'not found|unknown class|unknown symbol'),
-              ('incompatible type', r'not assignable|type mismatch|incompatible'),
-              ('missing return type', r'no return type|return type'),
-              ('possibly undefined value', r'might not exist|possibly undefined|might not be defined'),
-          )
-          for category, pattern in categories:
-              if re.search(pattern, log, re.IGNORECASE):
-                  print('PHPStan finding category: ' + category)
-          if not locations:
-              print('PHPStan finding location unavailable; raw diagnostics withheld.')
+          try:
+              result = json.loads(Path('var/test-results/phpstan.log').read_text(encoding='utf-8'))
+          except (OSError, json.JSONDecodeError):
+              print('PHPStan finding summary unavailable; raw diagnostics withheld.')
+          else:
+              errors = result.get('totals', {}).get('errors')
+              if isinstance(errors, int):
+                  print(f'PHPStan error count: {errors}')
+              shown = 0
+              for file_name, file_data in result.get('files', {}).items():
+                  if not isinstance(file_data, dict):
+                      continue
+                  for issue in file_data.get('messages', []):
+                      if not isinstance(issue, dict):
+                          continue
+                      line_number = issue.get('line')
+                      identifier = issue.get('identifier', 'unspecified')
+                      if not isinstance(line_number, int):
+                          line_number = 0
+                      if not isinstance(identifier, str) or not re.fullmatch(r'[A-Za-z0-9_.-]{1,80}', identifier):
+                          identifier = 'unspecified'
+                      print(f'PHPStan finding: {Path(file_name).name}:{line_number} ({identifier})')
+                      shown += 1
+                      if shown >= 12:
+                          break
+                  if shown >= 12:
+                      break
+              if shown == 0:
+                  print('PHPStan finding locations unavailable; raw diagnostics withheld.')
           PY
               elif [[ "$label" == rector ]]; then
                 if vendor/bin/rector process --config=rector.php --no-progress-bar --output-format=github "${files[@]}" > var/test-results/rector-fix.log 2>&1; then
@@ -746,7 +760,7 @@ jobs:
               return 1
             fi
           }
-          run_gate phpstan vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --no-progress --error-format=github --memory-limit=1G "${files[@]}"
+          run_gate phpstan vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --no-progress --error-format=json --memory-limit=1G "${files[@]}"
           run_gate php-cs-fixer vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --diff --using-cache=no "${files[@]}"
           run_gate rector vendor/bin/rector process --config=rector.php --dry-run --no-progress-bar --output-format=github "${files[@]}"
           run_gate psalm-taint vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm-hosting-security-selection.sarif "${files[@]}"
