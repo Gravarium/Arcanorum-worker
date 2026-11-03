@@ -137,14 +137,12 @@ final class InstallerSecurityProfileControllerTest extends WebTestCase
             ]);
             self::assertResponseStatusCodeSame(404);
         } finally {
-            try {
-                $this->removeAdmin($client, $email);
-            } finally {
-                if ($connection->isTransactionActive()) {
-                    $connection->rollBack();
-                }
-                $entityManager->clear();
+            if ($connection->isTransactionActive()) {
+                $connection->rollBack();
             }
+            $entityManager->clear();
+            $this->removeAdmin($client, $email);
+            $entityManager->clear();
         }
     }
 

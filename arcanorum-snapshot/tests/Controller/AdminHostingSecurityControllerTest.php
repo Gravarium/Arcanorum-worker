@@ -22,8 +22,6 @@ use App\Repository\HostingSecuritySelectionRepository;
 use App\Service\HostingSecurityFeatureSelectionManager;
 use App\Tests\Support\VerifiedRuntimeAttestationReportProvider;
 use Doctrine\ORM\EntityManagerInterface;
-use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -101,19 +99,18 @@ final class AdminHostingSecurityControllerTest extends WebTestCase
             self::assertNotNull($selected);
             self::assertTrue($selected->isEnabled());
         } finally {
-            try {
-                $this->removeAdmin($client, $email);
-            } finally {
-                if ($connection->isTransactionActive()) {
-                    $connection->rollBack();
-                }
-                $entityManager->clear();
+            if ($connection->isTransactionActive()) {
+                $connection->rollBack();
             }
+            $entityManager->clear();
+            $this->removeAdmin($client, $email);
+            $entityManager->clear();
         }
     }
 
     public function testMissingSavedSelectionReturnsGenericUnavailableResponse(): void
     {
+        $this->expectOutputRegex('/\\A\\[error\\] Die Host-Sicherheitsauswahl konnte nicht gelesen\\.\\s*\\z/');
         $client = static::createClient();
         $client->disableReboot();
         $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
@@ -130,8 +127,6 @@ final class AdminHostingSecurityControllerTest extends WebTestCase
             $this->persistAdmin($client, $email);
             $this->loginAdmin($client, $email);
             $connection->executeStatement('DELETE FROM hosting_security_selection WHERE id = 1');
-            $client->getContainer()->set(LoggerInterface::class, new NullLogger());
-
             $client->request('GET', '/admin/system/security');
 
             self::assertResponseStatusCodeSame(503);
@@ -140,14 +135,12 @@ final class AdminHostingSecurityControllerTest extends WebTestCase
                 $client->getResponse()->getContent(),
             );
         } finally {
-            try {
-                $this->removeAdmin($client, $email);
-            } finally {
-                if ($connection->isTransactionActive()) {
-                    $connection->rollBack();
-                }
-                $entityManager->clear();
+            if ($connection->isTransactionActive()) {
+                $connection->rollBack();
             }
+            $entityManager->clear();
+            $this->removeAdmin($client, $email);
+            $entityManager->clear();
         }
     }
 
