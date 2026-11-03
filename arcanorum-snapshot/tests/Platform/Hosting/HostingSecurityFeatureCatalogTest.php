@@ -85,7 +85,6 @@ final class HostingSecurityFeatureCatalogTest extends TestCase
 
     public function testExplicitFailureAndUnavailableEvidenceKeepFeaturesInactive(): void
     {
-        $catalog = new HostingSecurityFeatureCatalog();
         foreach ([CapabilityStatus::Failed, CapabilityStatus::NotAvailable] as $status) {
             $report = $this->report([
                 HostingCapability::PrivateStorage->value => $status,
