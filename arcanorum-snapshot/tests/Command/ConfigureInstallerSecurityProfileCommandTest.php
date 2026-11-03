@@ -24,6 +24,43 @@ use Symfony\Component\Console\Tester\CommandTester;
 
 final class ConfigureInstallerSecurityProfileCommandTest extends KernelTestCase
 {
+    public function testInstallStepRequiresAnAttachedInteractiveTerminal(): void
+    {
+        $manager = static::getContainer()->get(HostingSecurityFeatureSelectionManager::class);
+        self::assertInstanceOf(HostingSecurityFeatureSelectionManager::class, $manager);
+
+        $nonInteractiveTerminal = self::createMock(InteractiveConsoleTerminalInterface::class);
+        $nonInteractiveTerminal
+            ->expects(self::never())
+            ->method('isAttachedToTerminal');
+        $nonInteractiveTester = new CommandTester(
+            new ConfigureInstallerSecurityProfileCommand($manager, $nonInteractiveTerminal),
+        );
+
+        self::assertSame(
+            Command::FAILURE,
+            $nonInteractiveTester->execute([], ['interactive' => false]),
+        );
+        self::assertStringContainsString('interaktiven Terminal', $nonInteractiveTester->getDisplay());
+        self::assertStringNotContainsString('Prüfung der Hosting-Umgebung', $nonInteractiveTester->getDisplay());
+
+        $detachedTerminal = self::createMock(InteractiveConsoleTerminalInterface::class);
+        $detachedTerminal
+            ->expects(self::once())
+            ->method('isAttachedToTerminal')
+            ->willReturn(false);
+        $detachedTester = new CommandTester(
+            new ConfigureInstallerSecurityProfileCommand($manager, $detachedTerminal),
+        );
+
+        self::assertSame(
+            Command::FAILURE,
+            $detachedTester->execute([], ['interactive' => true]),
+        );
+        self::assertStringContainsString('interaktiven Terminal', $detachedTester->getDisplay());
+        self::assertStringNotContainsString('Prüfung der Hosting-Umgebung', $detachedTester->getDisplay());
+    }
+
     public function testInstallStepShowsFixedBaselineAndSavesOnlyVerifiedOptionalChoices(): void
     {
         $entityManager = static::getContainer()->get(EntityManagerInterface::class);
