@@ -872,10 +872,15 @@ jobs:
               except ET.ParseError:
                   print('JUnit failure summary unavailable; raw diagnostics withheld.')
               else:
-                  numeric = ('tests', 'assertions', 'failures', 'errors', 'skipped', 'time')
-                  counts = [f'{key}={root.attrib[key]}' for key in numeric if key in root.attrib]
-                  if counts:
-                      print('JUnit summary: ' + ', '.join(counts))
+                  numeric = ('tests', 'assertions', 'failures', 'errors', 'warnings', 'deprecations', 'notices', 'risky', 'skipped', 'incomplete')
+                  suites = [root] if root.tag == 'testsuite' else root.findall('testsuite')
+                  counts = []
+                  for key in numeric:
+                      values = [suite.attrib.get(key) for suite in suites]
+                      if values and all(value is not None and value.isdigit() for value in values):
+                          counts.append(f'{key}={sum(int(value) for value in values)}')
+                  counts.append(f'testcase_nodes={sum(1 for _ in root.iter("testcase"))}')
+                  print('JUnit summary: ' + ', '.join(counts))
                   shown = 0
                   for case in root.iter('testcase'):
                       for outcome in ('failure', 'error', 'skipped', 'risky', 'incomplete'):
@@ -900,6 +905,19 @@ jobs:
                           break
                   if shown == 0:
                       print('No failed testcase identifier was present in JUnit.')
+                      log = Path('var/test-results/phpunit-hosting-security-selection.log')
+                      if log.is_file():
+                          content = log.read_text(encoding='utf-8', errors='replace')
+                          summary = re.search(r'(?m)^Tests:.*$', content)
+                          if summary:
+                              safe_counts = re.findall(r'(?:Tests|Assertions|Failures|Errors|Warnings|Deprecations|Skipped|Incomplete|Risky|PHPUnit Notices): \d+', summary.group(0))
+                              if safe_counts:
+                                  print('PHPUnit summary: ' + ', '.join(safe_counts))
+                          categories = sorted(set(re.findall(r'(?m)^There (?:was|were) \d+ (?:failure|failures|error|errors|warning|warnings|risky test|risky tests|PHPUnit notice|PHPUnit notices|deprecation|deprecations|skipped test|skipped tests|incomplete test|incomplete tests):$', content)))
+                          for category in categories[:8]:
+                              print('PHPUnit outcome: ' + category)
+                          if 'Fatal error' in content or 'Uncaught ' in content:
+                              print('PHP runtime failure occurred; raw diagnostic output withheld.')
           PY
             exit "$status"
           fi
