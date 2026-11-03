@@ -12,6 +12,7 @@ use App\Platform\Hosting\CapabilityStatus;
 use App\Platform\Hosting\HostingCapability;
 use App\Platform\Hosting\HostingProfileDetector;
 use App\Platform\Hosting\HostingSecurityFeature;
+use App\Platform\Hosting\HostingSecurityFeatureChoice;
 use App\Platform\Hosting\HostingSecurityFeatureCatalog;
 use App\Platform\Security\AdminMfaProvisioningService;
 use App\Platform\Security\AdminMfaSecretCipher;
@@ -84,13 +85,10 @@ final class AdminHostingSecurityControllerTest extends WebTestCase
             $manager = $client->getContainer()->get(HostingSecurityFeatureSelectionManager::class);
             self::assertInstanceOf(HostingSecurityFeatureSelectionManager::class, $manager);
             $choices = $manager->choices();
-            $selected = null;
-            foreach ($choices as $choice) {
-                if (HostingSecurityFeature::PrivateStorage === $choice->feature) {
-                    $selected = $choice;
-                    break;
-                }
-            }
+            $selected = array_find(
+                $choices,
+                static fn (HostingSecurityFeatureChoice $choice): bool => HostingSecurityFeature::PrivateStorage === $choice->feature,
+            );
             self::assertNotNull($selected);
             self::assertTrue($selected->isEnabled());
         } finally {
