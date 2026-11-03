@@ -803,6 +803,15 @@ jobs:
               return 1
             fi
           }
+          migration_count=0
+          for migration in migrations/*.php; do
+            migration_count=$((migration_count + 1))
+            if ! php -l "$migration" > var/test-results/migration-php-lint.log 2>&1; then
+              printf 'Migration syntax: FAIL in %s; diagnostic output withheld.\n' "$(basename "$migration")"
+              exit 1
+            fi
+          done
+          printf 'Migration syntax: PASS (%s files).\n' "$migration_count"
           run_gate migrations php bin/console doctrine:migrations:migrate --env=test --no-interaction
           run_gate doctrine-mapping php bin/console doctrine:schema:validate --skip-sync
           run_gate services-yaml php bin/console lint:yaml config/services.yaml
