@@ -39,9 +39,6 @@ final readonly class InstallerDatabaseConnectionProbe
             $requiredTablesAvailable = $connection
                 ->createSchemaManager()
                 ->tablesExist(self::REQUIRED_TABLES);
-            if (!is_bool($requiredTablesAvailable)) {
-                return new InstallerDatabaseProbeResult(true, false, 'unexpected-metadata-result');
-            }
         } catch (\Throwable $exception) {
             return new InstallerDatabaseProbeResult(true, false, $exception::class);
         }
