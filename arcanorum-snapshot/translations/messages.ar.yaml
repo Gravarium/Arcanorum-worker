@@ -226,3 +226,7 @@
 
 "Unbekannt heißt: Arcanorum kann diese Fähigkeit derzeit nicht nachweisen. Das bedeutet nicht automatisch, dass der Hoster sie nicht unterstützt.": "تعني «غير معروف» أن أركانوروم لا يستطيع التحقق من هذه الإمكانية حالياً. ولا يعني ذلك بالضرورة أن مزوّد الاستضافة لا يدعمها."
 "Die Werte stammen aus der aktiven PHP-Weblaufzeit. Webserver- oder Proxygrenzen können zusätzlich enger sein.": "تأتي هذه القيم من بيئة PHP الفعلية على الويب. قد تكون حدود خادم الويب أو الوكيل أقل."
+
+"PHP-Sicherheitshinweise": "ملاحظات أمان PHP"
+"PHP-URL-Includes sind aktiviert und sollten deaktiviert werden.": "تضمينات عناوين URL في PHP مفعّلة ويجب تعطيلها."
+"PHP-Fehlerausgabe ist in der Produktionsumgebung aktiviert.": "عرض أخطاء PHP مفعّل في بيئة الإنتاج."

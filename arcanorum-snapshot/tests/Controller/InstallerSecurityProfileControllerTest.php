@@ -18,7 +18,9 @@ use App\Platform\Security\AdminMfaProvisioningService;
 use App\Platform\Security\RuntimeAttestationReportProviderInterface;
 use App\Repository\AdminUserRepository;
 use App\Repository\HostingSecuritySelectionRepository;
+use App\Service\AdminPhpRuntimeSummary;
 use App\Service\HostingSecurityFeatureSelectionManager;
+use App\Service\PhpRuntimeInspectorInterface;
 use App\Tests\Support\VerifiedRuntimeAttestationReportProvider;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -51,6 +53,10 @@ final class InstallerSecurityProfileControllerTest extends WebTestCase
             new VerifiedRuntimeAttestationReportProvider(),
         );
         $client->getContainer()->set(
+            AdminPhpRuntimeSummary::class,
+            new AdminPhpRuntimeSummary(new InstallerProfileRuntimeInspector(), 'prod'),
+        );
+        $client->getContainer()->set(
             HostingSecurityFeatureSelectionManager::class,
             $this->managerWithVerifiedPrivateStorage($client),
         );
@@ -68,6 +74,8 @@ final class InstallerSecurityProfileControllerTest extends WebTestCase
             self::assertSame('noindex, nofollow', $client->getResponse()->headers->get('X-Robots-Tag'));
             self::assertSelectorTextContains('h1', 'Hosting-Sicherheitsprofil');
             self::assertSelectorExists('#installer-php-runtime');
+            self::assertSelectorTextContains('#installer-php-runtime-notices', 'PHP-URL-Includes sind aktiviert und sollten deaktiviert werden.');
+            self::assertSelectorTextContains('#installer-php-runtime-notices', 'PHP-Fehlerausgabe ist in der Produktionsumgebung aktiviert.');
             self::assertSelectorTextContains('#installer-php-runtime', 'Maximale Uploadgröße');
             self::assertSelectorTextContains('#installer-php-runtime', 'Maximale POST-Größe');
             self::assertSelectorTextContains('#installer-php-runtime', 'PHP-Erweiterungen');
@@ -198,5 +206,42 @@ final class InstallerSecurityProfileControllerTest extends WebTestCase
             new HostingProfileDetector([$probe]),
             new HostingSecurityFeatureCatalog(),
         );
+    }
+}
+
+/** @internal */
+final readonly class InstallerProfileRuntimeInspector implements PhpRuntimeInspectorInterface
+{
+    public function version(): string
+    {
+        return '8.5.4';
+    }
+
+    public function sapi(): string
+    {
+        return 'fpm-fcgi';
+    }
+
+    public function iniValue(string $name): ?string
+    {
+        return match ($name) {
+            'upload_max_filesize' => '40M',
+            'post_max_size' => '42M',
+            'memory_limit' => '256M',
+            'max_execution_time' => '30',
+            'max_input_time' => '60',
+            'max_input_vars' => '1000',
+            'max_file_uploads' => '20',
+            'default_socket_timeout' => '60',
+            'display_errors', 'allow_url_include' => '1',
+            'log_errors', 'allow_url_fopen', 'opcache.enable', 'zend.assertions' => '1',
+            'expose_php' => '0',
+            default => null,
+        };
+    }
+
+    public function extensionLoaded(string $name): bool
+    {
+        return true;
     }
 }

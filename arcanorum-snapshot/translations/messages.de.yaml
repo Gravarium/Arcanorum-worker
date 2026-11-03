@@ -457,3 +457,7 @@
 
 "Unbekannt heißt: Arcanorum kann diese Fähigkeit derzeit nicht nachweisen. Das bedeutet nicht automatisch, dass der Hoster sie nicht unterstützt.": "Unbekannt heißt: Arcanorum kann diese Fähigkeit derzeit nicht nachweisen. Das bedeutet nicht automatisch, dass der Hoster sie nicht unterstützt."
 "Die Werte stammen aus der aktiven PHP-Weblaufzeit. Webserver- oder Proxygrenzen können zusätzlich enger sein.": "Die Werte stammen aus der aktiven PHP-Weblaufzeit. Webserver- oder Proxygrenzen können zusätzlich enger sein."
+
+"PHP-Sicherheitshinweise": "PHP-Sicherheitshinweise"
+"PHP-URL-Includes sind aktiviert und sollten deaktiviert werden.": "PHP-URL-Includes sind aktiviert und sollten deaktiviert werden."
+"PHP-Fehlerausgabe ist in der Produktionsumgebung aktiviert.": "PHP-Fehlerausgabe ist in der Produktionsumgebung aktiviert."

@@ -51,6 +51,14 @@
         <header class="panel-heading"><h2 id="installer-php-runtime-heading">{{ 'PHP-Konfiguration'|trans }}</h2></header>
         <p>{{ 'PHP-Version'|trans }} {{ php_runtime.php_version }} · {{ 'Laufzeit'|trans }} {{ php_runtime.php_sapi }}</p>
         <p class="muted">{{ 'Die Werte stammen aus der aktiven PHP-Weblaufzeit. Webserver- oder Proxygrenzen können zusätzlich enger sein.'|trans }}</p>
+        {% if php_runtime.notices is not empty %}
+            <aside id="installer-php-runtime-notices" aria-labelledby="installer-php-runtime-notices-heading">
+                <h3 id="installer-php-runtime-notices-heading">{{ 'PHP-Sicherheitshinweise'|trans }}</h3>
+                {% for notice in php_runtime.notices %}
+                    <p class="field-error" role="alert">{{ notice|trans }}</p>
+                {% endfor %}
+            </aside>
+        {% endif %}
         <div class="table-wrap"><table class="admin-table">
             <caption class="visually-hidden">{{ 'Begrenzte PHP-Laufzeitwerte'|trans }}</caption>
             <thead><tr><th scope="col">{{ 'Grenze'|trans }}</th><th scope="col">{{ 'Wert'|trans }}</th></tr></thead>
