@@ -20,8 +20,9 @@ final readonly class ModuleAvailability
 
     /** @var list<class-string> */
     private const array CONTROLLER_AVAILABILITY_EXEMPTIONS = [
-        // This pre-administrator setup step has its own first-admin guard.
+        // Pre-administrator installer steps enforce their own installation guards.
         \App\Module\Installer\Controller\InstallerSecurityProfileController::class,
+        \App\Module\Installer\Controller\InstallerAdministratorController::class,
         // Shared media routes enforce the owning content module inside their actions.
         \App\Module\Content\Controller\AdminContentInlineImageController::class,
         \App\Module\Content\Controller\ContentInlineImageController::class,
