@@ -677,6 +677,28 @@ jobs:
                 else
                   echo 'PHP-CS-Fixer could not produce a safe file summary.'
                 fi
+              elif [[ "$label" == phpstan ]]; then
+                python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          log = Path('var/test-results/phpstan.log').read_text(encoding='utf-8', errors='replace')
+          locations = sorted(set(re.findall(r'(?:file=)?((?:src|tests)/[^,\s:]+\.php)(?:,line=|:)(\d+)', log)))
+          for file_name, line_number in locations[:12]:
+              print(f'PHPStan finding location: {Path(file_name).name}:{line_number}')
+          categories = (
+              ('undefined method', r'undefined method'),
+              ('unknown class or symbol', r'not found|unknown class|unknown symbol'),
+              ('incompatible type', r'not assignable|type mismatch|incompatible'),
+              ('missing return type', r'no return type|return type'),
+              ('possibly undefined value', r'might not exist|possibly undefined|might not be defined'),
+          )
+          for category, pattern in categories:
+              if re.search(pattern, log, re.IGNORECASE):
+                  print('PHPStan finding category: ' + category)
+          if not locations:
+              print('PHPStan finding location unavailable; raw diagnostics withheld.')
+          PY
               elif [[ "$label" == rector ]]; then
                 if vendor/bin/rector process --config=rector.php --no-progress-bar --output-format=github "${files[@]}" > var/test-results/rector-fix.log 2>&1; then
                   changed_files=$(git diff --name-only -- "${files[@]}")
