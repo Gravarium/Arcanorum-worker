@@ -62,7 +62,7 @@ final class InstallerSecurityProfileControllerTest extends WebTestCase
 
             $client->request('GET', '/install/security-profile');
             self::assertResponseIsSuccessful();
-            $cacheControl = array_map('trim', explode(',', strtolower((string) $client->getResponse()->headers->get('Cache-Control'))));
+            $cacheControl = array_map(trim(...), explode(',', strtolower((string) $client->getResponse()->headers->get('Cache-Control'))));
             self::assertContains('private', $cacheControl);
             self::assertContains('no-store', $cacheControl);
             self::assertSame('noindex, nofollow', $client->getResponse()->headers->get('X-Robots-Tag'));
