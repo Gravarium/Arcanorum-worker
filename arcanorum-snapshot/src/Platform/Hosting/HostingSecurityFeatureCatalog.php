@@ -8,6 +8,7 @@ final readonly class HostingSecurityFeatureCatalog
 {
     /**
      * @param array<array-key, mixed> $selectedFeatureIds
+     *
      * @return list<HostingSecurityFeatureChoice>
      */
     public function choices(HostingCapabilityReport $report, array $selectedFeatureIds): array
@@ -35,6 +36,7 @@ final readonly class HostingSecurityFeatureCatalog
      *
      * @param array<array-key, mixed> $requestedFeatureIds
      * @param array<array-key, mixed> $previouslySelectedFeatureIds
+     *
      * @return list<string>
      */
     public function replaceSelection(
@@ -89,6 +91,7 @@ final readonly class HostingSecurityFeatureCatalog
 
     /**
      * @param array<array-key, mixed> $featureIds
+     *
      * @return list<string>
      */
     private function normalizeFeatureIds(array $featureIds): array

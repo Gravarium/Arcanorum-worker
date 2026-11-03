@@ -214,7 +214,7 @@ final class HostingSecurityFeatureCatalogTest extends TestCase
     }
 
     /**
-     * @param array<string, CapabilityStatus> $overrides
+     * @param array<string, CapabilityStatus>   $overrides
      * @param array<string, \DateTimeImmutable> $checkedAtOverrides
      */
     private function report(array $overrides = [], array $checkedAtOverrides = []): HostingCapabilityReport
