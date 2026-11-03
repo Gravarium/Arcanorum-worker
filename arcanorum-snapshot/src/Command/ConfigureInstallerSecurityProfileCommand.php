@@ -110,7 +110,7 @@ final class ConfigureInstallerSecurityProfileCommand extends Command
             $requestedFeatureIds = $this->parseSelection($answer, $numberToFeatureId);
             $this->selectionManager->replaceSelection($requestedFeatureIds);
             $savedChoices = $this->selectionManager->choices();
-        } catch (\\InvalidArgumentException) {
+        } catch (\InvalidArgumentException) {
             $io->error('Bitte nur angezeigte Nummern ohne Duplikate auswählen. Die Host-Prüfung wird beim Speichern erneut ausgeführt.');
 
             return Command::FAILURE;
