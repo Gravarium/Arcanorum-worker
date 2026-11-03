@@ -32,7 +32,7 @@ final readonly class HostingSecurityFeatureSelectionManager
     {
         $selection = $this->selections->findCurrent();
         if (!$selection instanceof HostingSecuritySelection) {
-            throw new \\RuntimeException('Die Host-Sicherheitsauswahl ist nicht initialisiert.');
+            throw new \RuntimeException('Die Host-Sicherheitsauswahl ist nicht initialisiert.');
         }
 
         $report = $this->hostingProfile->detect();
@@ -42,6 +42,7 @@ final readonly class HostingSecurityFeatureSelectionManager
             $this->catalog->choices($report, $selection->getSelectedFeatureIds()),
         );
     }
+
     public function replaceSelection(mixed $requestedFeatureIds): void
     {
         if (!is_array($requestedFeatureIds)) {
