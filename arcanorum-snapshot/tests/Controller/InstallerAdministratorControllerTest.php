@@ -34,12 +34,11 @@ final class InstallerAdministratorControllerTest extends WebTestCase
         $client->disableReboot();
         $client->setServerParameter('REMOTE_ADDR', '192.0.2.'.random_int(1, 254));
 
-        $adminUsers = $client->getContainer()->get(AdminUserRepository::class);
-        self::assertInstanceOf(AdminUserRepository::class, $adminUsers);
         $managerRegistry = $client->getContainer()->get(ManagerRegistry::class);
         self::assertInstanceOf(ManagerRegistry::class, $managerRegistry);
         $entityManager = $managerRegistry->getManagerForClass(AdminUser::class);
         self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        $adminUsers = new AdminUserRepository($managerRegistry);
         $client->getContainer()->set(AdminUserRepository::class, $adminUsers);
         $connection = $entityManager->getConnection();
         $connection->beginTransaction();
@@ -163,12 +162,11 @@ final class InstallerAdministratorControllerTest extends WebTestCase
         $client->disableReboot();
         $client->setServerParameter('REMOTE_ADDR', '198.51.100.'.random_int(1, 254));
 
-        $adminUsers = $client->getContainer()->get(AdminUserRepository::class);
-        self::assertInstanceOf(AdminUserRepository::class, $adminUsers);
         $managerRegistry = $client->getContainer()->get(ManagerRegistry::class);
         self::assertInstanceOf(ManagerRegistry::class, $managerRegistry);
         $entityManager = $managerRegistry->getManagerForClass(AdminUser::class);
         self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        $adminUsers = new AdminUserRepository($managerRegistry);
         $client->getContainer()->set(AdminUserRepository::class, $adminUsers);
         $connection = $entityManager->getConnection();
         $connection->beginTransaction();
