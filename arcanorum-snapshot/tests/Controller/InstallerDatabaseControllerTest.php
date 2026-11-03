@@ -34,7 +34,7 @@ final class InstallerDatabaseControllerTest extends WebTestCase
         try {
             $client->request('GET', '/install/database');
             self::assertResponseIsSuccessful();
-            self::assertSame('private, no-store', $client->getResponse()->headers->get('Cache-Control'));
+            $this->assertPrivateNoStore($client);
             self::assertSame('noindex, nofollow', $client->getResponse()->headers->get('X-Robots-Tag'));
             self::assertSelectorExists('#installer-database-probe-form');
             self::assertSame(1, $client->getCrawler()->filter('#installer-database-probe-form input')->count());
@@ -86,7 +86,7 @@ final class InstallerDatabaseControllerTest extends WebTestCase
         $client->request('GET', '/install/database');
 
         self::assertResponseStatusCodeSame(503);
-        self::assertSame('private, no-store', $client->getResponse()->headers->get('Cache-Control'));
+        $this->assertPrivateNoStore($client);
         self::assertSame('noindex, nofollow', $client->getResponse()->headers->get('X-Robots-Tag'));
         self::assertStringContainsString('DATABASE_URL', (string) $client->getResponse()->getContent());
         self::assertStringNotContainsString('private-connection-string-should-not-leak', (string) $client->getResponse()->getContent());
@@ -119,7 +119,7 @@ final class InstallerDatabaseControllerTest extends WebTestCase
         $client->request('GET', '/install/database');
 
         self::assertResponseStatusCodeSame(503);
-        self::assertSame('private, no-store', $client->getResponse()->headers->get('Cache-Control'));
+        $this->assertPrivateNoStore($client);
         self::assertSelectorTextContains(
             '[role="alert"]',
             'Die Verbindung antwortet, aber die erforderlichen Anwendungstabellen konnten nicht geprüft werden.',
@@ -162,6 +162,17 @@ final class InstallerDatabaseControllerTest extends WebTestCase
             }
             $entityManager->clear();
         }
+    }
+
+    private function assertPrivateNoStore(KernelBrowser $client): void
+    {
+        $directives = array_map(
+            'trim',
+            explode(',', strtolower((string) $client->getResponse()->headers->get('Cache-Control'))),
+        );
+
+        self::assertContains('private', $directives);
+        self::assertContains('no-store', $directives);
     }
 
     private function csrfToken(KernelBrowser $client): string
