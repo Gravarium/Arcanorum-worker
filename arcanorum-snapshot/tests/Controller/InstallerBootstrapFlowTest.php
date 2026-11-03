@@ -29,13 +29,19 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 final class InstallerBootstrapFlowTest extends WebTestCase
 {
-    /** @var array<string, string|false> */
+    /** @var array<string, array{process: string|false, env_present: bool, env_value: mixed, server_present: bool, server_value: mixed}> */
     private static array $originalEnvironment = [];
 
     public static function setUpBeforeClass(): void
     {
         foreach (['ADMIN_MFA_ENCRYPTION_KEY', 'APP_SECRET'] as $name) {
-            self::$originalEnvironment[$name] = getenv($name);
+            self::$originalEnvironment[$name] = [
+                'process' => getenv($name),
+                'env_present' => array_key_exists($name, $_ENV),
+                'env_value' => $_ENV[$name] ?? null,
+                'server_present' => array_key_exists($name, $_SERVER),
+                'server_value' => $_SERVER[$name] ?? null,
+            ];
         }
 
         $testApplicationSecret = str_repeat('I', 48);
@@ -51,17 +57,24 @@ final class InstallerBootstrapFlowTest extends WebTestCase
 
     public static function tearDownAfterClass(): void
     {
-        foreach (self::$originalEnvironment as $name => $value) {
-            if (false === $value) {
+        foreach (self::$originalEnvironment as $name => $values) {
+            if (false === $values['process']) {
                 putenv($name);
-                unset($_ENV[$name], $_SERVER[$name]);
-
-                continue;
+            } else {
+                putenv($name.'='.$values['process']);
             }
 
-            putenv($name.'='.$value);
-            $_ENV[$name] = $value;
-            $_SERVER[$name] = $value;
+            if ($values['env_present']) {
+                $_ENV[$name] = $values['env_value'];
+            } else {
+                unset($_ENV[$name]);
+            }
+
+            if ($values['server_present']) {
+                $_SERVER[$name] = $values['server_value'];
+            } else {
+                unset($_SERVER[$name]);
+            }
         }
 
         parent::tearDownAfterClass();
