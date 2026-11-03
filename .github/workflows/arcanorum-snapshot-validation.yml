@@ -624,11 +624,13 @@ jobs:
               src/Platform/Hosting/HostingSecurityFeatureSelectionStoreInterface.php
               src/Platform/Hosting/PrivateFileStorage.php
               src/Platform/Hosting/RedisCachePoolAdapter.php
+              src/Service/PrivateObjectStorageGateway.php
               tests/Platform/Hosting/DoctrineHostingSecurityFeatureSelectionStoreIntegrationTest.php
               tests/Platform/Hosting/DoctrineHostingSecurityFeatureSelectionStoreTest.php
               tests/Platform/Hosting/HostingAdapterSelectorTest.php
               tests/Platform/Hosting/HostingCachePoolProviderTest.php
               tests/Platform/Hosting/PrivateFileStorageTest.php
+              tests/Service/PrivateObjectStorageGatewayTest.php
               tests/Controller/HomePageTest.php
             )
           fi
@@ -898,6 +900,7 @@ jobs:
             tests/Platform/Hosting/HostingAdapterSelectorTest.php \
             tests/Platform/Hosting/HostingCachePoolProviderTest.php \
             tests/Platform/Hosting/PrivateFileStorageTest.php \
+            tests/Service/PrivateObjectStorageGatewayTest.php \
             tests/Controller/HomePageTest.php > var/test-results/phpunit-hosting-security-selection.log 2>&1
           status=$?
           set -e
