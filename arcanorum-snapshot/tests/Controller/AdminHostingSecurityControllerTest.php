@@ -110,7 +110,7 @@ final class AdminHostingSecurityControllerTest extends WebTestCase
 
     public function testMissingSavedSelectionReturnsGenericUnavailableResponse(): void
     {
-        $this->expectOutputRegex('/\\A\\[error\\] Die Host-Sicherheitsauswahl konnte nicht gelesen\\.\\s*\\z/');
+        $this->expectOutputRegex('/\\A\\[error\\] Die Host-Sicherheitsauswahl konnte nicht gelesen werden\\.\\s*\\z/');
         $client = static::createClient();
         $client->disableReboot();
         $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
