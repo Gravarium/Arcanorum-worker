@@ -58,7 +58,7 @@ final class AdminHostingSecurityControllerTest extends WebTestCase
             $client->request('GET', '/admin/system/security');
             self::assertResponseIsSuccessful();
             $cacheControl = (string) $client->getResponse()->headers->get('Cache-Control');
-            $cacheControlDirectives = array_map('trim', explode(',', strtolower($cacheControl)));
+            $cacheControlDirectives = array_map(trim(...), explode(',', strtolower($cacheControl)));
             self::assertContains('private', $cacheControlDirectives);
             self::assertContains('no-store', $cacheControlDirectives);
             self::assertSame('noindex, nofollow', $client->getResponse()->headers->get('X-Robots-Tag'));
