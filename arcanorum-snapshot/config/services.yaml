@@ -287,6 +287,9 @@ services:
         arguments:
             $redisDsn: '%env(REDIS_URL)%'
 
+    App\Platform\Hosting\HostingSecurityFeatureSelectionStoreInterface:
+        alias: App\Platform\Hosting\DoctrineHostingSecurityFeatureSelectionStore
+
     App\Platform\Hosting\HostingCachePoolProvider:
         arguments:
             0: 'arcanorum'

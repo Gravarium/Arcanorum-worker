@@ -15,6 +15,11 @@ interface HostingAdapterDefinitionInterface
      */
     public function requiredCapabilities(): array;
 
+    /**
+     * @return list<HostingSecurityFeature>
+     */
+    public function requiredFeatures(): array;
+
     public function priority(): int;
 
     public function isFallback(): bool;

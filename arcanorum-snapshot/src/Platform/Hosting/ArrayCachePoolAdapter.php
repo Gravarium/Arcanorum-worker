@@ -27,6 +27,14 @@ final readonly class ArrayCachePoolAdapter implements CachePoolAdapterInterface
         return [];
     }
 
+    /**
+     * @return list<HostingSecurityFeature>
+     */
+    public function requiredFeatures(): array
+    {
+        return [];
+    }
+
     public function priority(): int
     {
         return 0;

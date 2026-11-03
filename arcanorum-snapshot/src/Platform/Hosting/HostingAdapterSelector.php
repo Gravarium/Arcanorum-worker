@@ -45,6 +45,19 @@ final readonly class HostingAdapterSelector
                 $seenRequirements[$requirement->value] = true;
             }
 
+            $seenFeatures = [];
+            foreach ($adapter->requiredFeatures() as $requiredFeature) {
+                if (!$requiredFeature instanceof HostingSecurityFeature) {
+                    throw new \InvalidArgumentException('Hostingadapter benötigen gültige Sicherheitsfunktionen.');
+                }
+
+                if (isset($seenFeatures[$requiredFeature->value])) {
+                    throw new \InvalidArgumentException('Hostingadapter dürfen keine Sicherheitsfunktion doppelt verlangen.');
+                }
+
+                $seenFeatures[$requiredFeature->value] = true;
+            }
+
             $identifiers[$identifier] = true;
             $normalizedAdapters[] = $adapter;
         }
@@ -52,14 +65,31 @@ final readonly class HostingAdapterSelector
         $this->adapters = $normalizedAdapters;
     }
 
+    /**
+     * @param list<HostingSecurityFeature> $selectedFeatures
+     */
     public function select(
         HostingService $service,
         HostingCapabilityReport $report,
+        array $selectedFeatures = [],
     ): HostingAdapterDefinitionInterface {
         $eligible = [];
 
         foreach ($this->adapters as $adapter) {
             if ($adapter->service() !== $service) {
+                continue;
+            }
+
+            $featuresSelected = true;
+            foreach ($adapter->requiredFeatures() as $requiredFeature) {
+                if (!in_array($requiredFeature, $selectedFeatures, true)) {
+                    $featuresSelected = false;
+
+                    break;
+                }
+            }
+
+            if (!$featuresSelected) {
                 continue;
             }
 

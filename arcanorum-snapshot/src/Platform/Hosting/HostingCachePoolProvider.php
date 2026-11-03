@@ -16,6 +16,7 @@ final class HostingCachePoolProvider extends ProxyAdapter
         string $namespace,
         HostingAdapterSelector $selector,
         HostingProfileDetector $profileDetector,
+        HostingSecurityFeatureSelectionStoreInterface $selectionStore,
         CachePoolAdapterInterface $safeFallback,
     ) {
         if (HostingService::Cache !== $safeFallback->service()) {
@@ -30,7 +31,15 @@ final class HostingCachePoolProvider extends ProxyAdapter
             throw new \InvalidArgumentException('Der sichere Cache-Fallback darf keine Hostingfähigkeit voraussetzen.');
         }
 
-        $selected = $selector->select(HostingService::Cache, $profileDetector->detect());
+        if ([] !== $safeFallback->requiredFeatures()) {
+            throw new \InvalidArgumentException('Der sichere Cache-Fallback darf keine optionale Schutzfunktion voraussetzen.');
+        }
+
+        $selected = $selector->select(
+            HostingService::Cache,
+            $profileDetector->detect(),
+            $selectionStore->selectedFeatures(),
+        );
         if (!$selected instanceof CachePoolAdapterInterface) {
             throw new HostingAdapterUnavailable(HostingService::Cache);
         }

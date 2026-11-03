@@ -13,6 +13,8 @@ use App\Platform\Hosting\HostingCachePoolProvider;
 use App\Platform\Hosting\HostingCapability;
 use App\Platform\Hosting\HostingProfileDetector;
 use App\Platform\Hosting\RedisCachePoolAdapter;
+use App\Platform\Hosting\HostingSecurityFeature;
+use App\Platform\Hosting\HostingSecurityFeatureSelectionStoreInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
@@ -36,6 +38,17 @@ final class HostingCachePoolProviderTest extends TestCase
         $item->set('available');
         self::assertTrue($pool->save($item));
         self::assertSame('available', $pool->getItem('hosting-cache-fallback')->get());
+    }
+
+    public function testVerifiedRedisStillRequiresTheSavedOperatorSelection(): void
+    {
+        $provider = $this->providerFor([
+            $this->evidence(HostingCapability::RedisServer8, CapabilityStatus::Verified),
+            $this->evidence(HostingCapability::RedisPrivateEndpoint, CapabilityStatus::Verified),
+        ], 'redis://127.0.0.1:6379');
+
+        self::assertInstanceOf(ArrayAdapter::class, $provider->pool());
+        self::assertFalse($provider->usesRedisPool());
     }
 
     public function testSelectedPoolSupportsPsr6SymfonyCacheAndNamespacedContracts(): void
@@ -92,7 +105,7 @@ final class HostingCachePoolProviderTest extends TestCase
         self::assertTrue($provider->clear());
     }
 
-    public function testRedisPoolIsSelectedOnlyWithVerifiedVersionAndPrivateEndpoint(): void
+    public function testRedisPoolIsSelectedOnlyWithVerifiedEvidenceAndOperatorSelection(): void
     {
         $dsn = getenv('REDIS_URL');
         if (false === $dsn || '' === trim($dsn)) {
@@ -102,7 +115,7 @@ final class HostingCachePoolProviderTest extends TestCase
         $provider = $this->providerFor([
             $this->evidence(HostingCapability::RedisServer8, CapabilityStatus::Verified),
             $this->evidence(HostingCapability::RedisPrivateEndpoint, CapabilityStatus::Verified),
-        ], $dsn);
+        ], $dsn, [HostingSecurityFeature::PrivateRedisEndpoint]);
         $pool = $provider->pool();
 
         self::assertInstanceOf(RedisAdapter::class, $pool);
@@ -124,7 +137,7 @@ final class HostingCachePoolProviderTest extends TestCase
         $provider = $this->providerFor([
             $this->evidence(HostingCapability::RedisServer8, CapabilityStatus::Verified),
             $this->evidence(HostingCapability::RedisPrivateEndpoint, CapabilityStatus::Verified),
-        ], 'redis://private-user:private-password@127.0.0.1:1');
+        ], 'redis://private-user:private-password@127.0.0.1:1', [HostingSecurityFeature::PrivateRedisEndpoint]);
 
         $pool = $provider->pool();
 
@@ -138,16 +151,32 @@ final class HostingCachePoolProviderTest extends TestCase
 
     /**
      * @param list<CapabilityEvidence> $evidence
+     * @param list<HostingSecurityFeature> $selectedFeatures
      */
-    private function providerFor(array $evidence, string $redisDsn): HostingCachePoolProvider
-    {
+    private function providerFor(
+        array $evidence,
+        string $redisDsn,
+        array $selectedFeatures = [],
+    ): HostingCachePoolProvider {
         $redis = new RedisCachePoolAdapter($redisDsn);
         $fallback = new ArrayCachePoolAdapter();
+        $selectionStore = new readonly class($selectedFeatures) implements HostingSecurityFeatureSelectionStoreInterface {
+            /** @param list<HostingSecurityFeature> $selectedFeatures */
+            public function __construct(private array $selectedFeatures)
+            {
+            }
+
+            public function selectedFeatures(): array
+            {
+                return $this->selectedFeatures;
+            }
+        };
 
         return new HostingCachePoolProvider(
             'arcanorum-test',
             new HostingAdapterSelector([$redis, $fallback]),
             new HostingProfileDetector([$this->probeWith($evidence)]),
+            $selectionStore,
             $fallback,
         );
     }

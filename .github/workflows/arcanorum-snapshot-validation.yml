@@ -21,6 +21,7 @@ on:
         options:
           - full
           - installer-bootstrap-focused
+          - hosting-security-selection-focused
           - p01-p03-focused
           - automation-focused
           - analytics-focused
@@ -469,6 +470,229 @@ jobs:
           fi
           grep -E '^(OK|Tests:|Time:)' var/test-results/phpunit-installer-bootstrap.log
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit-installer-bootstrap.xml
+
+  validate-hosting-security-selection-focused:
+    if: github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'hosting-security-selection-focused'
+    name: Focused hosting security selection and adapter checks
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: arcanorum-snapshot
+    env:
+      APP_ENV: test
+      APP_DEBUG: '0'
+      APP_SECRET: ci-only-not-a-production-secret
+      DATABASE_URL: 'postgresql://arcanorum_ci:ci-only-test-password@127.0.0.1:5432/arcanorum_test?serverVersion=18&charset=utf8'
+      REDIS_URL: 'redis://127.0.0.1:6379'
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: arcanorum_test
+          POSTGRES_USER: arcanorum_ci
+          POSTGRES_PASSWORD: ci-only-test-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U arcanorum_ci -d arcanorum_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Check out public validation branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Verify exact source commit and exclude credentials
+        shell: bash
+        env:
+          SOURCE_COMMIT: ${{ inputs.source_commit }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$SOURCE_COMMIT" =~ ^[0-9a-f]{40}$ ]]; then
+            echo 'The source commit must be a full lowercase Git SHA.' >&2
+            exit 1
+          fi
+          printf '%s\n' "$SOURCE_COMMIT" | cmp -s - arcanorum-snapshot/SOURCE_BASE_SHA
+          python3 - <<'PY'
+          from hashlib import sha256
+          from pathlib import Path
+          import re
+
+          root = Path('arcanorum-snapshot')
+          blocked = []
+          patterns = {
+              'private-key': re.compile(rb'-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----'),
+              'github-token': re.compile(rb'(?:gh[pousr]_[A-Za-z0-9_]{30,}|github_pat_[A-Za-z0-9_]{30,})'),
+              'aws-key': re.compile(rb'AKIA[0-9A-Z]{16}'),
+              'stripe-live': re.compile(rb'sk_live_[A-Za-z0-9]{16,}'),
+              'slack-token': re.compile(rb'xox[baprs]-[A-Za-z0-9-]{20,}'),
+          }
+          for path in root.rglob('*'):
+              if path.is_symlink():
+                  blocked.append(path.relative_to(root).as_posix())
+                  continue
+              if not path.is_file():
+                  continue
+              relative = path.relative_to(root).as_posix()
+              if (path.name.startswith('.env')
+                  or '/secrets/' in f'/{relative}/'
+                  or relative.startswith(('var/', 'vendor/', 'node_modules/', 'logs/', 'test-results/', 'coverage/', 'public/uploads/', 'storage/private/', 'backups/'))
+                  or path.suffix.lower() in {'.pem', '.p12', '.key', '.sql', '.dump', '.sqlite', '.db'}):
+                  blocked.append(relative)
+              data = path.read_bytes()
+              if any(pattern.search(data) for pattern in patterns.values()):
+                  blocked.append(relative)
+          if blocked:
+              raise SystemExit('Snapshot content gate failed; details withheld.')
+
+          manifest_path = root / 'SOURCE_MANIFEST.sha256'
+          if not manifest_path.is_file() or manifest_path.is_symlink():
+              raise SystemExit('Source manifest gate failed; details withheld.')
+          expected = {}
+          for line in manifest_path.read_text(encoding='utf-8').splitlines():
+              digest, separator, relative = line.partition('  ')
+              path = Path(relative)
+              if (not separator or not re.fullmatch(r'[a-f0-9]{64}', digest)
+                      or not relative or path.is_absolute() or '..' in path.parts
+                      or relative in expected):
+                  raise SystemExit('Source manifest gate failed; details withheld.')
+              expected[relative] = digest
+          actual = {
+              path.relative_to(root).as_posix(): sha256(path.read_bytes()).hexdigest()
+              for path in root.rglob('*')
+              if path.is_file() and path.name not in {'SOURCE_BASE_SHA', 'SOURCE_MANIFEST.sha256'}
+          }
+          if actual != expected:
+              raise SystemExit('Source manifest gate failed; details withheld.')
+          print(f'Snapshot security and manifest gates: PASS ({len(actual)} files).')
+          PY
+
+      - name: Set up PHP 8.5 and extensions
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.5'
+          extensions: gd, intl, mbstring, pcov, pdo_pgsql, redis, xml, zip
+          coverage: pcov
+          tools: composer:v2
+          ini-values: memory_limit=1G
+
+      - name: Validate and install locked Composer dependencies
+        run: |
+          set -euo pipefail
+          mkdir -p var/test-results
+          if composer validate --strict --no-interaction > var/test-results/composer-validate.log 2>&1 \
+              && composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader > var/test-results/composer-install.log 2>&1 \
+              && composer audit --locked --no-interaction > var/test-results/composer-audit.log 2>&1; then
+            echo 'Composer validate/install/audit: PASS.'
+          else
+            echo 'Composer validate/install/audit: FAIL; diagnostic output withheld.'
+            exit 1
+          fi
+
+      - name: Run focused hosting adapter quality gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p var/test-results
+          files=(
+            src/Platform/Hosting/ArrayCachePoolAdapter.php
+            src/Platform/Hosting/DoctrineHostingSecurityFeatureSelectionStore.php
+            src/Platform/Hosting/HostingAdapterDefinitionInterface.php
+            src/Platform/Hosting/HostingAdapterSelector.php
+            src/Platform/Hosting/HostingCachePoolProvider.php
+            src/Platform/Hosting/HostingSecurityFeatureSelectionStoreInterface.php
+            src/Platform/Hosting/RedisCachePoolAdapter.php
+            tests/Platform/Hosting/DoctrineHostingSecurityFeatureSelectionStoreIntegrationTest.php
+            tests/Platform/Hosting/DoctrineHostingSecurityFeatureSelectionStoreTest.php
+            tests/Platform/Hosting/HostingAdapterSelectorTest.php
+            tests/Platform/Hosting/HostingCachePoolProviderTest.php
+            tests/Controller/HomePageTest.php
+          )
+          for file in "${files[@]}"; do
+            if ! php -l "$file" > var/test-results/php-lint.log 2>&1; then
+              echo 'PHP syntax: FAIL; diagnostic output withheld.'
+              exit 1
+            fi
+          done
+          echo 'PHP syntax: PASS.'
+          run_gate() {
+            label="$1"
+            shift
+            if "$@" > "var/test-results/${label}.log" 2>&1; then
+              printf '%s: PASS.\n' "$label"
+            else
+              printf '%s: FAIL; diagnostic output withheld.\n' "$label"
+              return 1
+            fi
+          }
+          run_gate phpstan vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --no-progress --error-format=github --memory-limit=1G "${files[@]}"
+          run_gate php-cs-fixer vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --diff --using-cache=no "${files[@]}"
+          run_gate rector vendor/bin/rector process --config=rector.php --dry-run --no-progress-bar --output-format=github "${files[@]}"
+          run_gate psalm-taint vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm-hosting-security-selection.sarif "${files[@]}"
+
+      - name: Prepare PostgreSQL and validate the Symfony container
+        run: |
+          set -euo pipefail
+          touch .env
+          mkdir -p var/test-results
+          run_gate() {
+            label="$1"
+            shift
+            if "$@" > "var/test-results/${label}.log" 2>&1; then
+              printf '%s: PASS.\n' "$label"
+            else
+              printf '%s: FAIL; diagnostic output withheld.\n' "$label"
+              return 1
+            fi
+          }
+          run_gate migrations php bin/console doctrine:migrations:migrate --env=test --no-interaction
+          run_gate doctrine-mapping php bin/console doctrine:schema:validate --skip-sync
+          run_gate services-yaml php bin/console lint:yaml config/services.yaml
+          run_gate dev-container php bin/console lint:container --env=dev
+          run_gate prod-container bash -c 'APP_ENV=prod APP_DEBUG=0 php bin/console lint:container --env=prod'
+
+      - name: Run affected hosting adapter and persistence tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p var/test-results
+          set +e
+          php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
+            --fail-on-risky --fail-on-warning --fail-on-deprecation \
+            --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
+            --fail-on-empty-test-suite --log-junit=var/test-results/junit-hosting-security-selection.xml \
+            tests/Platform/Hosting/DoctrineHostingSecurityFeatureSelectionStoreTest.php \
+            tests/Platform/Hosting/DoctrineHostingSecurityFeatureSelectionStoreIntegrationTest.php \
+            tests/Platform/Hosting/HostingAdapterSelectorTest.php \
+            tests/Platform/Hosting/HostingCachePoolProviderTest.php \
+            tests/Controller/HomePageTest.php > var/test-results/phpunit-hosting-security-selection.log 2>&1
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            echo 'Affected PHPUnit checks: FAIL; detailed test output withheld.'
+            exit "$status"
+          fi
+          echo 'Affected PHPUnit checks: PASS; detailed results withheld.'
+          if python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit-hosting-security-selection.xml > var/test-results/junit-validation.log 2>&1; then
+            echo 'JUnit report completeness: PASS.'
+          else
+            echo 'JUnit report completeness: FAIL; diagnostic output withheld.'
+            exit 1
+          fi
 
   validate-p01-p03-focused:
     if: github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'p01-p03-focused'

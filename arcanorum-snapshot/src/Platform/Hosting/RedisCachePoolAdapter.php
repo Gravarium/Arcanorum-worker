@@ -35,6 +35,14 @@ final readonly class RedisCachePoolAdapter implements CachePoolAdapterInterface
         ];
     }
 
+    /**
+     * @return list<HostingSecurityFeature>
+     */
+    public function requiredFeatures(): array
+    {
+        return [HostingSecurityFeature::PrivateRedisEndpoint];
+    }
+
     public function priority(): int
     {
         return 100;

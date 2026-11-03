@@ -13,6 +13,7 @@ use App\Platform\Hosting\HostingAdapterUnavailable;
 use App\Platform\Hosting\HostingCapability;
 use App\Platform\Hosting\HostingCapabilityReport;
 use App\Platform\Hosting\HostingService;
+use App\Platform\Hosting\HostingSecurityFeature;
 use PHPUnit\Framework\TestCase;
 
 final class HostingAdapterSelectorTest extends TestCase
@@ -55,6 +56,21 @@ final class HostingAdapterSelectorTest extends TestCase
                 HostingService::Cache,
                 [HostingCapability::RedisPrivateEndpoint, HostingCapability::RedisPrivateEndpoint],
                 1,
+            ),
+        ]);
+    }
+
+    public function testDuplicateFeatureRequirementsAreRejected(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        new HostingAdapterSelector([
+            $this->adapter(
+                'cache.duplicate_feature',
+                HostingService::Cache,
+                [],
+                1,
+                requiredFeatures: [HostingSecurityFeature::PrivateRedisEndpoint, HostingSecurityFeature::PrivateRedisEndpoint],
             ),
         ]);
     }
@@ -111,6 +127,29 @@ final class HostingAdapterSelectorTest extends TestCase
         self::assertSame($fallback, $selected);
     }
 
+    public function testOptionalAdapterRequiresTheOperatorFeatureSelection(): void
+    {
+        $optional = $this->adapter(
+            'redis.cache',
+            HostingService::Cache,
+            [HostingCapability::RedisServer8, HostingCapability::RedisPrivateEndpoint],
+            10,
+            requiredFeatures: [HostingSecurityFeature::PrivateRedisEndpoint],
+        );
+        $fallback = $this->adapter('cache.array', HostingService::Cache, [], 1, true);
+        $selector = new HostingAdapterSelector([$fallback, $optional]);
+        $report = $this->reportFor([
+            HostingCapability::RedisServer8->value => CapabilityStatus::Verified,
+            HostingCapability::RedisPrivateEndpoint->value => CapabilityStatus::Verified,
+        ]);
+
+        self::assertSame($fallback, $selector->select(HostingService::Cache, $report));
+        self::assertSame(
+            $optional,
+            $selector->select(HostingService::Cache, $report, [HostingSecurityFeature::PrivateRedisEndpoint]),
+        );
+    }
+
     public function testSafeFallbackIsSelectedWhenPreferredCapabilityEvidenceIsStale(): void
     {
         $preferred = $this->adapter('redis.cache', HostingService::Cache, [HostingCapability::RedisPrivateEndpoint], 10);
@@ -154,6 +193,7 @@ final class HostingAdapterSelectorTest extends TestCase
 
     /**
      * @param list<HostingCapability> $requirements
+     * @param list<HostingSecurityFeature> $requiredFeatures
      */
     private function adapter(
         string $identifier,
@@ -161,10 +201,12 @@ final class HostingAdapterSelectorTest extends TestCase
         array $requirements,
         int $priority,
         bool $fallback = false,
+        array $requiredFeatures = [],
     ): HostingAdapterDefinitionInterface {
-        return new readonly class($identifier, $service, $requirements, $priority, $fallback) implements HostingAdapterDefinitionInterface {
+        return new readonly class($identifier, $service, $requirements, $priority, $fallback, $requiredFeatures) implements HostingAdapterDefinitionInterface {
             /**
              * @param list<HostingCapability> $requirements
+             * @param list<HostingSecurityFeature> $requiredFeatures
              */
             public function __construct(
                 private string $identifier,
@@ -172,6 +214,7 @@ final class HostingAdapterSelectorTest extends TestCase
                 private array $requirements,
                 private int $priority,
                 private bool $fallback,
+                private array $requiredFeatures,
             ) {
             }
 
@@ -188,6 +231,11 @@ final class HostingAdapterSelectorTest extends TestCase
             public function requiredCapabilities(): array
             {
                 return $this->requirements;
+            }
+
+            public function requiredFeatures(): array
+            {
+                return $this->requiredFeatures;
             }
 
             public function priority(): int
