@@ -640,6 +640,26 @@ jobs:
                   changed_files=$(git diff --name-only -- "${files[@]}")
                   if [[ -n "$changed_files" ]]; then
                     printf 'PHP-CS-Fixer found style changes in these files:\n%s\n' "$changed_files"
+                    python3 - "${files[@]}" <<'PY'
+          import re
+          import subprocess
+          import sys
+
+          diff = subprocess.run(
+              ['git', 'diff', '--unified=0', '--', *sys.argv[1:]],
+              check=True,
+              capture_output=True,
+              text=True,
+          ).stdout
+          current_file = ''
+          for line in diff.splitlines():
+              if line.startswith('+++ b/'):
+                  current_file = line[6:]
+              elif line.startswith('@@ '):
+                  match = re.match(r'@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@', line)
+                  if match:
+                      print(f'PHP-CS-Fixer changed area: {current_file}:{match.group(1)}')
+          PY
                   else
                     echo 'PHP-CS-Fixer did not identify changed files after a failed check.'
                   fi
