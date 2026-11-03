@@ -48,7 +48,6 @@ final class InstallerAdministratorControllerTest extends WebTestCase
         self::assertInstanceOf(AdminUserRepository::class, $adminUsers);
         self::assertSame(0, $adminUsers->countAdministratorsForRoleManagement());
 
-
         $email = 'first-admin-'.bin2hex(random_bytes(6)).'@example.test';
         $password = bin2hex(random_bytes(12)).'Aa!';
 
@@ -178,8 +177,6 @@ final class InstallerAdministratorControllerTest extends WebTestCase
         $adminUsers = $client->getContainer()->get(AdminUserRepository::class);
         self::assertInstanceOf(AdminUserRepository::class, $adminUsers);
         self::assertSame(0, $adminUsers->countAdministratorsForRoleManagement());
-
-
         try {
             $client->request('GET', '/install/administrator');
             self::assertTrue($connection->isTransactionActive(), 'The database transaction must remain active across the first installer request.');
