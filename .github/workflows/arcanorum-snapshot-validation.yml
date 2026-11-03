@@ -797,6 +797,20 @@ jobs:
               print('Migration failure code locations: ' + ', '.join(safe_locations[:5]))
           if versions:
               print('Migration versions involved: ' + ', '.join(versions))
+          safe_words = {
+              'allowed', 'argument', 'array', 'as', 'access', 'before', 'be', 'call', 'cannot',
+              'class', 'compile', 'connection', 'declare', 'denied', 'does', 'error', 'exception',
+              'execution', 'expected', 'fatal', 'few', 'file', 'found', 'function', 'initialized',
+              'initialization', 'line', 'many', 'maximum', 'memory', 'method', 'must', 'not', 'null',
+              'object', 'of', 'offset', 'permission', 'private', 'property', 'protected', 'public',
+              'read', 'received', 'required', 'server', 'size', 'string', 'syntax', 'the', 'time',
+              'to', 'too', 'type', 'undefined', 'unexpected', 'unknown', 'use', 'value', 'write',
+          }
+          for line in (line for line in log.splitlines() if 'Fatal' in line or 'Exception' in line):
+              words = [word.lower() for word in re.findall(r'[A-Za-z]+', line) if word.lower() in safe_words]
+              if words:
+                  print('Migration safe error signature: ' + ' '.join(words[:12]))
+                  break
           PY
               fi
               printf '%s: FAIL; diagnostic output withheld.\n' "$label"
