@@ -22,6 +22,7 @@ on:
           - full
           - installer-bootstrap-focused
           - hosting-security-selection-focused
+          - hosting-security-selection-tests-only
           - p01-p03-focused
           - automation-focused
           - analytics-focused
@@ -472,7 +473,7 @@ jobs:
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit-installer-bootstrap.xml
 
   validate-hosting-security-selection-focused:
-    if: github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'hosting-security-selection-focused'
+    if: github.event_name == 'workflow_dispatch' && (inputs.validation_scope == 'hosting-security-selection-focused' || inputs.validation_scope == 'hosting-security-selection-tests-only')
     name: Focused hosting security selection and adapter checks
     runs-on: ubuntu-26.04
     timeout-minutes: 30
@@ -604,6 +605,7 @@ jobs:
           fi
 
       - name: Run focused hosting adapter quality gates
+        if: inputs.validation_scope != 'hosting-security-selection-tests-only'
         shell: bash
         run: |
           set -euo pipefail
@@ -855,7 +857,50 @@ jobs:
           status=$?
           set -e
           if [ "$status" -ne 0 ]; then
-            echo 'Affected PHPUnit checks: FAIL; detailed test output withheld.'
+            echo 'Affected PHPUnit checks: FAIL; printing test identifiers only.'
+            python3 - <<'PY'
+          import re
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          report = Path('var/test-results/junit-hosting-security-selection.xml')
+          if not report.is_file():
+              print('JUnit failure summary unavailable; raw diagnostics withheld.')
+          else:
+              try:
+                  root = ET.parse(report).getroot()
+              except ET.ParseError:
+                  print('JUnit failure summary unavailable; raw diagnostics withheld.')
+              else:
+                  numeric = ('tests', 'assertions', 'failures', 'errors', 'skipped', 'time')
+                  counts = [f'{key}={root.attrib[key]}' for key in numeric if key in root.attrib]
+                  if counts:
+                      print('JUnit summary: ' + ', '.join(counts))
+                  shown = 0
+                  for case in root.iter('testcase'):
+                      for outcome in ('failure', 'error', 'skipped', 'risky', 'incomplete'):
+                          issue = case.find(outcome)
+                          if issue is None:
+                              continue
+                          class_name = case.attrib.get('classname', '').rsplit('\\', 1)[-1]
+                          test_name = case.attrib.get('name', '')
+                          error_type = issue.attrib.get('type', '').rsplit('\\', 1)[-1]
+                          if not re.fullmatch(r'[A-Za-z0-9_]+', class_name):
+                              class_name = 'UnknownTestClass'
+                          if not re.fullmatch(r'test[A-Za-z0-9_]+', test_name):
+                              test_name = 'unknownTest'
+                          if not re.fullmatch(r'[A-Za-z0-9_]+', error_type):
+                              error_type = 'details withheld'
+                          print(f'Failed test: {class_name}::{test_name} ({outcome}: {error_type})')
+                          shown += 1
+                          if shown >= 12:
+                              print('Further failed test identifiers omitted.')
+                              break
+                      if shown >= 12:
+                          break
+                  if shown == 0:
+                      print('No failed testcase identifier was present in JUnit.')
+          PY
             exit "$status"
           fi
           echo 'Affected PHPUnit checks: PASS; detailed results withheld.'
