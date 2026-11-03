@@ -635,6 +635,18 @@ jobs:
             if "$@" > "var/test-results/${label}.log" 2>&1; then
               printf '%s: PASS.\n' "$label"
             else
+              if [[ "$label" == php-cs-fixer ]]; then
+                if vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --using-cache=no "${files[@]}" > var/test-results/php-cs-fixer-fix.log 2>&1; then
+                  changed_files=$(git diff --name-only -- "${files[@]}")
+                  if [[ -n "$changed_files" ]]; then
+                    printf 'PHP-CS-Fixer found style changes in these files:\n%s\n' "$changed_files"
+                  else
+                    echo 'PHP-CS-Fixer did not identify changed files after a failed check.'
+                  fi
+                else
+                  echo 'PHP-CS-Fixer could not produce a safe file summary.'
+                fi
+              fi
               printf '%s: FAIL; diagnostic output withheld.\n' "$label"
               return 1
             fi
