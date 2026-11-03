@@ -8,6 +8,7 @@ use App\Entity\HostingSecuritySelection;
 use App\Platform\Hosting\HostingProfileDetector;
 use App\Platform\Hosting\HostingSecurityFeatureCatalog;
 use App\Platform\Hosting\HostingSecurityFeatureChoice;
+use App\Platform\Hosting\HostingSecurityFeatureSelectionOverview;
 use App\Repository\HostingSecuritySelectionRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -24,17 +25,23 @@ final readonly class HostingSecurityFeatureSelectionManager
     /** @return list<HostingSecurityFeatureChoice> */
     public function choices(): array
     {
-        $selection = $this->selections->findCurrent();
-        if (!$selection instanceof HostingSecuritySelection) {
-            throw new \RuntimeException('Die Host-Sicherheitsauswahl ist nicht initialisiert.');
-        }
-
-        return $this->catalog->choices(
-            $this->hostingProfile->detect(),
-            $selection->getSelectedFeatureIds(),
-        );
+        return $this->overview()->optionalFeatures;
     }
 
+    public function overview(): HostingSecurityFeatureSelectionOverview
+    {
+        $selection = $this->selections->findCurrent();
+        if (!$selection instanceof HostingSecuritySelection) {
+            throw new \\RuntimeException('Die Host-Sicherheitsauswahl ist nicht initialisiert.');
+        }
+
+        $report = $this->hostingProfile->detect();
+
+        return new HostingSecurityFeatureSelectionOverview(
+            $report,
+            $this->catalog->choices($report, $selection->getSelectedFeatureIds()),
+        );
+    }
     public function replaceSelection(mixed $requestedFeatureIds): void
     {
         if (!is_array($requestedFeatureIds)) {
