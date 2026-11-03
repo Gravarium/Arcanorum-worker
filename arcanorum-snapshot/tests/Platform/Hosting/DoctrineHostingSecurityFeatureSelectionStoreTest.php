@@ -42,7 +42,7 @@ final class DoctrineHostingSecurityFeatureSelectionStoreTest extends TestCase
             $connection = $this->createMock(Connection::class);
             $connection->method('fetchOne')->willReturn($storedValue);
 
-            self::assertSame([], (new DoctrineHostingSecurityFeatureSelectionStore($connection))->selectedFeatures());
+            self::assertSame([], new DoctrineHostingSecurityFeatureSelectionStore($connection)->selectedFeatures());
         }
     }
 
@@ -51,6 +51,6 @@ final class DoctrineHostingSecurityFeatureSelectionStoreTest extends TestCase
         $connection = $this->createMock(Connection::class);
         $connection->method('fetchOne')->willThrowException(new \RuntimeException('Private database diagnostic'));
 
-        self::assertSame([], (new DoctrineHostingSecurityFeatureSelectionStore($connection))->selectedFeatures());
+        self::assertSame([], new DoctrineHostingSecurityFeatureSelectionStore($connection)->selectedFeatures());
     }
 }
