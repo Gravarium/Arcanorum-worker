@@ -730,11 +730,20 @@ jobs:
               printf '%s: PASS.\n' "$label"
             else
               if [[ "$label" == migrations ]]; then
+                set +e
+                APP_DEBUG=1 php bin/console doctrine:migrations:migrate --env=test --no-interaction > var/test-results/migrations-debug.log 2>&1
+                debug_status=$?
+                set -e
+                if [[ "$debug_status" -eq 0 ]]; then
+                  echo 'Migration diagnostic retry: completed after the initial failure.'
+                fi
                 python3 - <<'PY'
           import re
           from pathlib import Path
 
-          log = Path('var/test-results/migrations.log').read_text(encoding='utf-8', errors='replace')
+          debug_path = Path('var/test-results/migrations-debug.log')
+          log_path = debug_path if debug_path.is_file() and debug_path.stat().st_size > 0 else Path('var/test-results/migrations.log')
+          log = log_path.read_text(encoding='utf-8', errors='replace')
           states = sorted(set(re.findall(r'SQLSTATE\[([A-Z0-9]+)\]', log)))
           classes = sorted(set(re.findall(r'\b([A-Za-z_\\][A-Za-z0-9_\\]*(?:Exception|Error))\b', log)))
           versions = sorted(set(re.findall(r'DoctrineMigrations\\Version(\d+)', log)))
@@ -759,7 +768,7 @@ jobs:
               print('Migration failure exception types: ' + ', '.join(item.rsplit('\\', 1)[-1] for item in classes))
           else:
               print('Migration failure category: execution error; detailed output withheld.')
-          locations = re.findall(r'(?:in|In) ([^\s]+\.php)(?::(\d+)| line (\d+))', log)
+          locations = re.findall(r'(?:in|In) ([^\s:]+?)(?:\.php)?(?::(\d+)| line (\d+))', log)
           safe_locations = sorted({f'{Path(file).name}:{line or alternate}' for file, line, alternate in locations})
           if safe_locations:
               print('Migration failure code locations: ' + ', '.join(safe_locations[:5]))
