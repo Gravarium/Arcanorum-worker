@@ -86,7 +86,7 @@ final class AdminHostingSecurityControllerTest extends WebTestCase
             $choices = $manager->choices();
             $selected = null;
             foreach ($choices as $choice) {
-                if ($choice->feature === HostingSecurityFeature::PrivateStorage) {
+                if (HostingSecurityFeature::PrivateStorage === $choice->feature) {
                     $selected = $choice;
                     break;
                 }

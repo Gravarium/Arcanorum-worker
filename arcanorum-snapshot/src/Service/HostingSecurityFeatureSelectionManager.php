@@ -35,9 +35,6 @@ final readonly class HostingSecurityFeatureSelectionManager
         );
     }
 
-    /**
-     * @param mixed $requestedFeatureIds
-     */
     public function replaceSelection(mixed $requestedFeatureIds): void
     {
         if (!is_array($requestedFeatureIds)) {

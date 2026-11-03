@@ -75,7 +75,7 @@ final class AdminHostingSecurityController extends AbstractController
 
     /**
      * @param list<HostingSecurityFeatureChoice> $choices
-     * @param array<string, string> $errors
+     * @param array<string, string>              $errors
      */
     private function renderSelection(
         array $choices,
