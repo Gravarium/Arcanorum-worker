@@ -51,10 +51,14 @@ final class HostingSecurityFeatureSelectionManagerTest extends KernelTestCase
             self::assertFalse($inactive->isEnabled());
 
             $withoutProof->replaceSelection(['private_storage']);
-            self::assertSame(['private_storage'], $repository->findCurrent()?->getSelectedFeatureIds());
+            $retainedSelection = $repository->findCurrent();
+            self::assertInstanceOf(HostingSecuritySelection::class, $retainedSelection);
+            self::assertSame(['private_storage'], $retainedSelection->getSelectedFeatureIds());
 
             $withoutProof->replaceSelection([]);
-            self::assertSame([], $repository->findCurrent()?->getSelectedFeatureIds());
+            $clearedSelection = $repository->findCurrent();
+            self::assertInstanceOf(HostingSecuritySelection::class, $clearedSelection);
+            self::assertSame([], $clearedSelection->getSelectedFeatureIds());
         } finally {
             if ($connection->isTransactionActive()) {
                 $connection->rollBack();
@@ -85,7 +89,9 @@ final class HostingSecurityFeatureSelectionManagerTest extends KernelTestCase
                     $manager->replaceSelection($invalidSelection);
                     self::fail('The selection manager must reject malformed or unverified choices.');
                 } catch (\InvalidArgumentException) {
-                    self::assertSame([], $repository->findCurrent()?->getSelectedFeatureIds());
+                    $unchanged = $repository->findCurrent();
+                    self::assertInstanceOf(HostingSecuritySelection::class, $unchanged);
+                    self::assertSame([], $unchanged->getSelectedFeatureIds());
                 }
             }
         } finally {
