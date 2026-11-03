@@ -12,8 +12,8 @@ use App\Platform\Hosting\HostingAdapterSelector;
 use App\Platform\Hosting\HostingAdapterUnavailable;
 use App\Platform\Hosting\HostingCapability;
 use App\Platform\Hosting\HostingCapabilityReport;
-use App\Platform\Hosting\HostingService;
 use App\Platform\Hosting\HostingSecurityFeature;
+use App\Platform\Hosting\HostingService;
 use PHPUnit\Framework\TestCase;
 
 final class HostingAdapterSelectorTest extends TestCase
