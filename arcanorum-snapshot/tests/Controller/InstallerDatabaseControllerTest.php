@@ -167,7 +167,7 @@ final class InstallerDatabaseControllerTest extends WebTestCase
     private function assertPrivateNoStore(KernelBrowser $client): void
     {
         $directives = array_map(
-            'trim',
+            trim(...),
             explode(',', strtolower((string) $client->getResponse()->headers->get('Cache-Control'))),
         );
 
