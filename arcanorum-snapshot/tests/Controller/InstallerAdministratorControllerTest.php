@@ -94,7 +94,9 @@ final class InstallerAdministratorControllerTest extends WebTestCase
                 'code' => $invalidCode,
             ]);
             self::assertResponseStatusCodeSame(422);
-            self::assertSame(0, $client->getContainer()->get(AdminUserRepository::class)->countAdministratorsForRoleManagement());
+            $adminUsers = $client->getContainer()->get(AdminUserRepository::class);
+            self::assertInstanceOf(AdminUserRepository::class, $adminUsers);
+            self::assertSame(0, $adminUsers->countAdministratorsForRoleManagement());
 
             $client->request('GET', '/install/administrator/mfa');
             self::assertResponseIsSuccessful();

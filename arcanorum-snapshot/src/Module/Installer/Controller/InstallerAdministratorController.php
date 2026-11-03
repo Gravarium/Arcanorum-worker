@@ -356,6 +356,7 @@ final class InstallerAdministratorController extends AbstractController
         return ['email' => $email, 'password_hash' => $passwordHash, 'secret' => $secret];
     }
 
+    /** @phpstan-impure */
     private function runtimeAttestationAllowsAdministratorCreation(LoggerInterface $logger): bool
     {
         if (!$this->runtimeAttestationRequired) {
