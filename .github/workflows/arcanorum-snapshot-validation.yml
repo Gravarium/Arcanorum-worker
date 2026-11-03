@@ -847,6 +847,7 @@ jobs:
           php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
             --fail-on-risky --fail-on-warning --fail-on-deprecation \
             --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
+            --display-phpunit-notices \
             --fail-on-empty-test-suite --log-junit=var/test-results/junit-hosting-security-selection.xml \
             tests/Platform/Hosting/DoctrineHostingSecurityFeatureSelectionStoreTest.php \
             tests/Platform/Hosting/DoctrineHostingSecurityFeatureSelectionStoreIntegrationTest.php \
@@ -893,7 +894,7 @@ jobs:
                               test_name = 'unknownTest'
                           print(f'Test status: {class_name}::{test_name} ({status})')
                           shown += 1
-                      for outcome in ('failure', 'error', 'skipped', 'risky', 'incomplete'):
+                      for outcome in ('failure', 'error', 'warning', 'notice', 'deprecation', 'skipped', 'risky', 'incomplete'):
                           issue = case.find(outcome)
                           if issue is None:
                               continue
@@ -935,6 +936,13 @@ jobs:
                               print('PHPUnit outcome: ' + line)
                       if 'Fatal error' in content or 'Uncaught ' in content:
                           print('PHP runtime failure occurred; raw diagnostic output withheld.')
+                      notice_cases = sorted(set(re.findall(r'(?m)^\s*\d+\)\s+([A-Za-z0-9_\\]+::test[A-Za-z0-9_]+)\s*$', content)))
+                      for case in notice_cases[:12]:
+                          print('PHPUnit notice in test: ' + case.rsplit('\\', 1)[-1])
+                      if not notice_cases and 'PHPUnit Notices' in content:
+                          locations = sorted(set(re.findall(r'(?m)^\s*([A-Za-z0-9_./-]+\.php):(\d+)\s*$', content)))
+                          for file_name, line_number in locations[:12]:
+                              print(f'PHPUnit notice location: {Path(file_name).name}:{line_number}')
           PY
             exit "$status"
           fi
