@@ -21,6 +21,8 @@ use App\Platform\Security\TotpVerifier;
 use App\Repository\HostingSecuritySelectionRepository;
 use App\Service\HostingSecurityFeatureSelectionManager;
 use App\Tests\Support\VerifiedRuntimeAttestationReportProvider;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -128,6 +130,7 @@ final class AdminHostingSecurityControllerTest extends WebTestCase
             $this->persistAdmin($client, $email);
             $this->loginAdmin($client, $email);
             $connection->executeStatement('DELETE FROM hosting_security_selection WHERE id = 1');
+            $client->getContainer()->set(LoggerInterface::class, new NullLogger());
 
             $client->request('GET', '/admin/system/security');
 

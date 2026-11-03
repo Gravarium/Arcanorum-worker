@@ -58,7 +58,7 @@ final class InstallerSecurityProfileControllerTest extends WebTestCase
         try {
             $adminUsers = $client->getContainer()->get(AdminUserRepository::class);
             self::assertInstanceOf(AdminUserRepository::class, $adminUsers);
-            self::assertSame(0, $adminUsers->countForRoleManagement());
+            self::assertSame(0, $adminUsers->countAdministratorsForRoleManagement());
 
             $client->request('GET', '/install/security-profile');
             self::assertResponseIsSuccessful();
@@ -137,10 +137,26 @@ final class InstallerSecurityProfileControllerTest extends WebTestCase
             ]);
             self::assertResponseStatusCodeSame(404);
         } finally {
-            if ($connection->isTransactionActive()) {
-                $connection->rollBack();
+            try {
+                $this->removeAdmin($client, $email);
+            } finally {
+                if ($connection->isTransactionActive()) {
+                    $connection->rollBack();
+                }
+                $entityManager->clear();
             }
-            $entityManager->clear();
+        }
+    }
+
+    private function removeAdmin(KernelBrowser $client, string $email): void
+    {
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        $admin = $entityManager->getRepository(AdminUser::class)->findOneBy(['email' => $email]);
+
+        if ($admin instanceof AdminUser) {
+            $entityManager->remove($admin);
+            $entityManager->flush();
         }
     }
 
