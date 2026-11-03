@@ -10,6 +10,7 @@ use App\Platform\Security\AdminMfaSecretCipher;
 use App\Platform\Security\TotpVerifier;
 use App\Repository\AdminUserRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
@@ -35,7 +36,9 @@ final class InstallerAdministratorControllerTest extends WebTestCase
 
         $adminUsers = $client->getContainer()->get(AdminUserRepository::class);
         self::assertInstanceOf(AdminUserRepository::class, $adminUsers);
-        $entityManager = $adminUsers->getEntityManager();
+        $managerRegistry = $client->getContainer()->get(ManagerRegistry::class);
+        self::assertInstanceOf(ManagerRegistry::class, $managerRegistry);
+        $entityManager = $managerRegistry->getManagerForClass(AdminUser::class);
         self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
         $client->getContainer()->set(AdminUserRepository::class, $adminUsers);
         $connection = $entityManager->getConnection();
@@ -162,7 +165,9 @@ final class InstallerAdministratorControllerTest extends WebTestCase
 
         $adminUsers = $client->getContainer()->get(AdminUserRepository::class);
         self::assertInstanceOf(AdminUserRepository::class, $adminUsers);
-        $entityManager = $adminUsers->getEntityManager();
+        $managerRegistry = $client->getContainer()->get(ManagerRegistry::class);
+        self::assertInstanceOf(ManagerRegistry::class, $managerRegistry);
+        $entityManager = $managerRegistry->getManagerForClass(AdminUser::class);
         self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
         $client->getContainer()->set(AdminUserRepository::class, $adminUsers);
         $connection = $entityManager->getConnection();
