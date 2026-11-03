@@ -666,6 +666,37 @@ jobs:
                 else
                   echo 'PHP-CS-Fixer could not produce a safe file summary.'
                 fi
+              elif [[ "$label" == rector ]]; then
+                if vendor/bin/rector process --config=rector.php --no-progress-bar --output-format=github "${files[@]}" > var/test-results/rector-fix.log 2>&1; then
+                  changed_files=$(git diff --name-only -- "${files[@]}")
+                  if [[ -n "$changed_files" ]]; then
+                    printf 'Rector found changes in these files:\n%s\n' "$changed_files"
+                    python3 - "${files[@]}" <<'PY'
+          import re
+          import subprocess
+          import sys
+
+          diff = subprocess.run(
+              ['git', 'diff', '--unified=0', '--', *sys.argv[1:]],
+              check=True,
+              capture_output=True,
+              text=True,
+          ).stdout
+          current_file = ''
+          for line in diff.splitlines():
+              if line.startswith('+++ b/'):
+                  current_file = line[6:]
+              elif line.startswith('@@ '):
+                  match = re.match(r'@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@', line)
+                  if match:
+                      print(f'Rector changed area: {current_file}:{match.group(1)}')
+          PY
+                  else
+                    echo 'Rector did not identify changed files after a failed dry run.'
+                  fi
+                else
+                  echo 'Rector could not produce a safe file summary.'
+                fi
               fi
               printf '%s: FAIL; diagnostic output withheld.\n' "$label"
               return 1
