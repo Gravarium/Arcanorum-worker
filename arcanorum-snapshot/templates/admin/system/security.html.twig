@@ -1,0 +1,68 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}{{ 'Hosting-Sicherheitsauswahl'|trans }}{% endblock %}
+{% block admin_breadcrumb %}{{ 'Hosting-Sicherheitsauswahl'|trans }}{% endblock %}
+
+{% block admin_content %}
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow"><a href="{{ path('admin_system_index') }}">{{ 'Hosting und System'|trans }}</a></p>
+            <h1 id="seitenueberschrift">{{ 'Hosting-Sicherheitsauswahl'|trans }}</h1>
+            <p class="muted">{{ 'Wählen Sie zusätzliche Schutzfunktionen aus, die für diese Installation aktuell nachweislich verfügbar sind.'|trans }}</p>
+        </div>
+    </div>
+
+    {% if errors.form is defined %}
+        <p class="field-error" role="alert">{{ errors.form|trans }}</p>
+    {% endif %}
+
+    <section class="admin-panel" aria-labelledby="mandatory-security-heading">
+        <header class="panel-heading"><h2 id="mandatory-security-heading">{{ 'Verbindlicher Basisschutz'|trans }}</h2></header>
+        <p>{{ 'Diese Anwendungsschutzmaßnahmen bleiben immer aktiv und können hier nicht abgewählt werden.'|trans }}</p>
+        <ul>
+            <li>{{ 'Mehr-Faktor-Anmeldung für privilegierte Konten'|trans }}</li>
+            <li>{{ 'Serverseitige Rollen- und Berechtigungsprüfungen'|trans }}</li>
+            <li>{{ 'CSRF-Schutz für zustandsändernde Formulare'|trans }}</li>
+            <li>{{ 'Sichere Sitzungen und Schutz vor Sitzungsfixierung'|trans }}</li>
+            <li>{{ 'Eingabevalidierung, sichere Ausgabe und geschützte Uploads'|trans }}</li>
+        </ul>
+    </section>
+
+    <section class="admin-panel" aria-labelledby="optional-hosting-security-heading">
+        <header class="panel-heading"><h2 id="optional-hosting-security-heading">{{ 'Zusätzliche Host-Schutzfunktionen'|trans }}</h2></header>
+        <p>{{ 'Nur aktuell verifizierte Funktionen können neu ausgewählt werden. Eine manuelle Auswahl ersetzt keinen technischen Nachweis.'|trans }}</p>
+        <p>{{ 'Diese Seite speichert den Auswahlwunsch. Arcanorum verwendet eine Zusatzfunktion erst, wenn ihre Integration eingerichtet und ihre Voraussetzung aktuell nachgewiesen ist.'|trans }}</p>
+
+        <form id="hosting-security-form" method="post" action="{{ path('admin_hosting_security_update') }}" class="admin-form">
+            <input type="hidden" name="token" value="{{ csrf_token('admin_hosting_security') }}">
+
+            {% for choice in choices %}
+                {% set feature_id = choice.feature.value %}
+                {% set input_id = 'hosting-feature-' ~ feature_id %}
+                <div class="form-field">
+                    <label for="{{ input_id }}">
+                        <input
+                            id="{{ input_id }}"
+                            name="selected_features[]"
+                            type="checkbox"
+                            value="{{ feature_id }}"
+                            {% if choice.selected %}checked{% endif %}
+                            {% if not choice.isAvailable() and not choice.selected %}disabled{% endif %}
+                        >
+                        <strong>{{ choice.feature.label|trans }}</strong>
+                    </label>
+                    <p class="muted">{{ choice.feature.description|trans }}</p>
+                    <span class="status-pill {{ choice.availability.cssClass() }}">{{ choice.availability.label|trans }}</span>
+                    {% if choice.hasSelectionDrift() %}
+                        <p class="field-error" role="alert">{{ 'Ausgewählt, aber der aktuelle Hostnachweis fehlt. Die Funktion ist nicht als verfügbar bestätigt. Entfernen Sie die Auswahl oder stellen Sie den Nachweis wieder her.'|trans }}</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+            <div class="form-actions">
+                <button class="button button-primary" type="submit">{{ 'Auswahl speichern'|trans }}</button>
+                <a class="button" href="{{ path('admin_system_index') }}">{{ 'Zurück zu Hosting und System'|trans }}</a>
+            </div>
+        </form>
+    </section>
+{% endblock %}
