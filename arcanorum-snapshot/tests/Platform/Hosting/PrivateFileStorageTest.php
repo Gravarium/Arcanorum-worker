@@ -6,6 +6,7 @@ namespace App\Tests\Platform\Hosting;
 
 use App\Platform\Hosting\CapabilityProbeInterface;
 use App\Platform\Hosting\HostingCapabilityGuard;
+use App\Platform\Hosting\HostingSecurityFeature;
 use App\Platform\Hosting\PrivateFileStorage;
 use App\Platform\Hosting\PrivateStorageOperationFailed;
 use App\Platform\Hosting\PrivateStorageProbe;
@@ -13,6 +14,19 @@ use PHPUnit\Framework\TestCase;
 
 final class PrivateFileStorageTest extends TestCase
 {
+    public function testDeclaresItsRequiredPrivateStorageFeature(): void
+    {
+        $paths = $this->createStorageRoot();
+
+        try {
+            $storage = $this->createStorage($paths['public'], $paths['storage']);
+
+            self::assertSame([HostingSecurityFeature::PrivateStorage], $storage->requiredFeatures());
+        } finally {
+            $this->removeTree($paths['root']);
+        }
+    }
+
     public function testWritesReadsAndDeletesOwnerOnlyPrivateObject(): void
     {
         $paths = $this->createStorageRoot();

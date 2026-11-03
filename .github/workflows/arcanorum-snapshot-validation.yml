@@ -615,11 +615,13 @@ jobs:
             src/Platform/Hosting/HostingAdapterSelector.php
             src/Platform/Hosting/HostingCachePoolProvider.php
             src/Platform/Hosting/HostingSecurityFeatureSelectionStoreInterface.php
+            src/Platform/Hosting/PrivateFileStorage.php
             src/Platform/Hosting/RedisCachePoolAdapter.php
             tests/Platform/Hosting/DoctrineHostingSecurityFeatureSelectionStoreIntegrationTest.php
             tests/Platform/Hosting/DoctrineHostingSecurityFeatureSelectionStoreTest.php
             tests/Platform/Hosting/HostingAdapterSelectorTest.php
             tests/Platform/Hosting/HostingCachePoolProviderTest.php
+            tests/Platform/Hosting/PrivateFileStorageTest.php
             tests/Controller/HomePageTest.php
           )
           for file in "${files[@]}"; do
@@ -848,6 +850,7 @@ jobs:
             tests/Platform/Hosting/DoctrineHostingSecurityFeatureSelectionStoreIntegrationTest.php \
             tests/Platform/Hosting/HostingAdapterSelectorTest.php \
             tests/Platform/Hosting/HostingCachePoolProviderTest.php \
+            tests/Platform/Hosting/PrivateFileStorageTest.php \
             tests/Controller/HomePageTest.php > var/test-results/phpunit-hosting-security-selection.log 2>&1
           status=$?
           set -e

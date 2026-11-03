@@ -36,6 +36,14 @@ final readonly class PrivateFileStorage implements PrivateObjectStorageInterface
         return [HostingCapability::PrivateStorage];
     }
 
+    /**
+     * @return list<HostingSecurityFeature>
+     */
+    public function requiredFeatures(): array
+    {
+        return [HostingSecurityFeature::PrivateStorage];
+    }
+
     public function priority(): int
     {
         return 100;
