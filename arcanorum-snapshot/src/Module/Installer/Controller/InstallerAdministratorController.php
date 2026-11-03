@@ -419,7 +419,7 @@ final class InstallerAdministratorController extends AbstractController
     }
 
     /**
-     * @param array<string, mixed> $data
+     * @param array<string, mixed>  $data
      * @param array<string, string> $errors
      */
     private function renderStep(string $step, array $data = [], array $errors = [], int $status = Response::HTTP_OK): Response
@@ -433,7 +433,7 @@ final class InstallerAdministratorController extends AbstractController
 
     /**
      * @param array{email: string, password_hash: string, secret: string} $pending
-     * @param array<string, string> $errors
+     * @param array<string, string>                                       $errors
      */
     private function renderMfaStep(array $pending, array $errors = [], int $status = Response::HTTP_OK): Response
     {
