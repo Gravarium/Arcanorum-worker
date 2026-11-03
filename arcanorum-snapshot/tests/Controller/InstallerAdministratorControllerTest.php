@@ -65,7 +65,9 @@ final class InstallerAdministratorControllerTest extends WebTestCase
                 'password_confirmation' => 'short',
             ]);
             self::assertResponseStatusCodeSame(422);
-            self::assertSame(0, $client->getContainer()->get(AdminUserRepository::class)->countAdministratorsForRoleManagement());
+            $adminUsers = $client->getContainer()->get(AdminUserRepository::class);
+            self::assertInstanceOf(AdminUserRepository::class, $adminUsers);
+            self::assertSame(0, $adminUsers->countAdministratorsForRoleManagement());
 
             $client->request('POST', '/install/administrator', [
                 'token' => $credentialsToken,
@@ -220,7 +222,5 @@ final class InstallerAdministratorControllerTest extends WebTestCase
         }
 
         self::fail('Could not produce a non-matching TOTP value.');
-
-        return '';
     }
 }

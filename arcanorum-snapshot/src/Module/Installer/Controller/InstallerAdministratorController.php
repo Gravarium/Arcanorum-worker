@@ -35,6 +35,8 @@ use Symfony\Component\Routing\Attribute\Route;
 final class InstallerAdministratorController extends AbstractController
 {
     private const string PENDING_SESSION_KEY = '_installer_first_admin_pending';
+    private const string EXPIRED_SETUP_SESSION_KEY = '_installer_first_admin_expired';
+    private const string RECOVERY_CODES_SESSION_KEY = '_installer_first_admin_recovery_codes';
     private const int SETUP_TTL_SECONDS = 1200;
     private const int PASSWORD_MIN_LENGTH = 16;
     private const int PASSWORD_MAX_LENGTH = 1024;
@@ -81,14 +83,16 @@ final class InstallerAdministratorController extends AbstractController
         }
         $session = $request->getSession();
         $hadPendingSetup = $session->has(self::PENDING_SESSION_KEY);
+        $expiredSetup = true === $session->get(self::EXPIRED_SETUP_SESSION_KEY);
+        $session->remove(self::EXPIRED_SETUP_SESSION_KEY);
         $pending = $this->readPendingSetup($request);
         if ($request->isMethod(Request::METHOD_GET)) {
             if (null !== $pending) {
                 return $this->redirectPrivate('installer_administrator_mfa');
             }
 
-            if ($hadPendingSetup) {
-                $session->getFlashBag()->add('error', 'Die Installationssitzung ist abgelaufen. Starten Sie die Einrichtung erneut.');
+            if ($hadPendingSetup || $expiredSetup) {
+                return $this->renderStep('credentials', [], ['form' => 'Die Installationssitzung ist abgelaufen. Starten Sie die Einrichtung erneut.']);
             }
 
             return $this->renderStep('credentials');
@@ -193,7 +197,7 @@ final class InstallerAdministratorController extends AbstractController
         $pending = $this->readPendingSetup($request);
         if (null === $pending) {
             if ($hadPendingSetup) {
-                $session->getFlashBag()->add('error', 'Die Installationssitzung ist abgelaufen. Starten Sie die Einrichtung erneut.');
+                $session->set(self::EXPIRED_SETUP_SESSION_KEY, true);
             }
 
             return $this->redirectPrivate('installer_administrator_credentials');
@@ -246,7 +250,7 @@ final class InstallerAdministratorController extends AbstractController
         try {
             $provisioned = $this->entityManager->getConnection()->transactional(
                 function (Connection $connection) use ($pending): ?AdminMfaProvisioningResult {
-                    if (!$connection->isTransactionActive() || null === $this->hostingSelections->findCurrentForUpdate()) {
+                    if (null === $this->hostingSelections->findCurrentForUpdate()) {
                         throw new \RuntimeException('Die Installationssperre ist nicht initialisiert.');
                     }
 
@@ -277,8 +281,9 @@ final class InstallerAdministratorController extends AbstractController
             return $this->notFoundResponse();
         }
 
-        $request->getSession()->remove(self::PENDING_SESSION_KEY);
-        $request->getSession()->getFlashBag()->set('installer_first_admin_recovery_codes', $provisioned->recoveryCodes);
+        $session = $request->getSession();
+        $session->remove(self::PENDING_SESSION_KEY);
+        $session->set(self::RECOVERY_CODES_SESSION_KEY, $provisioned->recoveryCodes);
 
         return $this->redirectPrivate('installer_administrator_recovery');
     }
@@ -286,8 +291,10 @@ final class InstallerAdministratorController extends AbstractController
     #[Route('/recovery', name: 'recovery', methods: ['GET'])]
     public function recovery(Request $request): Response
     {
-        $codes = $request->getSession()->getFlashBag()->get('installer_first_admin_recovery_codes');
-        if (!array_is_list($codes) || 10 !== count($codes)) {
+        $session = $request->getSession();
+        $codes = $session->get(self::RECOVERY_CODES_SESSION_KEY);
+        $session->remove(self::RECOVERY_CODES_SESSION_KEY);
+        if (!is_array($codes) || !array_is_list($codes) || 10 !== count($codes)) {
             return $this->notFoundResponse();
         }
 
