@@ -39,7 +39,7 @@ final class DoctrineHostingSecurityFeatureSelectionStoreTest extends TestCase
             '["private_redis_endpoint","private_redis_endpoint"]',
             '["private_redis_endpoint",4]',
         ] as $storedValue) {
-            $connection = $this->createMock(Connection::class);
+            $connection = $this->createStub(Connection::class);
             $connection->method('fetchOne')->willReturn($storedValue);
 
             self::assertSame([], new DoctrineHostingSecurityFeatureSelectionStore($connection)->selectedFeatures());
@@ -48,7 +48,7 @@ final class DoctrineHostingSecurityFeatureSelectionStoreTest extends TestCase
 
     public function testUnavailableSelectionTableUsesNoOptionalFeatures(): void
     {
-        $connection = $this->createMock(Connection::class);
+        $connection = $this->createStub(Connection::class);
         $connection->method('fetchOne')->willThrowException(new \RuntimeException('Private database diagnostic'));
 
         self::assertSame([], new DoctrineHostingSecurityFeatureSelectionStore($connection)->selectedFeatures());
