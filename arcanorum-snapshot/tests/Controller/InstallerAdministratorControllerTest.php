@@ -39,6 +39,9 @@ final class InstallerAdministratorControllerTest extends WebTestCase
         $connection->beginTransaction();
         $connection->executeStatement('DELETE FROM admin_users');
         $entityManager->clear();
+        $adminUsers = $client->getContainer()->get(AdminUserRepository::class);
+        self::assertInstanceOf(AdminUserRepository::class, $adminUsers);
+        self::assertSame(0, $adminUsers->countAdministratorsForRoleManagement());
 
         $email = 'first-admin-'.bin2hex(random_bytes(6)).'@example.test';
         $password = bin2hex(random_bytes(12)).'Aa!';
@@ -160,6 +163,9 @@ final class InstallerAdministratorControllerTest extends WebTestCase
         $connection->beginTransaction();
         $connection->executeStatement('DELETE FROM admin_users');
         $entityManager->clear();
+        $adminUsers = $client->getContainer()->get(AdminUserRepository::class);
+        self::assertInstanceOf(AdminUserRepository::class, $adminUsers);
+        self::assertSame(0, $adminUsers->countAdministratorsForRoleManagement());
 
         try {
             $client->request('GET', '/install/administrator');
