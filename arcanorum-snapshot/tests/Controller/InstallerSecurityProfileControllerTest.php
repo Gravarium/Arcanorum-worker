@@ -20,7 +20,6 @@ use App\Repository\AdminUserRepository;
 use App\Repository\HostingSecuritySelectionRepository;
 use App\Service\HostingSecurityFeatureSelectionManager;
 use App\Tests\Support\VerifiedRuntimeAttestationReportProvider;
-use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;

@@ -110,6 +110,44 @@ final class AdminHostingSecurityControllerTest extends WebTestCase
         }
     }
 
+    public function testMissingSavedSelectionReturnsGenericUnavailableResponse(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        $connection = $entityManager->getConnection();
+        $connection->beginTransaction();
+        $client->getContainer()->set(
+            RuntimeAttestationReportProviderInterface::class,
+            new VerifiedRuntimeAttestationReportProvider(),
+        );
+        $email = 'hosting-security-missing-'.bin2hex(random_bytes(6)).'@example.test';
+
+        try {
+            $this->persistAdmin($client, $email);
+            $this->loginAdmin($client, $email);
+            $connection->executeStatement('DELETE FROM hosting_security_selection WHERE id = 1');
+
+            $client->request('GET', '/admin/system/security');
+
+            self::assertResponseStatusCodeSame(503);
+            self::assertSame(
+                'Die Auswahl konnte nicht geladen werden. Bitte versuchen Sie es erneut.',
+                $client->getResponse()->getContent(),
+            );
+        } finally {
+            try {
+                $this->removeAdmin($client, $email);
+            } finally {
+                if ($connection->isTransactionActive()) {
+                    $connection->rollBack();
+                }
+                $entityManager->clear();
+            }
+        }
+    }
+
     public function testUnauthenticatedVisitorCannotOpenTheAdminSelection(): void
     {
         $client = static::createClient();

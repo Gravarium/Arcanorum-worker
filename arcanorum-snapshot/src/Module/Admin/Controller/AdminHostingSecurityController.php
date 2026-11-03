@@ -26,9 +26,9 @@ final class AdminHostingSecurityController extends AbstractController
     }
 
     #[Route('', name: 'index', methods: ['GET'])]
-    public function index(): Response
+    public function index(LoggerInterface $logger): Response
     {
-        return $this->renderSelection($this->selectionManager->choices());
+        return $this->renderSavedSelection($logger);
     }
 
     #[Route('', name: 'update', methods: ['POST'])]
@@ -42,8 +42,8 @@ final class AdminHostingSecurityController extends AbstractController
 
         unset($input['token']);
         if ([] !== array_diff(array_keys($input), self::ALLOWED_INPUT_FIELDS)) {
-            return $this->renderSelection(
-                $this->selectionManager->choices(),
+            return $this->renderSavedSelection(
+                $logger,
                 ['form' => 'Die Anfrage enthält unbekannte Einstellungsfelder.'],
                 Response::HTTP_UNPROCESSABLE_ENTITY,
             );
@@ -52,8 +52,8 @@ final class AdminHostingSecurityController extends AbstractController
         try {
             $this->selectionManager->replaceSelection($input['selected_features'] ?? []);
         } catch (\InvalidArgumentException) {
-            return $this->renderSelection(
-                $this->selectionManager->choices(),
+            return $this->renderSavedSelection(
+                $logger,
                 ['form' => 'Bitte prüfen Sie die Auswahl und den aktuellen Hostingnachweis.'],
                 Response::HTTP_UNPROCESSABLE_ENTITY,
             );
@@ -71,6 +71,30 @@ final class AdminHostingSecurityController extends AbstractController
         $this->addFlash('success', 'Die Host-Sicherheitsauswahl wurde gespeichert.');
 
         return $this->privateResponse($this->redirectToRoute('admin_hosting_security_index'));
+    }
+
+    /**
+     * @param array<string, string> $errors
+     */
+    private function renderSavedSelection(
+        LoggerInterface $logger,
+        array $errors = [],
+        int $status = Response::HTTP_OK,
+    ): Response {
+        try {
+            $choices = $this->selectionManager->choices();
+        } catch (DbalException|\RuntimeException $exception) {
+            $logger->error('Die Host-Sicherheitsauswahl konnte nicht gelesen werden.', [
+                'failure_type' => $exception::class,
+            ]);
+
+            return $this->privateResponse(new Response(
+                'Die Auswahl konnte nicht geladen werden. Bitte versuchen Sie es erneut.',
+                Response::HTTP_SERVICE_UNAVAILABLE,
+            ));
+        }
+
+        return $this->renderSelection($choices, $errors, $status);
     }
 
     /**
