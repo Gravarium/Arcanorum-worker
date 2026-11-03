@@ -42,6 +42,10 @@ final class AdminHostingSecurityControllerTest extends WebTestCase
     {
         $client = static::createClient();
         $client->disableReboot();
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        $connection = $entityManager->getConnection();
+        $connection->beginTransaction();
         $client->getContainer()->set(
             RuntimeAttestationReportProviderInterface::class,
             new VerifiedRuntimeAttestationReportProvider(),
@@ -95,7 +99,14 @@ final class AdminHostingSecurityControllerTest extends WebTestCase
             self::assertNotNull($selected);
             self::assertTrue($selected->isEnabled());
         } finally {
-            $this->removeAdmin($client, $email);
+            try {
+                $this->removeAdmin($client, $email);
+            } finally {
+                if ($connection->isTransactionActive()) {
+                    $connection->rollBack();
+                }
+                $entityManager->clear();
+            }
         }
     }
 
