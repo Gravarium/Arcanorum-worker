@@ -29,14 +29,42 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 final class InstallerBootstrapFlowTest extends WebTestCase
 {
+    /** @var array<string, string|false> */
+    private static array $originalEnvironment = [];
+
     public static function setUpBeforeClass(): void
     {
-        $testKey = base64_encode(str_repeat('I', 32));
-        putenv('ADMIN_MFA_ENCRYPTION_KEY='.$testKey);
-        $_ENV['ADMIN_MFA_ENCRYPTION_KEY'] = $testKey;
-        $_SERVER['ADMIN_MFA_ENCRYPTION_KEY'] = $testKey;
+        foreach (['ADMIN_MFA_ENCRYPTION_KEY', 'APP_SECRET'] as $name) {
+            self::$originalEnvironment[$name] = getenv($name);
+        }
+
+        $testApplicationSecret = str_repeat('I', 48);
+        putenv('ADMIN_MFA_ENCRYPTION_KEY=');
+        $_ENV['ADMIN_MFA_ENCRYPTION_KEY'] = '';
+        $_SERVER['ADMIN_MFA_ENCRYPTION_KEY'] = '';
+        putenv('APP_SECRET='.$testApplicationSecret);
+        $_ENV['APP_SECRET'] = $testApplicationSecret;
+        $_SERVER['APP_SECRET'] = $testApplicationSecret;
 
         parent::setUpBeforeClass();
+    }
+
+    public static function tearDownAfterClass(): void
+    {
+        foreach (self::$originalEnvironment as $name => $value) {
+            if (false === $value) {
+                putenv($name);
+                unset($_ENV[$name], $_SERVER[$name]);
+
+                continue;
+            }
+
+            putenv($name.'='.$value);
+            $_ENV[$name] = $value;
+            $_SERVER[$name] = $value;
+        }
+
+        parent::tearDownAfterClass();
     }
 
     public function testBrowserInstallFlowFromDatabaseProbeThroughHostSelectionToFirstAdmin(): void
