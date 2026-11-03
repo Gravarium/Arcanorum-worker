@@ -532,7 +532,7 @@ jobs:
           from pathlib import Path
           import re
 
-          root = Path('arcanorum-snapshot')
+          root = Path('.')
           blocked = []
           patterns = {
               'private-key': re.compile(rb'-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----'),
