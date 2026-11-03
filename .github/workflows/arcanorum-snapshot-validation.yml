@@ -762,14 +762,37 @@ jobs:
               print('Migration failure category: PHP syntax.')
           elif 'typeerror' in lowered or 'must be of type' in lowered:
               print('Migration failure category: PHP type error.')
+          elif 'allowed memory size' in lowered or 'out of memory' in lowered:
+              print('Migration failure category: PHP memory limit.')
+          elif 'maximum execution time' in lowered or 'execution timed out' in lowered:
+              print('Migration failure category: execution timeout.')
+          elif 'too few arguments' in lowered or 'argumentcounterror' in lowered:
+              print('Migration failure category: PHP argument count.')
+          elif 'undefined constant' in lowered:
+              print('Migration failure category: undefined PHP constant.')
+          elif 'cannot access' in lowered or 'must be compatible with' in lowered:
+              print('Migration failure category: PHP declaration or visibility.')
+          elif 'cannot redeclare' in lowered:
+              print('Migration failure category: duplicate PHP declaration.')
           elif states:
               print('Migration failure SQLSTATE codes: ' + ', '.join(states))
           elif classes:
               print('Migration failure exception types: ' + ', '.join(item.rsplit('\\', 1)[-1] for item in classes))
           else:
               print('Migration failure category: execution error; detailed output withheld.')
-          locations = re.findall(r'(?:in|In) ([^\s:]+?)(?:\.php)?(?::(\d+)| line (\d+))', log)
-          safe_locations = sorted({f'{Path(file).name}:{line or alternate}' for file, line, alternate in locations})
+          safe_locations = {
+              f'{Path(file).name}:{line or alternate}'
+              for file, line, alternate in re.findall(r'(?:in|In) ([^\s:]+?)(?:\.php)?(?::(\d+)| line (\d+))', log)
+          }
+          safe_locations.update(
+              f'{Path(file).name}:{line}'
+              for file, line in re.findall(r'(?m)^\s*In ([^\n]+?) line (\d+):?\s*$', log)
+          )
+          safe_locations.update(
+              f'{Path(file).name}:{line}'
+              for file, line in re.findall(r'(?m)^#\d+ ([^\s]+\.php):(\d+)', log)
+          )
+          safe_locations = sorted(safe_locations)
           if safe_locations:
               print('Migration failure code locations: ' + ', '.join(safe_locations[:5]))
           if versions:
