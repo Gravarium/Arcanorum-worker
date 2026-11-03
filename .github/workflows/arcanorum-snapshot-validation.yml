@@ -526,7 +526,7 @@ jobs:
             echo 'The source commit must be a full lowercase Git SHA.' >&2
             exit 1
           fi
-          printf '%s\n' "$SOURCE_COMMIT" | cmp -s - arcanorum-snapshot/SOURCE_BASE_SHA
+          printf '%s\n' "$SOURCE_COMMIT" | cmp -s - SOURCE_BASE_SHA
           python3 - <<'PY'
           from hashlib import sha256
           from pathlib import Path
