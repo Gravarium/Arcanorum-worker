@@ -741,12 +741,28 @@ jobs:
           lowered = log.lower()
           if 'connection refused' in lowered or 'could not connect' in lowered or 'connection timed out' in lowered:
               print('Migration failure category: PostgreSQL connection.')
+          elif 'call to undefined function' in lowered:
+              print('Migration failure category: undefined PHP function.')
+          elif 'call to undefined method' in lowered:
+              print('Migration failure category: undefined PHP method.')
+          elif 'class ' in lowered and ' not found' in lowered:
+              print('Migration failure category: missing PHP class.')
+          elif 'cannot declare class' in lowered:
+              print('Migration failure category: duplicate PHP class.')
+          elif 'syntax error' in lowered:
+              print('Migration failure category: PHP syntax.')
+          elif 'typeerror' in lowered or 'must be of type' in lowered:
+              print('Migration failure category: PHP type error.')
           elif states:
               print('Migration failure SQLSTATE codes: ' + ', '.join(states))
           elif classes:
               print('Migration failure exception types: ' + ', '.join(item.rsplit('\\', 1)[-1] for item in classes))
           else:
               print('Migration failure category: execution error; detailed output withheld.')
+          locations = re.findall(r'(?:in|In) ([^\s]+\.php)(?::(\d+)| line (\d+))', log)
+          safe_locations = sorted({f'{Path(file).name}:{line or alternate}' for file, line, alternate in locations})
+          if safe_locations:
+              print('Migration failure code locations: ' + ', '.join(safe_locations[:5]))
           if versions:
               print('Migration versions involved: ' + ', '.join(versions))
           PY
