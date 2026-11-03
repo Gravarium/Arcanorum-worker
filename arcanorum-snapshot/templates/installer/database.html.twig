@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="{{ app.request.locale }}" dir="{{ locale_text_direction(app.request.locale) }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex,nofollow">
+    <meta name="color-scheme" content="light">
+    <title>{{ 'Installationsschritt: Datenbankverbindung'|trans }}</title>
+    <link rel="stylesheet" href="{{ asset('styles/app.css') }}">
+</head>
+<body class="public-site">
+<main class="public-main">
+    <header class="public-home-heading">
+        <p class="eyebrow">Arcanorum</p>
+        <h1>{{ 'Installationsschritt: Datenbankverbindung'|trans }}</h1>
+        <p>{{ 'Dieser Schritt prüft die vorhandene Serverkonfiguration. Datenbank-Zugangsdaten werden im Browser weder abgefragt noch gespeichert oder angezeigt.'|trans }}</p>
+    </header>
+
+    {% if errors.form is defined %}
+        <p class="field-error" role="alert">{{ errors.form|trans }}</p>
+    {% endif %}
+
+    {% if probe is not null and probe.connectionAvailable %}
+        <p class="status-pill status-pill-success" role="status">{{ 'Die Datenbankverbindung ist erreichbar.'|trans }}</p>
+        {% if probe.requiredTablesAvailable %}
+            <p>{{ 'Die erforderlichen Anwendungstabellen sind vorhanden. Diese Prüfung führt keine Migrationen aus.'|trans }}</p>
+            <p><a class="button button-primary" href="{{ path('installer_security_profile_index') }}">{{ 'Weiter zum Hosting-Sicherheitsprofil'|trans }}</a></p>
+        {% endif %}
+    {% elseif probe is not null %}
+        <p class="field-error" role="alert">{{ 'Die Datenbankverbindung ist nicht erreichbar. Prüfen Sie DATABASE_URL in der privaten Hoster- oder Serverkonfiguration und laden Sie diese Seite erneut.'|trans }}</p>
+    {% endif %}
+
+    <section class="admin-panel" aria-labelledby="installer-database-heading">
+        <header class="panel-heading"><h2 id="installer-database-heading">{{ 'Datenbankverbindung'|trans }}</h2></header>
+        <form id="installer-database-probe-form" method="post" action="{{ path('installer_database_index') }}" class="admin-form">
+            <input type="hidden" name="token" value="{{ csrf_token('installer_database_probe') }}">
+            <div class="form-actions">
+                <button class="button button-primary" type="submit">{{ 'Datenbankverbindung erneut prüfen'|trans }}</button>
+            </div>
+        </form>
+    </section>
+</main>
+</body>
+</html>

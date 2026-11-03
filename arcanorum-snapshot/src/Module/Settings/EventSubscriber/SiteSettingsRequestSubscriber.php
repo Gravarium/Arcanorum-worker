@@ -35,8 +35,12 @@ final readonly class SiteSettingsRequestSubscriber implements EventSubscriberInt
             return;
         }
 
-        $settings = $this->settings->current();
         $request = $event->getRequest();
+        if ('installer_database_index' === $request->attributes->get('_route')) {
+            return;
+        }
+
+        $settings = $this->settings->current();
         $request->setDefaultLocale($settings->getDefaultLocale());
         $request->attributes->set('_arcanorum_search_indexing_enabled', $settings->isSearchIndexingEnabled());
         if (!$request->attributes->has('_locale')) {

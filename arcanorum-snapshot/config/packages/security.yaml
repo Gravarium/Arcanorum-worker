@@ -87,6 +87,11 @@ framework:
             limit: 10
             interval: '1 hour'
             cache_pool: cache.app
+        installer_database_probe:
+            policy: sliding_window
+            limit: 10
+            interval: '1 hour'
+            cache_pool: cache.app
 
 security:
     session_fixation_strategy: migrate
@@ -160,7 +165,7 @@ security:
                 invalidate_session: true
 
     access_control:
-        - { path: '^/install/(?:security-profile|administrator(?:/(?:mfa|recovery))?)$', roles: PUBLIC_ACCESS }
+        - { path: '^/install/(?:database|security-profile|administrator(?:/(?:mfa|recovery))?)$', roles: PUBLIC_ACCESS }
         - { path: ^/admin/login$, roles: PUBLIC_ACCESS }
         - { path: ^/konto/(anmelden|registrieren|einrichten|verifizierung|passwort-vergessen)$, roles: PUBLIC_ACCESS }
         - { path: '^/konto/(verifizieren|passwort-zuruecksetzen)/[A-Za-z0-9_-]{43}$', roles: PUBLIC_ACCESS }

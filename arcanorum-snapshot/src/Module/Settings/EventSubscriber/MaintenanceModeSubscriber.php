@@ -33,10 +33,15 @@ final readonly class MaintenanceModeSubscriber implements EventSubscriberInterfa
         }
 
         $request = $event->getRequest();
+        $routeName = $request->attributes->get('_route');
+        if ('installer_database_index' === $routeName) {
+            return;
+        }
+
         $settings = $this->settings->current();
         if (!$settings->isMaintenanceModeEnabled()
             || $this->authorizationChecker->isGranted('ROLE_ADMIN')
-            || in_array($request->attributes->get('_route'), ['admin_login', 'robots_txt'], true)
+            || in_array($routeName, ['admin_login', 'robots_txt'], true)
         ) {
             return;
         }
