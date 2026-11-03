@@ -187,13 +187,14 @@ final class HostingSecurityFeatureCatalogTest extends TestCase
         array $previous,
         HostingCapabilityReport $report,
     ): void {
+        $rejected = false;
         try {
             new HostingSecurityFeatureCatalog()->replaceSelection($requested, $previous, $report);
         } catch (\InvalidArgumentException) {
-            return;
+            $rejected = true;
         }
 
-        self::fail('The invalid selection must be rejected.');
+        self::assertTrue($rejected, 'The invalid selection must be rejected.');
     }
 
     /**
