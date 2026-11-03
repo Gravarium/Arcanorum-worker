@@ -110,6 +110,7 @@ final class InstallerSecurityProfileController extends AbstractController
         return $this->privateResponse($this->redirectToRoute('installer_security_profile_index'));
     }
 
+    /** @phpstan-impure */
     private function installationIsComplete(): bool
     {
         return 0 < $this->adminUsers->countAdministratorsForRoleManagement();
