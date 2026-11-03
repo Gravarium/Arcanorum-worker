@@ -2158,3 +2158,5 @@ Admin: Administration
 "Vor der ersten Administratorkontoanlage können Sie nachweisbare Hosting-Fähigkeiten prüfen und optionale Schutzfunktionen auswählen.": "Before creating the first administrator account, review the hosting capabilities that were verified and choose optional protections."
 
 "Geprüfte Hosting-Fähigkeiten": "Verified hosting capabilities"
+
+"Unbekannt heißt: Arcanorum kann diese Fähigkeit derzeit nicht nachweisen. Das bedeutet nicht automatisch, dass der Hoster sie nicht unterstützt.": "Unknown means Arcanorum cannot currently verify this capability. This does not necessarily mean the hosting provider does not support it."

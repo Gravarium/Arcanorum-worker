@@ -62,10 +62,13 @@ final class InstallerSecurityProfileControllerTest extends WebTestCase
 
             $client->request('GET', '/install/security-profile');
             self::assertResponseIsSuccessful();
-            self::assertSame('private, no-store', $client->getResponse()->headers->get('Cache-Control'));
+            $cacheControl = array_map('trim', explode(',', strtolower((string) $client->getResponse()->headers->get('Cache-Control'))));
+            self::assertContains('private', $cacheControl);
+            self::assertContains('no-store', $cacheControl);
             self::assertSame('noindex, nofollow', $client->getResponse()->headers->get('X-Robots-Tag'));
             self::assertSelectorTextContains('h1', 'Hosting-Sicherheitsprofil');
             self::assertSelectorTextContains('#mandatory-security-heading', 'Verbindlicher Basisschutz');
+            self::assertSelectorTextContains('.hosting-capability-explanation', 'Unbekannt heißt: Arcanorum kann diese Fähigkeit derzeit nicht nachweisen. Das bedeutet nicht automatisch, dass der Hoster sie nicht unterstützt.');
             self::assertSelectorExists('input[name="selected_features[]"][value="private_storage"]:not([disabled])');
             self::assertSelectorExists('input[name="selected_features[]"][value="secret_store"][disabled]');
             self::assertStringNotContainsString('Test-only verified host capability.', (string) $client->getResponse()->getContent());

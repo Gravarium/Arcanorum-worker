@@ -31,6 +31,7 @@
     <section class="admin-panel" aria-labelledby="optional-hosting-security-heading">
         <header class="panel-heading"><h2 id="optional-hosting-security-heading">{{ 'Zusätzliche Host-Schutzfunktionen'|trans }}</h2></header>
         <p>{{ 'Nur aktuell verifizierte Funktionen können neu ausgewählt werden. Eine manuelle Auswahl ersetzt keinen technischen Nachweis.'|trans }}</p>
+        <p class="muted hosting-capability-explanation">{{ 'Unbekannt heißt: Arcanorum kann diese Fähigkeit derzeit nicht nachweisen. Das bedeutet nicht automatisch, dass der Hoster sie nicht unterstützt.'|trans }}</p>
         <p>{{ 'Diese Seite speichert den Auswahlwunsch. Arcanorum verwendet eine Zusatzfunktion erst, wenn ihre Integration eingerichtet und ihre Voraussetzung aktuell nachgewiesen ist.'|trans }}</p>
 
         <form id="hosting-security-form" method="post" action="{{ path('admin_hosting_security_update') }}" class="admin-form">
