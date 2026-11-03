@@ -251,7 +251,7 @@ final class InstallerAdministratorControllerTest extends WebTestCase
             KernelEvents::CONTROLLER,
             static function (ControllerEvent $event) use (&$controllerFromRequest): void {
                 $action = $event->getController();
-                if (is_array($action) && isset($action[0]) && $action[0] instanceof InstallerAdministratorController) {
+                if (is_array($action) && $action[0] instanceof InstallerAdministratorController) {
                     $controllerFromRequest = $action[0];
                 }
             },
