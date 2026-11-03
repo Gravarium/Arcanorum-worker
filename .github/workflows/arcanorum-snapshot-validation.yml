@@ -731,7 +731,7 @@ jobs:
             else
               if [[ "$label" == migrations ]]; then
                 set +e
-                APP_DEBUG=1 php bin/console doctrine:migrations:migrate --env=test --no-interaction > var/test-results/migrations-debug.log 2>&1
+                APP_DEBUG=1 php bin/console doctrine:migrations:migrate --env=test --no-interaction -vvv > var/test-results/migrations-debug.log 2>&1
                 debug_status=$?
                 set -e
                 if [[ "$debug_status" -eq 0 ]]; then
