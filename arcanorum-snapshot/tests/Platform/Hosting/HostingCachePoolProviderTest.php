@@ -150,7 +150,7 @@ final class HostingCachePoolProviderTest extends TestCase
     }
 
     /**
-     * @param list<CapabilityEvidence> $evidence
+     * @param list<CapabilityEvidence>     $evidence
      * @param list<HostingSecurityFeature> $selectedFeatures
      */
     private function providerFor(

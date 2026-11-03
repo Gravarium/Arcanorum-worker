@@ -192,7 +192,7 @@ final class HostingAdapterSelectorTest extends TestCase
     }
 
     /**
-     * @param list<HostingCapability> $requirements
+     * @param list<HostingCapability>      $requirements
      * @param list<HostingSecurityFeature> $requiredFeatures
      */
     private function adapter(
@@ -205,7 +205,7 @@ final class HostingAdapterSelectorTest extends TestCase
     ): HostingAdapterDefinitionInterface {
         return new readonly class($identifier, $service, $requirements, $priority, $fallback, $requiredFeatures) implements HostingAdapterDefinitionInterface {
             /**
-             * @param list<HostingCapability> $requirements
+             * @param list<HostingCapability>      $requirements
              * @param list<HostingSecurityFeature> $requiredFeatures
              */
             public function __construct(
