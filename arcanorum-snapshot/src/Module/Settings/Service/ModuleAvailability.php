@@ -19,7 +19,10 @@ final readonly class ModuleAvailability
     private const string REQUEST_ATTRIBUTE = '_arcanorum_module_availability';
 
     /** @var list<class-string> */
-    private const array OWNER_SCOPED_CONTROLLERS = [
+    private const array CONTROLLER_AVAILABILITY_EXEMPTIONS = [
+        // This pre-administrator setup step has its own first-admin guard.
+        \App\Module\Installer\Controller\InstallerSecurityProfileController::class,
+        // Shared media routes enforce the owning content module inside their actions.
         \App\Module\Content\Controller\AdminContentInlineImageController::class,
         \App\Module\Content\Controller\ContentInlineImageController::class,
     ];
@@ -69,8 +72,7 @@ final readonly class ModuleAvailability
             return true;
         }
 
-        // These shared media routes enforce the owning news/pages module inside their actions.
-        if (in_array($controllerClass, self::OWNER_SCOPED_CONTROLLERS, true)) {
+        if (in_array($controllerClass, self::CONTROLLER_AVAILABILITY_EXEMPTIONS, true)) {
             return true;
         }
 

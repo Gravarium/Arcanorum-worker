@@ -1089,6 +1089,7 @@ final class AdminGeneralSettingsTest extends WebTestCase
             self::assertFalse($availability->isEnabled('news'));
             self::assertTrue($availability->isEnabled('admin'));
             self::assertTrue($availability->controllerIsEnabled('App\\Module\\Automation\\Controller\\AdminScheduledTaskController::index'));
+            self::assertTrue($availability->controllerIsEnabled('App\\Module\\Installer\\Controller\\InstallerSecurityProfileController::index'));
             self::assertTrue($availability->controllerIsEnabled('App\\Module\\Content\\Controller\\AdminContentInlineImageController::upload'));
             self::assertTrue($availability->controllerIsEnabled('App\\Module\\Content\\Controller\\ContentInlineImageController::show'));
             self::assertFalse($availability->controllerIsEnabled('App\\Module\\Content\\Controller\\UnknownController::index'));
