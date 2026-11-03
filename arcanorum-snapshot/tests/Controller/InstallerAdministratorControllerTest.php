@@ -15,6 +15,10 @@ use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpKernel\Event\ControllerEvent;
+use Symfony\Component\HttpKernel\KernelEvents;
+use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 final class InstallerAdministratorControllerTest extends WebTestCase
@@ -48,13 +52,16 @@ final class InstallerAdministratorControllerTest extends WebTestCase
         $adminUsers = $client->getContainer()->get(AdminUserRepository::class);
         self::assertInstanceOf(AdminUserRepository::class, $adminUsers);
         self::assertSame(0, $adminUsers->countAdministratorsForRoleManagement());
-        $this->assertInstallerControllerUsesRepository($client, $adminUsers);
+        $installerController = $this->installerControllerUsesRepository($client, $adminUsers);
+        $controllerFromRequest = null;
+        $this->observeInstallerControllerRequest($client, $controllerFromRequest);
 
         $email = 'first-admin-'.bin2hex(random_bytes(6)).'@example.test';
         $password = bin2hex(random_bytes(12)).'Aa!';
 
         try {
             $client->request('GET', '/install/administrator');
+            self::assertSame($installerController, $controllerFromRequest);
             self::assertTrue($connection->isTransactionActive(), 'The database transaction must remain active across the first installer request.');
             self::assertSame(0, $adminUsers->countAdministratorsForRoleManagement(), 'The first installer request must still observe the transactionally cleared admin table.');
             self::assertResponseIsSuccessful();
@@ -135,6 +142,7 @@ final class InstallerAdministratorControllerTest extends WebTestCase
             $client->request('GET', '/install/administrator/recovery');
             self::assertResponseStatusCodeSame(404);
             $client->request('GET', '/install/administrator');
+            self::assertSame($installerController, $controllerFromRequest);
             self::assertResponseStatusCodeSame(404);
             $client->request('GET', '/install/security-profile');
             self::assertResponseStatusCodeSame(404);
@@ -179,7 +187,9 @@ final class InstallerAdministratorControllerTest extends WebTestCase
         $adminUsers = $client->getContainer()->get(AdminUserRepository::class);
         self::assertInstanceOf(AdminUserRepository::class, $adminUsers);
         self::assertSame(0, $adminUsers->countAdministratorsForRoleManagement());
-        $this->assertInstallerControllerUsesRepository($client, $adminUsers);
+        $installerController = $this->installerControllerUsesRepository($client, $adminUsers);
+        $controllerFromRequest = null;
+        $this->observeInstallerControllerRequest($client, $controllerFromRequest);
 
         try {
             $client->request('GET', '/install/administrator');
@@ -214,7 +224,7 @@ final class InstallerAdministratorControllerTest extends WebTestCase
         }
     }
 
-    private function assertInstallerControllerUsesRepository(KernelBrowser $client, AdminUserRepository $expectedRepository): void
+    private function installerControllerUsesRepository(KernelBrowser $client, AdminUserRepository $expectedRepository): InstallerAdministratorController
     {
         $controller = $client->getContainer()->get(InstallerAdministratorController::class);
         self::assertInstanceOf(InstallerAdministratorController::class, $controller);
@@ -224,6 +234,28 @@ final class InstallerAdministratorControllerTest extends WebTestCase
         self::assertInstanceOf(AdminUserRepository::class, $controllerRepository);
         self::assertSame($expectedRepository, $controllerRepository);
         self::assertSame(0, $controllerRepository->countAdministratorsForRoleManagement());
+
+        return $controller;
+    }
+
+    private function observeInstallerControllerRequest(KernelBrowser $client, ?InstallerAdministratorController &$controllerFromRequest): void
+    {
+        $router = $client->getContainer()->get(RouterInterface::class);
+        $dispatcher = $client->getContainer()->get(EventDispatcherInterface::class);
+        self::assertInstanceOf(RouterInterface::class, $router);
+        self::assertInstanceOf(EventDispatcherInterface::class, $dispatcher);
+        $match = $router->match('/install/administrator');
+        self::assertSame('installer_administrator_credentials', $match['_route'] ?? null);
+
+        $dispatcher->addListener(
+            KernelEvents::CONTROLLER,
+            static function (ControllerEvent $event) use (&$controllerFromRequest): void {
+                $action = $event->getController();
+                if (is_array($action) && isset($action[0]) && $action[0] instanceof InstallerAdministratorController) {
+                    $controllerFromRequest = $action[0];
+                }
+            },
+        );
     }
 
     private function csrfToken(KernelBrowser $client): string
