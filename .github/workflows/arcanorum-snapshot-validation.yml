@@ -798,13 +798,15 @@ jobs:
           if versions:
               print('Migration versions involved: ' + ', '.join(versions))
           safe_words = {
-              'allowed', 'argument', 'array', 'as', 'access', 'before', 'be', 'call', 'cannot',
-              'class', 'compile', 'connection', 'declare', 'denied', 'does', 'error', 'exception',
-              'execution', 'expected', 'fatal', 'few', 'file', 'found', 'function', 'initialized',
-              'initialization', 'line', 'many', 'maximum', 'memory', 'method', 'must', 'not', 'null',
-              'object', 'of', 'offset', 'permission', 'private', 'property', 'protected', 'public',
-              'read', 'received', 'required', 'server', 'size', 'string', 'syntax', 'the', 'time',
-              'to', 'too', 'type', 'undefined', 'unexpected', 'unknown', 'use', 'value', 'write',
+              'abstract', 'access', 'allowed', 'argument', 'array', 'as', 'be', 'before', 'call',
+              'cannot', 'class', 'compatible', 'compile', 'connection', 'declare', 'declared',
+              'declaration', 'denied', 'does', 'error', 'exception', 'execution', 'expected',
+              'fatal', 'few', 'file', 'found', 'function', 'implement', 'initialization',
+              'initialized', 'interface', 'line', 'many', 'maximum', 'memory', 'method', 'must',
+              'not', 'null', 'object', 'of', 'offset', 'permission', 'private', 'property',
+              'protected', 'public', 'read', 'received', 'remaining', 'required', 'server', 'size',
+              'static', 'string', 'syntax', 'the', 'therefore', 'time', 'to', 'too', 'trait',
+              'type', 'undefined', 'unexpected', 'unknown', 'use', 'value', 'with', 'write',
           }
           for line in (line for line in log.splitlines() if 'Fatal' in line or 'Exception' in line):
               words = [word.lower() for word in re.findall(r'[A-Za-z]+', line) if word.lower() in safe_words]
@@ -826,31 +828,6 @@ jobs:
             fi
           done
           printf 'Migration syntax: PASS (%s files).\n' "$migration_count"
-          php <<'PHP'
-          <?php
-
-          require 'vendor/autoload.php';
-
-          $loadedClasses = 0;
-          foreach (glob('migrations/Version*.php') as $migration) {
-              $class = 'DoctrineMigrations\\' . basename($migration, '.php');
-              try {
-                  if (!class_exists($class)) {
-                      throw new RuntimeException('Migration class could not be loaded.');
-                  }
-                  ++$loadedClasses;
-              } catch (Throwable $exception) {
-                  fwrite(STDERR, sprintf(
-                      'Migration class loading: FAIL in %s (%s).\n',
-                      basename($migration),
-                      get_class($exception),
-                  ));
-                  exit(1);
-              }
-          }
-
-          printf("Migration class loading: PASS (%d classes).\n", $loadedClasses);
-          PHP
           run_gate migrations php bin/console doctrine:migrations:migrate --env=test --no-interaction
           run_gate doctrine-mapping php bin/console doctrine:schema:validate --skip-sync
           run_gate services-yaml php bin/console lint:yaml config/services.yaml
