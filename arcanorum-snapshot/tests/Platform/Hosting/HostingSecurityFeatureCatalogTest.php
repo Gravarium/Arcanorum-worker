@@ -17,7 +17,7 @@ final class HostingSecurityFeatureCatalogTest extends TestCase
 {
     public function testNoOptionalFeatureIsAvailableWithoutEvidence(): void
     {
-        $choices = (new HostingSecurityFeatureCatalog())->choices($this->report(), []);
+        $choices = new HostingSecurityFeatureCatalog()->choices($this->report(), []);
 
         self::assertCount(count(HostingSecurityFeature::cases()), $choices);
         foreach ($choices as $choice) {
@@ -76,7 +76,7 @@ final class HostingSecurityFeatureCatalogTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('nicht verifiziert');
 
-        (new HostingSecurityFeatureCatalog())->replaceSelection(
+        new HostingSecurityFeatureCatalog()->replaceSelection(
             ['private_storage'],
             [],
             $this->report(),
@@ -114,7 +114,7 @@ final class HostingSecurityFeatureCatalogTest extends TestCase
 
     public function testOperatorMayExplicitlyRemoveAPreviouslySelectedFeatureAfterProofLoss(): void
     {
-        $selection = (new HostingSecurityFeatureCatalog())->replaceSelection(
+        $selection = new HostingSecurityFeatureCatalog()->replaceSelection(
             [],
             ['private_storage'],
             $this->report(),
@@ -170,7 +170,7 @@ final class HostingSecurityFeatureCatalogTest extends TestCase
 
         self::assertSame(
             array_map(static fn (HostingSecurityFeature $feature): string => $feature->value, HostingSecurityFeature::cases()),
-            (new HostingSecurityFeatureCatalog())->replaceSelection(
+            new HostingSecurityFeatureCatalog()->replaceSelection(
                 array_reverse(array_map(static fn (HostingSecurityFeature $feature): string => $feature->value, HostingSecurityFeature::cases())),
                 [],
                 $report,
@@ -188,7 +188,7 @@ final class HostingSecurityFeatureCatalogTest extends TestCase
         HostingCapabilityReport $report,
     ): void {
         try {
-            (new HostingSecurityFeatureCatalog())->replaceSelection($requested, $previous, $report);
+            new HostingSecurityFeatureCatalog()->replaceSelection($requested, $previous, $report);
         } catch (\InvalidArgumentException) {
             return;
         }
@@ -204,7 +204,7 @@ final class HostingSecurityFeatureCatalogTest extends TestCase
         HostingCapabilityReport $report,
         array $selected = [],
     ): HostingSecurityFeatureChoice {
-        foreach ((new HostingSecurityFeatureCatalog())->choices($report, $selected) as $choice) {
+        foreach (new HostingSecurityFeatureCatalog()->choices($report, $selected) as $choice) {
             if ($choice->feature === $feature) {
                 return $choice;
             }
