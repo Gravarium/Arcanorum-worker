@@ -67,6 +67,11 @@ final class InstallerSecurityProfileControllerTest extends WebTestCase
             self::assertContains('no-store', $cacheControl);
             self::assertSame('noindex, nofollow', $client->getResponse()->headers->get('X-Robots-Tag'));
             self::assertSelectorTextContains('h1', 'Hosting-Sicherheitsprofil');
+            self::assertSelectorExists('#installer-php-runtime');
+            self::assertSelectorTextContains('#installer-php-runtime', 'Maximale Uploadgröße');
+            self::assertSelectorTextContains('#installer-php-runtime', 'Maximale POST-Größe');
+            self::assertSelectorTextContains('#installer-php-runtime', 'PHP-Erweiterungen');
+            self::assertStringNotContainsString('/private/config', (string) $client->getResponse()->getContent());
             self::assertSelectorTextContains('#mandatory-security-heading', 'Verbindlicher Basisschutz');
             self::assertSelectorTextContains('.hosting-capability-explanation', 'Unbekannt heißt: Arcanorum kann diese Fähigkeit derzeit nicht nachweisen. Das bedeutet nicht automatisch, dass der Hoster sie nicht unterstützt.');
             self::assertSelectorExists('input[name="selected_features[]"][value="private_storage"]:not([disabled])');

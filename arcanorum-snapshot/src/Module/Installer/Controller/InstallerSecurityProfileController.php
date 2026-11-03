@@ -6,6 +6,7 @@ namespace App\Module\Installer\Controller;
 
 use App\Platform\Hosting\HostingSecurityFeatureSelectionOverview;
 use App\Repository\AdminUserRepository;
+use App\Service\AdminPhpRuntimeSummary;
 use App\Service\HostingSecurityFeatureSelectionManager;
 use Doctrine\DBAL\Exception as DbalException;
 use Psr\Log\LoggerInterface;
@@ -22,6 +23,7 @@ final class InstallerSecurityProfileController extends AbstractController
     public function __construct(
         private readonly AdminUserRepository $adminUsers,
         private readonly HostingSecurityFeatureSelectionManager $selectionManager,
+        private readonly AdminPhpRuntimeSummary $phpRuntime,
     ) {
     }
 
@@ -126,6 +128,7 @@ final class InstallerSecurityProfileController extends AbstractController
     ): Response {
         return $this->privateResponse($this->render('installer/security_profile.html.twig', [
             'overview' => $overview,
+            'php_runtime' => $this->phpRuntime->current(),
             'errors' => $errors,
         ], new Response(status: $status)));
     }

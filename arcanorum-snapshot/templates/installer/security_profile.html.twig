@@ -46,6 +46,42 @@
         <p class="muted hosting-capability-explanation">{{ 'Unbekannt heißt: Arcanorum kann diese Fähigkeit derzeit nicht nachweisen. Das bedeutet nicht automatisch, dass der Hoster sie nicht unterstützt.'|trans }}</p>
     </section>
 
+
+    <section class="admin-panel" id="installer-php-runtime" aria-labelledby="installer-php-runtime-heading">
+        <header class="panel-heading"><h2 id="installer-php-runtime-heading">{{ 'PHP-Konfiguration'|trans }}</h2></header>
+        <p>{{ 'PHP-Version'|trans }} {{ php_runtime.php_version }} · {{ 'Laufzeit'|trans }} {{ php_runtime.php_sapi }}</p>
+        <p class="muted">{{ 'Die Werte stammen aus der aktiven PHP-Weblaufzeit. Webserver- oder Proxygrenzen können zusätzlich enger sein.'|trans }}</p>
+        <div class="table-wrap"><table class="admin-table">
+            <caption class="visually-hidden">{{ 'Begrenzte PHP-Laufzeitwerte'|trans }}</caption>
+            <thead><tr><th scope="col">{{ 'Grenze'|trans }}</th><th scope="col">{{ 'Wert'|trans }}</th></tr></thead>
+            <tbody>
+                {% for label, value in php_runtime.php_limits %}
+                    <tr><th scope="row">{{ label|trans }}</th><td>{{ value|trans }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table></div>
+        <h3>{{ 'PHP-Einstellungen'|trans }}</h3>
+        <div class="table-wrap"><table class="admin-table">
+            <caption class="visually-hidden">{{ 'Ausgewählte PHP-Sicherheits- und Laufzeiteinstellungen'|trans }}</caption>
+            <thead><tr><th scope="col">{{ 'Einstellung'|trans }}</th><th scope="col">{{ 'Status'|trans }}</th></tr></thead>
+            <tbody>
+                {% for label, value in php_runtime.php_settings %}
+                    <tr><th scope="row">{{ label|trans }}</th><td>{{ value|trans }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table></div>
+        <h3>{{ 'PHP-Erweiterungen'|trans }}</h3>
+        <div class="table-wrap"><table class="admin-table">
+            <caption class="visually-hidden">{{ 'Verfügbarkeit erforderlicher und optionaler PHP-Erweiterungen'|trans }}</caption>
+            <thead><tr><th scope="col">{{ 'Erweiterung'|trans }}</th><th scope="col">{{ 'Status'|trans }}</th></tr></thead>
+            <tbody>
+                {% for label, enabled in php_runtime.php_extensions %}
+                    <tr><th scope="row">{{ label|trans }}</th><td>{{ (enabled ? 'Verfügbar' : 'Nicht verfügbar')|trans }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table></div>
+    </section>
+
     <section class="admin-panel" aria-labelledby="optional-hosting-security-heading">
         <header class="panel-heading"><h2 id="optional-hosting-security-heading">{{ 'Zusätzliche Host-Schutzfunktionen'|trans }}</h2></header>
         <p>{{ 'Nur aktuell verifizierte Funktionen können neu ausgewählt werden. Eine manuelle Auswahl ersetzt keinen technischen Nachweis.'|trans }}</p>

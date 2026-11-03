@@ -2160,3 +2160,4 @@ Admin: Administration
 "Geprüfte Hosting-Fähigkeiten": "Verified hosting capabilities"
 
 "Unbekannt heißt: Arcanorum kann diese Fähigkeit derzeit nicht nachweisen. Das bedeutet nicht automatisch, dass der Hoster sie nicht unterstützt.": "Unknown means Arcanorum cannot currently verify this capability. This does not necessarily mean the hosting provider does not support it."
+"Die Werte stammen aus der aktiven PHP-Weblaufzeit. Webserver- oder Proxygrenzen können zusätzlich enger sein.": "These values come from the active PHP web runtime. Web server or proxy limits may be lower."
