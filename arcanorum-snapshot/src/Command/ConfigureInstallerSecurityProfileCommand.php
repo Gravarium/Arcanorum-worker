@@ -8,8 +8,6 @@ use App\Platform\Hosting\HostingSecurityFeatureChoice;
 use App\Platform\Security\InteractiveConsoleTerminalInterface;
 use App\Service\HostingSecurityFeatureSelectionManager;
 use Doctrine\DBAL\Exception as DbalException;
-use InvalidArgumentException;
-use RuntimeException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -50,7 +48,7 @@ final class ConfigureInstallerSecurityProfileCommand extends Command
 
         try {
             $overview = $this->selectionManager->overview();
-        } catch (DbalException|RuntimeException) {
+        } catch (DbalException|\RuntimeException) {
             $io->error('Das Hosting-Profil konnte nicht geladen werden. Bitte Datenbankverbindung und Migrationen prüfen.');
 
             return Command::FAILURE;
@@ -112,11 +110,11 @@ final class ConfigureInstallerSecurityProfileCommand extends Command
             $requestedFeatureIds = $this->parseSelection($answer, $numberToFeatureId);
             $this->selectionManager->replaceSelection($requestedFeatureIds);
             $savedChoices = $this->selectionManager->choices();
-        } catch (\InvalidArgumentException) {
+        } catch (\\InvalidArgumentException) {
             $io->error('Bitte nur angezeigte Nummern ohne Duplikate auswählen. Die Host-Prüfung wird beim Speichern erneut ausgeführt.');
 
             return Command::FAILURE;
-        } catch (DbalException|RuntimeException) {
+        } catch (DbalException|\RuntimeException) {
             $io->error('Die Auswahl konnte nicht sicher gespeichert werden. Bitte Datenbankverbindung und Migrationen prüfen.');
 
             return Command::FAILURE;
@@ -147,19 +145,19 @@ final class ConfigureInstallerSecurityProfileCommand extends Command
         }
 
         if (strlen($answer) > 128) {
-            throw new InvalidArgumentException('Die Auswahl ist zu lang.');
+            throw new \InvalidArgumentException('Die Auswahl ist zu lang.');
         }
 
         $selected = [];
         foreach (explode(',', $answer) as $rawNumber) {
             $number = trim($rawNumber);
             if (1 !== preg_match('/\A[1-9][0-9]*\z/', $number)) {
-                throw new InvalidArgumentException('Die Auswahl enthält keine gültige Nummer.');
+                throw new \InvalidArgumentException('Die Auswahl enthält keine gültige Nummer.');
             }
 
             $featureId = $numberToFeatureId[(int) $number] ?? null;
             if (!is_string($featureId) || in_array($featureId, $selected, true)) {
-                throw new InvalidArgumentException('Die Auswahl enthält eine unbekannte oder doppelte Nummer.');
+                throw new \InvalidArgumentException('Die Auswahl enthält eine unbekannte oder doppelte Nummer.');
             }
 
             $selected[] = $featureId;
