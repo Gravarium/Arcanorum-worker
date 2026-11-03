@@ -697,6 +697,17 @@ jobs:
                 else
                   echo 'Rector could not produce a safe file summary.'
                 fi
+                python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          log = Path('var/test-results/rector.log').read_text(encoding='utf-8', errors='replace')
+          rules = sorted(set(re.findall(r'\b[A-Z][A-Za-z0-9]*Rector\b', log)))
+          if rules:
+              print('Rector rule IDs: ' + ', '.join(rules))
+          else:
+              print('Rector rule IDs were not present in the sanitized summary.')
+          PY
               fi
               printf '%s: FAIL; diagnostic output withheld.\n' "$label"
               return 1
