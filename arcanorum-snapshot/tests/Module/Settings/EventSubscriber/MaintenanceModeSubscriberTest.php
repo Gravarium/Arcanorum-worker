@@ -24,13 +24,13 @@ final class MaintenanceModeSubscriberTest extends TestCase
 
         $subscriber = new MaintenanceModeSubscriber(
             $settings,
-            $this->createStub(AuthorizationCheckerInterface::class),
+            self::createStub(AuthorizationCheckerInterface::class),
             $twig,
         );
         $request = Request::create('/install/database');
         $request->attributes->set('_route', 'installer_database_index');
         $event = new RequestEvent(
-            $this->createStub(HttpKernelInterface::class),
+            self::createStub(HttpKernelInterface::class),
             $request,
             HttpKernelInterface::MAIN_REQUEST,
         );

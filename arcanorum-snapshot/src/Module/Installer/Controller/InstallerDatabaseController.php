@@ -84,12 +84,17 @@ final class InstallerDatabaseController extends AbstractController
         }
 
         if (!$probe->requiredTablesAvailable) {
-            $status = null === $probe->failureType ? Response::HTTP_OK : Response::HTTP_SERVICE_UNAVAILABLE;
+            if (null !== $probe->failureType) {
+                return $this->renderProbe(
+                    $probe,
+                    ['form' => 'Die Verbindung antwortet, aber die erforderlichen Anwendungstabellen konnten nicht geprüft werden. Prüfen Sie die Datenbankrechte auf dem Server und versuchen Sie es erneut.'],
+                    Response::HTTP_SERVICE_UNAVAILABLE,
+                );
+            }
 
             return $this->renderProbe(
                 $probe,
                 ['form' => 'Die Verbindung antwortet, aber die erforderlichen Anwendungstabellen fehlen. Führen Sie die Migrationen auf dem Server aus und prüfen Sie erneut.'],
-                $status,
             );
         }
 

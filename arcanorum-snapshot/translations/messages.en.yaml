@@ -2187,6 +2187,7 @@ Admin: Administration
 'Dieser Schritt prüft die vorhandene Serverkonfiguration. Datenbank-Zugangsdaten werden im Browser weder abgefragt noch gespeichert oder angezeigt.': 'This step checks the existing server configuration. Database credentials are never requested, stored, or displayed in the browser.'
 'Die Datenbankverbindung ist erreichbar.': 'The database connection is available.'
 'Die Datenbankverbindung ist nicht erreichbar. Prüfen Sie DATABASE_URL in der privaten Hoster- oder Serverkonfiguration und laden Sie diese Seite erneut.': 'The database connection is unavailable. Check DATABASE_URL in the private host or server configuration, then reload this page.'
+'Die Verbindung antwortet, aber die erforderlichen Anwendungstabellen konnten nicht geprüft werden. Prüfen Sie die Datenbankrechte auf dem Server und versuchen Sie es erneut.': 'The connection responds, but the required application tables could not be checked. Check the server database permissions and try again.'
 'Die Verbindung antwortet, aber die erforderlichen Anwendungstabellen fehlen. Führen Sie die Migrationen auf dem Server aus und prüfen Sie erneut.': 'The connection responds, but required application tables are missing. Run the migrations on the server and check again.'
 'Die erforderlichen Anwendungstabellen sind vorhanden. Diese Prüfung führt keine Migrationen aus.': 'Required application tables are present. This check does not run migrations.'
 'Datenbankverbindung': 'Database connection'

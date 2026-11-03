@@ -25,7 +25,7 @@ final class SiteSettingsRequestSubscriberTest extends TestCase
         $request = Request::create('/install/database');
         $request->attributes->set('_route', 'installer_database_index');
         $event = new RequestEvent(
-            $this->createStub(HttpKernelInterface::class),
+            self::createStub(HttpKernelInterface::class),
             $request,
             HttpKernelInterface::MAIN_REQUEST,
         );
