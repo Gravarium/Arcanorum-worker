@@ -6,6 +6,7 @@ namespace App\Tests\Controller;
 
 use App\Entity\AdminRole;
 use App\Entity\AdminUser;
+use App\Module\Installer\Controller\InstallerAdministratorController;
 use App\Platform\Security\AdminMfaSecretCipher;
 use App\Platform\Security\TotpVerifier;
 use App\Repository\AdminUserRepository;
@@ -47,6 +48,7 @@ final class InstallerAdministratorControllerTest extends WebTestCase
         $adminUsers = $client->getContainer()->get(AdminUserRepository::class);
         self::assertInstanceOf(AdminUserRepository::class, $adminUsers);
         self::assertSame(0, $adminUsers->countAdministratorsForRoleManagement());
+        $this->assertInstallerControllerUsesRepository($client, $adminUsers);
 
         $email = 'first-admin-'.bin2hex(random_bytes(6)).'@example.test';
         $password = bin2hex(random_bytes(12)).'Aa!';
@@ -175,6 +177,7 @@ final class InstallerAdministratorControllerTest extends WebTestCase
         $adminUsers = $client->getContainer()->get(AdminUserRepository::class);
         self::assertInstanceOf(AdminUserRepository::class, $adminUsers);
         self::assertSame(0, $adminUsers->countAdministratorsForRoleManagement());
+        $this->assertInstallerControllerUsesRepository($client, $adminUsers);
 
         try {
             $client->request('GET', '/install/administrator');
@@ -205,6 +208,18 @@ final class InstallerAdministratorControllerTest extends WebTestCase
             }
             $entityManager->clear();
         }
+    }
+
+    private function assertInstallerControllerUsesRepository(KernelBrowser $client, AdminUserRepository $expectedRepository): void
+    {
+        $controller = $client->getContainer()->get(InstallerAdministratorController::class);
+        self::assertInstanceOf(InstallerAdministratorController::class, $controller);
+
+        $adminUsersProperty = new \ReflectionProperty(InstallerAdministratorController::class, 'adminUsers');
+        $controllerRepository = $adminUsersProperty->getValue($controller);
+        self::assertInstanceOf(AdminUserRepository::class, $controllerRepository);
+        self::assertSame($expectedRepository, $controllerRepository);
+        self::assertSame(0, $controllerRepository->countAdministratorsForRoleManagement());
     }
 
     private function csrfToken(KernelBrowser $client): string
