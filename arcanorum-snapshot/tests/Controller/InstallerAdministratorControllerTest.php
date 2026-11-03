@@ -37,6 +37,8 @@ final class InstallerAdministratorControllerTest extends WebTestCase
         self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
         $connection = $entityManager->getConnection();
         $connection->beginTransaction();
+        $connection->executeStatement('DELETE FROM admin_users');
+        $entityManager->clear();
 
         $email = 'first-admin-'.bin2hex(random_bytes(6)).'@example.test';
         $password = bin2hex(random_bytes(12)).'Aa!';
@@ -152,28 +154,42 @@ final class InstallerAdministratorControllerTest extends WebTestCase
         $client->disableReboot();
         $client->setServerParameter('REMOTE_ADDR', '198.51.100.'.random_int(1, 254));
 
-        $client->request('GET', '/install/administrator');
-        self::assertResponseIsSuccessful();
-        $token = $this->csrfToken($client);
-        $password = bin2hex(random_bytes(12)).'Aa!';
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        $connection = $entityManager->getConnection();
+        $connection->beginTransaction();
+        $connection->executeStatement('DELETE FROM admin_users');
+        $entityManager->clear();
 
-        for ($attempt = 0; $attempt < 10; ++$attempt) {
+        try {
+            $client->request('GET', '/install/administrator');
+            self::assertResponseIsSuccessful();
+            $token = $this->csrfToken($client);
+            $password = bin2hex(random_bytes(12)).'Aa!';
+
+            for ($attempt = 0; $attempt < 10; ++$attempt) {
+                $client->request('POST', '/install/administrator', [
+                    'token' => $token,
+                    'email' => 'not-an-email',
+                    'password' => $password,
+                    'password_confirmation' => $password,
+                ]);
+                self::assertResponseStatusCodeSame(422);
+            }
+
             $client->request('POST', '/install/administrator', [
                 'token' => $token,
                 'email' => 'not-an-email',
                 'password' => $password,
                 'password_confirmation' => $password,
             ]);
-            self::assertResponseStatusCodeSame(422);
+            self::assertResponseStatusCodeSame(429);
+        } finally {
+            if ($connection->isTransactionActive()) {
+                $connection->rollBack();
+            }
+            $entityManager->clear();
         }
-
-        $client->request('POST', '/install/administrator', [
-            'token' => $token,
-            'email' => 'not-an-email',
-            'password' => $password,
-            'password_confirmation' => $password,
-        ]);
-        self::assertResponseStatusCodeSame(429);
     }
 
     private function csrfToken(KernelBrowser $client): string
