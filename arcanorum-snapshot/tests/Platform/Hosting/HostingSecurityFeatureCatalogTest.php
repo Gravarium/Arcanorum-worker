@@ -95,12 +95,7 @@ final class HostingSecurityFeatureCatalogTest extends TestCase
             self::assertSame($status, $choice->availability);
             self::assertFalse($choice->isEnabled());
 
-            try {
-                $catalog->replaceSelection(['private_storage'], [], $report);
-                self::fail('A feature without verified host evidence must not be newly selected.');
-            } catch (\InvalidArgumentException) {
-                self::assertTrue(true);
-            }
+            $this->assertSelectionRejected(['private_storage'], [], $report);
         }
     }
 
@@ -137,16 +132,11 @@ final class HostingSecurityFeatureCatalogTest extends TestCase
         );
 
         foreach (['csrf', 'admin_mfa', 'future_feature'] as $featureId) {
-            try {
-                (new HostingSecurityFeatureCatalog())->replaceSelection(
-                    [$featureId],
-                    [],
-                    $this->report($allCapabilities),
-                );
-                self::fail('Unknown or mandatory controls must not become selectable features.');
-            } catch (\InvalidArgumentException) {
-                self::assertTrue(true);
-            }
+            $this->assertSelectionRejected(
+                [$featureId],
+                [],
+                $this->report($allCapabilities),
+            );
         }
     }
 
@@ -187,6 +177,24 @@ final class HostingSecurityFeatureCatalogTest extends TestCase
                 $report,
             ),
         );
+    }
+
+    /**
+     * @param array<array-key, mixed> $requested
+     * @param array<array-key, mixed> $previous
+     */
+    private function assertSelectionRejected(
+        array $requested,
+        array $previous,
+        HostingCapabilityReport $report,
+    ): void {
+        try {
+            (new HostingSecurityFeatureCatalog())->replaceSelection($requested, $previous, $report);
+        } catch (\InvalidArgumentException) {
+            return;
+        }
+
+        self::fail('The invalid selection must be rejected.');
     }
 
     /**

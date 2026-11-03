@@ -7,7 +7,7 @@ namespace App\Platform\Hosting;
 final readonly class HostingSecurityFeatureCatalog
 {
     /**
-     * @param list<string> $selectedFeatureIds
+     * @param array<array-key, mixed> $selectedFeatureIds
      * @return list<HostingSecurityFeatureChoice>
      */
     public function choices(HostingCapabilityReport $report, array $selectedFeatureIds): array
@@ -33,8 +33,8 @@ final readonly class HostingSecurityFeatureCatalog
      * unavailable; it is reported as inactive until the proof is restored or the
      * operator explicitly removes it.
      *
-     * @param list<string> $requestedFeatureIds
-     * @param list<string> $previouslySelectedFeatureIds
+     * @param array<array-key, mixed> $requestedFeatureIds
+     * @param array<array-key, mixed> $previouslySelectedFeatureIds
      * @return list<string>
      */
     public function replaceSelection(
@@ -88,7 +88,7 @@ final readonly class HostingSecurityFeatureCatalog
     }
 
     /**
-     * @param list<string> $featureIds
+     * @param array<array-key, mixed> $featureIds
      * @return list<string>
      */
     private function normalizeFeatureIds(array $featureIds): array
