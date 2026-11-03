@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="{{ app.request.locale }}" dir="{{ locale_text_direction(app.request.locale) }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex,nofollow">
+    <meta name="color-scheme" content="light">
+    <title>{{ 'Installationsschritt: Erstadministrator'|trans }}</title>
+    <link rel="stylesheet" href="{{ asset('styles/app.css') }}">
+</head>
+<body class="public-site">
+<main class="public-main">
+    <header class="public-home-heading">
+        <p class="eyebrow">Arcanorum</p>
+        <h1>{{ 'Installationsschritt: Erstadministrator'|trans }}</h1>
+        {% if step == 'credentials' %}
+            <p>{{ 'Richten Sie das erste Administratorkonto ein und bestätigen Sie die Mehr-Faktor-Anmeldung, bevor das Konto gespeichert wird.'|trans }}</p>
+        {% elseif step == 'mfa' %}
+            <p>{{ 'Mehr-Faktor-Einrichtung'|trans }}</p>
+        {% else %}
+            <p>{{ 'Wiederherstellungscodes einmalig sichern'|trans }}</p>
+        {% endif %}
+    </header>
+
+    {% for message in app.flashes('error') %}
+        <p class="field-error" role="alert">{{ message|trans }}</p>
+    {% endfor %}
+
+    {% if errors.form is defined %}
+        <p class="field-error" role="alert">{{ errors.form|trans }}</p>
+    {% endif %}
+
+    {% if step == 'credentials' %}
+        <section class="admin-panel" aria-labelledby="installer-admin-credentials-heading">
+            <header class="panel-heading"><h2 id="installer-admin-credentials-heading">{{ 'Kontoangaben'|trans }}</h2></header>
+            <form id="installer-first-admin-credentials-form" method="post" action="{{ path('installer_administrator_credentials') }}" class="admin-form">
+                <input type="hidden" name="token" value="{{ csrf_token('installer_first_admin_credentials') }}">
+
+                <div class="form-field">
+                    <label for="installer-first-admin-email">{{ 'E-Mail-Adresse'|trans }}</label>
+                    <input id="installer-first-admin-email" name="email" type="email" autocomplete="email" maxlength="180" required>
+                </div>
+
+                <div class="form-field">
+                    <label for="installer-first-admin-password">{{ 'Passwort (mindestens 16 Zeichen)'|trans }}</label>
+                    <input id="installer-first-admin-password" name="password" type="password" autocomplete="new-password" minlength="16" maxlength="1024" required>
+                </div>
+
+                <div class="form-field">
+                    <label for="installer-first-admin-password-confirmation">{{ 'Passwort wiederholen'|trans }}</label>
+                    <input id="installer-first-admin-password-confirmation" name="password_confirmation" type="password" autocomplete="new-password" minlength="16" maxlength="1024" required>
+                </div>
+
+                <div class="form-actions">
+                    <button class="button button-primary" type="submit">{{ 'Weiter zur Mehr-Faktor-Einrichtung'|trans }}</button>
+                </div>
+            </form>
+        </section>
+    {% elseif step == 'mfa' %}
+        <section class="admin-panel" aria-labelledby="installer-first-admin-mfa-heading">
+            <header class="panel-heading"><h2 id="installer-first-admin-mfa-heading">{{ 'Mehr-Faktor-Einrichtung'|trans }}</h2></header>
+            <p>{{ 'Geben Sie dieses einmalige Geheimnis direkt in Ihrer Authenticator-App ein. Es wird nur während dieser Einrichtung angezeigt.'|trans }}</p>
+            <p><strong>{{ 'Einmaliges Geheimnis'|trans }}</strong></p>
+            <p><code id="installer-totp-secret" dir="ltr">{{ data.totp_secret }}</code></p>
+
+            <form id="installer-first-admin-mfa-form" method="post" action="{{ path('installer_administrator_mfa') }}" class="admin-form">
+                <input type="hidden" name="token" value="{{ csrf_token('installer_first_admin_mfa') }}">
+
+                <div class="form-field">
+                    <label for="installer-first-admin-totp-code">{{ 'Bestätigungscode'|trans }}</label>
+                    <input id="installer-first-admin-totp-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" required>
+                    <p class="muted">{{ 'Geben Sie den aktuellen sechsstelligen Code Ihrer Authenticator-App ein.'|trans }}</p>
+                </div>
+
+                <div class="form-actions">
+                    <button class="button button-primary" type="submit">{{ 'Administratorkonto sicher anlegen'|trans }}</button>
+                </div>
+            </form>
+        </section>
+    {% elseif step == 'recovery' %}
+        <section class="admin-panel" aria-labelledby="installer-first-admin-recovery-heading">
+            <header class="panel-heading"><h2 id="installer-first-admin-recovery-heading">{{ 'Wiederherstellungscodes einmalig sichern'|trans }}</h2></header>
+            <p role="alert">{{ 'Diese Wiederherstellungscodes werden nur einmal angezeigt. Bewahren Sie sie sicher auf.'|trans }}</p>
+            <ul id="installer-recovery-codes">
+                {% for code in data.recovery_codes %}
+                    <li><code dir="ltr">{{ code }}</code></li>
+                {% endfor %}
+            </ul>
+            <p><a class="button button-primary" href="{{ path('admin_login') }}">{{ 'Zur Anmeldung'|trans }}</a></p>
+        </section>
+    {% endif %}
+</main>
+</body>
+</html>

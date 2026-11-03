@@ -126,6 +126,12 @@
             </div>
         </form>
     </section>
+
+    <section class="admin-panel" aria-labelledby="installer-first-admin-next-heading">
+        <header class="panel-heading"><h2 id="installer-first-admin-next-heading">{{ 'Installationsschritt: Erstadministrator'|trans }}</h2></header>
+        <p>{{ 'Richten Sie das erste Administratorkonto ein und bestätigen Sie die Mehr-Faktor-Anmeldung, bevor das Konto gespeichert wird.'|trans }}</p>
+        <p><a class="button button-primary" href="{{ path('installer_administrator_credentials') }}">{{ 'Weiter zur Einrichtung des Administratorkontos'|trans }}</a></p>
+    </section>
 </main>
 </body>
 </html>

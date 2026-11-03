@@ -2163,3 +2163,23 @@ Admin: Administration
 "Die Werte stammen aus der aktiven PHP-Weblaufzeit. Webserver- oder Proxygrenzen können zusätzlich enger sein.": "These values come from the active PHP web runtime. Web server or proxy limits may be lower."
 
 "PHP-Sicherheitshinweise": "PHP security notices"
+'Erstellen Sie das erste Administratorkonto und bestätigen Sie die Mehr-Faktor-Anmeldung, bevor das Konto gespeichert wird.': 'Set up the first administrator account and confirm multi-factor authentication before the account is saved.'
+'Passwort (mindestens 16 Zeichen)': 'Password (at least 16 characters)'
+'Weiter zur Mehr-Faktor-Einrichtung': 'Continue to multi-factor setup'
+'Kontoangaben': 'Account details'
+'Mehr-Faktor-Einrichtung': 'Multi-factor setup'
+'Geben Sie dieses einmalige Geheimnis direkt in Ihrer Authenticator-App ein. Es wird nur während dieser Einrichtung angezeigt.': 'Enter this one-time secret directly into your authenticator app. It is shown only during this setup.'
+'Einmaliges Geheimnis': 'One-time secret'
+'Bestätigungscode': 'Verification code'
+'Geben Sie den aktuellen sechsstelligen Code Ihrer Authenticator-App ein.': 'Enter the current six-digit code from your authenticator app.'
+'Administratorkonto sicher anlegen': 'Create administrator account securely'
+'Wiederherstellungscodes einmalig sichern': 'Save recovery codes now'
+'Diese Wiederherstellungscodes werden nur einmal angezeigt. Bewahren Sie sie sicher auf.': 'These recovery codes are shown only once. Store them safely.'
+'Die Installationssitzung ist abgelaufen. Starten Sie die Einrichtung erneut.': 'The setup session has expired. Start the setup again.'
+'Zu viele Versuche. Bitte warten Sie vor dem nächsten Versuch.': 'Too many attempts. Please wait before trying again.'
+'Die Kontodaten sind ungültig oder das Konto kann nicht angelegt werden.': 'The account details are invalid or the account could not be created.'
+'Bitte geben Sie eine gültige E-Mail-Adresse mit höchstens 180 Zeichen ein.': 'Enter a valid email address no longer than 180 characters.'
+'Das Passwort muss mindestens 16 Zeichen lang sein.': 'The password must be at least 16 characters long.'
+'Der Bestätigungscode ist ungültig. Prüfen Sie die Gerätezeit und versuchen Sie es erneut.': 'The verification code is invalid. Check your device clock and try again.'
+'Der Installationsschritt ist vorübergehend nicht verfügbar.': 'The setup step is temporarily unavailable.'
+'Weiter zur Einrichtung des Administratorkontos': 'Continue to administrator account setup'

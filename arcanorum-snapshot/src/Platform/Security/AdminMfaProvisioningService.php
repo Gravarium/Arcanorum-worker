@@ -22,10 +22,23 @@ final readonly class AdminMfaProvisioningService
 
     public function provision(AdminUser $user): AdminMfaProvisioningResult
     {
+        return $this->provisionUsingSecret($user, random_bytes(20));
+    }
+
+    public function provisionWithConfirmedSecret(AdminUser $user, string $secret): AdminMfaProvisioningResult
+    {
+        if (20 !== strlen($secret)) {
+            throw new \InvalidArgumentException('Das bestätigte TOTP-Geheimnis muss genau 20 Byte lang sein.');
+        }
+
+        return $this->provisionUsingSecret($user, $secret);
+    }
+
+    private function provisionUsingSecret(AdminUser $user, string $secret): AdminMfaProvisioningResult
+    {
         $expectedSecretCiphertext = $user->getMfaSecretCiphertext();
         $provisioningConflict = false;
 
-        $secret = random_bytes(20);
         $secretBase32 = Base32Encoder::encode($secret);
         $recoveryCodes = [];
         $recoveryHashes = [];
