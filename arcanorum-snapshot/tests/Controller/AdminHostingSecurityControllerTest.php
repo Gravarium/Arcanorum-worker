@@ -57,7 +57,10 @@ final class AdminHostingSecurityControllerTest extends WebTestCase
 
             $client->request('GET', '/admin/system/security');
             self::assertResponseIsSuccessful();
-            self::assertStringContainsString('private, no-store', (string) $client->getResponse()->headers->get('Cache-Control'));
+            $cacheControl = (string) $client->getResponse()->headers->get('Cache-Control');
+            $cacheControlDirectives = array_map('trim', explode(',', strtolower($cacheControl)));
+            self::assertContains('private', $cacheControlDirectives);
+            self::assertContains('no-store', $cacheControlDirectives);
             self::assertSame('noindex, nofollow', $client->getResponse()->headers->get('X-Robots-Tag'));
             self::assertSelectorTextContains('#mandatory-security-heading', 'Verbindlicher Basisschutz');
             self::assertSelectorExists('input[name="selected_features[]"][value="private_storage"]:not([disabled])');
