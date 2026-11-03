@@ -84,6 +84,9 @@ final class InstallerSecurityProfileControllerTest extends WebTestCase
             self::assertSelectorTextContains('.hosting-capability-explanation', 'Unbekannt heißt: Arcanorum kann diese Fähigkeit derzeit nicht nachweisen. Das bedeutet nicht automatisch, dass der Hoster sie nicht unterstützt.');
             self::assertSelectorExists('input[name="selected_features[]"][value="private_storage"]:not([disabled])');
             self::assertSelectorExists('input[name="selected_features[]"][value="secret_store"][disabled]');
+            self::assertSelectorTextContains('#installer-hosting-security-form', 'Erforderliche Hosting-Fähigkeiten');
+            self::assertSelectorTextContains('#installer-hosting-security-form', 'Privater Dateispeicher: Bestanden');
+            self::assertSelectorTextContains('#installer-hosting-security-form', 'Redis 8: Unbekannt');
             self::assertStringNotContainsString('Test-only verified host capability.', (string) $client->getResponse()->getContent());
 
             $client->request('POST', '/install/security-profile', ['selected_features' => ['private_storage']]);

@@ -422,29 +422,34 @@ jobs:
           composer audit --locked --no-interaction
 
       - name: Check focused PHP syntax
-        run: php -l tests/Controller/InstallerBootstrapFlowTest.php
+        run: |
+          php -l tests/Controller/InstallerBootstrapFlowTest.php
+          php -l tests/Controller/InstallerSecurityProfileControllerTest.php
 
-      - name: PHPStan on the changed installer flow test
-        run: vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --no-progress --error-format=github --memory-limit=1G tests/Controller/InstallerBootstrapFlowTest.php
+      - name: PHPStan on the installer flow and security selection tests
+        run: vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --no-progress --error-format=github --memory-limit=1G tests/Controller/InstallerBootstrapFlowTest.php tests/Controller/InstallerSecurityProfileControllerTest.php
 
-      - name: PHP CS Fixer on the changed installer flow test
-        run: vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --diff --using-cache=no tests/Controller/InstallerBootstrapFlowTest.php
+      - name: PHP CS Fixer on the installer flow and security selection tests
+        run: vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --diff --using-cache=no tests/Controller/InstallerBootstrapFlowTest.php tests/Controller/InstallerSecurityProfileControllerTest.php
 
-      - name: Rector dry run on the changed installer flow test
-        run: vendor/bin/rector process --config=rector.php --dry-run --no-progress-bar --output-format=github tests/Controller/InstallerBootstrapFlowTest.php
+      - name: Rector dry run on the installer flow and security selection tests
+        run: vendor/bin/rector process --config=rector.php --dry-run --no-progress-bar --output-format=github tests/Controller/InstallerBootstrapFlowTest.php tests/Controller/InstallerSecurityProfileControllerTest.php
 
-      - name: Psalm taint analysis on the changed installer flow test
+      - name: Psalm taint analysis on the installer flow and security selection tests
         run: |
           mkdir -p var/test-results
-          vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm-installer-bootstrap.sarif tests/Controller/InstallerBootstrapFlowTest.php
+          vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm-installer-bootstrap.sarif tests/Controller/InstallerBootstrapFlowTest.php tests/Controller/InstallerSecurityProfileControllerTest.php
 
-      - name: Prepare test database and runtime
+      - name: Prepare test database and lint installer translations and template
         run: |
           touch .env
           php bin/console doctrine:migrations:migrate --env=test --no-interaction
           php bin/console doctrine:schema:validate --skip-sync
+          php bin/console lint:twig templates/installer/security_profile.html.twig
+          php bin/console lint:yaml translations/messages.de.yaml
+          php bin/console lint:yaml translations/messages.en.yaml
 
-      - name: Run focused installer browser flow test
+      - name: Run focused installer browser flow and security selection tests
         shell: bash
         run: |
           set -euo pipefail
@@ -454,7 +459,8 @@ jobs:
             --fail-on-risky --fail-on-warning --fail-on-deprecation \
             --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
             --fail-on-empty-test-suite --log-junit=var/test-results/junit-installer-bootstrap.xml \
-            tests/Controller/InstallerBootstrapFlowTest.php > var/test-results/phpunit-installer-bootstrap.log 2>&1
+            tests/Controller/InstallerBootstrapFlowTest.php \
+            tests/Controller/InstallerSecurityProfileControllerTest.php > var/test-results/phpunit-installer-bootstrap.log 2>&1
           status=$?
           set -e
           if [ "$status" -ne 0 ]; then
