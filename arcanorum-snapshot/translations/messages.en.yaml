@@ -2152,3 +2152,9 @@ Admin: Administration
 "Diese Seite speichert den Auswahlwunsch. Arcanorum verwendet eine Zusatzfunktion erst, wenn ihre Integration eingerichtet und ihre Voraussetzung aktuell nachgewiesen ist.": "This page saves the requested choices. Arcanorum uses an optional feature only after its integration is configured and its requirements are currently verified."
 
 "Ausgewählt, aber der aktuelle Hostnachweis fehlt. Die Funktion ist nicht als verfügbar bestätigt. Entfernen Sie die Auswahl oder stellen Sie den Nachweis wieder her.": "Selected, but current host evidence is missing. Availability is not verified. Remove the selection or restore the evidence."
+
+"Installationsschritt: Hosting-Sicherheitsprofil": "Installation step: hosting security profile"
+
+"Vor der ersten Administratorkontoanlage können Sie nachweisbare Hosting-Fähigkeiten prüfen und optionale Schutzfunktionen auswählen.": "Before creating the first administrator account, review the hosting capabilities that were verified and choose optional protections."
+
+"Geprüfte Hosting-Fähigkeiten": "Verified hosting capabilities"

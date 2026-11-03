@@ -217,3 +217,9 @@
 "Diese Seite speichert den Auswahlwunsch. Arcanorum verwendet eine Zusatzfunktion erst, wenn ihre Integration eingerichtet und ihre Voraussetzung aktuell nachgewiesen ist.": "تحفظ هذه الصفحة الاختيارات المطلوبة. لا يستخدم Arcanorum ميزة إضافية إلا بعد إعداد تكاملها والتحقق حاليًا من متطلباتها."
 
 "Ausgewählt, aber der aktuelle Hostnachweis fehlt. Die Funktion ist nicht als verfügbar bestätigt. Entfernen Sie die Auswahl oder stellen Sie den Nachweis wieder her.": "تم الاختيار لكن إثبات الاستضافة الحالي غير متوفر. لم يتم التحقق من توفر الميزة. أزل الاختيار أو أعد الإثبات."
+
+"Installationsschritt: Hosting-Sicherheitsprofil": "خطوة التثبيت: ملف أمان الاستضافة"
+
+"Vor der ersten Administratorkontoanlage können Sie nachweisbare Hosting-Fähigkeiten prüfen und optionale Schutzfunktionen auswählen.": "قبل إنشاء حساب المدير الأول، راجع إمكانات الاستضافة التي تم التحقق منها واختر وسائل الحماية الإضافية."
+
+"Geprüfte Hosting-Fähigkeiten": "إمكانات الاستضافة التي تم التحقق منها"
