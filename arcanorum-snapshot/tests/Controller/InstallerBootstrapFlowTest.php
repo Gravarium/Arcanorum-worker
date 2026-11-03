@@ -109,7 +109,7 @@ final class InstallerBootstrapFlowTest extends WebTestCase
                 'token' => $profileToken,
                 'selected_features' => ['private_storage'],
             ]);
-            self::assertResponseRedirects('/install/security-profile', Response::HTTP_SEE_OTHER);
+            self::assertResponseRedirects('/install/security-profile', Response::HTTP_FOUND);
             $client->followRedirect();
             self::assertResponseIsSuccessful();
             $this->assertPrivateNoStore($client);
