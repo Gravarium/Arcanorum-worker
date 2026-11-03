@@ -606,14 +606,13 @@ jobs:
           fi
 
       - name: Run focused hosting adapter quality gates
-        if: inputs.validation_scope != 'hosting-security-selection-tests-only'
         env:
           HOSTING_VALIDATION_SCOPE: ${{ inputs.validation_scope }}
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p var/test-results
-          if [[ "$HOSTING_VALIDATION_SCOPE" == hosting-security-selection-test-quality-only ]]; then
+          if [[ "$HOSTING_VALIDATION_SCOPE" == hosting-security-selection-tests-only || "$HOSTING_VALIDATION_SCOPE" == hosting-security-selection-test-quality-only ]]; then
             files=(tests/Platform/Hosting/DoctrineHostingSecurityFeatureSelectionStoreTest.php)
           else
             files=(
