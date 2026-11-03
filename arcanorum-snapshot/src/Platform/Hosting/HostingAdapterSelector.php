@@ -47,10 +47,6 @@ final readonly class HostingAdapterSelector
 
             $seenFeatures = [];
             foreach ($adapter->requiredFeatures() as $requiredFeature) {
-                if (!$requiredFeature instanceof HostingSecurityFeature) {
-                    throw new \InvalidArgumentException('Hostingadapter benötigen gültige Sicherheitsfunktionen.');
-                }
-
                 if (isset($seenFeatures[$requiredFeature->value])) {
                     throw new \InvalidArgumentException('Hostingadapter dürfen keine Sicherheitsfunktion doppelt verlangen.');
                 }
