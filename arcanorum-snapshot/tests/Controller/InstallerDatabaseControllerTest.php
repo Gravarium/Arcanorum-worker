@@ -50,7 +50,7 @@ final class InstallerDatabaseControllerTest extends WebTestCase
                 'database_url' => $untrustedDsn,
             ]);
             self::assertResponseStatusCodeSame(422);
-            self::assertStringNotContainsString($untrustedDsn, (string) $client->getResponse()->getContent());
+            self::assertStringNotContainsString($untrustedDsn, $client->getResponse()->getContent());
 
             $client->request('POST', '/install/database', [
                 'token' => $token,
@@ -87,8 +87,8 @@ final class InstallerDatabaseControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(503);
         self::assertSame('private, no-store', $client->getResponse()->headers->get('Cache-Control'));
         self::assertSame('noindex, nofollow', $client->getResponse()->headers->get('X-Robots-Tag'));
-        self::assertStringContainsString('DATABASE_URL', (string) $client->getResponse()->getContent());
-        self::assertStringNotContainsString('private-connection-string-should-not-leak', (string) $client->getResponse()->getContent());
+        self::assertStringContainsString('DATABASE_URL', $client->getResponse()->getContent());
+        self::assertStringNotContainsString('private-connection-string-should-not-leak', $client->getResponse()->getContent());
     }
 
     public function testDatabaseProbeRateLimitsRequestsByHmacProtectedClientAddress(): void

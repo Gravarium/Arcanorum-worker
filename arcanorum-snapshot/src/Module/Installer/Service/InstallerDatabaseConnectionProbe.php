@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Module\Installer\Service;
 
+use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
 
 final readonly class InstallerDatabaseConnectionProbe
@@ -21,6 +22,10 @@ final readonly class InstallerDatabaseConnectionProbe
     {
         try {
             $connection = $this->managerRegistry->getConnection();
+            if (!$connection instanceof Connection) {
+                return new InstallerDatabaseProbeResult(false, false, 'unexpected-connection-type');
+            }
+
             $connectionResponse = $connection->fetchOne('SELECT 1');
         } catch (\Throwable $exception) {
             return new InstallerDatabaseProbeResult(false, false, $exception::class);
@@ -34,6 +39,9 @@ final readonly class InstallerDatabaseConnectionProbe
             $requiredTablesAvailable = $connection
                 ->createSchemaManager()
                 ->tablesExist(self::REQUIRED_TABLES);
+            if (!is_bool($requiredTablesAvailable)) {
+                return new InstallerDatabaseProbeResult(true, false, 'unexpected-metadata-result');
+            }
         } catch (\Throwable $exception) {
             return new InstallerDatabaseProbeResult(true, false, $exception::class);
         }

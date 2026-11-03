@@ -86,7 +86,7 @@ final class InstallerDatabaseConnectionProbeTest extends TestCase
             ->method('createSchemaManager')
             ->willThrowException(new \RuntimeException('metadata-error-must-not-leak'));
 
-        $result = (new InstallerDatabaseConnectionProbe($connection))->check();
+        $result = (new InstallerDatabaseConnectionProbe($this->managerRegistry($connection)))->check();
 
         self::assertTrue($result->connectionAvailable);
         self::assertFalse($result->requiredTablesAvailable);
