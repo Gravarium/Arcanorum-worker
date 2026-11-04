@@ -1820,26 +1820,6 @@ jobs:
                           )
                       )
                       print(f'PHPUnit failure: {name} ({location})')
-                      response_status_match = re.search(
-                          r'thumbnail_import_http_status=(\d{3})',
-                          f"{failure.get('message', '')} {failure_text}",
-                      )
-                      if response_status_match:
-                          print(f'Thumbnail import response status: HTTP {response_status_match.group(1)}.')
-                      exception_class_match = re.search(
-                          r'thumbnail_import_exception_class=([A-Za-z0-9_\\\\]+)',
-                          f"{failure.get('message', '')} {failure_text}",
-                      )
-                      if exception_class_match:
-                          print(f'Thumbnail import raised: {exception_class_match.group(1)}.')
-                      mock_failure_match = re.search(
-                          r'thumbnail_mock_failure=([a-z_]+)',
-                          f"{failure.get('message', '')} {failure_text}",
-                      )
-                      if mock_failure_match:
-                          print(f'Thumbnail import mock assertion: {mock_failure_match.group(1)}.')
-                      if 'thumbnail_import_location_mismatch' in f"{failure.get('message', '')} {failure_text}":
-                          print('Thumbnail import redirect location did not match its edit page.')
                       cache_match = re.search(
                           r'Cache-Control value:\s*([A-Za-z0-9 ,=.-]{0,120})',
                           f"{failure.get('message', '')} {failure_text}",

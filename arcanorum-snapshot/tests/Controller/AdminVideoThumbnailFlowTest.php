@@ -243,22 +243,14 @@ final class AdminVideoThumbnailFlowTest extends WebTestCase
             $client->getContainer()->set(VideoThumbnailImportService::class, new VideoThumbnailImportService(
                 new MockHttpClient(static function (string $method, string $url, array $options) use ($thumbnailPng, &$requestCount): MockResponse {
                     ++$requestCount;
-                    self::assertSame('GET', $method, 'thumbnail_mock_failure=method');
-                    self::assertSame(0, $options['max_redirects'] ?? null, 'thumbnail_mock_failure=redirects');
+                    self::assertSame('GET', $method);
+                    self::assertSame(0, $options['max_redirects'] ?? null);
                     $headers = $options['headers'] ?? null;
                     if (!is_array($headers)) {
-                        throw new \UnexpectedValueException('thumbnail_mock_failure=headers_type');
+                        throw new \UnexpectedValueException('Thumbnail request headers must be an array.');
                     }
-                    self::assertSame(
-                        'image/jpeg, image/png, image/webp',
-                        $headers['Accept'] ?? null,
-                        'thumbnail_mock_failure=accept',
-                    );
-                    self::assertSame(
-                        'https://images.example.test/video/cover.png',
-                        $url,
-                        'thumbnail_mock_failure=url',
-                    );
+                    self::assertContains('Accept: image/jpeg, image/png, image/webp', $headers);
+                    self::assertSame('https://images.example.test/video/cover.png', $url);
 
                     return new MockResponse($thumbnailPng, ['http_code' => Response::HTTP_OK]);
                 }),
@@ -305,27 +297,12 @@ final class AdminVideoThumbnailFlowTest extends WebTestCase
             self::assertResponseRedirects($editPath);
             self::assertSame(0, $requestCount);
 
-            $client->catchExceptions(false);
-            try {
-                $client->request('POST', $importPath, [
-                    '_token' => $token,
-                    'action' => 'import_url',
-                    'thumbnail_url' => 'https://images.example.test/video/cover.png',
-                ]);
-            } catch (\Throwable $exception) {
-                $mockFailure = 'unknown';
-                if (1 === preg_match('/thumbnail_mock_failure=([a-z_]+)/', $exception->getMessage(), $matches)) {
-                    $mockFailure = $matches[1];
-                }
-                self::fail('thumbnail_import_exception_class='.$exception::class.'; thumbnail_mock_failure='.$mockFailure);
-            }
-            $response = $client->getResponse();
-            self::assertSame(
-                Response::HTTP_FOUND,
-                $response->getStatusCode(),
-                'thumbnail_import_http_status='.$response->getStatusCode(),
-            );
-            self::assertSame($editPath, $response->headers->get('Location'), 'thumbnail_import_location_mismatch');
+            $client->request('POST', $importPath, [
+                '_token' => $token,
+                'action' => 'import_url',
+                'thumbnail_url' => 'https://images.example.test/video/cover.png',
+            ]);
+            self::assertResponseRedirects($editPath);
             self::assertSame(1, $requestCount);
             self::assertIsString($storedObjectId);
 
