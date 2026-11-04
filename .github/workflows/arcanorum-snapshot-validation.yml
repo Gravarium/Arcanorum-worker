@@ -66,7 +66,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: arcanorum-snapshot-${{ github.ref }}-${{ inputs.validation_scope || 'push' }}
+  group: arcanorum-snapshot-${{ github.ref }}-${{ inputs.validation_scope || 'push' }}-${{ inputs.source_commit || github.sha }}
   cancel-in-progress: true
 
 jobs:
