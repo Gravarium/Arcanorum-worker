@@ -1756,7 +1756,44 @@ jobs:
               tests > var/test-results/phpunit-video-editorial.log 2>&1; then
               echo 'Targeted video and editorial regressions: PASS; detailed results withheld.'
             else
-              echo 'Targeted video and editorial regressions: FAIL; detailed results withheld.'
+              echo 'Targeted video and editorial regressions: FAIL; reporting test names and coordinates only.'
+              python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          log = Path('var/test-results/phpunit-video-editorial.log').read_text(encoding='utf-8', errors='replace')
+          failures = []
+          current = None
+          test_pattern = re.compile(r'^\s*\d+\)\s+([A-Za-z0-9_\\]+::[A-Za-z0-9_]+)\s*$')
+          location_pattern = re.compile(r'(?:^|/)tests/([A-Za-z0-9_./-]+\.php):(\d+)(?:\s|$)')
+
+          for line in log.splitlines():
+              match = test_pattern.match(line)
+              if match:
+                  current = {'test': match.group(1), 'location': None}
+                  failures.append(current)
+                  continue
+              if current is not None and current['location'] is None:
+                  match = location_pattern.search(line)
+                  if match:
+                      current['location'] = f"tests/{match.group(1)}:{match.group(2)}"
+
+          for failure in failures:
+              location = failure['location'] or 'location unavailable'
+              print(f"PHPUnit failure: {failure['test']} ({location})")
+          if not failures:
+              print('PHPUnit failed without a parseable test name; detailed output remains withheld.')
+
+          for line in log.splitlines():
+              if re.match(r'^Tests:\s+\d+\b', line):
+                  match = re.match(r'^Tests:\s+(\d+)(?:,\s+Assertions:\s+(\d+))?(.*)$', line)
+                  if match:
+                      assertions = match.group(2) or 'unreported'
+                      outcomes = re.sub(r'[^A-Za-z0-9 ,.:]+', '', match.group(3)).strip(' ,.')
+                      suffix = f", {outcomes}" if outcomes else ''
+                      print(f"PHPUnit summary: {match.group(1)} tests, {assertions} assertions{suffix}.")
+                  break
+          PY
               exit 1
             fi
           else
