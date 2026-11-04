@@ -1832,6 +1832,12 @@ jobs:
                       )
                       if exception_class_match:
                           print(f'Thumbnail import raised: {exception_class_match.group(1)}.')
+                      mock_failure_match = re.search(
+                          r'thumbnail_mock_failure=([a-z_]+)',
+                          f"{failure.get('message', '')} {failure_text}",
+                      )
+                      if mock_failure_match:
+                          print(f'Thumbnail import mock assertion: {mock_failure_match.group(1)}.')
                       if 'thumbnail_import_location_mismatch' in f"{failure.get('message', '')} {failure_text}":
                           print('Thumbnail import redirect location did not match its edit page.')
                       cache_match = re.search(
