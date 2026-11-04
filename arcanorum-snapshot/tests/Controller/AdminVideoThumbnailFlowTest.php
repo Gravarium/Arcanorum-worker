@@ -293,11 +293,16 @@ final class AdminVideoThumbnailFlowTest extends WebTestCase
             self::assertResponseRedirects($editPath);
             self::assertSame(0, $requestCount);
 
-            $client->request('POST', $importPath, [
-                '_token' => $token,
-                'action' => 'import_url',
-                'thumbnail_url' => 'https://images.example.test/video/cover.png',
-            ]);
+            $client->catchExceptions(false);
+            try {
+                $client->request('POST', $importPath, [
+                    '_token' => $token,
+                    'action' => 'import_url',
+                    'thumbnail_url' => 'https://images.example.test/video/cover.png',
+                ]);
+            } catch (\Throwable $exception) {
+                self::fail('thumbnail_import_exception_class='.$exception::class);
+            }
             $response = $client->getResponse();
             self::assertSame(
                 Response::HTTP_FOUND,
