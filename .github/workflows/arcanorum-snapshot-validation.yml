@@ -1763,7 +1763,7 @@ jobs:
               --fail-on-risky --fail-on-warning --fail-on-deprecation \
               --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
               --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
-              --filter='testAdminVideoFormPrefillsSafeSourceModesAndShowsMinuteAndSecondFields|testFirstNewsAndVideoIterationPersistsContentAndRejectsUnsafeSources|testSystemOverviewShowsOnlyCuratedRuntimeValuesToAdmin|AdminVideoThumbnailFlowTest|VideoAccessFlowTest|VideoSocialPreviewFlowTest|VideoSubtitleCacheFlowTest|VideoEditorialMetadataTest' \
+              --filter='testAdminVideoFormPrefillsSafeSourceModesAndShowsMinuteAndSecondFields|testFirstNewsAndVideoIterationPersistsContentAndRejectsUnsafeSources|testAdministratorCanBeCreatedAndCanLogInAndOut|AdminVideoThumbnailFlowTest|VideoAccessFlowTest|VideoSocialPreviewFlowTest|VideoSubtitleCacheFlowTest|VideoEditorialMetadataTest' \
               tests > var/test-results/phpunit-video-editorial.log 2>&1; then
               echo 'Targeted video and editorial regressions: PASS; detailed results withheld.'
             else
