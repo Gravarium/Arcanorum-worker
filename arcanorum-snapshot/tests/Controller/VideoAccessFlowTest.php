@@ -104,7 +104,8 @@ final class VideoAccessFlowTest extends WebTestCase
             $client->request('GET', '/videos/'.$videoId.'/thumbnail');
             self::assertResponseIsSuccessful();
             self::assertSame($thumbnail, $client->getResponse()->getContent());
-            self::assertSame('private, no-store', $client->getResponse()->headers->get('Cache-Control'));
+            self::assertTrue($client->getResponse()->headers->getCacheControlDirective('private'));
+            self::assertTrue($client->getResponse()->headers->getCacheControlDirective('no-store'));
         } finally {
             $entityManager->clear();
             $connection->executeStatement('DELETE FROM videos WHERE id = :id', ['id' => $videoId]);

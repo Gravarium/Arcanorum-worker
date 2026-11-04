@@ -4211,7 +4211,8 @@ final class AdminDashboardTest extends WebTestCase
             self::assertSame('same-origin', $client->getResponse()->headers->get('Cross-Origin-Resource-Policy'));
             self::assertSame('nosniff', $client->getResponse()->headers->get('X-Content-Type-Options'));
             $mediaCacheControl = (string) $client->getResponse()->headers->get('Cache-Control');
-            self::assertStringContainsString('public', $mediaCacheControl, 'Cache-Control value: '.$mediaCacheControl);
+            self::assertStringContainsString('private', $mediaCacheControl, 'Cache-Control value: '.$mediaCacheControl);
+            self::assertStringNotContainsString('public', $mediaCacheControl, 'Cache-Control value: '.$mediaCacheControl);
             self::assertStringContainsString('max-age=0', $mediaCacheControl);
             self::assertStringContainsString('must-revalidate', $mediaCacheControl);
             $mediaEtag = (string) $client->getResponse()->headers->get('ETag');
