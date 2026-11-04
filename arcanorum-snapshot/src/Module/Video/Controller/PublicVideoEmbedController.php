@@ -6,8 +6,8 @@ namespace App\Module\Video\Controller;
 
 use App\Entity\Video;
 use App\Entity\VideoSourceType;
-use App\Module\Video\Service\VideoEmbedOriginPolicy;
 use App\Module\Video\Service\VideoAccessPolicy;
+use App\Module\Video\Service\VideoEmbedOriginPolicy;
 use App\Module\Video\Service\VideoQualitySourceResolver;
 use App\Module\Video\Service\VideoStreamSource;
 use App\Module\Video\Service\VideoStreamSourceResolver;
