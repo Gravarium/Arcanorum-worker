@@ -241,7 +241,9 @@ final class AdminVideoThumbnailFlowTest extends WebTestCase
                     ++$requestCount;
                     self::assertSame('GET', $method);
                     self::assertSame(0, $options['max_redirects'] ?? null);
-                    self::assertSame('image/jpeg, image/png, image/webp', $options['headers']['Accept'] ?? null);
+                    $headers = $options['headers'] ?? null;
+                    self::assertIsArray($headers);
+                    self::assertSame('image/jpeg, image/png, image/webp', $headers['Accept'] ?? null);
                     self::assertSame('https://images.example.test/video/cover.png', $url);
 
                     return new MockResponse($thumbnailPng, ['http_code' => Response::HTTP_OK]);

@@ -3846,3 +3846,69 @@ html[data-public-theme="arcanorum"][data-public-view="compact"] .public-navigati
         background: #fff;
     }
 }
+
+/* Redaktionsübersicht als klassische, lesbare Zeilen statt als App-Kacheln. */
+.dashboard-metrics {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    border-top: 1px solid #c5ced8;
+}
+
+.dashboard-metric-card {
+    display: grid;
+    grid-template-columns: minmax(10rem, 1fr) auto minmax(12rem, 1.5fr);
+    align-items: center;
+    gap: 0.5rem 1rem;
+    min-height: 3.25rem;
+    padding: 0.55rem 0.75rem;
+    border: 0;
+    border-bottom: 1px solid #c5ced8;
+    border-left: 0;
+    border-radius: 0;
+    background: #fff;
+    box-shadow: none;
+    transition: background-color 0.15s ease;
+}
+
+.dashboard-metric-card:hover {
+    background: #f5f7f9;
+    box-shadow: none;
+    transform: none;
+}
+
+.dashboard-metric-card:focus-visible {
+    outline-color: #285e8e;
+    outline-offset: -3px;
+}
+
+.dashboard-metric-label {
+    color: #304963;
+    font-size: 0.9rem;
+    font-weight: 650;
+    letter-spacing: normal;
+    text-transform: none;
+}
+
+.dashboard-metric-total {
+    min-width: 2.5rem;
+    font-size: 1.2rem;
+    letter-spacing: normal;
+    line-height: 1.2;
+    text-align: right;
+}
+
+.dashboard-metric-detail {
+    gap: 0.25rem 1rem;
+    color: #506176;
+    font-size: 0.8rem;
+}
+
+@media (max-width: 42rem) {
+    .dashboard-metric-card {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .dashboard-metric-detail {
+        grid-column: 1 / -1;
+    }
+}
