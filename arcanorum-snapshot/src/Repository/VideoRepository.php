@@ -108,8 +108,14 @@ final class VideoRepository extends ServiceEntityRepository implements ExternalV
         $queryBuilder = $this->createQueryBuilder('video');
 
         if ('' !== $search) {
+            $categorySearch = $this->getEntityManager()->createQueryBuilder()
+                ->select('categorizedVideo.id')
+                ->from(Video::class, 'categorizedVideo')
+                ->innerJoin('categorizedVideo.categories', 'searchedCategory')
+                ->andWhere('categorizedVideo = video')
+                ->andWhere('searchedCategory.name LIKE :search');
             $queryBuilder
-                ->andWhere('(video.title LIKE :search OR video.category LIKE :search)')
+                ->andWhere('(video.title LIKE :search OR video.category LIKE :search OR video.id IN ('.$categorySearch->getDQL().'))')
                 ->setParameter('search', '%'.$search.'%');
         }
         if (null !== $status) {
@@ -119,7 +125,7 @@ final class VideoRepository extends ServiceEntityRepository implements ExternalV
             $queryBuilder->andWhere('video.sourceType = :sourceType')->setParameter('sourceType', $sourceType);
         }
         if (null !== $category && '' !== $category) {
-            $queryBuilder->andWhere('video.category = :category')->setParameter('category', $category);
+            $this->applyCategoryFilter($queryBuilder, 'video', $category);
         }
         if (null !== $tag && '' !== $tag) {
             $queryBuilder
@@ -129,6 +135,20 @@ final class VideoRepository extends ServiceEntityRepository implements ExternalV
         }
 
         return $queryBuilder;
+    }
+
+    private function applyCategoryFilter(QueryBuilder $queryBuilder, string $videoAlias, string $category): void
+    {
+        $assignedVideos = $this->getEntityManager()->createQueryBuilder()
+            ->select('categorizedVideo.id')
+            ->from(Video::class, 'categorizedVideo')
+            ->innerJoin('categorizedVideo.categories', 'assignedCategory')
+            ->andWhere('categorizedVideo = '.$videoAlias)
+            ->andWhere('assignedCategory.normalizedName = :categoryName');
+
+        $queryBuilder
+            ->andWhere('(LOWER(TRIM('.$videoAlias.'.category)) = :categoryName OR '.$videoAlias.'.id IN ('.$assignedVideos->getDQL().'))')
+            ->setParameter('categoryName', mb_strtolower(trim($category)));
     }
 
     /** @return list<Video> */
@@ -142,15 +162,19 @@ final class VideoRepository extends ServiceEntityRepository implements ExternalV
         $queryBuilder->setParameter('now', new \DateTimeImmutable('now', new \DateTimeZone('UTC')));
 
         if ('' !== $search) {
+            $categorySearch = $this->getEntityManager()->createQueryBuilder()
+                ->select('categorizedVideo.id')
+                ->from(Video::class, 'categorizedVideo')
+                ->innerJoin('categorizedVideo.categories', 'searchedCategory')
+                ->andWhere('categorizedVideo = video')
+                ->andWhere('searchedCategory.name LIKE :search');
             $queryBuilder
-                ->andWhere('(video.title LIKE :search OR video.category LIKE :search OR video.description LIKE :search)')
+                ->andWhere('(video.title LIKE :search OR video.category LIKE :search OR video.description LIKE :search OR video.id IN ('.$categorySearch->getDQL().'))')
                 ->setParameter('search', '%'.$search.'%');
         }
 
         if (null !== $category && '' !== $category) {
-            $queryBuilder
-                ->andWhere('video.category = :category')
-                ->setParameter('category', $category);
+            $this->applyCategoryFilter($queryBuilder, 'video', $category);
         }
 
         if (null !== $tag && '' !== $tag) {
@@ -180,20 +204,20 @@ final class VideoRepository extends ServiceEntityRepository implements ExternalV
             return [];
         }
 
-        /** @var list<Video> $videos */
-        $videos = $this->createQueryBuilder('video')
+        /** @var QueryBuilder $queryBuilder */
+        $queryBuilder = $this->createQueryBuilder('video')
             ->andWhere('video.status = :status')
             ->andWhere('video.publishedAt IS NOT NULL')
             ->andWhere('video.publishedAt <= :now')
-            ->andWhere('LOWER(TRIM(video.category)) = :category')
             ->setParameter('status', PublishingStatus::Published)
             ->setParameter('now', new \DateTimeImmutable('now', new \DateTimeZone('UTC')))
-            ->setParameter('category', $normalizedCategory)
             ->orderBy('video.publishedAt', \SortDirection::Descending)
             ->addOrderBy('video.id', \SortDirection::Ascending)
-            ->setMaxResults(max(1, min(10, $limit)))
-            ->getQuery()
-            ->getResult();
+            ->setMaxResults(max(1, min(10, $limit)));
+        $this->applyCategoryFilter($queryBuilder, 'video', $normalizedCategory);
+
+        /** @var list<Video> $videos */
+        $videos = $queryBuilder->getQuery()->getResult();
 
         return $videos;
     }
@@ -328,8 +352,11 @@ final class VideoRepository extends ServiceEntityRepository implements ExternalV
             $sourceTagIds[] = $tag->getId();
         }
 
-        $sourceCategory = $source->getCategory();
-        if ([] === $sourceTagIds && (null === $sourceCategory || '' === trim($sourceCategory))) {
+        $sourceCategoryNames = array_values(array_unique(array_map(
+            static fn (string $name): string => mb_strtolower(trim($name)),
+            array_filter($source->getCategoryNames(), static fn (string $name): bool => '' !== trim($name)),
+        )));
+        if ([] === $sourceTagIds && [] === $sourceCategoryNames) {
             return [];
         }
 
@@ -343,30 +370,27 @@ final class VideoRepository extends ServiceEntityRepository implements ExternalV
             ->setParameter('now', $now)
             ->setParameter('sourceId', $source->getId());
 
-        if ([] !== $sourceTagIds && null !== $sourceCategory && '' !== trim($sourceCategory)) {
-            $taggedVideos = $this->getEntityManager()->createQueryBuilder()
-                ->select('taggedVideo.id')
-                ->from(Video::class, 'taggedVideo')
-                ->innerJoin('taggedVideo.tags', 'sharedTag')
-                ->andWhere('sharedTag.id IN (:tagIds)');
-            $queryBuilder
-                ->andWhere('(video.category = :category OR video.id IN ('.$taggedVideos->getDQL().'))')
-                ->setParameter('category', $sourceCategory)
-                ->setParameter('tagIds', $sourceTagIds);
-        } elseif ([] !== $sourceTagIds) {
-            $taggedVideos = $this->getEntityManager()->createQueryBuilder()
-                ->select('taggedVideo.id')
-                ->from(Video::class, 'taggedVideo')
-                ->innerJoin('taggedVideo.tags', 'sharedTag')
-                ->andWhere('sharedTag.id IN (:tagIds)');
-            $queryBuilder
-                ->andWhere('video.id IN ('.$taggedVideos->getDQL().')')
-                ->setParameter('tagIds', $sourceTagIds);
-        } elseif ('' !== trim($sourceCategory)) {
-            $queryBuilder
-                ->andWhere('video.category = :category')
-                ->setParameter('category', $sourceCategory);
+        $relatedConditions = [];
+        if ([] !== $sourceCategoryNames) {
+            $categorizedVideos = $this->getEntityManager()->createQueryBuilder()
+                ->select('categorizedVideo.id')
+                ->from(Video::class, 'categorizedVideo')
+                ->innerJoin('categorizedVideo.categories', 'sharedCategory')
+                ->andWhere('sharedCategory.normalizedName IN (:categoryNames)');
+            $relatedConditions[] = 'LOWER(TRIM(video.category)) IN (:categoryNames)';
+            $relatedConditions[] = 'video.id IN ('.$categorizedVideos->getDQL().')';
+            $queryBuilder->setParameter('categoryNames', $sourceCategoryNames);
         }
+        if ([] !== $sourceTagIds) {
+            $taggedVideos = $this->getEntityManager()->createQueryBuilder()
+                ->select('taggedVideo.id')
+                ->from(Video::class, 'taggedVideo')
+                ->innerJoin('taggedVideo.tags', 'sharedTag')
+                ->andWhere('sharedTag.id IN (:tagIds)');
+            $relatedConditions[] = 'video.id IN ('.$taggedVideos->getDQL().')';
+            $queryBuilder->setParameter('tagIds', $sourceTagIds);
+        }
+        $queryBuilder->andWhere('('.implode(' OR ', $relatedConditions).')');
 
         /** @var list<Video> $videos */
         $videos = $queryBuilder
@@ -394,8 +418,11 @@ final class VideoRepository extends ServiceEntityRepository implements ExternalV
         ];
         $types = ['status' => Types::STRING, 'now' => Types::DATETIME_IMMUTABLE, 'limit' => Types::INTEGER];
         if (null !== $category && '' !== trim($category)) {
-            $where[] = 'video.category = :category';
-            $parameters['category'] = $category;
+            $where[] = '(LOWER(BTRIM(video.category)) = :category OR EXISTS ('
+                .'SELECT 1 FROM video_categories AS assignment '
+                .'INNER JOIN content_categories AS assigned_category ON assigned_category.id = assignment.category_id '
+                .'WHERE assignment.video_id = video.id AND assigned_category.normalized_name = :category))';
+            $parameters['category'] = mb_strtolower(trim($category));
             $types['category'] = Types::STRING;
         }
         if (null !== $excludeId) {

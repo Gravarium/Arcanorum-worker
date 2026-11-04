@@ -3635,6 +3635,27 @@ html[data-public-theme="arcanorum"][data-public-view="compact"] .public-navigati
     font-size: 0.83rem;
 }
 
+.video-editor-section select[multiple] {
+    min-height: 12rem;
+    padding-block: 0.35rem;
+}
+
+.video-category-help {
+    display: block;
+    margin: -0.2rem 0 0;
+    padding: 0 0.85rem 0.55rem 11.9rem;
+    color: #596a7e;
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+
+@media (max-width: 62rem) {
+    .video-category-help,
+    .video-category-manage {
+        padding-left: 0.85rem;
+    }
+}
+
 .video-source-url-field > small,
 .video-metadata-actions {
     padding: 0.55rem 0.85rem;

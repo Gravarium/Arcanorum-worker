@@ -175,7 +175,7 @@
                                     <span class="muted">{{ 'Keine externe Einbettungsquelle'|trans }}</span>
                                 {% endif %}
                             </td>
-                            <td>{{ video.category ?? '—' }}</td>
+                            <td>{{ video.categoryNames|join(', ') ?: '—' }}</td>
                             <td>{% for content_tag in video.tags %}{{ content_tag.name }}{% if not loop.last %}, {% endif %}{% else %}—{% endfor %}</td>
                             <td><span class="status-pill {{ video.status.cssClass }}">{{ video.status.label|trans }}</span></td>
                             <td>{{ video.viewCount }}</td>

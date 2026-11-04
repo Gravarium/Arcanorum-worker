@@ -115,6 +115,13 @@ final class Video
     #[ORM\InverseJoinColumn(name: 'tag_id', referencedColumnName: 'id', onDelete: 'CASCADE')]
     private Collection $tags;
 
+    /** @var Collection<int, ContentCategory> */
+    #[ORM\ManyToMany(targetEntity: ContentCategory::class)]
+    #[ORM\JoinTable(name: 'video_categories')]
+    #[ORM\JoinColumn(name: 'video_id', referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ORM\InverseJoinColumn(name: 'category_id', referencedColumnName: 'id', onDelete: 'CASCADE')]
+    private Collection $categories;
+
     #[ORM\Column(name: 'created_at', type: Types::DATETIME_IMMUTABLE)]
     private \DateTimeImmutable $createdAt;
 
@@ -140,6 +147,7 @@ final class Video
         $this->createdAt = $now;
         $this->updatedAt = $now;
         $this->tags = new ArrayCollection();
+        $this->categories = new ArrayCollection();
 
         $this->revise($title, $description, $category, $sourceType, $sourceUrl, $status, $featured, $commentsEnabled);
     }
@@ -340,6 +348,61 @@ final class Video
     public function getCategory(): ?string
     {
         return $this->category;
+    }
+
+    /** @return list<ContentCategory> */
+    public function getCategories(): array
+    {
+        /** @var list<ContentCategory> $categories */
+        $categories = array_values($this->categories->toArray());
+        usort($categories, function (ContentCategory $left, ContentCategory $right): int {
+            $leftPrimary = $left->getName() === $this->category ? 0 : 1;
+            $rightPrimary = $right->getName() === $this->category ? 0 : 1;
+
+            return ($leftPrimary <=> $rightPrimary)
+                ?: strcasecmp($left->getName(), $right->getName())
+                ?: ($left->getId() <=> $right->getId());
+        });
+
+        return $categories;
+    }
+
+    /** @return list<string> */
+    public function getCategoryNames(): array
+    {
+        $names = array_map(static fn (ContentCategory $category): string => $category->getName(), $this->getCategories());
+
+        if ([] === $names && null !== $this->category && '' !== trim($this->category)) {
+            return [$this->category];
+        }
+
+        return $names;
+    }
+
+    /** @param list<ContentCategory> $categories */
+    public function replaceCategories(array $categories): void
+    {
+        if (count($categories) > 50) {
+            throw new \InvalidArgumentException('Ein Video darf höchstens 50 Kategorien erhalten.');
+        }
+
+        $normalized = [];
+        foreach ($categories as $category) {
+            if (ContentCategoryType::Video !== $category->getContentType()) {
+                throw new \InvalidArgumentException('Videos können nur Videokategorien zugeordnet werden.');
+            }
+
+            $normalized[$category->getId()] = $category;
+        }
+
+        $this->categories->clear();
+        foreach ($normalized as $category) {
+            $this->categories->add($category);
+        }
+        $normalizedCategories = array_values($normalized);
+        $primaryCategory = $normalizedCategories[0] ?? null;
+        $this->category = $primaryCategory?->getName();
+        $this->updatedAt = new \DateTimeImmutable();
     }
 
     public function getSourceType(): VideoSourceType

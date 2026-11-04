@@ -59,7 +59,7 @@
             {% for video in videos %}
                 <article class="content-card">
                     {% if video.thumbnailObjectId %}<img class="video-thumbnail" src="{{ path('video_thumbnail', {id: video.id}) }}" alt="{{ 'Vorschaubild für %title%'|trans({'%title%': video.title}) }}" loading="lazy" decoding="async">{% endif %}
-                    <p class="card-kicker">{{ video.category ?? ('Video'|trans) }}</p>
+                    <p class="card-kicker">{{ video.categoryNames|join(', ') ?: ('Video'|trans) }}</p>
                     <h2><a href="{{ path('video_show', {id: video.id}) }}">{{ video.title }}</a></h2>
                     {% if popular and popular_sort == 'views' %}<p>{{ video.viewCount }} {{ 'Gesamtaufrufe'|trans }}</p>{% endif %}
                     <p>{{ video.description|slice(0, 240) }}</p>

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Tests\Entity;
 
 use App\Entity\PublishingStatus;
+use App\Entity\ContentCategory;
+use App\Entity\ContentCategoryType;
 use App\Entity\Video;
 use App\Entity\VideoSourceType;
 use PHPUnit\Framework\TestCase;
@@ -64,6 +66,28 @@ final class VideoEditorialMetadataTest extends TestCase
 
         $this->expectException(\InvalidArgumentException::class);
         $video->updateEditorialMetadata('safe-video', 'Editorial Desk', false, false, 'not a language');
+    }
+
+    public function testVideoKeepsLegacyPrimaryCategoryAndSupportsSeveralVideoCategories(): void
+    {
+        $video = $this->publishedVideo();
+        $first = new ContentCategory('Culture', ContentCategoryType::Video);
+        $second = new ContentCategory('Interviews', ContentCategoryType::Video);
+
+        $video->replaceCategories([$first, $second]);
+
+        self::assertSame('Culture', $video->getCategory());
+        self::assertSame(['Culture', 'Interviews'], $video->getCategoryNames());
+        self::assertSame([$first, $second], $video->getCategories());
+    }
+
+    public function testVideoRejectsNewsCategories(): void
+    {
+        $video = $this->publishedVideo();
+        $newsCategory = new ContentCategory('News', ContentCategoryType::News);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $video->replaceCategories([$newsCategory]);
     }
 
     private function publishedVideo(): Video

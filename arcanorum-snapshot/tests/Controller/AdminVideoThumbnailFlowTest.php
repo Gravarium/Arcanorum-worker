@@ -6,6 +6,8 @@ namespace App\Tests\Controller;
 
 use App\Entity\AdminRole;
 use App\Entity\AdminUser;
+use App\Entity\ContentCategory;
+use App\Entity\ContentCategoryType;
 use App\Entity\PublishingStatus;
 use App\Entity\Video;
 use App\Entity\VideoSourceType;
@@ -40,6 +42,118 @@ final class AdminVideoThumbnailFlowTest extends WebTestCase
         $_SERVER['ADMIN_MFA_ENCRYPTION_KEY'] = $mfaKey;
 
         parent::setUpBeforeClass();
+    }
+
+    public function testAdministratorCanAssignSeveralVideoCategoriesAndRejectsNewsCategories(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $client->getContainer()->set(
+            RuntimeAttestationReportProviderInterface::class,
+            new VerifiedRuntimeAttestationReportProvider(),
+        );
+
+        $suffix = bin2hex(random_bytes(6));
+        $email = 'multiple-video-categories-'.$suffix.'@example.test';
+        $password = 'VideoCategories-'.$suffix.'-G4!';
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        $firstCategory = new ContentCategory('News category A '.$suffix, ContentCategoryType::Video);
+        $secondCategory = new ContentCategory('News category B '.$suffix, ContentCategoryType::Video);
+        $newsCategory = new ContentCategory('Not a video category '.$suffix, ContentCategoryType::News);
+        $temporaryPath = tempnam(sys_get_temp_dir(), 'arcanorum-video-thumbnail-create-');
+        self::assertIsString($temporaryPath);
+        $thumbnailPng = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/WioAAAAASUVORK5CYII=', true);
+        self::assertIsString($thumbnailPng);
+        self::assertSame(strlen($thumbnailPng), file_put_contents($temporaryPath, $thumbnailPng));
+        $storedThumbnailObjectId = null;
+        $entityManager->persist($firstCategory);
+        $entityManager->persist($secondCategory);
+        $entityManager->persist($newsCategory);
+        $entityManager->flush();
+
+        try {
+            $admin = $this->persistAdministrator($client, $email, $password);
+            $this->submitLogin($client, $admin, $password);
+            self::assertResponseRedirects('/admin');
+
+            $newVideoPath = '/admin/videos/new';
+            $client->request('GET', $newVideoPath);
+            self::assertResponseIsSuccessful();
+            self::assertSelectorExists('select[name="category_ids[]"][multiple][size="8"]');
+            self::assertSelectorExists('select[name="category_ids[]"] option[value="'.$firstCategory->getId().'"]');
+
+            $token = $client->getCrawler()->filter('form.admin-form input[name="_token"]')->first()->attr('value');
+            self::assertIsString($token);
+            $payload = [
+                '_token' => $token,
+                'category_ids_present' => '1',
+                'category_ids' => [$firstCategory->getId(), $newsCategory->getId()],
+                'title' => 'Rejected mixed category video '.$suffix,
+                'slug' => 'rejected-mixed-category-'.$suffix,
+                'description' => 'A category type validation check.',
+                'tags' => '',
+                'source_type' => 'embed',
+                'source_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                'duration_minutes' => '',
+                'duration_seconds_part' => '',
+                'status' => 'draft',
+                'publish_at' => '',
+                'author_name' => 'Editorial Desk',
+                'language_code' => '',
+                'view_count' => '0',
+                'embed_origins' => '',
+                'custom_fields_present' => '1',
+            ];
+            $client->request('POST', $newVideoPath, $payload);
+            self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+            self::assertSelectorTextContains('[role="alert"]', 'nicht verfügbar');
+            self::assertNull($entityManager->getRepository(Video::class)->findOneBy(['slug' => 'rejected-mixed-category-'.$suffix]));
+
+            $client->request('GET', $newVideoPath);
+            $validToken = $client->getCrawler()->filter('form.admin-form input[name="_token"]')->first()->attr('value');
+            self::assertIsString($validToken);
+            $payload['_token'] = $validToken;
+            $payload['category_ids'] = [$firstCategory->getId(), $secondCategory->getId()];
+            $payload['title'] = 'Multiple category video '.$suffix;
+            $payload['slug'] = 'multiple-category-'.$suffix;
+            $privateStorage = $this->createMock(PrivateObjectStorageInterface::class);
+            $privateStorage->expects(self::once())->method('write')->willReturnCallback(
+                static function (string $objectId, string $contents) use (&$storedThumbnailObjectId, $thumbnailPng): void {
+                    self::assertMatchesRegularExpression('/\A[a-f0-9]{64}\z/D', $objectId);
+                    self::assertSame($thumbnailPng, $contents);
+                    $storedThumbnailObjectId = $objectId;
+                },
+            );
+            $client->getContainer()->set(PrivateObjectStorageInterface::class, $privateStorage);
+            $client->getContainer()->set(VideoThumbnailUploadService::class, new VideoThumbnailUploadService($privateStorage));
+            $client->request(
+                'POST',
+                $newVideoPath,
+                $payload,
+                ['thumbnail_file' => new UploadedFile($temporaryPath, 'preview.png', 'image/png', null, true)],
+            );
+            self::assertResponseRedirects('/admin/videos');
+
+            $entityManager->clear();
+            $savedVideo = $entityManager->getRepository(Video::class)->findOneBy(['slug' => 'multiple-category-'.$suffix]);
+            self::assertInstanceOf(Video::class, $savedVideo);
+            self::assertSame([$firstCategory->getName(), $secondCategory->getName()], $savedVideo->getCategoryNames());
+            self::assertSame($storedThumbnailObjectId, $savedVideo->getThumbnailObjectId());
+        } finally {
+            $entityManager->getConnection()->executeStatement(
+                'DELETE FROM videos WHERE slug IN (:rejected_slug, :saved_slug)',
+                ['rejected_slug' => 'rejected-mixed-category-'.$suffix, 'saved_slug' => 'multiple-category-'.$suffix],
+            );
+            $entityManager->getConnection()->executeStatement('DELETE FROM admin_users WHERE email = :email', ['email' => $email]);
+            $entityManager->getConnection()->executeStatement(
+                'DELETE FROM content_categories WHERE id IN (:first, :second, :news)',
+                ['first' => $firstCategory->getId(), 'second' => $secondCategory->getId(), 'news' => $newsCategory->getId()],
+            );
+            if (is_file($temporaryPath)) {
+                unlink($temporaryPath);
+            }
+        }
     }
 
     public function testAdministratorCanImportAValidatedProviderThumbnailForAnExistingVideo(): void

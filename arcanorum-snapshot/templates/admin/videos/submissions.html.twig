@@ -49,7 +49,7 @@
                                         <span>{{ submission.video.title }}</span>
                                     {% endif %}
                                 </span>
-                                <p class="muted">{{ submission.video.category ?? ('Ohne Kategorie'|trans) }}</p>
+                                <p class="muted">{{ submission.video.categoryNames|join(', ') ?: ('Ohne Kategorie'|trans) }}</p>
                                 {% if submission.video.sourceType.value == 'file' %}
                                     {% if submission.video.isAudio %}
                                         <audio controls preload="metadata" aria-label="{{ 'Audiovorschau für %title%'|trans({'%title%': submission.video.title}) }}" data-testid="audio-submission-preview">

@@ -91,6 +91,22 @@ final class ContentCategoryRepository extends ServiceEntityRepository
         return $category instanceof ContentCategory ? $category : null;
     }
 
+    /** @param list<string> $ids
+     * @return list<ContentCategory>
+     */
+    public function findVideoCategoriesByIds(array $ids): array
+    {
+        return $this->findVideoCategories($ids, false);
+    }
+
+    /** @param list<string> $ids
+     * @return list<ContentCategory>
+     */
+    public function findVideoCategoriesByIdsForUpdate(array $ids): array
+    {
+        return $this->findVideoCategories($ids, true);
+    }
+
     public function findForUpdate(string $id): ?ContentCategory
     {
         $category = $this->createQueryBuilder('category')
@@ -105,6 +121,33 @@ final class ContentCategoryRepository extends ServiceEntityRepository
         }
 
         return $category instanceof ContentCategory ? $category : null;
+    }
+
+    /** @param list<string> $ids
+     * @return list<ContentCategory>
+     */
+    private function findVideoCategories(array $ids, bool $lock): array
+    {
+        if ([] === $ids) {
+            return [];
+        }
+
+        $query = $this->createQueryBuilder('category')
+            ->andWhere('category.contentType = :contentType')
+            ->andWhere('category.id IN (:ids)')
+            ->setParameter('contentType', ContentCategoryType::Video)
+            ->setParameter('ids', array_values(array_unique($ids)))
+            ->orderBy('category.id', \SortDirection::Ascending)
+            ->getQuery();
+
+        if ($lock) {
+            $query->setLockMode(LockMode::PESSIMISTIC_WRITE);
+        }
+
+        /** @var list<ContentCategory> $categories */
+        $categories = $query->getResult();
+
+        return $categories;
     }
 
     /** @return list<ContentCategory> */
@@ -171,7 +214,8 @@ final class ContentCategoryRepository extends ServiceEntityRepository
             .'WHERE category.content_type = :content_type '
             .'AND category.is_featured = TRUE '
             .'AND EXISTS (SELECT 1 FROM videos AS video '
-            .'WHERE LOWER(BTRIM(video.category)) = category.normalized_name '
+            .'WHERE (LOWER(BTRIM(video.category)) = category.normalized_name '
+            .'OR EXISTS (SELECT 1 FROM video_categories AS assignment WHERE assignment.video_id = video.id AND assignment.category_id = category.id)) '
             .'AND video.status = :status '
             .'AND video.published_at IS NOT NULL '
             .'AND video.published_at <= :now) '
@@ -268,6 +312,26 @@ final class ContentCategoryRepository extends ServiceEntityRepository
 
     public function countUsage(ContentCategory $category): int
     {
+        if (ContentCategoryType::Video === $category->getContentType()) {
+            $count = $this->getEntityManager()->getConnection()->fetchOne(
+                'SELECT COUNT(DISTINCT video.id) FROM videos AS video '
+                .'WHERE LOWER(BTRIM(COALESCE(video.category, \'\'))) = :normalized_name '
+                .'OR EXISTS (SELECT 1 FROM video_categories AS assignment WHERE assignment.video_id = video.id AND assignment.category_id = :category_id)',
+                [
+                    'normalized_name' => $category->getNormalizedName(),
+                    'category_id' => $category->getId(),
+                ],
+            );
+            if (is_int($count)) {
+                return max(0, $count);
+            }
+            if (is_string($count) && ctype_digit($count)) {
+                return (int) $count;
+            }
+
+            throw new \UnexpectedValueException('Die Anzahl der verwendeten Kategorien wurde nicht als Zahl zurückgegeben.');
+        }
+
         $table = self::tableFor($category->getContentType());
         $count = $this->getEntityManager()->getConnection()->fetchOne(
             sprintf('SELECT COUNT(*) FROM %s WHERE LOWER(BTRIM(category)) = :normalized_name', $table),

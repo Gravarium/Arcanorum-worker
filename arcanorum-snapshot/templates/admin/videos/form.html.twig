@@ -32,6 +32,7 @@
 
         <form class="admin-form" method="post" enctype="multipart/form-data" data-video-source-metadata data-video-edit="{{ is_edit ? '1' : '0' }}" data-provider-url-label="{{ 'YouTube- oder Videoanbieter-URL'|trans }}" data-direct-url-label="{{ 'Direkte Medien-URL'|trans }}" data-stream-url-label="{{ 'Stream-URL'|trans }}" data-metadata-endpoint="{{ path('admin_video_metadata') }}" data-metadata-csrf-token="{{ csrf_token('admin_video_metadata') }}" data-metadata-error="{{ 'Provider-Metadaten konnten nicht abgerufen werden.'|trans }}" data-metadata-loaded="{{ 'Provider-Metadaten wurden übernommen.'|trans }}" data-metadata-loading="{{ 'Provider-Metadaten werden abgerufen.'|trans }}">
             <input type="hidden" name="_token" value="{{ csrf_token('admin_video_save') }}">
+            <input type="hidden" name="category_ids_present" value="1">
 
             <div class="video-editor-layout">
                 <div class="video-editor-main">
@@ -123,12 +124,12 @@
                     <section class="video-editor-section">
                         <h3>{{ 'Veröffentlichung'|trans }}</h3>
                         <label>
-                            <span>{{ 'Kategorie'|trans }}</span>
-                            <select name="category">
-                                <option value="">{{ 'Keine Kategorie'|trans }}</option>
-                                {% for category in categories %}<option value="{{ category.name }}" {{ values.category == category.name ? 'selected' : '' }}>{{ category.name }}</option>{% endfor %}
+                            <span>{{ 'Videokategorien'|trans }}</span>
+                            <select name="category_ids[]" multiple size="8" aria-describedby="video-category-help">
+                                {% for category in categories %}<option value="{{ category.id }}" {{ category.id in values.category_ids ? 'selected' : '' }}>{{ category.name }}</option>{% endfor %}
                             </select>
                         </label>
+                        <small id="video-category-help" class="video-category-help">{{ 'Wähle mehrere Kategorien mit Strg- oder Umschalttaste.'|trans }}</small>
                         <p class="video-category-manage"><a href="{{ path('admin_category_index', {type: 'video'}) }}">{{ 'Videokategorien verwalten'|trans }}</a></p>
                         <label>
                             <span>{{ 'Status'|trans }}</span>
@@ -151,6 +152,17 @@
                             <input type="number" name="view_count" value="{{ values.view_count }}" min="0" max="2147483647" step="1" inputmode="numeric" required>
                         </label>
                     </section>
+
+                    {% if not is_edit %}
+                        <section class="video-editor-section" aria-labelledby="video-thumbnail-new-heading">
+                            <h3 id="video-thumbnail-new-heading">{{ 'Vorschaubild'|trans }}</h3>
+                            <label>
+                                <span>{{ 'Bilddatei'|trans }}</span>
+                                <input type="file" name="thumbnail_file" accept="image/jpeg,image/png,image/webp">
+                                <small>{{ 'JPEG, PNG oder WebP bis 4 MiB. SVG-Dateien sind nicht zugelassen; die Bilddatei bleibt außerhalb des öffentlichen Webpfads.'|trans }}</small>
+                            </label>
+                        </section>
+                    {% endif %}
 
                     <section class="video-editor-section">
                         <h3>{{ 'Zugriff und Wiedergabe'|trans }}</h3>

@@ -14,7 +14,7 @@
     {{ include('partials/public_site_header.html.twig') }}
     <main class="public-main">
         <article class="public-article"{% if video.languageCode %} lang="{{ video.languageCode }}"{% endif %}>
-            <p class="eyebrow">{{ video.category ?? ('Video'|trans) }}</p>
+            <p class="eyebrow">{{ video.categoryNames|join(', ') ?: ('Video'|trans) }}</p>
             <h1>{{ video.title }}</h1>
             <time datetime="{{ video.publishedAt|date('c') }}">{{ video.publishedAt|date('d.m.Y') }}</time>
             {% if video.durationSeconds is not null %}
@@ -283,7 +283,7 @@
             <div class="content-grid">
                 {% for related in related_videos %}<article class="content-card">
                     {% if related.thumbnailObjectId %}<img class="video-thumbnail" src="{{ path('video_thumbnail', {id: related.id}) }}" alt="{{ 'Vorschaubild für %title%'|trans({'%title%': related.title}) }}" loading="lazy" decoding="async">{% endif %}
-                    <p class="card-kicker">{{ related.category ?? ('Video'|trans) }}</p>
+                    <p class="card-kicker">{{ related.categoryNames|join(', ') ?: ('Video'|trans) }}</p>
                     <h3><a href="{{ path('video_show', {id: related.id}) }}">{{ related.title }}</a></h3>
                 </article>{% endfor %}
             </div>
@@ -293,7 +293,7 @@
             <div class="content-grid">
                 {% for rated in top_rated_videos %}<article class="content-card">
                     {% if rated.thumbnailObjectId %}<img class="video-thumbnail" src="{{ path('video_thumbnail', {id: rated.id}) }}" alt="{{ 'Vorschaubild für %title%'|trans({'%title%': rated.title}) }}" loading="lazy" decoding="async">{% endif %}
-                    <p class="card-kicker">{{ rated.category ?? ('Video'|trans) }}</p>
+                    <p class="card-kicker">{{ rated.categoryNames|join(', ') ?: ('Video'|trans) }}</p>
                     <h3><a href="{{ path('video_show', {id: rated.id}) }}">{{ rated.title }}</a></h3>
                 </article>{% endfor %}
             </div>
