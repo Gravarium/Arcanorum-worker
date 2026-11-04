@@ -14,6 +14,9 @@ final readonly class TestHostingSecurityFeatureSelectionStore implements Hosting
      */
     public function selectedFeatures(): array
     {
-        return [HostingSecurityFeature::PrivateStorage];
+        return [
+            HostingSecurityFeature::PrivateStorage,
+            HostingSecurityFeature::PrivateRedisEndpoint,
+        ];
     }
 }
