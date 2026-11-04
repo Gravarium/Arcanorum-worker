@@ -298,7 +298,13 @@ final class AdminVideoThumbnailFlowTest extends WebTestCase
                 'action' => 'import_url',
                 'thumbnail_url' => 'https://images.example.test/video/cover.png',
             ]);
-            self::assertResponseRedirects($editPath);
+            $response = $client->getResponse();
+            self::assertSame(
+                Response::HTTP_FOUND,
+                $response->getStatusCode(),
+                'thumbnail_import_http_status='.$response->getStatusCode(),
+            );
+            self::assertSame($editPath, $response->headers->get('Location'), 'thumbnail_import_location_mismatch');
             self::assertSame(1, $requestCount);
             self::assertIsString($storedObjectId);
 
