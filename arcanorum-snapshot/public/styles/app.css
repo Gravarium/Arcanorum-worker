@@ -3831,6 +3831,9 @@ html[data-public-theme="arcanorum"][data-public-view="compact"] .public-navigati
 
 .navigation-group > summary {
     border-top: 1px solid #40556e;
+    background: transparent !important;
+    letter-spacing: normal;
+    text-transform: none;
 }
 
 .navigation-group > summary:hover,
@@ -3838,12 +3841,18 @@ html[data-public-theme="arcanorum"][data-public-view="compact"] .public-navigati
 .navigation-group[open] > summary,
 .navigation-dashboard:hover,
 .navigation-dashboard:focus-visible {
-    background: #344d6b;
+    background: #344d6b !important;
     color: #fff;
 }
 
 .navigation-group > summary::after {
+    content: "⌄";
+    display: block;
     color: #d1dbe6;
+}
+
+.navigation-group[open] > summary::after {
+    transform: rotate(180deg);
 }
 
 .navigation-items {
@@ -3867,6 +3876,13 @@ html[data-public-theme="arcanorum"][data-public-view="compact"] .public-navigati
 }
 
 .navigation-link.is-active {
+    border-left: 3px solid #d6e5f5;
+    border-radius: 0;
+    background: #3a5b80;
+    color: #fff;
+}
+
+.navigation-items .navigation-link.is-active {
     border-left: 3px solid #d6e5f5;
     border-radius: 0;
     background: #3a5b80;
