@@ -31,6 +31,7 @@ use App\Service\SiteSettingsProvider;
 use App\Service\VideoMediaUploadService;
 use App\Service\VideoProviderImportException;
 use App\Service\VideoProviderImportService;
+use App\Service\VideoSlugLock;
 use App\Service\VideoSourceUrlLock;
 use App\Service\VideoSubtitleUploadService;
 use App\Service\VideoThumbnailUploadService;
@@ -45,6 +46,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\String\Slugger\AsciiSlugger;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 #[Route('/admin/videos', name: 'admin_video_')]
@@ -433,6 +435,7 @@ final class VideoAdminController extends AbstractController
         VideoQualitySourceRepository $qualitySources,
         VideoEmbedOriginPolicy $embedOriginPolicy,
         VideoEmbedCodeGenerator $embedCodeGenerator,
+        VideoSlugLock $slugLock,
     ): Response {
         return $this->editForm(
             $request,
@@ -450,6 +453,7 @@ final class VideoAdminController extends AbstractController
             $qualitySources,
             $embedOriginPolicy,
             $embedCodeGenerator,
+            $slugLock,
         );
     }
 
@@ -475,6 +479,7 @@ final class VideoAdminController extends AbstractController
         VideoQualitySourceRepository $qualitySources,
         VideoEmbedOriginPolicy $embedOriginPolicy,
         VideoEmbedCodeGenerator $embedCodeGenerator,
+        VideoSlugLock $slugLock,
     ): Response {
         $video = $videos->find($id);
         if (!$video instanceof Video) {
@@ -497,6 +502,7 @@ final class VideoAdminController extends AbstractController
             $qualitySources,
             $embedOriginPolicy,
             $embedCodeGenerator,
+            $slugLock,
         );
     }
 
@@ -516,14 +522,17 @@ final class VideoAdminController extends AbstractController
         VideoQualitySourceRepository $qualitySources,
         VideoEmbedOriginPolicy $embedOriginPolicy,
         VideoEmbedCodeGenerator $embedCodeGenerator,
+        VideoSlugLock $slugLock,
     ): Response {
         $isEdit = null !== $video;
         $storedDurationSeconds = $video?->getDurationSeconds();
+        $siteTimezone = new \DateTimeZone($siteSettings->current()->getTimezone());
         $storedEmbedOrigins = null !== $video
             ? $embedOriginPolicy->validateStoredOrigins($video->getEmbedAllowedOrigins())
             : [];
         $values = [
             'title' => $video?->getTitle() ?? '',
+            'slug' => $video?->getSlug() ?? '',
             'description' => $video?->getDescription() ?? '',
             'category' => $video?->getCategory() ?? '',
             'tags' => $video?->getTagNames() ?? '',
@@ -533,8 +542,14 @@ final class VideoAdminController extends AbstractController
             'duration_minutes' => null === $storedDurationSeconds ? '' : (string) intdiv($storedDurationSeconds, 60),
             'duration_seconds_part' => null === $storedDurationSeconds ? '' : (string) ($storedDurationSeconds % 60),
             'status' => $video?->getStatus()->value ?? PublishingStatus::Draft->value,
+            'publish_at' => $video?->getPublishedAt()?->setTimezone($siteTimezone)->format('Y-m-d\\TH:i') ?? '',
+            'author_name' => $video?->getAuthorName() ?? 'Redaktion',
+            'language_code' => $video?->getLanguageCode() ?? '',
             'featured' => $video?->isFeatured() ?? false,
             'comments_enabled' => $video?->isCommentsEnabled() ?? $siteSettings->current()->isDefaultCommentsEnabled(),
+            'members_only' => $video?->isMembersOnly() ?? false,
+            'embedding_enabled' => $video?->isEmbeddingEnabled() ?? false,
+            'view_count' => (string) ($video?->getViewCount() ?? 0),
             'embed_origins' => implode("\n", $storedEmbedOrigins ?? []),
             'custom_fields' => $video?->getCustomFields() ?? [],
         ];
@@ -553,19 +568,20 @@ final class VideoAdminController extends AbstractController
 
             $rawPayload = $request->request->all();
             $allowedFields = [
-                '_token', 'title', 'description', 'category', 'tags', 'source_type', 'source_url',
-                'duration_seconds', 'duration_minutes', 'duration_seconds_part', 'status', 'featured', 'comments_enabled', 'embed_origins',
+                '_token', 'title', 'slug', 'description', 'category', 'tags', 'source_type', 'source_url',
+                'duration_seconds', 'duration_minutes', 'duration_seconds_part', 'status', 'publish_at', 'author_name', 'language_code',
+                'featured', 'comments_enabled', 'members_only', 'embedding_enabled', 'view_count', 'embed_origins',
                 'custom_fields_present', 'custom_fields',
             ];
             if ([] !== array_diff(array_keys($rawPayload), $allowedFields)) {
                 $errors[] = 'Die Anfrage enthält unerwartete Eingabefelder.';
             }
-            foreach (['_token', 'title', 'description', 'category', 'tags', 'source_type', 'source_url', 'duration_seconds', 'duration_minutes', 'duration_seconds_part', 'status', 'embed_origins'] as $field) {
+            foreach (['_token', 'title', 'slug', 'description', 'category', 'tags', 'source_type', 'source_url', 'duration_seconds', 'duration_minutes', 'duration_seconds_part', 'status', 'publish_at', 'author_name', 'language_code', 'view_count', 'embed_origins'] as $field) {
                 if (isset($rawPayload[$field]) && !is_string($rawPayload[$field])) {
                     $errors[] = 'Die Eingabe enthält einen ungültigen Wert.';
                 }
             }
-            foreach (['featured', 'comments_enabled'] as $field) {
+            foreach (['featured', 'comments_enabled', 'members_only', 'embedding_enabled'] as $field) {
                 if (isset($rawPayload[$field]) && '1' !== $rawPayload[$field]) {
                     $errors[] = 'Die Eingabe enthält einen ungültigen Wert.';
                 }
@@ -591,6 +607,7 @@ final class VideoAdminController extends AbstractController
             }
             $values = [
                 'title' => trim(self::input($request->request, 'title')),
+                'slug' => array_key_exists('slug', $rawPayload) ? trim(self::input($request->request, 'slug')) : $values['slug'],
                 'description' => self::input($request->request, 'description'),
                 'category' => trim(self::input($request->request, 'category')),
                 'tags' => self::input($request->request, 'tags'),
@@ -599,8 +616,16 @@ final class VideoAdminController extends AbstractController
                 'duration_minutes' => trim(self::input($request->request, 'duration_minutes')),
                 'duration_seconds_part' => trim(self::input($request->request, 'duration_seconds_part')),
                 'status' => self::input($request->request, 'status'),
+                'publish_at' => array_key_exists('publish_at', $rawPayload) ? trim(self::input($request->request, 'publish_at')) : $values['publish_at'],
+                'author_name' => array_key_exists('author_name', $rawPayload) ? trim(self::input($request->request, 'author_name')) : $values['author_name'],
+                'language_code' => array_key_exists('language_code', $rawPayload) ? trim(self::input($request->request, 'language_code')) : $values['language_code'],
                 'featured' => $request->request->has('featured'),
                 'comments_enabled' => $request->request->has('comments_enabled'),
+                'members_only' => array_key_exists('members_only', $rawPayload) ? $request->request->has('members_only') : $values['members_only'],
+                'embedding_enabled' => array_key_exists('embedding_enabled', $rawPayload)
+                    ? $request->request->has('embedding_enabled')
+                    : ('' !== trim(self::input($request->request, 'embed_origins')) || $values['embedding_enabled']),
+                'view_count' => array_key_exists('view_count', $rawPayload) ? trim(self::input($request->request, 'view_count')) : $values['view_count'],
                 'embed_origins' => isset($rawPayload['embed_origins']) && is_string($rawPayload['embed_origins'])
                     ? $rawPayload['embed_origins']
                     : '',
@@ -642,8 +667,36 @@ final class VideoAdminController extends AbstractController
             } catch (\InvalidArgumentException $exception) {
                 $errors[] = $exception->getMessage();
             }
-            if ('' === $values['title'] || mb_strlen($values['title']) > 180) {
+            if (false === preg_match('//u', $values['title'])
+                || '' === $values['title']
+                || mb_strlen($values['title'], 'UTF-8') > 180
+                || 1 === preg_match('/\p{Cc}/u', $values['title'])
+            ) {
                 $errors[] = 'Der Titel ist erforderlich und darf höchstens 180 Zeichen lang sein.';
+            }
+            $slug = '' === $values['slug'] ? self::slugFromTitle($values['title']) : $values['slug'];
+            if (mb_strlen($slug, 'UTF-8') > 200 || 1 !== preg_match('/\A[a-z0-9]+(?:-[a-z0-9]+)*\z/', $slug)) {
+                $errors[] = 'Der Permalink darf nur Kleinbuchstaben, Ziffern und einzelne Bindestriche enthalten.';
+            }
+            $existingSlugVideo = '' === $slug ? null : $videos->findOneBySlug($slug);
+            if (null !== $existingSlugVideo
+                && (null === $video || $existingSlugVideo->getId() !== $video->getId())
+            ) {
+                $errors[] = 'Für diesen Video-Permalink gibt es bereits ein Video.';
+            }
+            if (false === preg_match('//u', $values['author_name'])
+                || '' === $values['author_name']
+                || mb_strlen($values['author_name'], 'UTF-8') > 120
+                || 1 === preg_match('/\p{Cc}/u', $values['author_name'])
+            ) {
+                $errors[] = 'Die Einsenderangabe ist erforderlich und darf höchstens 120 Zeichen lang sein.';
+            }
+            if ('' !== $values['language_code']
+                && (false === preg_match('//u', $values['language_code'])
+                    || mb_strlen($values['language_code'], 'UTF-8') > 35
+                    || 1 !== preg_match('/\A[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*\z/', $values['language_code']))
+            ) {
+                $errors[] = 'Der Sprachcode muss ein gültiger BCP-47-Code sein, zum Beispiel de oder en-US.';
             }
             if (mb_strlen($values['description']) > 100000) {
                 $errors[] = 'Die Beschreibung darf höchstens 100.000 Zeichen lang sein.';
@@ -721,6 +774,41 @@ final class VideoAdminController extends AbstractController
             if (null === $status) {
                 $errors[] = 'Bitte wähle einen gültigen Veröffentlichungsstatus.';
             }
+            $publicationAt = null;
+            if (PublishingStatus::Published === $status) {
+                if ('' === $values['publish_at']) {
+                    $publicationAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+                } else {
+                    $parsedPublicationAt = strlen($values['publish_at']) <= 16
+                        ? \DateTimeImmutable::createFromFormat('!Y-m-d\\TH:i', $values['publish_at'], $siteTimezone)
+                        : false;
+                    $dateErrors = false === $parsedPublicationAt ? false : \DateTimeImmutable::getLastErrors();
+                    if (false === $parsedPublicationAt
+                        || (false !== $dateErrors && (0 !== $dateErrors['warning_count'] || 0 !== $dateErrors['error_count']))
+                        || $parsedPublicationAt->format('Y-m-d\\TH:i') !== $values['publish_at']
+                    ) {
+                        $errors[] = 'Bitte gib einen gültigen Veröffentlichungszeitpunkt ein.';
+                    } else {
+                        $publicationAt = $parsedPublicationAt->setTimezone(new \DateTimeZone('UTC'));
+                    }
+                }
+            } elseif ('' !== $values['publish_at']) {
+                $errors[] = 'Ein Veröffentlichungszeitpunkt ist nur für veröffentlichte oder geplante Videos zulässig.';
+            }
+            $viewCount = ctype_digit($values['view_count'])
+                && strlen($values['view_count']) <= 10
+                && (int) $values['view_count'] <= 2147483647
+                    ? (int) $values['view_count']
+                    : null;
+            if (null === $viewCount) {
+                $errors[] = 'Die Aufrufzahl muss eine ganze Zahl von 0 bis 2.147.483.647 sein.';
+            }
+            if (!$values['embedding_enabled'] && [] !== $embedOrigins) {
+                $errors[] = 'Trage Einbettungsseiten nur ein, wenn die Einbettung für dieses Video erlaubt ist.';
+            }
+            if ($values['members_only'] && [] !== $embedOrigins) {
+                $errors[] = 'Mitgliedervideos können nicht für externe Websites freigegeben werden.';
+            }
             if ([] !== $embedOrigins && null !== $sourceType && null !== $status && PublishingStatus::Published === $status) {
                 $canEmbedSource = match ($sourceType) {
                     VideoSourceType::File => null !== $uploadedFile || null !== $video?->getUploadedObjectId(),
@@ -747,6 +835,7 @@ final class VideoAdminController extends AbstractController
             if ([] === $errors && null !== $sourceType) {
                 $isNew = null === $video;
                 $previousObjectId = null;
+                $viewCountValue = $viewCount ?? 0;
                 if ($isNew) {
                     $video = new Video(
                         $values['title'],
@@ -763,9 +852,13 @@ final class VideoAdminController extends AbstractController
                     $saveResult = $entityManager->getConnection()->transactional(function (Connection $connection) use (
                         $sourceType,
                         $sourceLock,
+                        $slugLock,
                         $values,
+                        $slug,
                         $durationSeconds,
                         $status,
+                        $publicationAt,
+                        $viewCountValue,
                         $embedOrigins,
                         $uploadedMedia,
                         $isNew,
@@ -776,6 +869,7 @@ final class VideoAdminController extends AbstractController
                         $tagNames,
                         $entityManager,
                     ): string {
+                        $slugLock->lock($connection, $slug);
                         if (VideoSourceType::File !== $sourceType) {
                             $sourceLock->lock($connection, [$values['source_url']]);
                         }
@@ -787,6 +881,11 @@ final class VideoAdminController extends AbstractController
                             }
 
                             $video = $currentVideo;
+                        }
+
+                        $existingSlugVideo = $videos->findOneBySlug($slug);
+                        if (null !== $existingSlugVideo && $existingSlugVideo->getId() !== $video->getId()) {
+                            return 'duplicate_slug';
                         }
 
                         if (VideoSourceType::File !== $sourceType) {
@@ -814,10 +913,19 @@ final class VideoAdminController extends AbstractController
                             $values['featured'],
                             $values['comments_enabled'],
                         );
+                        $video->updateEditorialMetadata(
+                            $slug,
+                            $values['author_name'],
+                            $values['members_only'],
+                            $values['embedding_enabled'],
+                            '' === $values['language_code'] ? null : $values['language_code'],
+                        );
+                        $video->setPublicationAt($publicationAt);
+                        $video->setViewCount($viewCountValue);
                         $video->setDurationSeconds($durationSeconds);
                         $video->replaceCustomFields($values['custom_fields']);
                         $video->setEmbedAllowedOrigins(
-                            PublishingStatus::Published === $status ? $embedOrigins : [],
+                            PublishingStatus::Published === $status && $values['embedding_enabled'] ? $embedOrigins : [],
                         );
                         if (null !== $uploadedMedia) {
                             $video->attachUploadedMedia(
@@ -855,6 +963,7 @@ final class VideoAdminController extends AbstractController
 
                     $errorMessages = [
                         'duplicate_source' => 'Diese Videoquelle ist bereits vorhanden.',
+                        'duplicate_slug' => 'Für diesen Video-Permalink gibt es bereits ein Video.',
                         'missing_media' => 'Für einen Datei-Upload ist weiterhin eine geprüfte Mediendatei erforderlich.',
                         'missing_video' => 'Das Video wurde zwischenzeitlich entfernt. Bitte lade die Seite neu.',
                     ];
@@ -918,5 +1027,17 @@ final class VideoAdminController extends AbstractController
         $value = $bag->all()[$key] ?? null;
 
         return is_string($value) ? $value : '';
+    }
+
+    private static function slugFromTitle(string $title): string
+    {
+        if (false === preg_match('//u', $title)) {
+            return 'video';
+        }
+
+        $slug = (new AsciiSlugger('en'))->slug(trim($title))->lower()->toString();
+        $slug = rtrim(mb_substr($slug, 0, 200, 'UTF-8'), '-');
+
+        return '' === $slug ? 'video' : $slug;
     }
 }

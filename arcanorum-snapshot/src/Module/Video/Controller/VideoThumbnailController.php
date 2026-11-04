@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Module\Video\Controller;
 
 use App\Entity\Video;
+use App\Module\Video\Service\VideoAccessPolicy;
 use App\Platform\Hosting\PrivateObjectStorageInterface;
 use App\Platform\Hosting\PrivateStorageOperationFailed;
 use App\Repository\VideoRepository;
@@ -12,6 +13,7 @@ use App\Service\VideoSocialPreviewGenerator;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 final readonly class VideoThumbnailController
@@ -25,6 +27,8 @@ final readonly class VideoThumbnailController
     public function __construct(
         private PrivateObjectStorageInterface $storage,
         private VideoSocialPreviewGenerator $socialPreviews,
+        private Security $security,
+        private VideoAccessPolicy $videoAccess,
     ) {
     }
 
@@ -32,7 +36,7 @@ final readonly class VideoThumbnailController
     public function show(string $id, Request $request, VideoRepository $videos): Response
     {
         $video = $videos->findPublishedById($id);
-        if (!$video instanceof Video) {
+        if (!$video instanceof Video || !$this->videoAccess->canWatch($video, $this->security->getUser())) {
             return new Response('', Response::HTTP_NOT_FOUND, ['Cache-Control' => 'no-store']);
         }
 
@@ -48,7 +52,7 @@ final readonly class VideoThumbnailController
     public function socialPreview(string $id, string $version, Request $request, VideoRepository $videos): Response
     {
         $video = $videos->findPublishedById($id);
-        if (!$video instanceof Video) {
+        if (!$video instanceof Video || !$this->videoAccess->canWatch($video, $this->security->getUser())) {
             return new Response('', Response::HTTP_NOT_FOUND, ['Cache-Control' => 'no-store']);
         }
 

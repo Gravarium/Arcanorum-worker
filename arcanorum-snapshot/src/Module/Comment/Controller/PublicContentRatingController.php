@@ -14,6 +14,7 @@ use App\Entity\NewsArticle;
 use App\Entity\Video;
 use App\Module\Comment\CommentPagination;
 use App\Module\News\Service\NewsArticleAccessPolicy;
+use App\Module\Video\Service\VideoAccessPolicy;
 use App\Platform\Security\RateLimitKeyFactory;
 use App\Repository\ContentCommentRepository;
 use App\Repository\ContentRatingRepository;
@@ -42,9 +43,10 @@ final class PublicContentRatingController extends AbstractController
         LoggerInterface $logger,
         #[Autowire(service: 'limiter.content_rating')] RateLimiterFactoryInterface $limiter,
         RateLimitKeyFactory $rateLimitKeys,
+        VideoAccessPolicy $videoAccess,
     ): Response {
         $video = $videos->findPublishedById($id);
-        if (!$video instanceof Video) {
+        if (!$video instanceof Video || !$videoAccess->canWatch($video, $this->getUser())) {
             return $this->notFound();
         }
 
@@ -84,6 +86,7 @@ final class PublicContentRatingController extends AbstractController
         LoggerInterface $logger,
         #[Autowire(service: 'limiter.content_rating')] RateLimiterFactoryInterface $limiter,
         RateLimitKeyFactory $rateLimitKeys,
+        VideoAccessPolicy $videoAccess,
     ): Response {
         $comment = $comments->find($id);
         if (!$comment instanceof ContentComment || CommentStatus::Approved !== $comment->getStatus()) {
@@ -103,6 +106,9 @@ final class PublicContentRatingController extends AbstractController
             return $this->notFound();
         }
         if ($target instanceof NewsArticle && !$articleAccess->canRead($target, $this->getUser())) {
+            return $this->notFound();
+        }
+        if ($target instanceof Video && !$videoAccess->canWatch($target, $this->getUser())) {
             return $this->notFound();
         }
 

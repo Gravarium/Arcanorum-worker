@@ -6,6 +6,7 @@ namespace App\Module\Video\Controller;
 
 use App\Entity\Video;
 use App\Entity\VideoSourceType;
+use App\Module\Video\Service\VideoAccessPolicy;
 use App\Platform\Hosting\PrivateObjectStorageInterface;
 use App\Platform\Hosting\PrivateStorageOperationFailed;
 use App\Repository\VideoRepository;
@@ -31,9 +32,10 @@ final class VideoMediaController extends AbstractController
         Request $request,
         VideoRepository $videos,
         PrivateObjectStorageInterface $storage,
+        VideoAccessPolicy $videoAccess,
     ): Response {
         $video = $videos->findPublishedById($id);
-        if (!$video instanceof Video) {
+        if (!$video instanceof Video || !$videoAccess->canWatch($video, $this->getUser())) {
             return new Response('', Response::HTTP_NOT_FOUND);
         }
 

@@ -1,0 +1,21 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ video.title }} · {{ site_settings().siteName }}{% endblock %}
+
+{% block body %}
+    {{ include('partials/public_site_header.html.twig') }}
+    <main class="public-main">
+        <article class="public-article">
+            <p class="eyebrow">{{ 'Video'|trans }}</p>
+            <h1>{{ video.title }}</h1>
+            <section class="members-only-notice" aria-labelledby="members-only-video-heading">
+                <h2 id="members-only-video-heading">{{ 'Dieses Video ist registrierten Mitgliedern vorbehalten.'|trans }}</h2>
+                <p>{{ 'Melde dich an, um dieses Video anzusehen.'|trans }}</p>
+                <p><a class="button" href="{{ path('member_login') }}">{{ 'Anmelden'|trans }}</a></p>
+                {% if site_settings().isMemberRegistrationEnabled %}
+                    <p><a class="button button-secondary" href="{{ path('member_register') }}">{{ 'Registrieren'|trans }}</a></p>
+                {% endif %}
+            </section>
+        </article>
+    </main>
+{% endblock %}

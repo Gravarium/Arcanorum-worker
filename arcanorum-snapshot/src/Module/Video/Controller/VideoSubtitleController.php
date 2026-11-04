@@ -7,6 +7,7 @@ namespace App\Module\Video\Controller;
 use App\Entity\Video;
 use App\Entity\VideoSourceType;
 use App\Entity\VideoSubtitleTrack;
+use App\Module\Video\Service\VideoAccessPolicy;
 use App\Platform\Hosting\PrivateObjectStorageInterface;
 use App\Platform\Hosting\PrivateStorageOperationFailed;
 use App\Repository\VideoRepository;
@@ -15,6 +16,7 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Bundle\SecurityBundle\Security;
 
 final readonly class VideoSubtitleController
 {
@@ -23,6 +25,8 @@ final readonly class VideoSubtitleController
     public function __construct(
         private PrivateObjectStorageInterface $storage,
         private LoggerInterface $logger,
+        private Security $security,
+        private VideoAccessPolicy $videoAccess,
     ) {
     }
 
@@ -41,6 +45,7 @@ final readonly class VideoSubtitleController
     ): Response {
         $video = $videos->findPublishedById($videoId);
         if (!$video instanceof Video
+            || !$this->videoAccess->canWatch($video, $this->security->getUser())
             || !in_array($video->getSourceType(), [VideoSourceType::File, VideoSourceType::Stream], true)
         ) {
             return self::notFound();

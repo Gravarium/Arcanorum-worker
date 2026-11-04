@@ -13,6 +13,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: VideoRepository::class)]
 #[ORM\Table(name: 'videos')]
+#[ORM\UniqueConstraint(name: 'uniq_videos_slug', columns: ['slug'])]
 #[ORM\UniqueConstraint(name: 'uniq_videos_uploaded_object_id', columns: ['uploaded_object_id'])]
 #[ORM\UniqueConstraint(name: 'uniq_videos_thumbnail_object_id', columns: ['thumbnail_object_id'])]
 #[ORM\Index(name: 'idx_videos_status_created', columns: ['status', 'created_at'])]
@@ -23,6 +24,9 @@ final class Video
     #[ORM\Id]
     #[ORM\Column(length: 32)]
     private string $id;
+
+    #[ORM\Column(length: 200, options: ['default' => ''])]
+    private string $slug;
 
     #[ORM\Column(length: 180)]
     private string $title;
@@ -68,6 +72,18 @@ final class Video
 
     #[ORM\Column(name: 'comments_enabled', type: Types::BOOLEAN, options: ['default' => true])]
     private bool $commentsEnabled = true;
+
+    #[ORM\Column(name: 'author_name', length: 120, options: ['default' => 'Redaktion'])]
+    private string $authorName = 'Redaktion';
+
+    #[ORM\Column(name: 'language_code', length: 35, nullable: true)]
+    private ?string $languageCode = null;
+
+    #[ORM\Column(name: 'members_only', type: Types::BOOLEAN, options: ['default' => false])]
+    private bool $membersOnly = false;
+
+    #[ORM\Column(name: 'embedding_enabled', type: Types::BOOLEAN, options: ['default' => false])]
+    private bool $embeddingEnabled = false;
 
     /** @var list<mixed> Persisted JSON is validated again before use. */
     #[ORM\Column(name: 'embed_allowed_origins', type: Types::JSON, options: ['default' => '[]'])]
@@ -119,6 +135,7 @@ final class Video
         bool $commentsEnabled,
     ) {
         $this->id = bin2hex(random_bytes(16));
+        $this->slug = 'video-'.$this->id;
         $now = new \DateTimeImmutable();
         $this->createdAt = $now;
         $this->updatedAt = $now;
@@ -207,6 +224,94 @@ final class Video
     public function getTitle(): string
     {
         return $this->title;
+    }
+
+    public function getSlug(): string
+    {
+        return $this->slug;
+    }
+
+    public function getAuthorName(): string
+    {
+        return $this->authorName;
+    }
+
+    public function getLanguageCode(): ?string
+    {
+        return $this->languageCode;
+    }
+
+    public function isMembersOnly(): bool
+    {
+        return $this->membersOnly;
+    }
+
+    public function isEmbeddingEnabled(): bool
+    {
+        return $this->embeddingEnabled;
+    }
+
+    public function updateEditorialMetadata(
+        string $slug,
+        string $authorName,
+        bool $membersOnly,
+        bool $embeddingEnabled,
+        ?string $languageCode = null,
+    ): void {
+        $slug = trim($slug);
+        $authorName = trim($authorName);
+        $languageCode = null === $languageCode ? null : trim($languageCode);
+        if (false === preg_match('//u', $slug)
+            || mb_strlen($slug, 'UTF-8') > 200
+            || 1 !== preg_match('/\A[a-z0-9]+(?:-[a-z0-9]+)*\z/', $slug)
+        ) {
+            throw new \InvalidArgumentException('Der Video-Permalink ist ungültig.');
+        }
+        if (false === preg_match('//u', $authorName)
+            || '' === $authorName
+            || mb_strlen($authorName, 'UTF-8') > 120
+            || 1 === preg_match('/\p{Cc}/u', $authorName)
+        ) {
+            throw new \InvalidArgumentException('Die Einsenderangabe ist ungültig.');
+        }
+        if (null !== $languageCode
+            && (false === preg_match('//u', $languageCode)
+                || '' === $languageCode
+                || mb_strlen($languageCode, 'UTF-8') > 35
+                || 1 !== preg_match('/\A[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*\z/', $languageCode))
+        ) {
+            throw new \InvalidArgumentException('Der Sprachcode des Videos ist ungültig.');
+        }
+
+        $this->slug = $slug;
+        $this->authorName = $authorName;
+        $this->languageCode = $languageCode;
+        $this->membersOnly = $membersOnly;
+        $this->embeddingEnabled = $embeddingEnabled;
+        if (!$embeddingEnabled || $membersOnly) {
+            $this->embedAllowedOrigins = [];
+        }
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function setPublicationAt(?\DateTimeImmutable $publishedAt): void
+    {
+        if (PublishingStatus::Published !== $this->status && null !== $publishedAt) {
+            throw new \LogicException('Nur veröffentlichte Videos können einen Veröffentlichungszeitpunkt haben.');
+        }
+
+        $this->publishedAt = $publishedAt;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function setViewCount(int $viewCount): void
+    {
+        if ($viewCount < 0 || $viewCount > 2147483647) {
+            throw new \InvalidArgumentException('Die Aufrufzahl muss zwischen 0 und 2.147.483.647 liegen.');
+        }
+
+        $this->viewCount = $viewCount;
+        $this->updatedAt = new \DateTimeImmutable();
     }
 
     public function getDescription(): string
@@ -420,11 +525,14 @@ final class Video
     /** @param list<string> $origins */
     public function setEmbedAllowedOrigins(array $origins): void
     {
-        if (PublishingStatus::Published !== $this->status && [] !== $origins) {
+        if ((PublishingStatus::Published !== $this->status || $this->membersOnly) && [] !== $origins) {
             throw new \LogicException('Nur veröffentlichte Videos können extern freigegeben werden.');
         }
 
         $this->embedAllowedOrigins = array_values(array_unique($origins));
+        if ([] !== $this->embedAllowedOrigins) {
+            $this->embeddingEnabled = true;
+        }
         $this->updatedAt = new \DateTimeImmutable();
     }
 
@@ -432,6 +540,8 @@ final class Video
     {
         return PublishingStatus::Published === $this->status
             && null !== $this->publishedAt
+            && $this->embeddingEnabled
+            && !$this->membersOnly
             && [] !== $this->embedAllowedOrigins;
     }
 

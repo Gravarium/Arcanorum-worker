@@ -54,10 +54,10 @@
                 <summary class="admin-menu-toggle">{{ 'Menü'|trans }}</summary>
                 <nav class="admin-navigation" aria-label="{{ 'Hauptnavigation'|trans }}">
                     {% if is_granted('ROLE_ADMIN') %}
-                    <a class="navigation-link navigation-dashboard{% if current_route == 'admin_dashboard' %} is-active{% endif %}" href="{{ path('admin_dashboard') }}" data-admin-shortcut="g d"{% if current_route == 'admin_dashboard' %} aria-current="page"{% endif %}><span class="admin-navigation-icon" aria-hidden="true">▦</span>{{ 'Übersicht'|trans }}</a>
+                    <a class="navigation-link navigation-dashboard{% if current_route == 'admin_dashboard' %} is-active{% endif %}" href="{{ path('admin_dashboard') }}" data-admin-shortcut="g d"{% if current_route == 'admin_dashboard' %} aria-current="page"{% endif %}>{{ 'Übersicht'|trans }}</a>
 
-                    <details class="navigation-group"{% if current_route starts with 'admin_video_' or (current_route == 'admin_category_index' and app.request.query.get('type') == 'video') %} open{% endif %}>
-                        <summary title="{{ 'Videos'|trans }}"><span class="admin-navigation-icon" aria-hidden="true">▸</span>{{ 'Videos'|trans }}</summary>
+                    <details class="navigation-group" open>
+                        <summary title="{{ 'Videos'|trans }}">{{ 'Videos'|trans }}</summary>
                         <div class="navigation-items">
                             <a class="navigation-link{% if current_route == 'admin_video_edit' or (current_route == 'admin_video_index' and app.request.query.all['source_type']|default(null) not in ['stream', 'embed']) %} is-active{% endif %}" href="{{ path('admin_video_index') }}" data-admin-shortcut="g v"{% if current_route == 'admin_video_edit' or (current_route == 'admin_video_index' and app.request.query.all['source_type']|default(null) not in ['stream', 'embed']) %} aria-current="page"{% endif %}>{{ 'Videos verwalten'|trans }}</a>
                             <a class="navigation-link{% if current_route in ['admin_video_report_index', 'admin_video_report_moderate'] %} is-active{% endif %}" href="{{ path('admin_video_report_index') }}"{% if current_route in ['admin_video_report_index', 'admin_video_report_moderate'] %} aria-current="page"{% endif %}>{{ 'Videomeldungen'|trans }}</a>
@@ -74,8 +74,8 @@
                         </div>
                     </details>
 
-                    {% if module_enabled('series') %}<details class="navigation-group">
-                        <summary title="{{ 'Serien'|trans }}"><span class="admin-navigation-icon" aria-hidden="true">▣</span>{{ 'Serien'|trans }}</summary>
+                    {% if module_enabled('series') %}<details class="navigation-group" open>
+                        <summary title="{{ 'Serien'|trans }}">{{ 'Serien'|trans }}</summary>
                         <div class="navigation-items">
                             <a class="navigation-link{% if current_route in ['admin_series_index', 'admin_series_edit'] %} is-active{% endif %}" href="{{ path('admin_series_index') }}"{% if current_route in ['admin_series_index', 'admin_series_edit'] %} aria-current="page"{% endif %}>{{ 'Serien verwalten'|trans }}</a>
                             <a class="navigation-link{% if current_route in ['admin_episode_index', 'admin_episode_new', 'admin_episode_edit'] %} is-active{% endif %}" href="{{ path('admin_episode_index') }}"{% if current_route in ['admin_episode_index', 'admin_episode_new', 'admin_episode_edit'] %} aria-current="page"{% endif %}>{{ 'Folgen verwalten'|trans }}</a>
@@ -83,8 +83,8 @@
                         </div>
                     </details>{% endif %}
 
-                    {% if module_enabled('news') %}<details class="navigation-group"{% if current_route starts with 'admin_news_' or (current_route == 'admin_category_index' and app.request.query.get('type') == 'news') or current_route starts with 'admin_tag_' %} open{% endif %}>
-                        <summary title="{{ 'News und Artikel'|trans }}"><span class="admin-navigation-icon" aria-hidden="true">▤</span>{{ 'News und Artikel'|trans }}</summary>
+                    {% if module_enabled('news') %}<details class="navigation-group" open>
+                        <summary title="{{ 'News und Artikel'|trans }}">{{ 'News und Artikel'|trans }}</summary>
                         <div class="navigation-items">
                             <a class="navigation-link{% if current_route in ['admin_news_index', 'admin_news_edit', 'admin_news_history'] %} is-active{% endif %}" href="{{ path('admin_news_index') }}" data-admin-shortcut="g n"{% if current_route in ['admin_news_index', 'admin_news_edit', 'admin_news_history'] %} aria-current="page"{% endif %}>{{ 'News verwalten'|trans }}</a>
                             <a class="navigation-link{% if current_route == 'admin_news_new' %} is-active{% endif %}" href="{{ path('admin_news_new') }}"{% if current_route == 'admin_news_new' %} aria-current="page"{% endif %}>{{ 'News verfassen'|trans }}</a>
@@ -93,31 +93,31 @@
                         </div>
                     </details>{% endif %}
 
-                    {% if module_enabled('pages') %}<details class="navigation-group"{% if current_route starts with 'admin_page_' %} open{% endif %}>
-                        <summary title="{{ 'Seiten'|trans }}"><span class="admin-navigation-icon" aria-hidden="true">▱</span>{{ 'Seiten'|trans }}</summary>
+                    {% if module_enabled('pages') %}<details class="navigation-group" open>
+                        <summary title="{{ 'Seiten'|trans }}">{{ 'Seiten'|trans }}</summary>
                         <div class="navigation-items">
                             <a class="navigation-link{% if current_route in ['admin_page_index', 'admin_page_edit'] %} is-active{% endif %}" href="{{ path('admin_page_index') }}"{% if current_route in ['admin_page_index', 'admin_page_edit'] %} aria-current="page"{% endif %}>{{ 'Seiten verwalten'|trans }}</a>
                             <a class="navigation-link{% if current_route == 'admin_page_new' %} is-active{% endif %}" href="{{ path('admin_page_new') }}"{% if current_route == 'admin_page_new' %} aria-current="page"{% endif %}>{{ 'Neue Seite'|trans }}</a>
                         </div>
                     </details>{% endif %}
 
-                    {% if module_enabled('comments') %}<details class="navigation-group"{% if current_route starts with 'admin_comment_' or current_route starts with 'admin_comment_filter_' %} open{% endif %}>
-                        <summary title="{{ 'Kommentare'|trans }}"><span class="admin-navigation-icon" aria-hidden="true">●</span>{{ 'Kommentare'|trans }}</summary>
+                    {% if module_enabled('comments') %}<details class="navigation-group" open>
+                        <summary title="{{ 'Kommentare'|trans }}">{{ 'Kommentare'|trans }}</summary>
                         <div class="navigation-items">
                             <a class="navigation-link{% if current_route in ['admin_comment_index', 'admin_comment_moderate'] %} is-active{% endif %}" href="{{ path('admin_comment_index') }}"{% if current_route in ['admin_comment_index', 'admin_comment_moderate'] %} aria-current="page"{% endif %}>{{ 'Freigabe und Meldungen'|trans }}</a>
                             <a class="navigation-link{% if current_route in ['admin_comment_filter_index', 'admin_comment_filter_save', 'admin_comment_filter_delete'] %} is-active{% endif %}" href="{{ path('admin_comment_filter_index') }}"{% if current_route in ['admin_comment_filter_index', 'admin_comment_filter_save', 'admin_comment_filter_delete'] %} aria-current="page"{% endif %}>{{ 'Wortfilter'|trans }}</a>
                         </div>
                     </details>{% endif %}
 
-                    {% if module_enabled('contact') %}<details class="navigation-group"{% if current_route starts with 'admin_contact_message_' %} open{% endif %}>
-                        <summary title="{{ 'Kontakt'|trans }}"><span class="admin-navigation-icon" aria-hidden="true">✉︎</span>{{ 'Kontakt'|trans }}</summary>
+                    {% if module_enabled('contact') %}<details class="navigation-group" open>
+                        <summary title="{{ 'Kontakt'|trans }}">{{ 'Kontakt'|trans }}</summary>
                         <div class="navigation-items">
                             <a class="navigation-link{% if current_route in ['admin_contact_message_index', 'admin_contact_message_close', 'admin_contact_message_delete'] %} is-active{% endif %}" href="{{ path('admin_contact_message_index') }}"{% if current_route in ['admin_contact_message_index', 'admin_contact_message_close', 'admin_contact_message_delete'] %} aria-current="page"{% endif %}>{{ 'Kontaktpostfach'|trans }}</a>
                         </div>
                     </details>{% endif %}
 
-                    <details class="navigation-group"{% if current_route starts with 'admin_member_' or current_route == 'admin_activity_index' %} open{% endif %}>
-                        <summary title="{{ 'Nutzer'|trans }}"><span class="admin-navigation-icon" aria-hidden="true">♙</span>{{ 'Nutzer'|trans }}</summary>
+                    <details class="navigation-group" open>
+                        <summary title="{{ 'Nutzer'|trans }}">{{ 'Nutzer'|trans }}</summary>
                         <div class="navigation-items">
                             <a class="navigation-link{% if current_route == 'admin_member_index' %} is-active{% endif %}" href="{{ path('admin_member_index') }}" data-admin-shortcut="g m"{% if current_route == 'admin_member_index' %} aria-current="page"{% endif %}>{{ 'Nutzer verwalten'|trans }}</a>
                             <a class="navigation-link{% if current_route == 'admin_member_new' %} is-active{% endif %}" href="{{ path('admin_member_new') }}"{% if current_route == 'admin_member_new' %} aria-current="page"{% endif %}>{{ 'Nutzer hinzufügen'|trans }}</a>
@@ -128,8 +128,8 @@
                         </div>
                     </details>
 
-                    <details class="navigation-group"{% if current_route starts with 'admin_advertising_' %} open{% endif %}>
-                        <summary title="{{ 'Werbung'|trans }}"><span class="admin-navigation-icon" aria-hidden="true">◈</span>{{ 'Werbung'|trans }}</summary>
+                    <details class="navigation-group" open>
+                        <summary title="{{ 'Werbung'|trans }}">{{ 'Werbung'|trans }}</summary>
                         <div class="navigation-items">
                             <a class="navigation-link{% if current_route == 'admin_advertising_index' and app.request.query.get('format') != 'player' %} is-active{% endif %}" href="{{ path('admin_advertising_index') }}"{% if current_route == 'admin_advertising_index' and app.request.query.get('format') != 'player' %} aria-current="page"{% endif %}>{{ 'Banner'|trans }}</a>
                             <a class="navigation-link{% if current_route == 'admin_advertising_index' and app.request.query.get('format') == 'player' %} is-active{% endif %}" href="{{ path('admin_advertising_index', {format: 'player'}) }}"{% if current_route == 'admin_advertising_index' and app.request.query.get('format') == 'player' %} aria-current="page"{% endif %}>{{ 'Player-Anzeigen'|trans }}</a>
@@ -137,24 +137,24 @@
                         </div>
                     </details>
 
-                    <details class="navigation-group"{% if current_route starts with 'admin_statistics_' or current_route starts with 'admin_search_statistics_' %} open{% endif %}>
-                        <summary title="{{ 'Statistik und Protokolle'|trans }}"><span class="admin-navigation-icon" aria-hidden="true">▥</span>{{ 'Statistik und Protokolle'|trans }}</summary>
+                    <details class="navigation-group" open>
+                        <summary title="{{ 'Statistik und Protokolle'|trans }}">{{ 'Statistik und Protokolle'|trans }}</summary>
                         <div class="navigation-items">
                             <a class="navigation-link{% if current_route == 'admin_statistics_index' %} is-active{% endif %}" href="{{ path('admin_statistics_index') }}"{% if current_route == 'admin_statistics_index' %} aria-current="page"{% endif %}>{{ 'Inhaltsstatistik'|trans }}</a>
                             {% if module_enabled('search') %}<a class="navigation-link{% if current_route in ['admin_search_statistics_index', 'admin_search_statistics_clear'] %} is-active{% endif %}" href="{{ path('admin_search_statistics_index') }}"{% if current_route in ['admin_search_statistics_index', 'admin_search_statistics_clear'] %} aria-current="page"{% endif %}>{{ 'Suchanfragen'|trans }}</a>{% endif %}
                         </div>
                     </details>
 
-                    <details class="navigation-group"{% if current_route starts with 'admin_automation_' %} open{% endif %}>
-                        <summary title="{{ 'Hintergrundaufgaben'|trans }}"><span class="admin-navigation-icon" aria-hidden="true">◷</span>{{ 'Hintergrundaufgaben'|trans }}</summary>
+                    <details class="navigation-group" open>
+                        <summary title="{{ 'Hintergrundaufgaben'|trans }}">{{ 'Hintergrundaufgaben'|trans }}</summary>
                         <div class="navigation-items">
                             <a class="navigation-link{% if current_route in ['admin_automation_index', 'admin_automation_create', 'admin_automation_update', 'admin_automation_toggle', 'admin_automation_delete'] %} is-active{% endif %}" href="{{ path('admin_automation_index') }}"{% if current_route in ['admin_automation_index', 'admin_automation_create', 'admin_automation_update', 'admin_automation_toggle', 'admin_automation_delete'] %} aria-current="page"{% endif %}>{{ 'Aufgaben verwalten'|trans }}</a>
                             <a class="navigation-link{% if current_route == 'admin_automation_setup' %} is-active{% endif %}" href="{{ path('admin_automation_setup') }}"{% if current_route == 'admin_automation_setup' %} aria-current="page"{% endif %}>{{ 'Einrichtung'|trans }}</a>
                         </div>
                     </details>
 
-                    <details class="navigation-group"{% if current_route starts with 'admin_general_settings_' or current_route starts with 'admin_content_settings_' or current_route starts with 'admin_public_display_settings_' or current_route starts with 'admin_email_settings_' or current_route starts with 'admin_design_settings_' or current_route == 'admin_password_change' or current_route == 'sitemap_index' %} open{% endif %}>
-                        <summary title="{{ 'Einstellungen'|trans }}"><span class="admin-navigation-icon" aria-hidden="true">⚙︎</span>{{ 'Einstellungen'|trans }}</summary>
+                    <details class="navigation-group" open>
+                        <summary title="{{ 'Einstellungen'|trans }}">{{ 'Einstellungen'|trans }}</summary>
                         <div class="navigation-items">
                             <a class="navigation-link{% if current_route in ['admin_general_settings_index', 'admin_general_settings_update'] %} is-active{% endif %}" href="{{ path('admin_general_settings_index') }}" data-admin-shortcut="g s"{% if current_route in ['admin_general_settings_index', 'admin_general_settings_update'] %} aria-current="page"{% endif %}>{{ 'Allgemein und Konten'|trans }}</a>
                             <a class="navigation-link{% if current_route in ['admin_content_settings_index', 'admin_content_settings_update'] %} is-active{% endif %}" href="{{ path('admin_content_settings_index') }}"{% if current_route in ['admin_content_settings_index', 'admin_content_settings_update'] %} aria-current="page"{% endif %}>{{ 'Video und Wiedergabe'|trans }}</a>
@@ -166,8 +166,8 @@
                         </div>
                     </details>
 
-                    <details class="navigation-group"{% if current_route == 'admin_system_index' or current_route in ['admin_staff_index', 'admin_staff_role_update', 'admin_module_settings_index', 'admin_module_settings_update'] or current_route starts with 'admin_database_backup_' %} open{% endif %}>
-                        <summary title="{{ 'System'|trans }}"><span class="admin-navigation-icon" aria-hidden="true">⚙</span>{{ 'System'|trans }}</summary>
+                    <details class="navigation-group" open>
+                        <summary title="{{ 'System'|trans }}">{{ 'System'|trans }}</summary>
                         <div class="navigation-items">
                             <a class="navigation-link{% if current_route == 'admin_system_index' %} is-active{% endif %}" href="{{ path('admin_system_index') }}"{% if current_route == 'admin_system_index' %} aria-current="page"{% endif %}>{{ 'Hosting und System'|trans }}</a>
                             <a class="navigation-link{% if current_route in ['admin_staff_index', 'admin_staff_role_update'] %} is-active{% endif %}" href="{{ path('admin_staff_index') }}"{% if current_route in ['admin_staff_index', 'admin_staff_role_update'] %} aria-current="page"{% endif %}>{{ 'Rollen und Rechte'|trans }}</a>
@@ -176,8 +176,8 @@
                         </div>
                     </details>
                     {% elseif is_granted('ROLE_CONTENT_EDITOR') %}
-                        {% if module_enabled('news') %}<details class="navigation-group">
-                            <summary title="{{ 'News'|trans }}"><span class="admin-navigation-icon" aria-hidden="true">▤</span>{{ 'News'|trans }}</summary>
+                        {% if module_enabled('news') %}<details class="navigation-group" open>
+                            <summary title="{{ 'News'|trans }}">{{ 'News'|trans }}</summary>
                             <div class="navigation-items">
                                 <a class="navigation-link{% if current_route in ['admin_news_index', 'admin_news_edit', 'admin_news_history'] %} is-active{% endif %}" href="{{ path('admin_news_index') }}"{% if current_route in ['admin_news_index', 'admin_news_edit', 'admin_news_history'] %} aria-current="page"{% endif %}>{{ 'News verwalten'|trans }}</a>
                                 <a class="navigation-link{% if current_route == 'admin_news_new' %} is-active{% endif %}" href="{{ path('admin_news_new') }}"{% if current_route == 'admin_news_new' %} aria-current="page"{% endif %}>{{ 'News verfassen'|trans }}</a>
@@ -185,8 +185,8 @@
                             </div>
                         </details>{% endif %}
                     {% else %}
-                        <details class="navigation-group">
-                            <summary title="{{ 'Moderation'|trans }}"><span class="admin-navigation-icon" aria-hidden="true">⚑︎</span>{{ 'Moderation'|trans }}</summary>
+                        <details class="navigation-group" open>
+                            <summary title="{{ 'Moderation'|trans }}">{{ 'Moderation'|trans }}</summary>
                             <div class="navigation-items">
                                 {% if is_granted('ROLE_MODERATOR_VIDEO') %}
                                     <a class="navigation-link{% if current_route in ['admin_video_report_index', 'admin_video_report_moderate'] %} is-active{% endif %}" href="{{ path('admin_video_report_index') }}"{% if current_route in ['admin_video_report_index', 'admin_video_report_moderate'] %} aria-current="page"{% endif %}>{{ 'Videomeldungen'|trans }}</a>

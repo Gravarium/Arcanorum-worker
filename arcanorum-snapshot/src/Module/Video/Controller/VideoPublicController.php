@@ -18,6 +18,7 @@ use App\Module\Comment\CommentPagination;
 use App\Module\Feed\Service\CanonicalPublicUrlGenerator;
 use App\Module\Member\Service\VideoEmailShareSender;
 use App\Module\Video\Service\VideoEmbedCodeGenerator;
+use App\Module\Video\Service\VideoAccessPolicy;
 use App\Module\Video\Service\VideoQualitySourceResolver;
 use App\Module\Video\Service\VideoStreamSource;
 use App\Module\Video\Service\VideoStreamSourceResolver;
@@ -142,6 +143,12 @@ final class VideoPublicController extends AbstractController
         requirements: ['id' => '[a-f0-9]{32}'],
         methods: ['GET'],
     )]
+    #[Route(
+        '/watch/{id}',
+        name: 'show_slug',
+        requirements: ['id' => '[a-z0-9]+(?:-[a-z0-9]+)*'],
+        methods: ['GET'],
+    )]
     public function show(
         string $id,
         Request $request,
@@ -161,12 +168,24 @@ final class VideoPublicController extends AbstractController
         VideoEmailShareSender $videoEmailShareSender,
         PublicShareMetadataFactory $shareMetadata,
         LoggerInterface $logger,
+        VideoAccessPolicy $videoAccess,
     ): Response {
-        $video = $videos->findPublishedById($id);
+        $video = 1 === preg_match('/\A[a-f0-9]{32}\z/D', $id)
+            ? $videos->findPublishedById($id)
+            : $videos->findPublishedBySlug($id);
         if (!$video instanceof Video) {
             return $this->render('public/not_found.html.twig', [
                 'content_type' => 'Video',
             ], new Response(status: Response::HTTP_NOT_FOUND));
+        }
+
+        if (!$videoAccess->canWatch($video, $this->getUser())) {
+            $response = $this->render('videos/members-only.html.twig', [
+                'video' => $video,
+            ]);
+            $response->headers->set('Cache-Control', 'private, no-store');
+
+            return $response;
         }
 
         $viewCounter->record($video, $request);
@@ -267,9 +286,10 @@ final class VideoPublicController extends AbstractController
         Request $request,
         VideoRepository $videos,
         \Doctrine\ORM\EntityManagerInterface $entityManager,
+        VideoAccessPolicy $videoAccess,
     ): Response {
         $video = $videos->findPublishedById($id);
-        if (!$video instanceof Video) {
+        if (!$video instanceof Video || !$videoAccess->canWatch($video, $this->getUser())) {
             return $this->render('public/not_found.html.twig', [
                 'content_type' => 'Video',
             ], new Response(status: Response::HTTP_NOT_FOUND));

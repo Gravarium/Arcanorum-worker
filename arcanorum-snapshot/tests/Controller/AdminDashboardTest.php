@@ -1605,10 +1605,13 @@ final class AdminDashboardTest extends WebTestCase
             self::assertSelectorTextContains('nav[aria-label="Hauptnavigation"]', 'Kommentare');
             self::assertSelectorTextContains('nav[aria-label="Hauptnavigation"]', 'Einstellungen');
             self::assertCount(12, $client->getCrawler()->filter('details.navigation-group'));
+            self::assertSelectorNotExists('details.navigation-group:not([open])');
+            self::assertCount(1, $client->getCrawler()->filterXPath('//nav[@aria-label="Hauptnavigation"]//a[normalize-space()="Video und Wiedergabe"]'));
             self::assertSelectorExists('nav[aria-label="Hauptnavigation"] > a.navigation-dashboard[href="/admin"]');
             self::assertSelectorTextContains('nav[aria-label="Hauptnavigation"] > details.navigation-group:nth-of-type(1) > summary', 'Videos');
             self::assertStringNotContainsString('Fortress', (string) $client->getResponse()->getContent());
-            self::assertSelectorExists('nav[aria-label="Hauptnavigation"] summary[title="Videos"] .admin-navigation-icon[aria-hidden="true"]');
+            self::assertSelectorTextContains('nav[aria-label="Hauptnavigation"] summary[title="Videos"]', 'Videos');
+            self::assertSelectorNotExists('.admin-navigation-icon');
             self::assertSelectorExists('nav[aria-label="Hauptnavigation"] a[href="/admin/videos/new?source_type=embed"]');
             self::assertSelectorExists('nav[aria-label="Hauptnavigation"] a[href="/admin/videos/new?source_type=url"]');
             self::assertSelectorExists('nav[aria-label="Hauptnavigation"] a[href="/admin/videos/new?source_type=stream"]');
@@ -7393,8 +7396,20 @@ final class AdminDashboardTest extends WebTestCase
             self::assertResponseIsSuccessful();
             self::assertSelectorExists('select[name="source_type"] option[value="embed"][selected]');
             self::assertSelectorExists('input[name="source_url"][type="url"]');
+            self::assertSelectorExists('input[name="source_url"][placeholder="https://www.youtube.com/watch?v=…"]');
+            self::assertSelectorTextContains('.video-source-url-field label', 'YouTube- oder Videoanbieter-URL');
+            self::assertSelectorExists('button[data-video-metadata-fetch]');
+            self::assertSelectorTextContains('button[data-video-metadata-fetch]', 'Titel, Beschreibung und Laufzeit übernehmen');
             self::assertSelectorExists('input[name="duration_minutes"][type="number"]');
             self::assertSelectorExists('input[name="duration_seconds_part"][type="number"]');
+            self::assertSelectorExists('select[name="category"]');
+            self::assertSelectorExists('input[name="tags"]');
+            self::assertSelectorExists('input[name="language_code"][list="video-language-codes"]');
+            self::assertSelectorExists('a[href="/admin/categories?type=video"]');
+            self::assertSelectorNotExists('.admin-navigation-icon');
+            self::assertSelectorExists('textarea[name="description"]');
+            self::assertSelectorExists('input[name="featured"][type="checkbox"]');
+            self::assertSelectorExists('input[name="comments_enabled"][type="checkbox"]');
             self::assertSelectorExists('details.navigation-group[open] > summary[title="Videos"]');
             self::assertSelectorExists('nav[aria-label="Hauptnavigation"] a[href="/admin/videos/new?source_type=embed"][aria-current="page"]');
 
@@ -7432,6 +7447,7 @@ final class AdminDashboardTest extends WebTestCase
         $password = 'VideoDuration!'.bin2hex(random_bytes(6)).'-A9!';
         $validTitle = $marker.' valid';
         $invalidTitle = $marker.' invalid';
+        $videoSlug = 'video-duration-'.bin2hex(random_bytes(5));
         $sourceUrl = 'https://www.youtube.com/watch?v='.substr(bin2hex(random_bytes(6)), 0, 11);
 
         try {
@@ -7447,6 +7463,7 @@ final class AdminDashboardTest extends WebTestCase
             $client->request('POST', '/admin/videos/new', [
                 '_token' => $csrfToken,
                 'title' => $validTitle,
+                'slug' => $videoSlug,
                 'description' => 'Duration fields regression.',
                 'category' => '',
                 'tags' => '',
@@ -7454,7 +7471,15 @@ final class AdminDashboardTest extends WebTestCase
                 'source_url' => $sourceUrl,
                 'duration_minutes' => '2',
                 'duration_seconds_part' => '3',
-                'status' => 'draft',
+                'status' => 'published',
+                'author_name' => 'Video Desk',
+                'language_code' => 'de-AT',
+                'featured' => '1',
+                'comments_enabled' => '1',
+                'members_only' => '1',
+                'embedding_enabled' => '1',
+                'view_count' => '73',
+                'publish_at' => '',
                 'embed_origins' => '',
             ]);
             self::assertResponseRedirects('/admin/videos');
@@ -7462,14 +7487,28 @@ final class AdminDashboardTest extends WebTestCase
                 'SELECT duration_seconds FROM videos WHERE title = :title',
                 ['title' => $validTitle],
             ), [123, '123'], true));
+            self::assertSame('de-AT', $connection->fetchOne(
+                'SELECT language_code FROM videos WHERE title = :title',
+                ['title' => $validTitle],
+            ));
             $videoId = $connection->fetchOne('SELECT id FROM videos WHERE title = :title', ['title' => $validTitle]);
             self::assertIsString($videoId);
             $client->request('GET', '/admin/videos/'.$videoId.'/edit');
             self::assertResponseIsSuccessful();
             self::assertSelectorExists('input[name="duration_minutes"][value="2"]');
             self::assertSelectorExists('input[name="duration_seconds_part"][value="3"]');
+            self::assertSelectorExists(sprintf('input[name="slug"][value="%s"]', $videoSlug));
+            self::assertSelectorExists('input[name="author_name"][value="Video Desk"]');
+            self::assertSelectorExists('input[name="language_code"][value="de-AT"]');
+            self::assertSelectorExists('input[name="view_count"][value="73"]');
+            self::assertSelectorExists('select[name="status"] option[value="published"][selected]');
+            self::assertSelectorExists('input[name="featured"][checked]');
+            self::assertSelectorExists('input[name="comments_enabled"][checked]');
+            self::assertSelectorExists('input[name="members_only"][checked]');
+            self::assertSelectorExists('input[name="embedding_enabled"][checked]');
             self::assertSelectorTextContains('[data-testid="video-view-count"]', 'Aufrufe');
-            self::assertSelectorExists('input[readonly][aria-readonly="true"]');
+            self::assertSelectorExists('[data-testid="video-view-count"] input[name="view_count"][type="number"]');
+            self::assertSelectorNotExists('[data-testid="video-view-count"] input[readonly]');
 
             $client->request('GET', '/admin/videos/new');
             self::assertResponseIsSuccessful();

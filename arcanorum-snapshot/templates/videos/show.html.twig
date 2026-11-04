@@ -13,7 +13,7 @@
 {% block body %}
     {{ include('partials/public_site_header.html.twig') }}
     <main class="public-main">
-        <article class="public-article">
+        <article class="public-article"{% if video.languageCode %} lang="{{ video.languageCode }}"{% endif %}>
             <p class="eyebrow">{{ video.category ?? ('Video'|trans) }}</p>
             <h1>{{ video.title }}</h1>
             <time datetime="{{ video.publishedAt|date('c') }}">{{ video.publishedAt|date('d.m.Y') }}</time>

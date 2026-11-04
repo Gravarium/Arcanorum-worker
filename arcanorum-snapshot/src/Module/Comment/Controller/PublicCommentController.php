@@ -12,6 +12,7 @@ use App\Entity\NewsArticle;
 use App\Entity\Video;
 use App\Module\Comment\CommentPagination;
 use App\Module\News\Service\NewsArticleAccessPolicy;
+use App\Module\Video\Service\VideoAccessPolicy;
 use App\Repository\ContentCommentRepository;
 use App\Repository\NewsArticleRepository;
 use App\Repository\VideoRepository;
@@ -45,6 +46,7 @@ final class PublicCommentController extends AbstractController
         EntityManagerInterface $entityManager,
         NewsArticleAccessPolicy $articleAccess,
         SiteSettingsProvider $siteSettings,
+        VideoAccessPolicy $videoAccess,
     ): Response {
         $type = CommentContentType::tryFrom($contentType);
         if (null === $type) {
@@ -59,6 +61,9 @@ final class PublicCommentController extends AbstractController
             return $this->notFound();
         }
         if ($target instanceof NewsArticle && !$articleAccess->canRead($target, $this->getUser())) {
+            return $this->notFound();
+        }
+        if ($target instanceof Video && !$videoAccess->canWatch($target, $this->getUser())) {
             return $this->notFound();
         }
 
@@ -170,6 +175,7 @@ final class PublicCommentController extends AbstractController
         VideoRepository $videos,
         EntityManagerInterface $entityManager,
         NewsArticleAccessPolicy $articleAccess,
+        VideoAccessPolicy $videoAccess,
     ): Response {
         $comment = $comments->find($id);
         if (!$comment instanceof ContentComment || CommentStatus::Approved !== $comment->getStatus()) {
@@ -186,7 +192,7 @@ final class PublicCommentController extends AbstractController
             $routeParameters['slug'] = $newsArticle->getSlug();
         } else {
             $video = $videos->findPublishedById($comment->getContentId());
-            if (!$video instanceof Video) {
+            if (!$video instanceof Video || !$videoAccess->canWatch($video, $this->getUser())) {
                 return $this->notFound();
             }
             $route = 'video_show';

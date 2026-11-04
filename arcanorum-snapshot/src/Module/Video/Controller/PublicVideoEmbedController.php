@@ -7,6 +7,7 @@ namespace App\Module\Video\Controller;
 use App\Entity\Video;
 use App\Entity\VideoSourceType;
 use App\Module\Video\Service\VideoEmbedOriginPolicy;
+use App\Module\Video\Service\VideoAccessPolicy;
 use App\Module\Video\Service\VideoQualitySourceResolver;
 use App\Module\Video\Service\VideoStreamSource;
 use App\Module\Video\Service\VideoStreamSourceResolver;
@@ -38,6 +39,7 @@ final class PublicVideoEmbedController extends AbstractController
         VideoSubtitleTrackRepository $subtitleTracks,
         VideoQualitySourceResolver $qualitySourceResolver,
         SiteSettingsProvider $settings,
+        VideoAccessPolicy $videoAccess,
     ): Response {
         $siteSettings = $settings->current();
         if (!$siteSettings->isPublicVideoEmbeddingEnabled()) {
@@ -45,7 +47,10 @@ final class PublicVideoEmbedController extends AbstractController
         }
 
         $video = $videos->findPublishedById($id);
-        if (!$video instanceof Video || !$video->isExternallyEmbeddable()) {
+        if (!$video instanceof Video
+            || !$videoAccess->canWatch($video, $this->getUser())
+            || !$video->isExternallyEmbeddable()
+        ) {
             return self::notFound();
         }
 

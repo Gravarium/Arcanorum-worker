@@ -3177,9 +3177,279 @@ html[data-public-theme="arcanorum"][data-public-view="compact"] .public-navigati
     background: #f7f9fc;
 }
 
+.video-editor-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.8fr) minmax(18rem, 0.9fr);
+    align-items: start;
+    gap: 1rem;
+}
+
+.video-editor-main,
+.video-editor-sidebar {
+    display: grid;
+    min-width: 0;
+    gap: 1rem;
+}
+
+.video-editor-section {
+    display: grid;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid #cfd7e1;
+    background: #fff;
+}
+
+.video-editor-section > h3 {
+    margin: 0;
+    padding-bottom: 0.65rem;
+    border-bottom: 1px solid #d8e0e8;
+    color: #30435b;
+    font-size: 1rem;
+}
+
+.video-editor-section .video-source-url-field {
+    min-width: 0;
+}
+
+.video-editor-section .video-duration-field {
+    margin: 0;
+}
+
+.video-editor-section .form-checks {
+    display: grid;
+    gap: 0.6rem;
+}
+
+.video-editor-section .form-checks label {
+    align-items: flex-start;
+}
+
+.video-editor-section .form-checks input[type="checkbox"] {
+    margin-top: 0.25rem;
+}
+
+@media (max-width: 62rem) {
+    .video-editor-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
 .admin-form [hidden],
 .admin-filter-form [hidden] {
     display: none !important;
+}
+
+/* Klassisches Redaktionsmenü und Videoformular mit dauerhaft sichtbaren Bereichen. */
+.navigation-group > summary {
+    cursor: pointer;
+    padding: 0.5rem 0.7rem 0.25rem;
+    border-radius: 0;
+    background: transparent !important;
+    color: #c6d2e1;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.045em;
+    text-transform: uppercase;
+}
+
+.navigation-group > summary::after {
+    content: none;
+}
+
+.navigation-group > summary:focus-visible {
+    outline: 2px solid #cfe0ff;
+    outline-offset: 1px;
+}
+
+.navigation-items {
+    gap: 0;
+    margin: 0 0 0.55rem;
+    padding-left: 0;
+    border-left: 0;
+}
+
+.navigation-items .navigation-link {
+    min-height: 2.2rem;
+    padding: 0.45rem 0.75rem;
+    border-left: 3px solid transparent;
+    border-radius: 0;
+    color: #e0e7f0;
+    font-size: 0.84rem;
+}
+
+.navigation-items .navigation-link:hover,
+.navigation-items .navigation-link:focus-visible {
+    background: #344d70;
+    color: #fff;
+}
+
+.navigation-items .navigation-link.is-active {
+    border-left-color: #fff;
+    background: #263b58;
+    color: #fff;
+}
+
+.admin-navigation-icon {
+    width: 1.1rem;
+    flex-basis: 1.1rem;
+    font-size: 0.82rem;
+}
+
+.video-editor-layout {
+    grid-template-columns: minmax(0, 1.7fr) minmax(18rem, 0.8fr);
+    gap: 1.25rem;
+}
+
+.video-editor-main,
+.video-editor-sidebar {
+    gap: 1.25rem;
+}
+
+.video-editor-section {
+    gap: 0;
+    padding: 0;
+    border: 1px solid #c5ced8;
+    background: #fff;
+}
+
+.video-editor-section > h3 {
+    padding: 0.7rem 0.85rem;
+    border-bottom: 1px solid #c5ced8;
+    background: #e7edf4;
+    color: #30435b;
+    font-size: 0.93rem;
+}
+
+.video-editor-section > label,
+.video-editor-section > .video-source-url-field,
+.video-editor-section > fieldset,
+.video-editor-section > .form-checks,
+.video-editor-section > .custom-fields-editor {
+    margin: 0;
+    padding: 0.8rem 0.85rem;
+    border-bottom: 1px solid #e4e8ed;
+}
+
+.video-editor-section > label,
+.video-editor-section > .video-source-url-field > label {
+    grid-template-columns: minmax(9.5rem, 0.65fr) minmax(0, 1.5fr);
+    align-items: start;
+    column-gap: 1rem;
+    row-gap: 0.35rem;
+    font-size: 0.88rem;
+}
+
+.video-editor-section > label > span,
+.video-editor-section > .video-source-url-field > label > span {
+    padding-top: 0.45rem;
+}
+
+.video-editor-section > label > input,
+.video-editor-section > label > select,
+.video-editor-section > label > textarea,
+.video-editor-section > .video-source-url-field > label > input,
+.video-editor-section > label > small,
+.video-editor-section > .video-source-url-field > label > small {
+    grid-column: 2;
+}
+
+.video-editor-section > label > small,
+.video-editor-section > .video-source-url-field > label > small {
+    color: #596a7e;
+    font-weight: 400;
+    line-height: 1.45;
+}
+
+.video-editor-section .video-source-url-field {
+    gap: 0;
+}
+
+.video-source-url-field > small,
+.video-metadata-actions {
+    margin: 0;
+    padding: 0.55rem 0.85rem;
+    border-bottom: 1px solid #e4e8ed;
+    color: #596a7e;
+    font-size: 0.83rem;
+    line-height: 1.45;
+}
+
+.video-source-url-field > .video-metadata-actions {
+    display: flex;
+    grid-template-columns: minmax(9.5rem, 0.65fr) minmax(0, 1.5fr);
+    align-items: center;
+    gap: 0.65rem 1rem;
+}
+
+.video-editor-section .video-duration-field {
+    display: block;
+    padding: 0.8rem 0.85rem;
+    border: 0;
+    border-bottom: 1px solid #e4e8ed;
+    background: #fff;
+}
+
+.video-duration-field legend {
+    float: left;
+    width: 36%;
+    padding: 0.45rem 0.8rem 0 0;
+    font-size: 0.88rem;
+}
+
+.video-duration-field > .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
+}
+
+.video-duration-field > small {
+    display: block;
+    margin: 0.45rem 0 0 36%;
+}
+
+.video-editor-section .form-checks {
+    padding: 0.8rem 0.85rem;
+}
+
+.video-editor-section .form-checks label {
+    display: flex;
+    align-items: center;
+    padding: 0.15rem 0;
+}
+
+.video-editor-section > label:last-child,
+.video-editor-section > .form-checks:last-child {
+    border-bottom: 0;
+}
+
+@media (max-width: 62rem) {
+    .video-editor-section > label,
+    .video-editor-section > .video-source-url-field > label {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .video-editor-section > label > span,
+    .video-editor-section > label > input,
+    .video-editor-section > label > select,
+    .video-editor-section > label > textarea,
+    .video-editor-section > label > small,
+    .video-editor-section > .video-source-url-field > label > span,
+    .video-editor-section > .video-source-url-field > label > input,
+    .video-editor-section > .video-source-url-field > label > small {
+        grid-column: 1;
+    }
+
+    .video-editor-section > label > span,
+    .video-editor-section > .video-source-url-field > label > span {
+        padding-top: 0;
+    }
+
+    .video-duration-field legend,
+    .video-duration-field > small {
+        float: none;
+        width: auto;
+        margin-left: 0;
+        padding: 0;
+    }
 }
 
 .admin-mobile-menu > summary {
@@ -3212,6 +3482,212 @@ html[data-public-theme="arcanorum"][data-public-view="compact"] .public-navigati
 
 .video-metadata-actions p {
     margin: 0;
+}
+
+/* Flache, textbasierte Verwaltungsoberfläche für den Redaktionsbetrieb. */
+.admin-shell {
+    grid-template-columns: 15rem minmax(0, 1fr);
+    background: #eef1f4;
+}
+
+.admin-sidebar {
+    border-right: 1px solid #b8c2cc;
+    background: #e1e6eb;
+    color: #23384d;
+    box-shadow: none;
+}
+
+.admin-sidebar > .brand {
+    border-bottom: 1px solid #bdc7d1;
+    color: #23384d;
+}
+
+.admin-sidebar .admin-brand-mark,
+.admin-navigation-icon {
+    display: none;
+}
+
+.admin-sidebar .brand-caption,
+.admin-sidebar .brand-tagline,
+.sidebar-footer {
+    color: #506176;
+}
+
+.admin-navigation {
+    gap: 0;
+    margin-top: 0.65rem;
+}
+
+.navigation-group > summary {
+    padding: 0.55rem 0.6rem 0.3rem;
+    border-top: 1px solid #c4cdd6;
+    border-radius: 0;
+    background: transparent !important;
+    color: #31465d;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.035em;
+    text-transform: uppercase;
+}
+
+.navigation-group > summary::after {
+    content: none;
+}
+
+.navigation-group > summary:focus-visible,
+.admin-navigation a:focus-visible {
+    outline-color: #285e8e;
+}
+
+.navigation-items {
+    gap: 0;
+    margin: 0 0 0.4rem;
+    padding: 0;
+    border: 0;
+}
+
+.navigation-items .navigation-link {
+    min-height: 2rem;
+    padding: 0.38rem 0.7rem;
+    border: 0;
+    border-radius: 0;
+    color: #304963;
+    font-size: 0.83rem;
+    font-weight: 400;
+}
+
+.navigation-items .navigation-link:hover,
+.navigation-items .navigation-link:focus-visible {
+    background: #d0dbe5;
+    color: #182d43;
+}
+
+.navigation-items .navigation-link.is-active {
+    border-left: 3px solid #2a5b87;
+    background: #d0dbe5;
+    color: #173653;
+    font-weight: 700;
+}
+
+.admin-topbar,
+.admin-page {
+    box-shadow: none;
+}
+
+.admin-page {
+    max-width: none;
+    padding: 1.5rem;
+}
+
+.admin-panel,
+.dashboard-metric-card,
+.module-card {
+    border: 1px solid #c5ced8;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.dashboard-metric-card {
+    border-left: 4px solid #477396;
+}
+
+.dashboard-metric-card:hover {
+    box-shadow: none;
+    transform: none;
+}
+
+.video-editor-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.85rem;
+}
+
+.video-editor-main,
+.video-editor-sidebar {
+    gap: 0.85rem;
+}
+
+.video-editor-section > label,
+.video-editor-section > .video-source-url-field > label {
+    grid-template-columns: minmax(10rem, 0.32fr) minmax(0, 1fr);
+    column-gap: 1.1rem;
+    padding: 0.7rem 0.85rem;
+}
+
+.video-editor-section > .video-source-url-field > label > input,
+.video-editor-section > label > input,
+.video-editor-section > label > select,
+.video-editor-section > label > textarea,
+.video-editor-section > label > small,
+.video-editor-section > .video-source-url-field > label > small,
+.video-editor-section > label > a {
+    grid-column: 2;
+}
+
+.video-editor-section > .video-source-url-field > label > small,
+.video-editor-section > label > small {
+    margin: 0;
+}
+
+.video-category-manage {
+    margin: -0.35rem 0 0;
+    padding: 0 0.85rem 0.7rem 11.9rem;
+    border-bottom: 1px solid #e4e8ed;
+    font-size: 0.83rem;
+}
+
+.video-source-url-field > small,
+.video-metadata-actions {
+    padding: 0.55rem 0.85rem;
+}
+
+.video-duration-field legend {
+    width: 32%;
+}
+
+.video-duration-field > small {
+    margin-left: 32%;
+}
+
+.admin-quick-add,
+.admin-shortcut-toggle,
+.logout-button,
+.admin-panel .button,
+.admin-panel .button-secondary {
+    border-radius: 0.12rem;
+    box-shadow: none;
+}
+
+@media (max-width: 62rem) {
+    .video-editor-section > label,
+    .video-editor-section > .video-source-url-field > label {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .video-editor-section > .video-source-url-field > label > input,
+    .video-editor-section > label > input,
+    .video-editor-section > label > select,
+    .video-editor-section > label > textarea,
+    .video-editor-section > label > small,
+    .video-editor-section > .video-source-url-field > label > small,
+    .video-editor-section > label > a {
+        grid-column: 1;
+    }
+
+    .video-category-manage {
+        padding-left: 0.85rem;
+    }
+
+    .video-duration-field legend,
+    .video-duration-field > small {
+        width: auto;
+        margin-left: 0;
+    }
+}
+
+@media (max-width: 48rem) {
+    .admin-page {
+        padding: 1rem;
+    }
 }
 
 .video-duration-field {

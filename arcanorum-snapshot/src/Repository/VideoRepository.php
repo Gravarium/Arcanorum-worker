@@ -91,6 +91,13 @@ final class VideoRepository extends ServiceEntityRepository implements ExternalV
         return $video instanceof Video ? $video : null;
     }
 
+    public function findOneBySlug(string $slug): ?Video
+    {
+        $video = $this->findOneBy(['slug' => $slug]);
+
+        return $video instanceof Video ? $video : null;
+    }
+
     private function createAdminQueryBuilder(
         string $search,
         ?PublishingStatus $status,
@@ -577,6 +584,24 @@ final class VideoRepository extends ServiceEntityRepository implements ExternalV
             ->andWhere('video.publishedAt IS NOT NULL')
             ->andWhere('video.publishedAt <= :now')
             ->setParameter('id', $id)
+            ->setParameter('status', PublishingStatus::Published)
+            ->setParameter('now', new \DateTimeImmutable('now', new \DateTimeZone('UTC')))
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        return $video instanceof Video && null !== $video->getPublishedAt()
+            ? $video
+            : null;
+    }
+
+    public function findPublishedBySlug(string $slug): ?Video
+    {
+        $video = $this->createQueryBuilder('video')
+            ->andWhere('video.slug = :slug')
+            ->andWhere('video.status = :status')
+            ->andWhere('video.publishedAt IS NOT NULL')
+            ->andWhere('video.publishedAt <= :now')
+            ->setParameter('slug', $slug)
             ->setParameter('status', PublishingStatus::Published)
             ->setParameter('now', new \DateTimeImmutable('now', new \DateTimeZone('UTC')))
             ->getQuery()
