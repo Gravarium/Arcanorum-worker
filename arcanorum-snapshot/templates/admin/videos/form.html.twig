@@ -30,7 +30,7 @@
             </div>
         </header>
 
-        <form class="admin-form" method="post" enctype="multipart/form-data" data-video-source-metadata data-metadata-endpoint="{{ path('admin_video_metadata') }}" data-metadata-csrf-token="{{ csrf_token('admin_video_metadata') }}" data-metadata-error="{{ 'Provider-Metadaten konnten nicht abgerufen werden.'|trans }}" data-metadata-loaded="{{ 'Provider-Metadaten wurden übernommen.'|trans }}" data-metadata-loading="{{ 'Provider-Metadaten werden abgerufen.'|trans }}">
+        <form class="admin-form" method="post" enctype="multipart/form-data" data-video-source-metadata data-video-edit="{{ is_edit ? '1' : '0' }}" data-provider-url-label="{{ 'Video-URL eines unterstützten Providers'|trans }}" data-direct-url-label="{{ 'Direkte Medien-URL'|trans }}" data-stream-url-label="{{ 'Stream-URL'|trans }}" data-metadata-endpoint="{{ path('admin_video_metadata') }}" data-metadata-csrf-token="{{ csrf_token('admin_video_metadata') }}" data-metadata-error="{{ 'Provider-Metadaten konnten nicht abgerufen werden.'|trans }}" data-metadata-loaded="{{ 'Provider-Metadaten wurden übernommen.'|trans }}" data-metadata-loading="{{ 'Provider-Metadaten werden abgerufen.'|trans }}">
             <input type="hidden" name="_token" value="{{ csrf_token('admin_video_save') }}">
 
             <label>
@@ -40,32 +40,32 @@
 
             <div class="form-grid">
                 <label>
-                    <span>{{ 'Quellart'|trans }}</span>
-                    <select name="source_type">
-                        <option value="url" {{ values.source_type == 'url' ? 'selected' : '' }}>{{ 'Video-URL'|trans }}</option>
-                        <option value="stream" {{ values.source_type == 'stream' ? 'selected' : '' }}>{{ 'Stream'|trans }}</option>
-                        <option value="embed" {{ values.source_type == 'embed' ? 'selected' : '' }}>{{ 'Einbettungs-URL'|trans }}</option>
-                        <option value="file" {{ values.source_type == 'file' ? 'selected' : '' }}>{{ 'Private Medien-Datei'|trans }}</option>
+                    <span>{{ 'Videoquelle'|trans }}</span>
+                    <select name="source_type" data-video-source-type>
+                        <option value="embed" {{ values.source_type == 'embed' ? 'selected' : '' }}>{{ 'Video von Anbieter-URL (YouTube, Vimeo und weitere)'|trans }}</option>
+                        <option value="url" {{ values.source_type == 'url' ? 'selected' : '' }}>{{ 'Direkte Video- oder Audio-URL'|trans }}</option>
+                        <option value="stream" {{ values.source_type == 'stream' ? 'selected' : '' }}>{{ 'Video- oder Audiostream'|trans }}</option>
+                        <option value="file" {{ values.source_type == 'file' ? 'selected' : '' }}>{{ 'Videodatei hochladen'|trans }}</option>
                     </select>
                 </label>
-                <label>
-                    <span>{{ 'Quell-URL'|trans }}</span>
-                    <input type="url" name="source_url" value="{{ values.source_url }}" maxlength="2048" placeholder="https://www.youtube.com/watch?v=…">
-                    <button class="button button-secondary" type="button" data-video-metadata-fetch>{{ 'Provider-Metadaten übernehmen'|trans }}</button>
-                    <p class="muted" data-video-metadata-status role="status" aria-live="polite"></p>
-                    <small>{{ 'Für Einbettungen sind nur geprüfte YouTube-, Vimeo-, Dailymotion-, Facebook-, Google-Drive-, Rutube-, VK- und Youku-Video-URLs zugelassen; fremder HTML-Code wird nicht ausgeführt.'|trans }}</small>
-                    <small>{{ 'Unterstützt werden direkte MP4-, M4V-, WebM-, Ogg- und MP3-Dateien sowie HLS-Live-Playlists (M3U8) auf freigegebenen HTTPS-Hosts. HLS-Segmente und Schlüssel müssen ebenfalls von freigegebenen Hosts kommen; der Server ruft die Stream-Adresse nicht ab.'|trans }}</small>
+                <div class="video-source-url-field" data-video-source-url-field>
+                    <label>
+                        <span data-video-source-url-label>{{ 'Video-URL eines unterstützten Providers'|trans }}</span>
+                        <input type="url" name="source_url" value="{{ values.source_url }}" maxlength="2048" placeholder="https://www.youtube.com/watch?v=…" data-video-source-url>
+                    </label>
+                    <div class="video-metadata-actions">
+                        <button class="button button-secondary" type="button" data-video-metadata-fetch>{{ 'Provider-Metadaten übernehmen'|trans }}</button>
+                        <p class="muted" data-video-metadata-status role="status" aria-live="polite"></p>
+                    </div>
+                    <small data-video-source-help="embed">{{ 'Für Einbettungen sind nur geprüfte YouTube-, Vimeo-, Dailymotion-, Facebook-, Google-Drive-, Rutube-, VK- und Youku-Video-URLs zugelassen; fremder HTML-Code wird nicht ausgeführt.'|trans }}</small>
+                    <small data-video-source-help="url">{{ 'Direkte Medien-URLs müssen auf eine unterstützte Mediendatei zeigen. Der Server ruft die Adresse nicht ab.'|trans }}</small>
+                    <small data-video-source-help="stream">{{ 'Unterstützt werden direkte MP4-, M4V-, WebM-, Ogg- und MP3-Dateien sowie HLS-Live-Playlists (M3U8) auf ausdrücklich freigegebenen HTTPS-Hosts. HLS-Segmente und Schlüssel müssen ebenfalls freigegeben sein.'|trans }}</small>
                     <small>{{ 'Die vollständige Adresse einschließlich Abfrageparametern wird öffentlich ausgegeben. Bitte keine Zugangsdaten oder geheimen Tokens verwenden.'|trans }}</small>
-                    {% if not stream_configured %}<small>{{ 'Streamhosts sind derzeit nicht freigegeben; bitte die Hostingverwaltung um Einrichtung bitten.'|trans }}</small>{% endif %}
-                </label>
-                <label>
-                    <span>{{ 'Medienlaufzeit in Sekunden'|trans }}</span>
-                    <input type="number" name="duration_seconds" value="{{ values.duration_seconds }}" min="0" max="2147483647" step="1" inputmode="numeric">
-                    <small>{{ 'Optional, zum Beispiel 120 Sekunden für zwei Minuten.'|trans }}</small>
-                </label>
-                <label>
+                    {% if not stream_configured %}<small data-video-source-help="stream">{{ 'Streamhosts sind derzeit nicht freigegeben; bitte die Hostingverwaltung um Einrichtung bitten.'|trans }}</small>{% endif %}
+                </div>
+                <label data-video-source-file-field>
                     <span>{{ 'Video- oder MP3-Datei'|trans }}</span>
-                    <input type="file" name="video_file" accept="video/mp4,video/webm,video/ogg,audio/mpeg,.mp3">
+                    <input type="file" name="video_file" accept="video/mp4,video/webm,video/ogg,audio/mpeg,.mp3" data-video-source-file>
                     <small>{{ 'Bei Quellart „Private Medien-Datei“ erforderlich; beim Bearbeiten optional, wenn die vorhandene Datei bleiben soll.'|trans }}</small>
                     {% if current_media_type %}<small>{{ 'Aktuelle private Datei: %media_type%.'|trans({'%media_type%': current_media_type}) }}</small>{% endif %}
                 </label>
@@ -90,6 +90,21 @@
                 </label>
             </div>
 
+            <fieldset class="video-duration-field">
+                <legend>{{ 'Medienlaufzeit'|trans }}</legend>
+                <div class="form-grid">
+                    <label>
+                        <span>{{ 'Minuten'|trans }}</span>
+                        <input type="number" name="duration_minutes" value="{{ values.duration_minutes }}" min="0" max="35791394" step="1" inputmode="numeric">
+                    </label>
+                    <label>
+                        <span>{{ 'Sekunden'|trans }}</span>
+                        <input type="number" name="duration_seconds_part" value="{{ values.duration_seconds_part }}" min="0" max="59" step="1" inputmode="numeric">
+                    </label>
+                </div>
+                <small>{{ 'Optional. Sekunden müssen zwischen 0 und 59 liegen.'|trans }}</small>
+            </fieldset>
+
             <label>
                 <span>{{ 'Schlagwörter'|trans }}</span>
                 <input name="tags" value="{{ values.tags }}" maxlength="1000" placeholder="{{ 'z. B. Kultur, Interviews, Neuigkeiten'|trans }}">
@@ -113,6 +128,13 @@
                 <label><input type="checkbox" name="featured" value="1" {{ values.featured ? 'checked' : '' }}> {{ 'Auf der Startseite hervorheben'|trans }}</label>
                 <label><input type="checkbox" name="comments_enabled" value="1" {{ values.comments_enabled ? 'checked' : '' }}> {{ 'Kommentare erlauben'|trans }}</label>
             </div>
+
+            {% if is_edit %}
+                <label>
+                    <span>{{ 'Aufrufe'|trans }}</span>
+                    <input type="text" value="{{ video_view_count }}" readonly aria-readonly="true">
+                </label>
+            {% endif %}
 
             <div class="form-actions">
                 <button class="button" type="submit">{{ is_edit ? ('Änderungen speichern'|trans) : ('Video speichern'|trans) }}</button>

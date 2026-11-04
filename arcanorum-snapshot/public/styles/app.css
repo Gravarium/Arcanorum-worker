@@ -2610,48 +2610,56 @@ html[data-public-theme="arcanorum"] .video-stage {
     border-radius: 0.15rem;
 }
 
-/* Verwaltungsseiten mit hellen Flächen und klaren Tabellen */
+/* Klassische, dauerhaft beschriftete Redaktionsnavigation */
 .admin-shell {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto minmax(0, 1fr);
-    background: #fff;
+    grid-template-columns: 17rem minmax(0, 1fr);
+    grid-template-rows: 3.75rem minmax(0, 1fr);
+    background: #f1f3f5;
 }
 
 .admin-topbar {
     min-height: 3.75rem;
     padding-inline: 1.5rem;
-    border-bottom-color: #e1e3e5;
+    border-bottom-color: #d4dbe3;
     background: #fff;
 }
 
 .admin-sidebar {
     padding: 1.15rem 0.75rem 0.75rem;
-    border-right-color: #e1e3e5;
-    background: #fff;
-    color: #202124;
+    border-right-color: #20334c;
+    background: #2a405e;
+    color: #f7f9fc;
     box-shadow: none;
 }
 
 .admin-sidebar > .brand {
     padding: 0 0.55rem 1rem;
-    border-bottom: 1px solid #e8eaed;
-    color: #202124;
+    border-bottom: 1px solid #536983;
+    color: #fff;
 }
 
 .admin-sidebar .brand-caption,
 .admin-sidebar .brand-tagline {
-    color: #5f6368;
+    color: #c6d2e1;
 }
 
 .admin-navigation {
     gap: 0.15rem;
-    margin-top: 0.9rem;
+    margin-top: 0.75rem;
+}
+
+.navigation-dashboard {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin-bottom: 0.25rem;
+    color: #f7f9fc;
 }
 
 .navigation-group > summary {
     padding: 0.58rem 0.7rem;
-    border-radius: 0.15rem;
-    color: #4a4d50;
+    border-radius: 0.1rem;
+    color: #f7f9fc;
     font-size: 0.86rem;
     font-weight: 600;
 }
@@ -2659,165 +2667,59 @@ html[data-public-theme="arcanorum"] .video-stage {
 .navigation-group > summary:hover,
 .navigation-group > summary:focus-visible,
 .navigation-group[open] > summary {
-    background: #f1f3f4;
+    background: #344d70;
 }
 
 .navigation-items {
     margin: 0.15rem 0 0.45rem;
     padding-left: 0.35rem;
-    border-left-color: #dadce0;
+    border-left-color: #617791;
 }
 
 .navigation-items .navigation-link {
     padding: 0.48rem 0.65rem;
-    border-radius: 0.15rem;
-    color: #5f6368;
+    border-radius: 0.1rem;
+    color: #dbe4ef;
     font-size: 0.82rem;
 }
 
 .navigation-items .navigation-link:hover,
 .navigation-items .navigation-link:focus-visible {
-    background: #f6f7f8;
-    color: #202124;
+    background: #344d70;
+    color: #fff;
 }
 
 .navigation-link.is-active {
-    border-left: 2px solid #1a73e8;
+    border-left: 3px solid #cfe0ff;
     border-radius: 0;
-    background: #e8f0fe;
-    color: #174ea6;
+    background: #286efa;
+    color: #fff;
+    font-weight: 700;
+}
+
+.admin-navigation-icon {
+    display: inline-grid;
+    width: 1.35rem;
+    flex: 0 0 1.35rem;
+    place-items: center;
+    color: #c6d2e1;
+    font-family: Arial, sans-serif;
+    font-size: 0.95rem;
 }
 
 @media (min-width: 48.001rem) {
     .admin-shell {
-        grid-template-columns: 15rem minmax(0, 1fr);
+        grid-template-columns: 16.5rem minmax(0, 1fr);
         grid-template-rows: 3.75rem minmax(0, 1fr);
     }
 }
 
-@supports selector(.admin-shell:has(.navigation-group[open])) {
-    @media (min-width: 48.001rem) {
-        .admin-shell {
-            grid-template-columns: 4.25rem minmax(0, 1fr);
-        }
-
-        .admin-shell:has(.admin-sidebar .navigation-group[open]) {
-            grid-template-columns: 15rem minmax(0, 1fr);
-        }
-
-        .admin-sidebar {
-            padding: 0.75rem 0.3rem;
-        }
-
-        .admin-sidebar > .brand {
-            align-items: center;
-            padding: 0.45rem 0 0.7rem;
-        }
-
-        .admin-sidebar .brand-name,
-        .admin-sidebar .brand-caption,
-        .admin-sidebar .brand-tagline {
-            display: none;
-        }
-
-        .admin-brand-mark {
-            display: grid;
-            width: 2.25rem;
-            height: 2.25rem;
-            place-items: center;
-            border: 1px solid #dadce0;
-            border-radius: 50%;
-            background: #f8f9fa;
-            color: #202124;
-            font-size: 1rem;
-            font-weight: 700;
-        }
-
-        .admin-navigation {
-            gap: 0.25rem;
-            margin-top: 0.65rem;
-        }
-
-        .navigation-group > summary {
-            width: 2.8rem;
-            min-height: 2.7rem;
-            justify-content: center;
-            margin: 0 auto;
-            padding: 0.3rem;
-            font-size: 0;
-        }
-
-        .admin-navigation-icon {
-            display: grid;
-            width: 2.1rem;
-            height: 2.1rem;
-            place-items: center;
-            border-radius: 0.2rem;
-            color: #5f6368;
-            font-family: Arial, sans-serif;
-            font-size: 1.05rem;
-            font-variant-emoji: text;
-        }
-
-        .navigation-group > summary::after {
-            display: none;
-        }
-
-        .navigation-group:has(.navigation-link.is-active) > summary .admin-navigation-icon {
-            background: #e8f0fe;
-            color: #174ea6;
-        }
-
-        .admin-sidebar:has(.navigation-group[open]) {
-            padding: 1.15rem 0.75rem 0.75rem;
-        }
-
-        .admin-sidebar:has(.navigation-group[open]) > .brand {
-            align-items: flex-start;
-            padding: 0 0.55rem 1rem;
-        }
-
-        .admin-sidebar:has(.navigation-group[open]) .brand-name {
-            display: inline;
-        }
-
-        .admin-sidebar:has(.navigation-group[open]) .brand-caption,
-        .admin-sidebar:has(.navigation-group[open]) .brand-tagline {
-            display: block;
-        }
-
-        .admin-sidebar:has(.navigation-group[open]) .admin-brand-mark {
-            display: none;
-        }
-
-        .admin-sidebar:not(:has(.navigation-group[open])) .sidebar-footer {
-            display: none;
-        }
-
-        .admin-sidebar:has(.navigation-group[open]) .navigation-group > summary {
-            width: auto;
-            min-height: 2.2rem;
-            justify-content: flex-start;
-            margin: 0;
-            padding: 0.58rem 0.7rem;
-            font-size: 0.86rem;
-        }
-
-        .admin-sidebar:has(.navigation-group[open]) .admin-navigation-icon {
-            width: 1.6rem;
-            height: 1.6rem;
-            margin-inline-end: 0.45rem;
-            font-size: 0.95rem;
-        }
-
-        .admin-sidebar:has(.navigation-group[open]) .navigation-group > summary::after {
-            display: inline;
-            margin-inline-start: auto;
-        }
-    }
-}
-
 @media (max-width: 48rem) {
+    .admin-shell {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto minmax(0, 1fr);
+    }
+
     .admin-topbar {
         grid-column: 1;
         grid-row: 1;
@@ -2834,9 +2736,9 @@ html[data-public-theme="arcanorum"] .video-stage {
         overflow: visible;
         padding: 0.2rem 1rem;
         border: 0;
-        border-bottom: 1px solid #e1e3e5;
-        background: #fff;
-        color: #202124;
+        border-bottom: 1px solid #20334c;
+        background: #2a405e;
+        color: #f7f9fc;
         box-shadow: none;
     }
 
@@ -2847,8 +2749,8 @@ html[data-public-theme="arcanorum"] .video-stage {
 }
 
 .sidebar-footer {
-    border-top-color: #e8eaed;
-    color: #5f6368;
+    border-top-color: #536983;
+    color: #c6d2e1;
 }
 
 .admin-page {
@@ -2875,8 +2777,8 @@ html[data-public-theme="arcanorum"] .video-stage {
 }
 
 .admin-table thead th {
-    background: #fff;
-    color: #5f6368;
+    background: #e9eef4;
+    color: #34465e;
     font-size: 0.78rem;
     font-weight: 600;
     letter-spacing: 0;
@@ -2884,22 +2786,22 @@ html[data-public-theme="arcanorum"] .video-stage {
 }
 
 .dashboard-metric-card {
-    border: 1px solid #dadce0;
-    border-left: 2px solid #1a73e8;
+    border: 1px solid #cfd7e1;
+    border-left: 3px solid #286efa;
     border-radius: 0.15rem;
     box-shadow: none;
     transition: background-color 120ms ease;
 }
 
 .dashboard-metric-card:hover {
-    background: #f8f9fa;
+    background: #f7f9fc;
     box-shadow: none;
     transform: none;
 }
 
 .dashboard-metric-card:focus-visible,
 .admin-quick-add:focus-visible {
-    outline: 3px solid #8ab4f8;
+    outline: 3px solid #286efa;
     outline-offset: 2px;
 }
 
@@ -3210,6 +3112,121 @@ html[data-public-theme="arcanorum"][data-public-view="compact"] .public-navigati
     .admin-toolbar > form {
         width: 100%;
     }
+}
+
+/* Redaktionsformulare und Tabellen: klare, kantige Verwaltungselemente */
+.admin-main {
+    min-width: 0;
+    background: #f1f3f5;
+}
+
+.admin-panel,
+.admin-toolbar .admin-filter-form,
+.activity-clear-form,
+.admin-toolbar > form {
+    border-color: #cfd7e1;
+    border-radius: 0.12rem;
+    box-shadow: none;
+}
+
+.panel-heading {
+    background: #f7f9fb;
+}
+
+.admin-form label,
+.admin-filter-form label {
+    color: #293b53;
+}
+
+.admin-form input:not([type="checkbox"]),
+.admin-form select,
+.admin-form textarea,
+.admin-filter-form input,
+.admin-filter-form select,
+.admin-form button,
+.button,
+.button-secondary {
+    border-radius: 0.12rem;
+}
+
+.admin-form input:not([type="checkbox"]),
+.admin-form select,
+.admin-form textarea,
+.admin-filter-form input,
+.admin-filter-form select {
+    border-color: #aebbc9;
+}
+
+.admin-form input:focus-visible,
+.admin-form select:focus-visible,
+.admin-form textarea:focus-visible,
+.admin-filter-form input:focus-visible,
+.admin-filter-form select:focus-visible {
+    border-color: #286efa;
+    outline: 2px solid #286efa;
+    outline-offset: 1px;
+}
+
+.admin-table thead th {
+    border-bottom: 1px solid #c8d2de;
+    background: #e7edf4;
+    color: #30435b;
+}
+
+.admin-table tbody tr:hover {
+    background: #f7f9fc;
+}
+
+.admin-form [hidden],
+.admin-filter-form [hidden] {
+    display: none !important;
+}
+
+.admin-mobile-menu > summary {
+    color: #f7f9fc;
+}
+
+.admin-mobile-menu > summary::after {
+    color: #c6d2e1;
+}
+
+.video-source-url-field {
+    display: grid;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.video-source-url-field > small,
+.video-duration-field > small {
+    color: #596a7e;
+    font-weight: 400;
+    line-height: 1.5;
+}
+
+.video-metadata-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.65rem 1rem;
+}
+
+.video-metadata-actions p {
+    margin: 0;
+}
+
+.video-duration-field {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0.85rem;
+    border: 1px solid #cfd7e1;
+    background: #f7f9fb;
+}
+
+.video-duration-field legend {
+    padding-inline: 0.3rem;
+    color: #293b53;
+    font-weight: 700;
 }
 
 .public-navigation a:focus-visible,

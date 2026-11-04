@@ -27,9 +27,26 @@ class FakeButton extends FakeElement {
 
 class FakeInput extends FakeElement {
     value = '';
+    required = false;
 }
 
 class FakeTextarea extends FakeInput {}
+
+class FakeSelect extends FakeElement {
+    value = 'embed';
+    listener = null;
+
+    addEventListener(name, listener) {
+        assert.equal(name, 'change');
+        this.listener = listener;
+    }
+
+    change(value) {
+        this.value = value;
+        assert.equal(typeof this.listener, 'function');
+        this.listener();
+    }
+}
 
 function createHarness(response) {
     const button = new FakeButton();
@@ -38,10 +55,24 @@ function createHarness(response) {
     source.value = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
     const title = new FakeInput();
     const description = new FakeTextarea();
-    const duration = new FakeInput();
+    const durationMinutes = new FakeInput();
+    const durationSeconds = new FakeInput();
+    const sourceType = new FakeSelect();
+    const sourceUrlField = new FakeElement();
+    const sourceUrlLabel = new FakeElement();
+    const sourceFileField = new FakeElement();
+    const sourceFile = new FakeInput();
+    const sourceHelp = [new FakeElement(), new FakeElement(), new FakeElement()];
+    sourceHelp[0].dataset.videoSourceHelp = 'embed';
+    sourceHelp[1].dataset.videoSourceHelp = 'url';
+    sourceHelp[2].dataset.videoSourceHelp = 'stream';
     const calls = [];
     const form = {
         dataset: {
+            videoEdit: '0',
+            providerUrlLabel: 'Provider video URL',
+            directUrlLabel: 'Direct media URL',
+            streamUrlLabel: 'Stream URL',
             metadataEndpoint: '/admin/videos/metadata',
             metadataCsrfToken: 'csrf-token',
             metadataError: 'Metadata could not be imported.',
@@ -55,8 +86,18 @@ function createHarness(response) {
                 ['[name="source_url"]', source],
                 ['[name="title"]', title],
                 ['[name="description"]', description],
-                ['[name="duration_seconds"]', duration],
+                ['[name="duration_minutes"]', durationMinutes],
+                ['[name="duration_seconds_part"]', durationSeconds],
+                ['[data-video-source-type]', sourceType],
+                ['[data-video-source-url-field]', sourceUrlField],
+                ['[data-video-source-url-label]', sourceUrlLabel],
+                ['[data-video-source-file-field]', sourceFileField],
+                ['[data-video-source-file]', sourceFile],
             ]).get(selector);
+        },
+        querySelectorAll(selector) {
+            assert.equal(selector, '[data-video-source-help]');
+            return sourceHelp;
         },
     };
     const fetch = async (url, options) => {
@@ -69,12 +110,16 @@ function createHarness(response) {
         HTMLButtonElement: FakeButton,
         HTMLElement: FakeElement,
         HTMLInputElement: FakeInput,
+        HTMLSelectElement: FakeSelect,
         HTMLTextAreaElement: FakeTextarea,
         URLSearchParams,
         fetch,
     });
 
-    return {button, status, source, title, description, duration, calls};
+    return {
+        button, status, source, title, description, durationMinutes, durationSeconds,
+        sourceType, sourceUrlField, sourceUrlLabel, sourceFileField, sourceFile, sourceHelp, calls,
+    };
 }
 
 test('imports provider fields through the same-origin CSRF endpoint after an explicit click', async () => {
@@ -100,7 +145,8 @@ test('imports provider fields through the same-origin CSRF endpoint after an exp
     });
     assert.equal(state.title.value, 'Video title');
     assert.equal(state.description.value, 'Description');
-    assert.equal(state.duration.value, '3723');
+    assert.equal(state.durationMinutes.value, '62');
+    assert.equal(state.durationSeconds.value, '3');
     assert.equal(state.status.textContent, 'Metadata imported.');
     assert.equal(state.button.disabled, false);
 });
@@ -112,13 +158,45 @@ test('fails closed for invalid provider responses without replacing the administ
     });
     state.title.value = 'Manual title';
     state.description.value = 'Manual description';
-    state.duration.value = '60';
+    state.durationMinutes.value = '1';
+    state.durationSeconds.value = '0';
 
     await state.button.click();
 
     assert.equal(state.title.value, 'Manual title');
     assert.equal(state.description.value, 'Manual description');
-    assert.equal(state.duration.value, '60');
+    assert.equal(state.durationMinutes.value, '1');
+    assert.equal(state.durationSeconds.value, '0');
     assert.equal(state.status.textContent, 'Metadata could not be imported.');
     assert.equal(state.button.disabled, false);
+});
+
+test('shows only the fields for the selected video source and requires a new upload only for file sources', () => {
+    const state = createHarness({ok: true, json: async () => ({})});
+
+    assert.equal(state.button.hidden, false);
+    assert.equal(state.sourceUrlField.hidden, false);
+    assert.equal(state.sourceFileField.hidden, true);
+    assert.equal(state.source.required, true);
+    assert.equal(state.sourceFile.required, false);
+    assert.equal(state.sourceUrlLabel.textContent, 'Provider video URL');
+    assert.equal(state.sourceHelp[0].hidden, false);
+    assert.equal(state.sourceHelp[1].hidden, true);
+
+    state.sourceType.change('file');
+    state.sourceFile.value = 'selected-upload';
+
+    assert.equal(state.button.hidden, true);
+    assert.equal(state.sourceUrlField.hidden, true);
+    assert.equal(state.sourceFileField.hidden, false);
+    assert.equal(state.source.required, false);
+    assert.equal(state.sourceFile.required, true);
+    assert.equal(state.sourceHelp[0].hidden, true);
+
+    state.sourceType.change('url');
+
+    assert.equal(state.sourceFileField.hidden, true);
+    assert.equal(state.sourceFile.value, '');
+    assert.equal(state.source.required, true);
+    assert.equal(state.sourceUrlLabel.textContent, 'Direct media URL');
 });

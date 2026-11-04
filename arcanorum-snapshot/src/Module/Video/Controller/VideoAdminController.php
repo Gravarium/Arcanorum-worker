@@ -518,6 +518,7 @@ final class VideoAdminController extends AbstractController
         VideoEmbedCodeGenerator $embedCodeGenerator,
     ): Response {
         $isEdit = null !== $video;
+        $storedDurationSeconds = $video?->getDurationSeconds();
         $storedEmbedOrigins = null !== $video
             ? $embedOriginPolicy->validateStoredOrigins($video->getEmbedAllowedOrigins())
             : [];
@@ -526,9 +527,12 @@ final class VideoAdminController extends AbstractController
             'description' => $video?->getDescription() ?? '',
             'category' => $video?->getCategory() ?? '',
             'tags' => $video?->getTagNames() ?? '',
-            'source_type' => $video?->getSourceType()->value ?? VideoSourceType::Url->value,
+            'source_type' => $video?->getSourceType()->value
+                ?? VideoSourceType::tryFrom(self::input($request->query, 'source_type'))?->value
+                ?? VideoSourceType::Embed->value,
             'source_url' => $video?->getSourceUrl() ?? '',
-            'duration_seconds' => null === $video?->getDurationSeconds() ? '' : (string) $video->getDurationSeconds(),
+            'duration_minutes' => null === $storedDurationSeconds ? '' : (string) intdiv($storedDurationSeconds, 60),
+            'duration_seconds_part' => null === $storedDurationSeconds ? '' : (string) ($storedDurationSeconds % 60),
             'status' => $video?->getStatus()->value ?? PublishingStatus::Draft->value,
             'featured' => $video?->isFeatured() ?? false,
             'comments_enabled' => $video?->isCommentsEnabled() ?? $siteSettings->current()->isDefaultCommentsEnabled(),
@@ -551,13 +555,13 @@ final class VideoAdminController extends AbstractController
             $rawPayload = $request->request->all();
             $allowedFields = [
                 '_token', 'title', 'description', 'category', 'tags', 'source_type', 'source_url',
-                'duration_seconds', 'status', 'featured', 'comments_enabled', 'embed_origins',
+                'duration_seconds', 'duration_minutes', 'duration_seconds_part', 'status', 'featured', 'comments_enabled', 'embed_origins',
                 'custom_fields_present', 'custom_fields',
             ];
             if ([] !== array_diff(array_keys($rawPayload), $allowedFields)) {
                 $errors[] = 'Die Anfrage enthält unerwartete Eingabefelder.';
             }
-            foreach (['_token', 'title', 'description', 'category', 'tags', 'source_type', 'source_url', 'duration_seconds', 'status', 'embed_origins'] as $field) {
+            foreach (['_token', 'title', 'description', 'category', 'tags', 'source_type', 'source_url', 'duration_seconds', 'duration_minutes', 'duration_seconds_part', 'status', 'embed_origins'] as $field) {
                 if (isset($rawPayload[$field]) && !is_string($rawPayload[$field])) {
                     $errors[] = 'Die Eingabe enthält einen ungültigen Wert.';
                 }
@@ -593,7 +597,8 @@ final class VideoAdminController extends AbstractController
                 'tags' => self::input($request->request, 'tags'),
                 'source_type' => self::input($request->request, 'source_type'),
                 'source_url' => trim(self::input($request->request, 'source_url')),
-                'duration_seconds' => trim(self::input($request->request, 'duration_seconds')),
+                'duration_minutes' => trim(self::input($request->request, 'duration_minutes')),
+                'duration_seconds_part' => trim(self::input($request->request, 'duration_seconds_part')),
                 'status' => self::input($request->request, 'status'),
                 'featured' => $request->request->has('featured'),
                 'comments_enabled' => $request->request->has('comments_enabled'),
@@ -605,8 +610,16 @@ final class VideoAdminController extends AbstractController
             if (array_key_exists('embed_origins', $rawPayload) && !is_string($rawPayload['embed_origins'])) {
                 $errors[] = 'Die Freigabeliste für Videoeinbettungen muss aus Text bestehen.';
             }
-            if (array_key_exists('duration_seconds', $rawPayload) && !is_string($rawPayload['duration_seconds'])) {
-                $errors[] = 'Die Medienlaufzeit muss eine ganze Zahl sein.';
+            if (array_key_exists('duration_seconds', $rawPayload)
+                && (array_key_exists('duration_minutes', $rawPayload) || array_key_exists('duration_seconds_part', $rawPayload))
+            ) {
+                $errors[] = 'Die Medienlaufzeit darf nur in einem einheitlichen Format übermittelt werden.';
+            }
+            if ((array_key_exists('duration_minutes', $rawPayload) && !is_string($rawPayload['duration_minutes']))
+                || (array_key_exists('duration_seconds_part', $rawPayload) && !is_string($rawPayload['duration_seconds_part']))
+                || (array_key_exists('duration_seconds', $rawPayload) && !is_string($rawPayload['duration_seconds']))
+            ) {
+                $errors[] = 'Die Medienlaufzeit muss aus ganzen Zahlen bestehen.';
             }
             $parsedEmbedOrigins = $embedOriginPolicy->parseInput($values['embed_origins']);
             if (null === $parsedEmbedOrigins) {
@@ -640,14 +653,38 @@ final class VideoAdminController extends AbstractController
                 $errors[] = 'Die Kategorie darf höchstens 100 Zeichen lang sein.';
             }
             $durationSeconds = null;
-            if ('' !== $values['duration_seconds']) {
-                if (!ctype_digit($values['duration_seconds'])
-                    || strlen($values['duration_seconds']) > 10
-                    || (int) $values['duration_seconds'] > 2147483647
-                ) {
-                    $errors[] = 'Die Medienlaufzeit muss eine ganze Zahl von 0 bis 2.147.483.647 Sekunden sein.';
+            $hasMinuteParts = array_key_exists('duration_minutes', $rawPayload)
+                || array_key_exists('duration_seconds_part', $rawPayload);
+            if ($hasMinuteParts) {
+                $minutes = $values['duration_minutes'];
+                $secondsPart = $values['duration_seconds_part'];
+                $validMinutes = '' === $minutes
+                    || (ctype_digit($minutes) && strlen($minutes) <= 8 && (int) $minutes <= 35791394);
+                $validSecondsPart = '' === $secondsPart
+                    || (ctype_digit($secondsPart) && strlen($secondsPart) <= 2 && (int) $secondsPart <= 59);
+                if (!$validMinutes || !$validSecondsPart) {
+                    $errors[] = 'Die Laufzeit muss aus höchstens 35.791.394 Minuten und 0 bis 59 Sekunden bestehen.';
                 } else {
-                    $durationSeconds = (int) $values['duration_seconds'];
+                    $totalSeconds = ((int) ($minutes ?: '0') * 60) + (int) ($secondsPart ?: '0');
+                    if ($totalSeconds > 2147483647) {
+                        $errors[] = 'Die Medienlaufzeit darf höchstens 2.147.483.647 Sekunden betragen.';
+                    } elseif ('' !== $minutes || '' !== $secondsPart) {
+                        $durationSeconds = $totalSeconds;
+                    }
+                }
+            } else {
+                $legacyDurationSeconds = trim(self::input($request->request, 'duration_seconds'));
+                if ('' !== $legacyDurationSeconds) {
+                    if (!ctype_digit($legacyDurationSeconds)
+                        || strlen($legacyDurationSeconds) > 10
+                        || (int) $legacyDurationSeconds > 2147483647
+                    ) {
+                        $errors[] = 'Die Medienlaufzeit muss eine ganze Zahl von 0 bis 2.147.483.647 Sekunden sein.';
+                    } else {
+                        $durationSeconds = (int) $legacyDurationSeconds;
+                        $values['duration_minutes'] = (string) intdiv($durationSeconds, 60);
+                        $values['duration_seconds_part'] = (string) ($durationSeconds % 60);
+                    }
                 }
             }
             if ('' !== $values['category']
@@ -856,6 +893,7 @@ final class VideoAdminController extends AbstractController
             'categories' => $categories->findForAdmin(ContentCategoryType::Video),
             'is_edit' => $isEdit,
             'current_media_type' => $video?->getUploadedMimeType(),
+            'video_view_count' => $video?->getViewCount(),
             'video_id' => $isEdit ? $video->getId() : null,
             'has_thumbnail' => $isEdit && null !== $video->getThumbnailObjectId(),
             'subtitle_tracks' => $isEdit ? $subtitleTracks->findForVideo($video) : [],

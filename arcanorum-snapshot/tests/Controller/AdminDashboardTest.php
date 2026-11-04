@@ -1605,8 +1605,15 @@ final class AdminDashboardTest extends WebTestCase
             self::assertSelectorTextContains('nav[aria-label="Hauptnavigation"]', 'Kommentare');
             self::assertSelectorTextContains('nav[aria-label="Hauptnavigation"]', 'Einstellungen');
             self::assertCount(12, $client->getCrawler()->filter('details.navigation-group'));
-            self::assertSelectorTextContains('nav[aria-label="Hauptnavigation"] > details.navigation-group:first-child > summary', 'Fortress');
+            self::assertSelectorExists('nav[aria-label="Hauptnavigation"] > a.navigation-dashboard[href="/admin"]');
+            self::assertSelectorTextContains('nav[aria-label="Hauptnavigation"] > details.navigation-group:nth-of-type(1) > summary', 'Videos');
+            self::assertStringNotContainsString('Fortress', (string) $client->getResponse()->getContent());
             self::assertSelectorExists('nav[aria-label="Hauptnavigation"] summary[title="Videos"] .admin-navigation-icon[aria-hidden="true"]');
+            self::assertSelectorExists('nav[aria-label="Hauptnavigation"] a[href="/admin/videos/new?source_type=embed"]');
+            self::assertSelectorExists('nav[aria-label="Hauptnavigation"] a[href="/admin/videos/new?source_type=url"]');
+            self::assertSelectorExists('nav[aria-label="Hauptnavigation"] a[href="/admin/videos/new?source_type=stream"]');
+            self::assertSelectorExists('nav[aria-label="Hauptnavigation"] a[href="/admin/videos/new?source_type=file"]');
+            self::assertSelectorExists('nav[aria-label="Hauptnavigation"] a[href="/admin/videos/import/provider"]');
             self::assertSelectorExists('nav[aria-label="Hauptnavigation"] a[href="/admin/backups"]');
             self::assertSelectorExists('nav[aria-label="Hauptnavigation"] a[href="/sitemap-index.xml"]');
             self::assertSelectorNotExists('nav[aria-label="Hauptnavigation"] [aria-disabled="true"]');
@@ -7361,6 +7368,135 @@ final class AdminDashboardTest extends WebTestCase
             foreach ($videos as $video) {
                 $connection->delete('videos', ['id' => $video->getId()]);
             }
+            $this->removeUser($client, $email);
+        }
+    }
+
+    public function testAdminVideoFormPrefillsSafeSourceModesAndShowsMinuteAndSecondFields(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $client->getContainer()->set(
+            RuntimeAttestationReportProviderInterface::class,
+            new VerifiedRuntimeAttestationReportProvider(),
+        );
+        $marker = 'video-source-form-'.bin2hex(random_bytes(6));
+        $email = $marker.'@example.test';
+        $password = 'VideoSource!'.bin2hex(random_bytes(6)).'-A9!';
+
+        try {
+            $this->persistUser($client, $email, $password, ['ROLE_ADMIN']);
+            $this->submitLogin($client, $email, $password);
+            self::assertResponseRedirects('/admin');
+
+            $client->request('GET', '/admin/videos/new');
+            self::assertResponseIsSuccessful();
+            self::assertSelectorExists('select[name="source_type"] option[value="embed"][selected]');
+            self::assertSelectorExists('input[name="source_url"][type="url"]');
+            self::assertSelectorExists('input[name="duration_minutes"][type="number"]');
+            self::assertSelectorExists('input[name="duration_seconds_part"][type="number"]');
+            self::assertSelectorExists('details.navigation-group[open] > summary[title="Videos"]');
+            self::assertSelectorExists('nav[aria-label="Hauptnavigation"] a[href="/admin/videos/new?source_type=embed"][aria-current="page"]');
+
+            foreach (['url', 'stream', 'file'] as $sourceType) {
+                $client->request('GET', '/admin/videos/new', ['source_type' => $sourceType]);
+                self::assertResponseIsSuccessful();
+                self::assertSelectorExists(sprintf('select[name="source_type"] option[value="%s"][selected]', $sourceType));
+            }
+
+            $client->request('GET', '/admin/videos/new', ['source_type' => 'unsupported']);
+            self::assertResponseIsSuccessful();
+            self::assertSelectorExists('select[name="source_type"] option[value="embed"][selected]');
+
+            $client->request('GET', '/admin/videos/new', ['source_type' => ['stream']]);
+            self::assertResponseIsSuccessful();
+            self::assertSelectorExists('select[name="source_type"] option[value="embed"][selected]');
+        } finally {
+            $this->removeUser($client, $email);
+        }
+    }
+
+    public function testAdminVideoFormParsesMinuteAndSecondDurationAndRejectsInvalidSeconds(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $client->getContainer()->set(
+            RuntimeAttestationReportProviderInterface::class,
+            new VerifiedRuntimeAttestationReportProvider(),
+        );
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        $connection = $entityManager->getConnection();
+        $marker = 'video-duration-form-'.bin2hex(random_bytes(6));
+        $email = $marker.'@example.test';
+        $password = 'VideoDuration!'.bin2hex(random_bytes(6)).'-A9!';
+        $validTitle = $marker.' valid';
+        $invalidTitle = $marker.' invalid';
+        $sourceUrl = 'https://www.youtube.com/watch?v='.substr(bin2hex(random_bytes(6)), 0, 11);
+
+        try {
+            $this->persistUser($client, $email, $password, ['ROLE_ADMIN']);
+            $this->submitLogin($client, $email, $password);
+            self::assertResponseRedirects('/admin');
+
+            $client->request('GET', '/admin/videos/new');
+            self::assertResponseIsSuccessful();
+            $csrfToken = $client->getCrawler()->filter('form[data-video-source-metadata] input[name="_token"]')->attr('value');
+            self::assertIsString($csrfToken);
+
+            $client->request('POST', '/admin/videos/new', [
+                '_token' => $csrfToken,
+                'title' => $validTitle,
+                'description' => 'Duration fields regression.',
+                'category' => '',
+                'tags' => '',
+                'source_type' => 'embed',
+                'source_url' => $sourceUrl,
+                'duration_minutes' => '2',
+                'duration_seconds_part' => '3',
+                'status' => 'draft',
+                'embed_origins' => '',
+            ]);
+            self::assertResponseRedirects('/admin/videos');
+            self::assertSame(123, (int) $connection->fetchOne(
+                'SELECT duration_seconds FROM videos WHERE title = :title',
+                ['title' => $validTitle],
+            ));
+            $videoId = $connection->fetchOne('SELECT id FROM videos WHERE title = :title', ['title' => $validTitle]);
+            self::assertIsString($videoId);
+            $client->request('GET', '/admin/videos/'.$videoId.'/edit');
+            self::assertResponseIsSuccessful();
+            self::assertSelectorExists('input[name="duration_minutes"][value="2"]');
+            self::assertSelectorExists('input[name="duration_seconds_part"][value="3"]');
+            self::assertSelectorTextContains('label', 'Aufrufe');
+            self::assertSelectorExists('input[readonly][aria-readonly="true"]');
+
+            $client->request('GET', '/admin/videos/new');
+            self::assertResponseIsSuccessful();
+            $csrfToken = $client->getCrawler()->filter('form[data-video-source-metadata] input[name="_token"]')->attr('value');
+            self::assertIsString($csrfToken);
+            $client->request('POST', '/admin/videos/new', [
+                '_token' => $csrfToken,
+                'title' => $invalidTitle,
+                'description' => 'Invalid duration regression.',
+                'category' => '',
+                'tags' => '',
+                'source_type' => 'embed',
+                'source_url' => $sourceUrl,
+                'duration_minutes' => '2',
+                'duration_seconds_part' => '60',
+                'status' => 'draft',
+                'embed_origins' => '',
+            ]);
+            self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+            self::assertSelectorTextContains('[role="alert"]', '0 bis 59 Sekunden');
+            self::assertSame(0, (int) $connection->fetchOne(
+                'SELECT COUNT(*) FROM videos WHERE title = :title',
+                ['title' => $invalidTitle],
+            ));
+        } finally {
+            $connection->delete('videos', ['title' => $validTitle]);
+            $connection->delete('videos', ['title' => $invalidTitle]);
             $this->removeUser($client, $email);
         }
     }

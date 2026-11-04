@@ -5,17 +5,58 @@
         const sourceInput = form.querySelector('[name="source_url"]');
         const titleInput = form.querySelector('[name="title"]');
         const descriptionInput = form.querySelector('[name="description"]');
-        const durationInput = form.querySelector('[name="duration_seconds"]');
+        const durationMinutesInput = form.querySelector('[name="duration_minutes"]');
+        const durationSecondsInput = form.querySelector('[name="duration_seconds_part"]');
+        const sourceTypeInput = form.querySelector('[data-video-source-type]');
+        const sourceUrlField = form.querySelector('[data-video-source-url-field]');
+        const sourceUrlLabel = form.querySelector('[data-video-source-url-label]');
+        const sourceFileField = form.querySelector('[data-video-source-file-field]');
+        const sourceFileInput = form.querySelector('[data-video-source-file]');
+        const sourceHelp = form.querySelectorAll('[data-video-source-help]');
 
         if (!(button instanceof HTMLButtonElement)
             || !(status instanceof HTMLElement)
             || !(sourceInput instanceof HTMLInputElement)
             || !(titleInput instanceof HTMLInputElement)
             || !(descriptionInput instanceof HTMLTextAreaElement)
-            || !(durationInput instanceof HTMLInputElement)
+            || !(durationMinutesInput instanceof HTMLInputElement)
+            || !(durationSecondsInput instanceof HTMLInputElement)
+            || !(sourceTypeInput instanceof HTMLSelectElement)
+            || !(sourceUrlField instanceof HTMLElement)
+            || !(sourceUrlLabel instanceof HTMLElement)
+            || !(sourceFileField instanceof HTMLElement)
+            || !(sourceFileInput instanceof HTMLInputElement)
         ) {
             continue;
         }
+
+        const updateSourceFields = () => {
+            const sourceType = sourceTypeInput.value;
+            const isFile = 'file' === sourceType;
+            sourceUrlField.hidden = isFile;
+            sourceInput.required = !isFile;
+            sourceFileField.hidden = !isFile;
+            sourceFileInput.required = isFile && '1' !== form.dataset.videoEdit;
+            if (!isFile) {
+                sourceFileInput.value = '';
+            }
+            button.hidden = 'embed' !== sourceType;
+
+            if ('embed' === sourceType) {
+                sourceUrlLabel.textContent = form.dataset.providerUrlLabel || '';
+            } else if ('stream' === sourceType) {
+                sourceUrlLabel.textContent = form.dataset.streamUrlLabel || '';
+            } else {
+                sourceUrlLabel.textContent = form.dataset.directUrlLabel || '';
+            }
+
+            for (const help of sourceHelp) {
+                help.hidden = help.dataset.videoSourceHelp !== sourceType;
+            }
+        };
+
+        sourceTypeInput.addEventListener('change', updateSourceFields);
+        updateSourceFields();
 
         button.addEventListener('click', async () => {
             const endpoint = form.dataset.metadataEndpoint || '';
@@ -61,7 +102,8 @@
                 titleInput.value = metadata.title;
                 descriptionInput.value = metadata.description;
                 if (null !== metadata.duration_seconds) {
-                    durationInput.value = String(metadata.duration_seconds);
+                    durationMinutesInput.value = String(Math.floor(metadata.duration_seconds / 60));
+                    durationSecondsInput.value = String(metadata.duration_seconds % 60);
                 }
                 status.textContent = form.dataset.metadataLoaded || '';
             } catch {
