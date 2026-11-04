@@ -12,20 +12,16 @@ final class HostingCachePoolProvider extends ProxyAdapter
 {
     private readonly SwitchableCachePool $switchablePool;
 
-    private readonly string $namespace;
-
-    private readonly CachePoolAdapterInterface $safeFallback;
-
     private string $selectedAdapterIdentifier;
 
     private CacheItemPoolInterface $selectedPool;
 
     public function __construct(
-        string $namespace,
+        private readonly string $namespace,
         private readonly HostingAdapterSelector $selector,
         private readonly HostingProfileDetector $profileDetector,
         private readonly HostingSecurityFeatureSelectionStoreInterface $selectionStore,
-        CachePoolAdapterInterface $safeFallback,
+        private readonly CachePoolAdapterInterface $safeFallback,
     ) {
         if (HostingService::Cache !== $safeFallback->service()) {
             throw new \InvalidArgumentException('Der Cache-Fallback muss dem Cache-Dienst zugeordnet sein.');
@@ -43,8 +39,6 @@ final class HostingCachePoolProvider extends ProxyAdapter
             throw new \InvalidArgumentException('Der sichere Cache-Fallback darf keine optionale Schutzfunktion voraussetzen.');
         }
 
-        $this->namespace = $namespace;
-        $this->safeFallback = $safeFallback;
         $selectedAdapter = $this->selectAdapter();
         $this->selectedAdapterIdentifier = $selectedAdapter->identifier();
         $this->selectedPool = $this->createPool($selectedAdapter);
