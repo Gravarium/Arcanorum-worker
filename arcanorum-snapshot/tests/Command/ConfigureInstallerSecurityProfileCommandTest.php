@@ -116,7 +116,7 @@ final class ConfigureInstallerSecurityProfileCommandTest extends KernelTestCase
             $validTester->setInputs(['1']);
 
             self::assertSame(Command::SUCCESS, $validTester->execute([], ['interactive' => true]));
-            self::assertStringContainsString('1 optionale Schutzfunktion(en) ausgewählt; 1 davon sind nachgewiesen und in Arcanorum integriert.', $validTester->getDisplay());
+            self::assertStringContainsString('1 Schutzfunktion(en) ausgewählt; 1 davon verifiziert und integriert.', $validTester->getDisplay());
             self::assertStringContainsString('Laufzeitintegration: vorhanden', $validTester->getDisplay());
 
             $selection = $repository->findCurrent();

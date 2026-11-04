@@ -130,7 +130,7 @@ final class ConfigureInstallerSecurityProfileCommand extends Command
             static fn (HostingSecurityFeatureChoice $choice): bool => $choice->isEnabled(),
         ));
         $io->success(sprintf(
-            '%d optionale Schutzfunktion(en) ausgewählt; %d davon sind nachgewiesen und in Arcanorum integriert.',
+            '%d Schutzfunktion(en) ausgewählt; %d davon verifiziert und integriert.',
             $selectedCount,
             $enabledCount,
         ));
