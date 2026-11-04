@@ -7458,10 +7458,10 @@ final class AdminDashboardTest extends WebTestCase
                 'embed_origins' => '',
             ]);
             self::assertResponseRedirects('/admin/videos');
-            self::assertSame('123', $connection->fetchOne(
+            self::assertTrue(in_array($connection->fetchOne(
                 'SELECT duration_seconds FROM videos WHERE title = :title',
                 ['title' => $validTitle],
-            ));
+            ), [123, '123'], true));
             $videoId = $connection->fetchOne('SELECT id FROM videos WHERE title = :title', ['title' => $validTitle]);
             self::assertIsString($videoId);
             $client->request('GET', '/admin/videos/'.$videoId.'/edit');
@@ -7490,10 +7490,10 @@ final class AdminDashboardTest extends WebTestCase
             ]);
             self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
             self::assertSelectorTextContains('[role="alert"]', '0 bis 59 Sekunden');
-            self::assertSame('0', $connection->fetchOne(
+            self::assertTrue(in_array($connection->fetchOne(
                 'SELECT COUNT(*) FROM videos WHERE title = :title',
                 ['title' => $invalidTitle],
-            ));
+            ), [0, '0'], true));
         } finally {
             $connection->delete('videos', ['title' => $validTitle]);
             $connection->delete('videos', ['title' => $invalidTitle]);
