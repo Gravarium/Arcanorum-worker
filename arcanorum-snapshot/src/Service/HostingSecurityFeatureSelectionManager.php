@@ -67,6 +67,7 @@ final readonly class HostingSecurityFeatureSelectionManager
         }
 
         $report = $this->hostingProfile->detect();
+
         return $this->entityManager->getConnection()->transactional(function () use ($requestedFeatureIds, $report, $requireUninstalled): bool {
             $selection = $this->selections->findCurrentForUpdate();
             if (!$selection instanceof HostingSecuritySelection) {
