@@ -746,10 +746,6 @@ final class NewsArticleHistoryFlowTest extends WebTestCase
                 $this->inner->delete($objectId);
             }
 
-            public function reset(): void
-            {
-                $this->inner->reset();
-            }
         };
         $client->getContainer()->set(PrivateObjectStorageInterface::class, $storage);
 

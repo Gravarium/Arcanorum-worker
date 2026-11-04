@@ -121,7 +121,4 @@ final class InlineImageRecordingStorage implements PrivateObjectStorageInterface
         unset($this->objects[$objectId]);
     }
 
-    public function reset(): void
-    {
-    }
 }

@@ -630,7 +630,4 @@ final class CategoryInlineImageFlowStorage implements PrivateObjectStorageInterf
         unset($this->objects[$objectId]);
     }
 
-    public function reset(): void
-    {
-    }
 }

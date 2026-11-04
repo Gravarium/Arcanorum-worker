@@ -11,6 +11,7 @@ use App\Platform\Hosting\PrivateFileStorage;
 use App\Platform\Hosting\PrivateStorageOperationFailed;
 use App\Platform\Hosting\PrivateStorageProbe;
 use App\Service\PrivateObjectStorageGateway;
+use App\Service\PrivateObjectStorageSelection;
 use PHPUnit\Framework\TestCase;
 
 final class PrivateObjectStorageGatewayTest extends TestCase
@@ -24,7 +25,10 @@ final class PrivateObjectStorageGatewayTest extends TestCase
             ->willReturn([HostingSecurityFeature::PrivateStorage]);
 
         try {
-            $gateway = new PrivateObjectStorageGateway($this->createStorage($paths['public'], $paths['storage']), $selectionStore);
+            $gateway = new PrivateObjectStorageGateway(
+                $this->createStorage($paths['public'], $paths['storage']),
+                new PrivateObjectStorageSelection($selectionStore),
+            );
 
             $gateway->write('selected', 'private-payload');
 
@@ -49,7 +53,7 @@ final class PrivateObjectStorageGatewayTest extends TestCase
             ->willReturn([]);
 
         try {
-            $gateway = new PrivateObjectStorageGateway($storage, $selectionStore);
+            $gateway = new PrivateObjectStorageGateway($storage, new PrivateObjectStorageSelection($selectionStore));
 
             $this->assertOperationIsBlocked(static fn () => $gateway->write('new-object', 'blocked'));
             $this->assertOperationIsBlocked(static fn () => $gateway->read('existing', 64));
@@ -72,7 +76,10 @@ final class PrivateObjectStorageGatewayTest extends TestCase
             ->willThrowException(new \RuntimeException('sensitive database diagnostic'));
 
         try {
-            $gateway = new PrivateObjectStorageGateway($this->createStorage($paths['public'], $paths['storage']), $selectionStore);
+            $gateway = new PrivateObjectStorageGateway(
+                $this->createStorage($paths['public'], $paths['storage']),
+                new PrivateObjectStorageSelection($selectionStore),
+            );
 
             try {
                 $gateway->write('blocked', 'must-not-be-written');
@@ -102,17 +109,18 @@ final class PrivateObjectStorageGatewayTest extends TestCase
             );
 
         try {
-            $gateway = new PrivateObjectStorageGateway($this->createStorage($paths['public'], $paths['storage']), $selectionStore);
+            $selection = new PrivateObjectStorageSelection($selectionStore);
+            $gateway = new PrivateObjectStorageGateway($this->createStorage($paths['public'], $paths['storage']), $selection);
             $this->assertOperationIsBlocked(static fn () => $gateway->write('before-reset', 'blocked'));
 
-            $gateway->reset();
+            $selection->reset();
             $gateway->write('after-reset', 'allowed-after-selection');
             self::assertSame(
                 'allowed-after-selection',
                 $gateway->read('after-reset', strlen('allowed-after-selection')),
             );
 
-            $gateway->reset();
+            $selection->reset();
             $this->assertOperationIsBlocked(static fn () => $gateway->read('after-reset', 64));
             self::assertFileExists($paths['storage'].DIRECTORY_SEPARATOR.'after-reset.bin');
         } finally {

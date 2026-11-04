@@ -11,6 +11,7 @@ use App\Platform\Hosting\PrivateFileStorage;
 use App\Platform\Hosting\PrivateStorageOperationFailed;
 use App\Platform\Hosting\PrivateStorageProbe;
 use App\Service\PrivateObjectStorageGateway;
+use App\Service\PrivateObjectStorageSelection;
 use Doctrine\DBAL\Connection;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
@@ -52,6 +53,7 @@ final class DoctrineHostingSecurityFeatureSelectionStoreIntegrationTest extends 
                 'UPDATE hosting_security_selection SET selected_feature_ids = CAST(:features AS json) WHERE id = :id',
                 ['features' => '[]', 'id' => 1],
             );
+            $selection = new PrivateObjectStorageSelection(new DoctrineHostingSecurityFeatureSelectionStore($connection));
             $gateway = new PrivateObjectStorageGateway(
                 new PrivateFileStorage(
                     $paths['public'],
@@ -59,7 +61,7 @@ final class DoctrineHostingSecurityFeatureSelectionStoreIntegrationTest extends 
                     new PrivateStorageProbe($paths['public'], $paths['storage']),
                     new HostingCapabilityGuard(),
                 ),
-                new DoctrineHostingSecurityFeatureSelectionStore($connection),
+                $selection,
             );
 
             $this->assertOperationIsBlocked(static fn () => $gateway->write('choice', 'blocked'));
@@ -68,7 +70,7 @@ final class DoctrineHostingSecurityFeatureSelectionStoreIntegrationTest extends 
                 'UPDATE hosting_security_selection SET selected_feature_ids = CAST(:features AS json) WHERE id = :id',
                 ['features' => '["private_storage"]', 'id' => 1],
             );
-            $gateway->reset();
+            $selection->reset();
             $gateway->write('choice', 'enabled-after-reset');
             self::assertSame('enabled-after-reset', $gateway->read('choice', strlen('enabled-after-reset')));
 
@@ -76,7 +78,7 @@ final class DoctrineHostingSecurityFeatureSelectionStoreIntegrationTest extends 
                 'UPDATE hosting_security_selection SET selected_feature_ids = CAST(:features AS json) WHERE id = :id',
                 ['features' => '[]', 'id' => 1],
             );
-            $gateway->reset();
+            $selection->reset();
             $this->assertOperationIsBlocked(static fn () => $gateway->delete('choice'));
             self::assertFileExists($paths['storage'].DIRECTORY_SEPARATOR.'choice.bin');
         } finally {

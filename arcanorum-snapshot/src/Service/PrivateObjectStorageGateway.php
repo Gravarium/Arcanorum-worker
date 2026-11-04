@@ -4,34 +4,16 @@ declare(strict_types=1);
 
 namespace App\Service;
 
-use App\Platform\Hosting\HostingSecurityFeature;
-use App\Platform\Hosting\HostingSecurityFeatureSelectionStoreInterface;
 use App\Platform\Hosting\PrivateFileStorage;
 use App\Platform\Hosting\PrivateObjectStorageInterface;
 use App\Platform\Hosting\PrivateStorageOperationFailed;
 
 final class PrivateObjectStorageGateway implements PrivateObjectStorageInterface
 {
-    private bool $enabled = false;
-
     public function __construct(
         private readonly PrivateFileStorage $storage,
-        private readonly HostingSecurityFeatureSelectionStoreInterface $selectionStore,
+        private readonly PrivateObjectStorageSelection $selection,
     ) {
-        $this->reset();
-    }
-
-    public function reset(): void
-    {
-        try {
-            $selectedFeatures = $this->selectionStore->selectedFeatures();
-        } catch (\Throwable) {
-            $this->enabled = false;
-
-            return;
-        }
-
-        $this->enabled = in_array(HostingSecurityFeature::PrivateStorage, $selectedFeatures, true);
     }
 
     public function write(string $objectId, string $contents): void
@@ -55,7 +37,7 @@ final class PrivateObjectStorageGateway implements PrivateObjectStorageInterface
 
     private function requireEnabled(): void
     {
-        if (!$this->enabled) {
+        if (!$this->selection->isEnabled()) {
             throw new PrivateStorageOperationFailed();
         }
     }

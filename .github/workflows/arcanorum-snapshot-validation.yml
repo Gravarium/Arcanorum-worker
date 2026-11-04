@@ -273,16 +273,35 @@ jobs:
           node --test --test-reporter=tap tests/JavaScript/*.test.mjs
 
       - name: PHPUnit full suite with strict failures and coverage
+        shell: bash
         run: |
+          set -euo pipefail
           mkdir -p var/test-results
+          set +e
           php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
             --fail-on-risky --fail-on-warning --fail-on-deprecation \
             --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
             --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
-            --coverage-text --coverage-clover=var/test-results/coverage.xml
+            --coverage-text --coverage-clover=var/test-results/coverage.xml \
+            > var/test-results/phpunit-full.log 2>&1
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            echo 'Full PHPUnit suite with coverage: FAIL; diagnostics and test artifacts withheld.'
+            exit "$status"
+          fi
+          echo 'Full PHPUnit suite with coverage: PASS; detailed results withheld.'
 
       - name: Validate PHPUnit report completeness
-        run: python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
+        shell: bash
+        run: |
+          set -euo pipefail
+          if python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml > var/test-results/junit-validation.log 2>&1; then
+            echo 'JUnit report completeness: PASS.'
+          else
+            echo 'JUnit report completeness: FAIL; diagnostics withheld.'
+            exit 1
+          fi
 
   validate-installer-bootstrap-focused:
     if: github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'installer-bootstrap-focused'
@@ -626,7 +645,9 @@ jobs:
               src/Platform/Hosting/PrivateObjectStorageInterface.php
               src/Platform/Hosting/RedisCachePoolAdapter.php
               src/Service/PrivateObjectStorageGateway.php
+              src/Service/PrivateObjectStorageSelection.php
               config/services_test.yaml
+              tests/Controller/AdminDashboardTest.php
               tests/Controller/ContentInlineImageFlowTest.php
               tests/Controller/NewsArticleHistoryFlowTest.php
               tests/Platform/Hosting/DoctrineHostingSecurityFeatureSelectionStoreIntegrationTest.php
@@ -907,6 +928,7 @@ jobs:
             tests/Platform/Hosting/HostingAdapterSelectorTest.php \
             tests/Platform/Hosting/HostingCachePoolProviderTest.php \
             tests/Platform/Hosting/PrivateFileStorageTest.php \
+            tests/Controller/AdminDashboardTest.php \
             tests/Controller/ContentInlineImageFlowTest.php \
             tests/Controller/NewsArticleHistoryFlowTest.php \
             tests/Service/ContentInlineImageUploadServiceTest.php \
