@@ -242,7 +242,9 @@ final class AdminVideoThumbnailFlowTest extends WebTestCase
                     self::assertSame('GET', $method);
                     self::assertSame(0, $options['max_redirects'] ?? null);
                     $headers = $options['headers'] ?? null;
-                    self::assertIsArray($headers);
+                    if (!is_array($headers)) {
+                        throw new \UnexpectedValueException('Thumbnail request headers must be an array.');
+                    }
                     self::assertSame('image/jpeg, image/png, image/webp', $headers['Accept'] ?? null);
                     self::assertSame('https://images.example.test/video/cover.png', $url);
 
