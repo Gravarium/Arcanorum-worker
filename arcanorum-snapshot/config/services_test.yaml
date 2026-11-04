@@ -12,3 +12,10 @@ services:
 
     App\Platform\Security\RuntimeAttestationReportProviderInterface:
         alias: App\Tests\Support\VerifiedRuntimeAttestationReportProvider
+
+    App\Tests\Support\TestHostingSecurityFeatureSelectionStore:
+        autowire: true
+        autoconfigure: true
+
+    App\Platform\Hosting\HostingSecurityFeatureSelectionStoreInterface:
+        alias: App\Tests\Support\TestHostingSecurityFeatureSelectionStore

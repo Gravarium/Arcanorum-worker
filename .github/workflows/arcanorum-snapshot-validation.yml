@@ -623,10 +623,17 @@ jobs:
               src/Platform/Hosting/HostingCachePoolProvider.php
               src/Platform/Hosting/HostingSecurityFeatureSelectionStoreInterface.php
               src/Platform/Hosting/PrivateFileStorage.php
+              src/Platform/Hosting/PrivateObjectStorageInterface.php
               src/Platform/Hosting/RedisCachePoolAdapter.php
               src/Service/PrivateObjectStorageGateway.php
+              config/services_test.yaml
+              tests/Controller/ContentInlineImageFlowTest.php
+              tests/Controller/NewsArticleHistoryFlowTest.php
               tests/Platform/Hosting/DoctrineHostingSecurityFeatureSelectionStoreIntegrationTest.php
               tests/Platform/Hosting/DoctrineHostingSecurityFeatureSelectionStoreTest.php
+              tests/Service/ContentInlineImageUploadServiceTest.php
+              tests/Service/VideoSocialPreviewGeneratorTest.php
+              tests/Support/TestHostingSecurityFeatureSelectionStore.php
               tests/Platform/Hosting/HostingAdapterSelectorTest.php
               tests/Platform/Hosting/HostingCachePoolProviderTest.php
               tests/Platform/Hosting/PrivateFileStorageTest.php
@@ -900,7 +907,11 @@ jobs:
             tests/Platform/Hosting/HostingAdapterSelectorTest.php \
             tests/Platform/Hosting/HostingCachePoolProviderTest.php \
             tests/Platform/Hosting/PrivateFileStorageTest.php \
+            tests/Controller/ContentInlineImageFlowTest.php \
+            tests/Controller/NewsArticleHistoryFlowTest.php \
+            tests/Service/ContentInlineImageUploadServiceTest.php \
             tests/Service/PrivateObjectStorageGatewayTest.php \
+            tests/Service/VideoSocialPreviewGeneratorTest.php \
             tests/Controller/HomePageTest.php > var/test-results/phpunit-hosting-security-selection.log 2>&1
           status=$?
           set -e

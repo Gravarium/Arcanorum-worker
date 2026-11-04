@@ -9,9 +9,8 @@ use App\Platform\Hosting\HostingSecurityFeatureSelectionStoreInterface;
 use App\Platform\Hosting\PrivateFileStorage;
 use App\Platform\Hosting\PrivateObjectStorageInterface;
 use App\Platform\Hosting\PrivateStorageOperationFailed;
-use Symfony\Contracts\Service\ResetInterface;
 
-final class PrivateObjectStorageGateway implements PrivateObjectStorageInterface, ResetInterface
+final class PrivateObjectStorageGateway implements PrivateObjectStorageInterface
 {
     private bool $enabled = false;
 

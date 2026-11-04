@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Platform\Hosting;
 
-interface PrivateObjectStorageInterface
+use Symfony\Contracts\Service\ResetInterface;
+
+interface PrivateObjectStorageInterface extends ResetInterface
 {
     public function write(string $objectId, string $contents): void;
 

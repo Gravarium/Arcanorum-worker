@@ -204,6 +204,10 @@ final readonly class PrivateFileStorage implements PrivateObjectStorageInterface
         }
     }
 
+    public function reset(): void
+    {
+    }
+
     private function requirePrivateStorageCapability(): void
     {
         try {
