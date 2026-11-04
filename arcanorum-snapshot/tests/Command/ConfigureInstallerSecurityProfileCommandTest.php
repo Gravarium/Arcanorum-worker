@@ -106,6 +106,7 @@ final class ConfigureInstallerSecurityProfileCommandTest extends KernelTestCase
             self::assertStringContainsString('immer aktiv', $invalidTester->getDisplay());
             self::assertStringContainsString('Privater Dateispeicher', $invalidTester->getDisplay());
             self::assertStringContainsString('derzeit nicht auswählbar', $invalidTester->getDisplay());
+            self::assertStringContainsString('Laufzeitintegration: in dieser Version nicht enthalten', $invalidTester->getDisplay());
 
             $selection = $repository->findCurrent();
             self::assertInstanceOf(HostingSecuritySelection::class, $selection);
@@ -115,7 +116,8 @@ final class ConfigureInstallerSecurityProfileCommandTest extends KernelTestCase
             $validTester->setInputs(['1']);
 
             self::assertSame(Command::SUCCESS, $validTester->execute([], ['interactive' => true]));
-            self::assertStringContainsString('erneut bestätigtem Host-Nachweis', $validTester->getDisplay());
+            self::assertStringContainsString('1 optionale Schutzfunktion(en) ausgewählt; 1 davon sind nachgewiesen und in Arcanorum integriert.', $validTester->getDisplay());
+            self::assertStringContainsString('Laufzeitintegration: vorhanden', $validTester->getDisplay());
 
             $selection = $repository->findCurrent();
             self::assertInstanceOf(HostingSecuritySelection::class, $selection);

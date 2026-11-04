@@ -254,3 +254,7 @@
 'Der Bestätigungscode ist ungültig. Prüfen Sie die Gerätezeit und versuchen Sie es erneut.': 'رمز التحقق غير صالح. تحقق من وقت جهازك وحاول مجددًا.'
 'Der Installationsschritt ist vorübergehend nicht verfügbar.': 'خطوة الإعداد غير متاحة مؤقتًا.'
 'Weiter zur Einrichtung des Administratorkontos': 'المتابعة إلى إعداد حساب المسؤول'
+'Laufzeitintegration': 'تكامل وقت التشغيل'
+'In Arcanorum integriert': 'مدمج في Arcanorum'
+'In dieser Version nicht integriert': 'غير مدمج في هذا الإصدار'
+'Ausgewählt, aber noch nicht aktiv: Die Laufzeitintegration ist in dieser Version nicht vorhanden. Die Auswahl bleibt gespeichert und wird erst nach Integration verwendet.': 'تم الاختيار، لكنه غير نشط بعد: لا يتضمن هذا الإصدار تكاملًا لوقت التشغيل. يظل الاختيار محفوظًا ولن يُستخدم إلا بعد إضافة التكامل.'

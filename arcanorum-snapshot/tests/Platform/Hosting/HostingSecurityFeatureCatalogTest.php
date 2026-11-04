@@ -51,6 +51,41 @@ final class HostingSecurityFeatureCatalogTest extends TestCase
         self::assertTrue($choice->isAvailable());
         self::assertTrue($choice->isEnabled());
         self::assertFalse($choice->hasSelectionDrift());
+        self::assertFalse($choice->hasIntegrationGap());
+    }
+
+    public function testSavedChoiceWithoutRuntimeIntegrationIsNotReportedAsEnabled(): void
+    {
+        $report = $this->report(array_fill_keys(
+            array_map(static fn (HostingCapability $capability): string => $capability->value, HostingCapability::cases()),
+            CapabilityStatus::Verified,
+        ));
+        $choice = $this->choice(HostingSecurityFeature::SecretStore, $report, ['secret_store']);
+
+        self::assertTrue($choice->selected);
+        self::assertTrue($choice->isAvailable());
+        self::assertFalse($choice->hasRuntimeIntegration());
+        self::assertFalse($choice->isEnabled());
+        self::assertFalse($choice->hasSelectionDrift());
+        self::assertTrue($choice->hasIntegrationGap());
+        self::assertSame(
+            ['secret_store'],
+            new HostingSecurityFeatureCatalog()->replaceSelection(['secret_store'], [], $report),
+        );
+    }
+
+    public function testOnlyImplementedFeatureIntegrationsAreReportedAsAvailable(): void
+    {
+        self::assertSame(
+            [
+                HostingSecurityFeature::PrivateStorage,
+                HostingSecurityFeature::PrivateRedisEndpoint,
+            ],
+            array_values(array_filter(
+                HostingSecurityFeature::cases(),
+                static fn (HostingSecurityFeature $feature): bool => $feature->hasRuntimeIntegration(),
+            )),
+        );
     }
 
     public function testSelectedFeatureRemainsSelectedButInactiveWhenEvidenceBecomesUnknown(): void

@@ -67,6 +67,8 @@ final class AdminHostingSecurityControllerTest extends WebTestCase
             self::assertContains('no-store', $cacheControlDirectives);
             self::assertSame('noindex, nofollow', $client->getResponse()->headers->get('X-Robots-Tag'));
             self::assertSelectorTextContains('#mandatory-security-heading', 'Verbindlicher Basisschutz');
+            self::assertSelectorTextContains('#hosting-security-form', 'Laufzeitintegration: In Arcanorum integriert');
+            self::assertSelectorTextContains('#hosting-security-form', 'In dieser Version nicht integriert');
             self::assertSelectorExists('input[name="selected_features[]"][value="private_storage"]:not([disabled])');
 
             $client->request('POST', '/admin/system/security', ['selected_features' => ['private_storage']]);

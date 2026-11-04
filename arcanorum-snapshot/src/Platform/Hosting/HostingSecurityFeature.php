@@ -40,6 +40,19 @@ enum HostingSecurityFeature: string
         };
     }
 
+    public function hasRuntimeIntegration(): bool
+    {
+        return match ($this) {
+            self::PrivateStorage,
+            self::PrivateRedisEndpoint => true,
+            self::DatabaseRoleSeparation,
+            self::ProcessIsolation,
+            self::OutboundNetworkPolicy,
+            self::SecretStore,
+            self::VerifiedBackupRestore => false,
+        };
+    }
+
     /**
      * @return non-empty-list<HostingCapability>
      */

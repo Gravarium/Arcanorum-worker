@@ -74,6 +74,7 @@ final class ConfigureInstallerSecurityProfileCommand extends Command
             $status = $this->statusLabel($choice);
             $io->text(sprintf('%s — %s', $choice->feature->label(), $status));
             $io->text('  '.$choice->feature->description());
+            $io->text('  Laufzeitintegration: '.($choice->hasRuntimeIntegration() ? 'vorhanden' : 'in dieser Version nicht enthalten'));
 
             if (!$choice->isAvailable() && !$choice->selected) {
                 continue;
@@ -120,15 +121,20 @@ final class ConfigureInstallerSecurityProfileCommand extends Command
             return Command::FAILURE;
         }
 
+        $selectedCount = count(array_filter(
+            $savedChoices,
+            static fn (HostingSecurityFeatureChoice $choice): bool => $choice->selected,
+        ));
         $enabledCount = count(array_filter(
             $savedChoices,
             static fn (HostingSecurityFeatureChoice $choice): bool => $choice->isEnabled(),
         ));
         $io->success(sprintf(
-            '%d optionale Schutzfunktion(en) ausgewählt. Aktiv sind nur Funktionen mit erneut bestätigtem Host-Nachweis.',
+            '%d optionale Schutzfunktion(en) ausgewählt; %d davon sind nachgewiesen und in Arcanorum integriert.',
+            $selectedCount,
             $enabledCount,
         ));
-        $io->note('Diese Auswahl aktiviert keine Anbieterintegration ohne deren separate, erfolgreiche Einrichtung.');
+        $io->note('Eine gespeicherte Auswahl aktiviert keine fehlende Integration. Jede Funktion prüft ihre Hostvoraussetzungen vor der Nutzung erneut.');
 
         return Command::SUCCESS;
     }
@@ -169,15 +175,21 @@ final class ConfigureInstallerSecurityProfileCommand extends Command
     private function statusLabel(HostingSecurityFeatureChoice $choice): string
     {
         if ($choice->isEnabled()) {
-            return 'verifiziert und ausgewählt';
+            return 'Hostnachweis verifiziert, ausgewählt und integriert';
         }
 
         if ($choice->hasSelectionDrift()) {
-            return 'noch ausgewählt, aber derzeit nicht wirksam: der Host-Nachweis fehlt';
+            return 'ausgewählt, aber derzeit nicht nutzbar: der Hostnachweis fehlt';
+        }
+
+        if ($choice->hasIntegrationGap()) {
+            return 'ausgewählt und hostseitig verifiziert, aber nicht nutzbar: die Integration fehlt';
         }
 
         if ($choice->isAvailable()) {
-            return 'verifiziert und auswählbar';
+            return $choice->hasRuntimeIntegration()
+                ? 'Hostnachweis verifiziert und auswählbar'
+                : 'Hostnachweis verifiziert; Laufzeitintegration fehlt';
         }
 
         return $choice->availability->label().' — derzeit nicht auswählbar';

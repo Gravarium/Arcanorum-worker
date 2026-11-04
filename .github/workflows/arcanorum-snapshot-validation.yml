@@ -485,22 +485,28 @@ jobs:
 
       - name: Check focused PHP syntax
         run: |
+          php -l src/Command/ConfigureInstallerSecurityProfileCommand.php
+          php -l src/Platform/Hosting/HostingSecurityFeature.php
+          php -l src/Platform/Hosting/HostingSecurityFeatureChoice.php
+          php -l tests/Command/ConfigureInstallerSecurityProfileCommandTest.php
+          php -l tests/Platform/Hosting/HostingSecurityFeatureCatalogTest.php
           php -l tests/Controller/InstallerBootstrapFlowTest.php
           php -l tests/Controller/InstallerSecurityProfileControllerTest.php
+          php -l tests/Controller/AdminHostingSecurityControllerTest.php
 
       - name: PHPStan on the installer flow and security selection tests
-        run: vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --no-progress --error-format=github --memory-limit=1G tests/Controller/InstallerBootstrapFlowTest.php tests/Controller/InstallerSecurityProfileControllerTest.php
+        run: vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --no-progress --error-format=github --memory-limit=1G src/Command/ConfigureInstallerSecurityProfileCommand.php src/Platform/Hosting/HostingSecurityFeature.php src/Platform/Hosting/HostingSecurityFeatureChoice.php tests/Command/ConfigureInstallerSecurityProfileCommandTest.php tests/Platform/Hosting/HostingSecurityFeatureCatalogTest.php tests/Controller/InstallerBootstrapFlowTest.php tests/Controller/InstallerSecurityProfileControllerTest.php tests/Controller/AdminHostingSecurityControllerTest.php
 
       - name: PHP CS Fixer on the installer flow and security selection tests
-        run: vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --diff --using-cache=no tests/Controller/InstallerBootstrapFlowTest.php tests/Controller/InstallerSecurityProfileControllerTest.php
+        run: vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --diff --using-cache=no src/Command/ConfigureInstallerSecurityProfileCommand.php src/Platform/Hosting/HostingSecurityFeature.php src/Platform/Hosting/HostingSecurityFeatureChoice.php tests/Command/ConfigureInstallerSecurityProfileCommandTest.php tests/Platform/Hosting/HostingSecurityFeatureCatalogTest.php tests/Controller/InstallerBootstrapFlowTest.php tests/Controller/InstallerSecurityProfileControllerTest.php tests/Controller/AdminHostingSecurityControllerTest.php
 
       - name: Rector dry run on the installer flow and security selection tests
-        run: vendor/bin/rector process --config=rector.php --dry-run --no-progress-bar --output-format=github tests/Controller/InstallerBootstrapFlowTest.php tests/Controller/InstallerSecurityProfileControllerTest.php
+        run: vendor/bin/rector process --config=rector.php --dry-run --no-progress-bar --output-format=github src/Command/ConfigureInstallerSecurityProfileCommand.php src/Platform/Hosting/HostingSecurityFeature.php src/Platform/Hosting/HostingSecurityFeatureChoice.php tests/Command/ConfigureInstallerSecurityProfileCommandTest.php tests/Platform/Hosting/HostingSecurityFeatureCatalogTest.php tests/Controller/InstallerBootstrapFlowTest.php tests/Controller/InstallerSecurityProfileControllerTest.php tests/Controller/AdminHostingSecurityControllerTest.php
 
       - name: Psalm taint analysis on the installer flow and security selection tests
         run: |
           mkdir -p var/test-results
-          vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm-installer-bootstrap.sarif tests/Controller/InstallerBootstrapFlowTest.php tests/Controller/InstallerSecurityProfileControllerTest.php
+          vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm-installer-bootstrap.sarif src/Command/ConfigureInstallerSecurityProfileCommand.php src/Platform/Hosting/HostingSecurityFeature.php src/Platform/Hosting/HostingSecurityFeatureChoice.php tests/Command/ConfigureInstallerSecurityProfileCommandTest.php tests/Platform/Hosting/HostingSecurityFeatureCatalogTest.php tests/Controller/InstallerBootstrapFlowTest.php tests/Controller/InstallerSecurityProfileControllerTest.php tests/Controller/AdminHostingSecurityControllerTest.php
 
       - name: Prepare test database and lint installer translations and template
         run: |
@@ -508,6 +514,8 @@ jobs:
           php bin/console doctrine:migrations:migrate --env=test --no-interaction
           php bin/console doctrine:schema:validate --skip-sync
           php bin/console lint:twig templates/installer/security_profile.html.twig
+          php bin/console lint:twig templates/admin/system/security.html.twig
+          php bin/console lint:yaml translations/messages.ar.yaml
           php bin/console lint:yaml translations/messages.de.yaml
           php bin/console lint:yaml translations/messages.en.yaml
 
@@ -521,8 +529,11 @@ jobs:
             --fail-on-risky --fail-on-warning --fail-on-deprecation \
             --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
             --fail-on-empty-test-suite --log-junit=var/test-results/junit-installer-bootstrap.xml \
+            tests/Command/ConfigureInstallerSecurityProfileCommandTest.php \
+            tests/Platform/Hosting/HostingSecurityFeatureCatalogTest.php \
             tests/Controller/InstallerBootstrapFlowTest.php \
-            tests/Controller/InstallerSecurityProfileControllerTest.php > var/test-results/phpunit-installer-bootstrap.log 2>&1
+            tests/Controller/InstallerSecurityProfileControllerTest.php \
+            tests/Controller/AdminHostingSecurityControllerTest.php > var/test-results/phpunit-installer-bootstrap.log 2>&1
           status=$?
           set -e
           if [ "$status" -ne 0 ]; then

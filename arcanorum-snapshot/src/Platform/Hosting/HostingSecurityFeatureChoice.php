@@ -18,13 +18,23 @@ final readonly class HostingSecurityFeatureChoice
         return CapabilityStatus::Verified === $this->availability;
     }
 
+    public function hasRuntimeIntegration(): bool
+    {
+        return $this->feature->hasRuntimeIntegration();
+    }
+
     public function isEnabled(): bool
     {
-        return $this->selected && $this->isAvailable();
+        return $this->selected && $this->isAvailable() && $this->hasRuntimeIntegration();
     }
 
     public function hasSelectionDrift(): bool
     {
         return $this->selected && !$this->isAvailable();
+    }
+
+    public function hasIntegrationGap(): bool
+    {
+        return $this->selected && !$this->hasRuntimeIntegration();
     }
 }

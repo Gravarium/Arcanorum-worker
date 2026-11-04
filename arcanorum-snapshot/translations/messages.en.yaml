@@ -2198,3 +2198,7 @@ Admin: Administration
 'Die Datenbankprüfung ist derzeit begrenzt. Versuchen Sie es später erneut.': 'Database checks are temporarily rate limited. Try again later.'
 'Die Datenbankprüfung ist vorübergehend nicht verfügbar.': 'The database check is temporarily unavailable.'
 'Die Anfrage enthält nicht zulässige Felder.': 'The request contains fields that are not allowed.'
+'Laufzeitintegration': 'Runtime integration'
+'In Arcanorum integriert': 'Integrated in Arcanorum'
+'In dieser Version nicht integriert': 'Not integrated in this version'
+'Ausgewählt, aber noch nicht aktiv: Die Laufzeitintegration ist in dieser Version nicht vorhanden. Die Auswahl bleibt gespeichert und wird erst nach Integration verwendet.': 'Selected, but not active yet: This version does not include a runtime integration. The selection remains saved and will only be used after an integration is added.'

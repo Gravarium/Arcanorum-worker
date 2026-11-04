@@ -133,6 +133,8 @@ final class InstallerBootstrapFlowTest extends WebTestCase
             $this->assertPrivateNoStore($client);
             self::assertSelectorTextContains('h1', 'Hosting-Sicherheitsprofil');
             self::assertSelectorExists('#mandatory-security-heading');
+            self::assertSelectorTextContains('#installer-hosting-security-form', 'Laufzeitintegration: In Arcanorum integriert');
+            self::assertSelectorTextContains('#installer-hosting-security-form', 'In dieser Version nicht integriert');
             self::assertSelectorExists('input[name="selected_features[]"][value="private_storage"]:not([disabled])');
             self::assertSelectorExists('input[name="selected_features[]"][value="secret_store"][disabled]');
             self::assertStringNotContainsString('/private/config', (string) $client->getResponse()->getContent());

@@ -53,9 +53,13 @@
                         <strong>{{ choice.feature.label|trans }}</strong>
                     </label>
                     <p class="muted">{{ choice.feature.description|trans }}</p>
+                    <p class="muted"><strong>{{ 'Laufzeitintegration'|trans }}:</strong> {{ (choice.hasRuntimeIntegration() ? 'In Arcanorum integriert' : 'In dieser Version nicht integriert')|trans }}</p>
                     <span class="status-pill {{ choice.availability.cssClass() }}">{{ choice.availability.label|trans }}</span>
                     {% if choice.hasSelectionDrift() %}
                         <p class="field-error" role="alert">{{ 'Ausgewählt, aber der aktuelle Hostnachweis fehlt. Die Funktion ist nicht als verfügbar bestätigt. Entfernen Sie die Auswahl oder stellen Sie den Nachweis wieder her.'|trans }}</p>
+                    {% endif %}
+                    {% if choice.hasIntegrationGap() %}
+                        <p class="muted" role="status">{{ 'Ausgewählt, aber noch nicht aktiv: Die Laufzeitintegration ist in dieser Version nicht vorhanden. Die Auswahl bleibt gespeichert und wird erst nach Integration verwendet.'|trans }}</p>
                     {% endif %}
                 </div>
             {% endfor %}

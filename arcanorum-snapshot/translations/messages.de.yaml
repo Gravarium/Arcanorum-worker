@@ -500,3 +500,7 @@
 'Die Datenbankprüfung ist derzeit begrenzt. Versuchen Sie es später erneut.': 'Die Datenbankprüfung ist derzeit begrenzt. Versuchen Sie es später erneut.'
 'Die Datenbankprüfung ist vorübergehend nicht verfügbar.': 'Die Datenbankprüfung ist vorübergehend nicht verfügbar.'
 'Die Anfrage enthält nicht zulässige Felder.': 'Die Anfrage enthält nicht zulässige Felder.'
+'Laufzeitintegration': 'Laufzeitintegration'
+'In Arcanorum integriert': 'In Arcanorum integriert'
+'In dieser Version nicht integriert': 'In dieser Version nicht integriert'
+'Ausgewählt, aber noch nicht aktiv: Die Laufzeitintegration ist in dieser Version nicht vorhanden. Die Auswahl bleibt gespeichert und wird erst nach Integration verwendet.': 'Ausgewählt, aber noch nicht aktiv: Die Laufzeitintegration ist in dieser Version nicht vorhanden. Die Auswahl bleibt gespeichert und wird erst nach Integration verwendet.'
