@@ -1605,7 +1605,7 @@ final class AdminDashboardTest extends WebTestCase
             self::assertSelectorTextContains('nav[aria-label="Hauptnavigation"]', 'Kommentare');
             self::assertSelectorTextContains('nav[aria-label="Hauptnavigation"]', 'Einstellungen');
             self::assertCount(12, $client->getCrawler()->filter('details.navigation-group'));
-            self::assertSelectorCount(0, 'details.navigation-group:not([open])');
+            self::assertCount(12, $client->getCrawler()->filter('details.navigation-group:not([open])'));
             self::assertCount(1, $client->getCrawler()->filterXPath('//nav[@aria-label="Hauptnavigation"]//a[normalize-space()="Video und Wiedergabe"]'));
             self::assertSelectorExists('nav[aria-label="Hauptnavigation"] > a.navigation-dashboard[href="/admin"]');
             self::assertSelectorTextContains('nav[aria-label="Hauptnavigation"] > details.navigation-group:nth-of-type(1) > summary', 'Videos');
@@ -7401,7 +7401,8 @@ final class AdminDashboardTest extends WebTestCase
             self::assertSelectorExists('input[name="source_url"][placeholder="https://www.youtube.com/watch?v=…"]');
             self::assertSelectorTextContains('.video-source-url-field label', 'YouTube- oder Videoanbieter-URL');
             self::assertSelectorExists('button[data-video-metadata-fetch]');
-            self::assertSelectorTextContains('button[data-video-metadata-fetch]', 'Titel, Beschreibung und Laufzeit übernehmen');
+            self::assertSelectorTextContains('button[data-video-metadata-fetch]', 'Titel, Beschreibung, Laufzeit und Vorschaubild übernehmen');
+            self::assertSelectorExists('input[name="thumbnail_url"][type="url"]');
             self::assertSelectorExists('input[name="title"]');
             self::assertSelectorExists('input[name="slug"]');
             self::assertSelectorExists('textarea[name="description"]');
@@ -7423,8 +7424,8 @@ final class AdminDashboardTest extends WebTestCase
             self::assertSelectorExists('input[name="custom_fields[0][value]"]');
             self::assertSelectorExists('a[href="/admin/categories?type=video"]');
             self::assertSelectorNotExists('.admin-navigation-icon');
-            self::assertSelectorCount(0, 'details.navigation-group:not([open])');
-            self::assertSelectorCount(0, 'details.navigation-subgroup:not([open])');
+            self::assertCount(11, $client->getCrawler()->filter('details.navigation-group:not([open])'));
+            self::assertCount(1, $client->getCrawler()->filter('details.navigation-subgroup:not([open])'));
             self::assertSelectorExists('details.navigation-group[open] > summary[title="Videos"]');
             self::assertSelectorTextContains('details.navigation-subgroup[open] > summary', 'Video hinzufügen');
             self::assertSelectorExists('nav[aria-label="Hauptnavigation"] a[href="/admin/videos/new?source_type=embed"][aria-current="page"]');
