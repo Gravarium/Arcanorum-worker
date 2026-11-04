@@ -313,9 +313,10 @@ final class AdminVideoThumbnailFlowTest extends WebTestCase
                     'thumbnail_url' => 'https://images.example.test/video/cover.png',
                 ]);
             } catch (\Throwable $exception) {
-                $mockFailure = preg_match('/thumbnail_mock_failure=([a-z_]+)/', $exception->getMessage(), $matches)
-                    ? $matches[1]
-                    : 'unknown';
+                $mockFailure = 'unknown';
+                if (1 === preg_match('/thumbnail_mock_failure=([a-z_]+)/', $exception->getMessage(), $matches)) {
+                    $mockFailure = $matches[1];
+                }
                 self::fail('thumbnail_import_exception_class='.$exception::class.'; thumbnail_mock_failure='.$mockFailure);
             }
             $response = $client->getResponse();
