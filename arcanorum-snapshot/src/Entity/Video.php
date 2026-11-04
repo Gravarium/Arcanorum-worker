@@ -359,9 +359,17 @@ final class Video
             $leftPrimary = $left->getName() === $this->category ? 0 : 1;
             $rightPrimary = $right->getName() === $this->category ? 0 : 1;
 
-            return ($leftPrimary <=> $rightPrimary)
-                ?: strcasecmp($left->getName(), $right->getName())
-                ?: ($left->getId() <=> $right->getId());
+            $primaryComparison = $leftPrimary <=> $rightPrimary;
+            if (0 !== $primaryComparison) {
+                return $primaryComparison;
+            }
+
+            $nameComparison = strcasecmp($left->getName(), $right->getName());
+            if (0 !== $nameComparison) {
+                return $nameComparison;
+            }
+
+            return $left->getId() <=> $right->getId();
         });
 
         return $categories;
