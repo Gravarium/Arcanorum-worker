@@ -528,8 +528,7 @@ final class VideoAdminController extends AbstractController
             'category' => $video?->getCategory() ?? '',
             'tags' => $video?->getTagNames() ?? '',
             'source_type' => $video?->getSourceType()->value
-                ?? VideoSourceType::tryFrom(self::input($request->query, 'source_type'))?->value
-                ?? VideoSourceType::Embed->value,
+                ?? (VideoSourceType::tryFrom(self::input($request->query, 'source_type')) ?? VideoSourceType::Embed)->value,
             'source_url' => $video?->getSourceUrl() ?? '',
             'duration_minutes' => null === $storedDurationSeconds ? '' : (string) intdiv($storedDurationSeconds, 60),
             'duration_seconds_part' => null === $storedDurationSeconds ? '' : (string) ($storedDurationSeconds % 60),
@@ -665,7 +664,8 @@ final class VideoAdminController extends AbstractController
                 if (!$validMinutes || !$validSecondsPart) {
                     $errors[] = 'Die Laufzeit muss aus höchstens 35.791.394 Minuten und 0 bis 59 Sekunden bestehen.';
                 } else {
-                    $totalSeconds = ((int) ($minutes ?: '0') * 60) + (int) ($secondsPart ?: '0');
+                    $totalSeconds = (('' === $minutes ? 0 : (int) $minutes) * 60)
+                        + ('' === $secondsPart ? 0 : (int) $secondsPart);
                     if ($totalSeconds > 2147483647) {
                         $errors[] = 'Die Medienlaufzeit darf höchstens 2.147.483.647 Sekunden betragen.';
                     } elseif ('' !== $minutes || '' !== $secondsPart) {

@@ -7458,7 +7458,7 @@ final class AdminDashboardTest extends WebTestCase
                 'embed_origins' => '',
             ]);
             self::assertResponseRedirects('/admin/videos');
-            self::assertSame(123, (int) $connection->fetchOne(
+            self::assertSame('123', $connection->fetchOne(
                 'SELECT duration_seconds FROM videos WHERE title = :title',
                 ['title' => $validTitle],
             ));
@@ -7490,7 +7490,7 @@ final class AdminDashboardTest extends WebTestCase
             ]);
             self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
             self::assertSelectorTextContains('[role="alert"]', '0 bis 59 Sekunden');
-            self::assertSame(0, (int) $connection->fetchOne(
+            self::assertSame('0', $connection->fetchOne(
                 'SELECT COUNT(*) FROM videos WHERE title = :title',
                 ['title' => $invalidTitle],
             ));
