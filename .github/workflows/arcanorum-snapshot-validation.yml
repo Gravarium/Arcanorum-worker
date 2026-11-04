@@ -1048,6 +1048,46 @@ jobs:
             exit 1
           fi
 
+      - name: Record sanitized PHPUnit source coordinates
+        id: safe-failure-references
+        if: failure()
+        run: |
+          python3 - <<'PY'
+          import os
+          import re
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          report = Path('var/test-results/junit-hosting-security-selection.xml')
+          references = []
+          if report.is_file():
+              try:
+                  root = ET.parse(report).getroot()
+              except ET.ParseError:
+                  root = None
+              if root is not None:
+                  for issue in (node for node in root.iter() if node.tag in {'failure', 'error'}):
+                      details = issue.attrib.get('message', '') + ' ' + ''.join(issue.itertext())
+                      for source_path, line_number in re.findall(
+                          r'((?:src|tests)/[A-Za-z0-9_./-]+\.php):(\d+)', details,
+                      ):
+                          path = Path(source_path)
+                          if '..' in path.parts:
+                              continue
+                          file_name = path.name
+                          if re.fullmatch(r'[A-Za-z0-9_.-]+\.php', file_name):
+                              reference = f'{file_name}:{line_number}'
+                              if reference not in references:
+                                  references.append(reference)
+          value = ','.join(references[:6]) or 'unavailable'
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+              output.write(f'references={value}\n')
+          PY
+
+      - name: "Sanitized PHPUnit source coordinates (${{ steps.safe-failure-references.outputs.references || 'unavailable' }})"
+        if: failure()
+        run: echo 'Only source coordinates are shown; test output remains withheld.'
+
   validate-p01-p03-focused:
     if: github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'p01-p03-focused'
     name: Focused P-01/P-03 regression checks
