@@ -752,6 +752,7 @@ jobs:
               src/Platform/Hosting/HostingAdapterSelector.php
               src/Platform/Hosting/HostingCachePoolProvider.php
               src/Platform/Hosting/HostingSecurityFeatureSelectionStoreInterface.php
+              src/Platform/Hosting/SwitchableCachePool.php
               src/Platform/Hosting/PrivateFileStorage.php
               src/Platform/Hosting/PrivateObjectStorageInterface.php
               src/Platform/Hosting/RedisCachePoolAdapter.php

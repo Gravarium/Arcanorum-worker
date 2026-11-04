@@ -8,12 +8,14 @@ use App\Platform\Hosting\ArrayCachePoolAdapter;
 use App\Platform\Hosting\CapabilityEvidence;
 use App\Platform\Hosting\CapabilityProbeInterface;
 use App\Platform\Hosting\CapabilityStatus;
+use App\Platform\Hosting\CachePoolAdapterInterface;
 use App\Platform\Hosting\HostingAdapterSelector;
 use App\Platform\Hosting\HostingCachePoolProvider;
 use App\Platform\Hosting\HostingCapability;
 use App\Platform\Hosting\HostingProfileDetector;
 use App\Platform\Hosting\HostingSecurityFeature;
 use App\Platform\Hosting\HostingSecurityFeatureSelectionStoreInterface;
+use App\Platform\Hosting\HostingService;
 use App\Platform\Hosting\RedisCachePoolAdapter;
 use PHPUnit\Framework\TestCase;
 use Psr\Cache\CacheItemPoolInterface;
@@ -149,6 +151,94 @@ final class HostingCachePoolProviderTest extends TestCase
         self::assertSame('fallback', $pool->getItem('hosting-cache-after-redis-failure')->get());
     }
 
+    public function testResetAppliesCurrentSelectionAndKeepsNamespacedPoolsSwitchable(): void
+    {
+        $evidence = [
+            $this->evidence(HostingCapability::RedisServer8, CapabilityStatus::Verified),
+            $this->evidence(HostingCapability::RedisPrivateEndpoint, CapabilityStatus::Verified),
+        ];
+        $selectionStore = new MutableHostingSecurityFeatureSelectionStore();
+        $fallback = new ArrayCachePoolAdapter();
+        $probe = new MutableHostingCapabilityProbe($evidence);
+        $provider = new HostingCachePoolProvider(
+            'arcanorum-test',
+            new HostingAdapterSelector([$this->selectedArrayCacheAdapter(), $fallback]),
+            new HostingProfileDetector([$probe]),
+            $selectionStore,
+            $fallback,
+        );
+        $initialPool = $provider->pool();
+        $nestedPool = $provider->withSubNamespace('reset-check');
+
+        $selectionStore->setSelectedFeatures([HostingSecurityFeature::PrivateRedisEndpoint]);
+        $provider->reset();
+
+        $selectedPool = $provider->pool();
+        self::assertNotSame($initialPool, $selectedPool);
+        $provider->reset();
+        self::assertSame($selectedPool, $provider->pool());
+
+        $rootItem = $provider->getItem('root-value');
+        $rootItem->set('root');
+        self::assertTrue($provider->save($rootItem));
+        $nestedItem = $nestedPool->getItem('nested-value');
+        $nestedItem->set('nested');
+        self::assertTrue($nestedPool->save($nestedItem));
+        self::assertTrue($nestedPool->clear());
+        self::assertTrue($provider->hasItem('root-value'));
+
+        $probe->setEvidence([
+            $this->evidence(HostingCapability::RedisServer8, CapabilityStatus::NotAvailable),
+            $this->evidence(HostingCapability::RedisPrivateEndpoint, CapabilityStatus::NotAvailable),
+        ]);
+        $provider->reset();
+        $hostCapabilityFallback = $provider->pool();
+        self::assertNotSame($selectedPool, $hostCapabilityFallback);
+
+        $probe->setEvidence($evidence);
+        $provider->reset();
+        $restoredPool = $provider->pool();
+        self::assertNotSame($hostCapabilityFallback, $restoredPool);
+
+        $selectionStore->setSelectedFeatures([]);
+        $provider->reset();
+
+        self::assertNotSame($restoredPool, $provider->pool());
+        $itemAfterReset = $nestedPool->getItem('after-reset');
+        $itemAfterReset->set('still-switchable');
+        self::assertTrue($nestedPool->save($itemAfterReset));
+        self::assertSame('still-switchable', $nestedPool->getItem('after-reset')->get());
+    }
+
+    public function testSelectionStoreFailureSwitchesToSafeFallbackAtReset(): void
+    {
+        $evidence = [
+            $this->evidence(HostingCapability::RedisServer8, CapabilityStatus::Verified),
+            $this->evidence(HostingCapability::RedisPrivateEndpoint, CapabilityStatus::Verified),
+        ];
+        $selectionStore = new MutableHostingSecurityFeatureSelectionStore();
+        $fallback = new ArrayCachePoolAdapter();
+        $provider = new HostingCachePoolProvider(
+            'arcanorum-test',
+            new HostingAdapterSelector([$this->selectedArrayCacheAdapter(), $fallback]),
+            new HostingProfileDetector([$this->probeWith($evidence)]),
+            $selectionStore,
+            $fallback,
+        );
+
+        $selectionStore->setSelectedFeatures([HostingSecurityFeature::PrivateRedisEndpoint]);
+        $provider->reset();
+        $selectedPool = $provider->pool();
+        $selectionStore->failReads();
+        $provider->reset();
+
+        self::assertNotSame($selectedPool, $provider->pool());
+        $item = $provider->getItem('selection-read-failure');
+        $item->set('fallback');
+        self::assertTrue($provider->save($item));
+        self::assertSame('fallback', $provider->getItem('selection-read-failure')->get());
+    }
+
     /**
      * @param list<CapabilityEvidence>     $evidence
      * @param list<HostingSecurityFeature> $selectedFeatures
@@ -179,6 +269,52 @@ final class HostingCachePoolProviderTest extends TestCase
             $selectionStore,
             $fallback,
         );
+    }
+
+    private function selectedArrayCacheAdapter(): CachePoolAdapterInterface
+    {
+        return new readonly class implements CachePoolAdapterInterface {
+            public function identifier(): string
+            {
+                return 'cache.selected-test';
+            }
+
+            public function service(): HostingService
+            {
+                return HostingService::Cache;
+            }
+
+            /**
+             * @return list<HostingCapability>
+             */
+            public function requiredCapabilities(): array
+            {
+                return [HostingCapability::RedisServer8, HostingCapability::RedisPrivateEndpoint];
+            }
+
+            /**
+             * @return list<HostingSecurityFeature>
+             */
+            public function requiredFeatures(): array
+            {
+                return [HostingSecurityFeature::PrivateRedisEndpoint];
+            }
+
+            public function priority(): int
+            {
+                return 100;
+            }
+
+            public function isFallback(): bool
+            {
+                return false;
+            }
+
+            public function createPool(string $namespace): CacheItemPoolInterface
+            {
+                return new ArrayAdapter(0, true);
+            }
+        };
     }
 
     private function evidence(HostingCapability $capability, CapabilityStatus $status): CapabilityEvidence
@@ -213,5 +349,63 @@ final class HostingCachePoolProviderTest extends TestCase
                 return $this->evidence;
             }
         };
+    }
+}
+
+final class MutableHostingSecurityFeatureSelectionStore implements HostingSecurityFeatureSelectionStoreInterface
+{
+    /** @var list<HostingSecurityFeature> */
+    private array $features = [];
+
+    private bool $failRead = false;
+
+    /**
+     * @param list<HostingSecurityFeature> $features
+     */
+    public function setSelectedFeatures(array $features): void
+    {
+        $this->features = $features;
+        $this->failRead = false;
+    }
+
+    public function failReads(): void
+    {
+        $this->failRead = true;
+    }
+
+    /**
+     * @return list<HostingSecurityFeature>
+     */
+    public function selectedFeatures(): array
+    {
+        if ($this->failRead) {
+            throw new \RuntimeException('selection read failed');
+        }
+
+        return $this->features;
+    }
+}
+
+final class MutableHostingCapabilityProbe implements CapabilityProbeInterface
+{
+    /** @param list<CapabilityEvidence> $evidence */
+    public function __construct(private array $evidence)
+    {
+    }
+
+    /**
+     * @param list<CapabilityEvidence> $evidence
+     */
+    public function setEvidence(array $evidence): void
+    {
+        $this->evidence = $evidence;
+    }
+
+    /**
+     * @return iterable<CapabilityEvidence>
+     */
+    public function probe(): iterable
+    {
+        return $this->evidence;
     }
 }
