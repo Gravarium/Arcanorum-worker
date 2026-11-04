@@ -1554,10 +1554,12 @@ jobs:
       - name: Check affected PHP syntax
         run: |
           if [[ "$VALIDATION_SCOPE" == 'video-social-preview-cache-followup' ]]; then
+            php -l src/Module/Video/Controller/AdminVideoThumbnailController.php
             php -l src/Module/Video/Controller/VideoAdminController.php
             php -l src/Module/Video/Controller/VideoThumbnailController.php
             php -l src/Module/Video/Controller/VideoSubtitleController.php
             php -l tests/Controller/AdminDashboardTest.php
+            php -l tests/Controller/AdminVideoThumbnailFlowTest.php
             php -l tests/Controller/VideoAccessFlowTest.php
             php -l tests/Controller/VideoSocialPreviewFlowTest.php
             php -l tests/Controller/VideoSubtitleCacheFlowTest.php
@@ -1590,6 +1592,7 @@ jobs:
         run: |
           php bin/console lint:container --env=dev
           APP_ENV=prod APP_DEBUG=0 php bin/console lint:container --env=prod
+          php bin/console lint:twig templates/admin/videos/form.html.twig
           php bin/console doctrine:migrations:migrate --env=test --no-interaction
           php bin/console doctrine:schema:validate --skip-sync
 
@@ -1597,10 +1600,12 @@ jobs:
         run: |
           if [[ "$VALIDATION_SCOPE" == 'video-social-preview-cache-followup' ]]; then
             vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --no-progress --error-format=table --memory-limit=1G \
+              src/Module/Video/Controller/AdminVideoThumbnailController.php \
               src/Module/Video/Controller/VideoAdminController.php \
               src/Module/Video/Controller/VideoThumbnailController.php \
               src/Module/Video/Controller/VideoSubtitleController.php \
               tests/Controller/AdminDashboardTest.php \
+              tests/Controller/AdminVideoThumbnailFlowTest.php \
               tests/Controller/VideoAccessFlowTest.php \
               tests/Controller/VideoSocialPreviewFlowTest.php \
               tests/Controller/VideoSubtitleCacheFlowTest.php \
@@ -1634,10 +1639,12 @@ jobs:
         run: |
           if [[ "$VALIDATION_SCOPE" == 'video-social-preview-cache-followup' ]]; then
             vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --diff --using-cache=no \
+              src/Module/Video/Controller/AdminVideoThumbnailController.php \
               src/Module/Video/Controller/VideoAdminController.php \
               src/Module/Video/Controller/VideoThumbnailController.php \
               src/Module/Video/Controller/VideoSubtitleController.php \
               tests/Controller/AdminDashboardTest.php \
+              tests/Controller/AdminVideoThumbnailFlowTest.php \
               tests/Controller/VideoAccessFlowTest.php \
               tests/Controller/VideoSocialPreviewFlowTest.php \
               tests/Controller/VideoSubtitleCacheFlowTest.php \
@@ -1671,10 +1678,12 @@ jobs:
         run: |
           if [[ "$VALIDATION_SCOPE" == 'video-social-preview-cache-followup' ]]; then
             vendor/bin/rector process \
+              src/Module/Video/Controller/AdminVideoThumbnailController.php \
               src/Module/Video/Controller/VideoAdminController.php \
               src/Module/Video/Controller/VideoThumbnailController.php \
               src/Module/Video/Controller/VideoSubtitleController.php \
               tests/Controller/AdminDashboardTest.php \
+              tests/Controller/AdminVideoThumbnailFlowTest.php \
               tests/Controller/VideoAccessFlowTest.php \
               tests/Controller/VideoSocialPreviewFlowTest.php \
               tests/Controller/VideoSubtitleCacheFlowTest.php \
@@ -1711,10 +1720,12 @@ jobs:
           mkdir -p var/test-results
           if [[ "$VALIDATION_SCOPE" == 'video-social-preview-cache-followup' ]]; then
             vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm.sarif \
+              src/Module/Video/Controller/AdminVideoThumbnailController.php \
               src/Module/Video/Controller/VideoAdminController.php \
               src/Module/Video/Controller/VideoThumbnailController.php \
               src/Module/Video/Controller/VideoSubtitleController.php \
               tests/Controller/AdminDashboardTest.php \
+              tests/Controller/AdminVideoThumbnailFlowTest.php \
               tests/Controller/VideoAccessFlowTest.php \
               tests/Controller/VideoSocialPreviewFlowTest.php \
               tests/Controller/VideoSubtitleCacheFlowTest.php \
@@ -1752,7 +1763,7 @@ jobs:
               --fail-on-risky --fail-on-warning --fail-on-deprecation \
               --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
               --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
-              --filter='testFirstNewsAndVideoIterationPersistsContentAndRejectsUnsafeSources|VideoAccessFlowTest|VideoSocialPreviewFlowTest|VideoSubtitleCacheFlowTest|VideoEditorialMetadataTest' \
+              --filter='testFirstNewsAndVideoIterationPersistsContentAndRejectsUnsafeSources|AdminVideoThumbnailFlowTest|VideoAccessFlowTest|VideoSocialPreviewFlowTest|VideoSubtitleCacheFlowTest|VideoEditorialMetadataTest' \
               tests > var/test-results/phpunit-video-editorial.log 2>&1; then
               echo 'Targeted video and editorial regressions: PASS; detailed results withheld.'
             else

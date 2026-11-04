@@ -216,6 +216,19 @@
                 </div>
             </form>
 
+            <form class="admin-form" method="post" action="{{ path('admin_video_thumbnail_import_url', {id: video_id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('admin_video_thumbnail_url_import_' ~ video_id) }}">
+                <input type="hidden" name="action" value="import_url">
+                <label>
+                    <span>{{ 'Vorschaubild-Adresse'|trans }}</span>
+                    <input type="url" name="thumbnail_url" maxlength="2048" inputmode="url" autocomplete="url" placeholder="https://example.org/vorschaubild.jpg" pattern="https://.*" required>
+                    <small>{{ 'Die öffentliche HTTPS-Bildadresse wird geprüft, als Bilddatei heruntergeladen und privat gespeichert. Besucher laden das Bild anschließend von dieser Website.'|trans }}</small>
+                </label>
+                <div class="form-actions">
+                    <button class="button button-secondary" type="submit">{{ 'Vorschaubild aus URL übernehmen'|trans }}</button>
+                </div>
+            </form>
+
             {% if values.source_type in ['embed', 'url'] and values.source_url != '' %}
                 <form method="post" action="{{ path('admin_video_thumbnail_provider_import', {id: video_id}) }}">
                     <input type="hidden" name="_token" value="{{ csrf_token('admin_video_thumbnail_provider_import_' ~ video_id) }}">

@@ -156,6 +156,130 @@ final class AdminVideoThumbnailController extends AbstractController
         return $this->redirectToRoute('admin_video_edit', ['id' => $video->getId()]);
     }
 
+    #[Route('/{id}/thumbnail/import-url', name: 'thumbnail_import_url', requirements: ['id' => '[a-f0-9]{32}'], methods: ['POST'])]
+    public function importFromUrl(
+        string $id,
+        Request $request,
+        VideoRepository $videos,
+        VideoThumbnailImportService $thumbnailImports,
+        RateLimitKeyFactory $rateLimitKeys,
+        EntityManagerInterface $entityManager,
+        #[Autowire(service: 'limiter.video_provider_import')] RateLimiterFactory $importRateLimiter,
+    ): Response {
+        $video = $videos->find($id);
+        if (!$video instanceof Video) {
+            throw $this->createNotFoundException('Video wurde nicht gefunden.');
+        }
+
+        $payload = $request->request->all();
+        $token = self::input($request->request, '_token');
+        if ('' === $token || !$this->isCsrfTokenValid('admin_video_thumbnail_url_import_'.$video->getId(), $token)) {
+            throw $this->createAccessDeniedException();
+        }
+
+        if ([] !== array_diff(array_keys($payload), ['_token', 'action', 'thumbnail_url'])
+            || [] !== $request->files->all()
+            || 'import_url' !== self::input($request->request, 'action')
+        ) {
+            $this->addFlash('error', 'Die Vorschaubildanfrage enthält nicht erlaubte Felder.');
+
+            return $this->redirectToRoute('admin_video_edit', ['id' => $video->getId()]);
+        }
+
+        $thumbnailUrl = trim(self::input($request->request, 'thumbnail_url'));
+        if (mb_strlen($thumbnailUrl, 'UTF-8') > 2048
+            || 1 === preg_match('/\p{Cc}/u', $thumbnailUrl)
+            || !Video::isSafeHttpsSource($thumbnailUrl)
+        ) {
+            $this->addFlash('error', 'Das Vorschaubild benötigt eine gültige öffentliche HTTPS-Bildadresse.');
+
+            return $this->redirectToRoute('admin_video_edit', ['id' => $video->getId()]);
+        }
+
+        $admin = $this->getUser();
+        if (null === $admin) {
+            throw $this->createAccessDeniedException();
+        }
+        $limiterKey = $rateLimitKeys->forIdentity($admin->getUserIdentifier(), 'video-thumbnail-import');
+        $limit = $importRateLimiter->create($limiterKey)->consume();
+        if (!$limit->isAccepted()) {
+            $this->addFlash('error', 'Das Importlimit wurde erreicht. Bitte warte kurz und versuche es erneut.');
+            $response = $this->redirectToRoute('admin_video_edit', ['id' => $video->getId()]);
+            $response->headers->set('Retry-After', (string) max(1, $limit->getRetryAfter()->getTimestamp() - time()));
+
+            return $response;
+        }
+
+        try {
+            $thumbnail = $thumbnailImports->storeFromUrl($thumbnailUrl, new VideoThumbnailImportBudget());
+        } catch (\InvalidArgumentException|PrivateStorageOperationFailed) {
+            $this->addFlash('error', 'Das Vorschaubild konnte nicht sicher importiert werden.');
+
+            return $this->redirectToRoute('admin_video_edit', ['id' => $video->getId()]);
+        }
+
+        $expectedPreviousObjectId = $video->getThumbnailObjectId();
+        $previousObjectId = null;
+        $thumbnailChangedDuringImport = false;
+        try {
+            $entityManager->getConnection()->transactional(function () use (
+                $id,
+                $videos,
+                $entityManager,
+                $thumbnail,
+                &$previousObjectId,
+                $expectedPreviousObjectId,
+                &$thumbnailChangedDuringImport,
+            ): void {
+                $currentVideo = $videos->findByIdForUpdate($id);
+                if (!$currentVideo instanceof Video) {
+                    throw $this->createNotFoundException('Video wurde nicht gefunden.');
+                }
+
+                if ($currentVideo->getThumbnailObjectId() !== $expectedPreviousObjectId) {
+                    $thumbnailChangedDuringImport = true;
+
+                    return;
+                }
+
+                $previousObjectId = $currentVideo->getThumbnailObjectId();
+                $currentVideo->attachThumbnail($thumbnail['object_id'], $thumbnail['mime_type'], $thumbnail['size']);
+                $entityManager->flush();
+            });
+        } catch (\Throwable $exception) {
+            try {
+                $thumbnailImports->delete($thumbnail['object_id']);
+            } catch (PrivateStorageOperationFailed|\InvalidArgumentException) {
+                $this->addFlash('warning', 'Das neue private Vorschaubild konnte nach dem Speicherfehler nicht bereinigt werden.');
+            }
+
+            throw $exception;
+        }
+
+        if ($thumbnailChangedDuringImport) {
+            try {
+                $thumbnailImports->delete($thumbnail['object_id']);
+            } catch (PrivateStorageOperationFailed|\InvalidArgumentException) {
+                $this->addFlash('warning', 'Das neue private Vorschaubild konnte nach der gleichzeitigen Änderung nicht bereinigt werden.');
+            }
+            $this->addFlash('error', 'Das Vorschaubild wurde während des Imports geändert. Bitte starte den Import erneut.');
+
+            return $this->redirectToRoute('admin_video_edit', ['id' => $id]);
+        }
+
+        if (null !== $previousObjectId && $previousObjectId !== $thumbnail['object_id']) {
+            try {
+                $thumbnailImports->delete($previousObjectId);
+            } catch (PrivateStorageOperationFailed|\InvalidArgumentException) {
+                $this->addFlash('warning', 'Das frühere private Vorschaubild konnte nicht bereinigt werden.');
+            }
+        }
+
+        $this->addFlash('success', 'Vorschaubild wurde sicher aus der URL übernommen.');
+
+        return $this->redirectToRoute('admin_video_edit', ['id' => $video->getId()]);
+    }
+
     #[Route('/{id}/thumbnail/provider-import', name: 'thumbnail_provider_import', requirements: ['id' => '[a-f0-9]{32}'], methods: ['POST'])]
     public function importFromProvider(
         string $id,

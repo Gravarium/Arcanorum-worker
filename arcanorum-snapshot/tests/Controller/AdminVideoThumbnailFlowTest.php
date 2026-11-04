@@ -195,6 +195,234 @@ final class AdminVideoThumbnailFlowTest extends WebTestCase
         }
     }
 
+    public function testAdministratorCanImportAValidatedThumbnailFromPublicHttpsUrl(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $client->getContainer()->set(
+            RuntimeAttestationReportProviderInterface::class,
+            new VerifiedRuntimeAttestationReportProvider(),
+        );
+
+        $suffix = bin2hex(random_bytes(8));
+        $email = 'thumbnail-url-'.$suffix.'@example.test';
+        $password = 'ThumbnailUrl-'.$suffix.'-G4!';
+        $video = new Video(
+            'Thumbnail URL '.$suffix,
+            'A draft video used to verify importing a private thumbnail from a safe URL.',
+            null,
+            VideoSourceType::Embed,
+            'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            PublishingStatus::Draft,
+            false,
+            true,
+        );
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        try {
+            $entityManager->persist($video);
+            $entityManager->flush();
+
+            $thumbnailPng = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/WioAAAAASUVORK5CYII=', true);
+            self::assertIsString($thumbnailPng);
+            $storedObjectId = null;
+            $requestCount = 0;
+            $privateStorage = $this->createMock(PrivateObjectStorageInterface::class);
+            $privateStorage->expects(self::once())->method('write')->willReturnCallback(
+                static function (string $objectId, string $contents) use (&$storedObjectId, $thumbnailPng): void {
+                    self::assertMatchesRegularExpression('/\A[a-f0-9]{64}\z/D', $objectId);
+                    self::assertSame($thumbnailPng, $contents);
+                    $storedObjectId = $objectId;
+                },
+            );
+            $client->getContainer()->set(PrivateObjectStorageInterface::class, $privateStorage);
+            $client->getContainer()->set(VideoThumbnailImportService::class, new VideoThumbnailImportService(
+                new MockHttpClient(static function (string $method, string $url, array $options) use ($thumbnailPng, &$requestCount): MockResponse {
+                    ++$requestCount;
+                    self::assertSame('GET', $method);
+                    self::assertSame(0, $options['max_redirects'] ?? null);
+                    self::assertSame('image/jpeg, image/png, image/webp', $options['headers']['Accept'] ?? null);
+                    self::assertSame('https://images.example.test/video/cover.png', $url);
+
+                    return new MockResponse($thumbnailPng, ['http_code' => Response::HTTP_OK]);
+                }),
+                new VideoThumbnailUploadService($privateStorage),
+            ));
+
+            $admin = $this->persistAdministrator($client, $email, $password);
+            $importPath = '/admin/videos/'.$video->getId().'/thumbnail/import-url';
+            $editPath = '/admin/videos/'.$video->getId().'/edit';
+            $this->submitLogin($client, $admin, $password);
+            self::assertResponseRedirects('/admin');
+
+            $client->request('GET', $editPath);
+            self::assertResponseIsSuccessful();
+            self::assertSelectorExists('form[action="'.$importPath.'"] input[name="thumbnail_url"]');
+            $token = $client->getCrawler()
+                ->filter('form[action="'.$importPath.'"] input[name="_token"]')
+                ->attr('value');
+            self::assertIsString($token);
+            self::assertNotSame('', $token);
+
+            $client->request('POST', $importPath, [
+                '_token' => 'invalid-csrf-token',
+                'action' => 'import_url',
+                'thumbnail_url' => 'https://images.example.test/video/cover.png',
+            ]);
+            self::assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
+            self::assertSame(0, $requestCount);
+
+            $client->request('POST', $importPath, [
+                '_token' => $token,
+                'action' => 'import_url',
+                'thumbnail_url' => 'http://images.example.test/video/cover.png',
+            ]);
+            self::assertResponseRedirects($editPath);
+            self::assertSame(0, $requestCount);
+
+            $client->request('POST', $importPath, [
+                '_token' => $token,
+                'action' => 'import_url',
+                'thumbnail_url' => 'https://images.example.test/video/cover.png',
+                'unexpected' => 'ignored-fields-must-be-rejected',
+            ]);
+            self::assertResponseRedirects($editPath);
+            self::assertSame(0, $requestCount);
+
+            $client->request('POST', $importPath, [
+                '_token' => $token,
+                'action' => 'import_url',
+                'thumbnail_url' => 'https://images.example.test/video/cover.png',
+            ]);
+            self::assertResponseRedirects($editPath);
+            self::assertSame(1, $requestCount);
+            self::assertIsString($storedObjectId);
+
+            $client->followRedirect();
+            self::assertSelectorTextContains('.flash-message.is-success', 'Vorschaubild wurde sicher aus der URL übernommen.');
+            $entityManager->clear();
+            $storedVideo = $entityManager->getRepository(Video::class)->find($video->getId());
+            self::assertInstanceOf(Video::class, $storedVideo);
+            self::assertSame($storedObjectId, $storedVideo->getThumbnailObjectId());
+            self::assertSame('image/png', $storedVideo->getThumbnailMimeType());
+        } finally {
+            $entityManager->getConnection()->executeStatement('DELETE FROM videos WHERE id = :id', ['id' => $video->getId()]);
+            $entityManager->getConnection()->executeStatement('DELETE FROM admin_users WHERE email = :email', ['email' => $email]);
+        }
+    }
+
+    public function testUrlThumbnailImportDiscardsImageWhenCurrentThumbnailChangesDuringFetch(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $client->getContainer()->set(
+            RuntimeAttestationReportProviderInterface::class,
+            new VerifiedRuntimeAttestationReportProvider(),
+        );
+
+        $suffix = bin2hex(random_bytes(8));
+        $email = 'thumbnail-url-race-'.$suffix.'@example.test';
+        $password = 'ThumbnailUrlRace-'.$suffix.'-G4!';
+        $video = new Video(
+            'Thumbnail URL race '.$suffix,
+            'A draft video used to verify an in-flight thumbnail replacement is discarded.',
+            null,
+            VideoSourceType::Embed,
+            'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            PublishingStatus::Draft,
+            false,
+            true,
+        );
+        $originalObjectId = str_repeat('a', 64);
+        $concurrentObjectId = str_repeat('b', 64);
+        $video->attachThumbnail($originalObjectId, 'image/png', 128);
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        $connection = $entityManager->getConnection();
+
+        try {
+            $entityManager->persist($video);
+            $entityManager->flush();
+
+            $thumbnailPng = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/WioAAAAASUVORK5CYII=', true);
+            self::assertIsString($thumbnailPng);
+            $storedObjectId = null;
+            $deletedObjectIds = [];
+            $privateStorage = $this->createMock(PrivateObjectStorageInterface::class);
+            $privateStorage->expects(self::once())->method('write')->willReturnCallback(
+                static function (string $objectId, string $contents) use (&$storedObjectId, $thumbnailPng): void {
+                    self::assertSame($thumbnailPng, $contents);
+                    $storedObjectId = $objectId;
+                },
+            );
+            $privateStorage->expects(self::exactly(2))->method('delete')->willReturnCallback(
+                static function (string $objectId) use (&$deletedObjectIds): void {
+                    $deletedObjectIds[] = $objectId;
+                },
+            );
+            $client->getContainer()->set(PrivateObjectStorageInterface::class, $privateStorage);
+            $client->getContainer()->set(VideoThumbnailImportService::class, new VideoThumbnailImportService(
+                new MockHttpClient(static function (string $method, string $url, array $options) use (
+                    $thumbnailPng,
+                    $connection,
+                    $video,
+                    $concurrentObjectId,
+                ): MockResponse {
+                    self::assertSame('GET', $method);
+                    self::assertSame('https://images.example.test/video/cover.png', $url);
+                    self::assertSame(0, $options['max_redirects'] ?? null);
+                    $connection->executeStatement(
+                        'UPDATE videos SET thumbnail_object_id = :object_id, thumbnail_mime_type = :mime_type, thumbnail_size = :size WHERE id = :video_id',
+                        [
+                            'object_id' => $concurrentObjectId,
+                            'mime_type' => 'image/png',
+                            'size' => strlen($thumbnailPng),
+                            'video_id' => $video->getId(),
+                        ],
+                    );
+
+                    return new MockResponse($thumbnailPng, ['http_code' => Response::HTTP_OK]);
+                }),
+                new VideoThumbnailUploadService($privateStorage),
+            ));
+
+            $admin = $this->persistAdministrator($client, $email, $password);
+            $this->submitLogin($client, $admin, $password);
+            self::assertResponseRedirects('/admin');
+
+            $editPath = '/admin/videos/'.$video->getId().'/edit';
+            $importPath = '/admin/videos/'.$video->getId().'/thumbnail/import-url';
+            $client->request('GET', $editPath);
+            self::assertResponseIsSuccessful();
+            $token = $client->getCrawler()
+                ->filter('form[action="'.$importPath.'"] input[name="_token"]')
+                ->attr('value');
+            self::assertIsString($token);
+
+            $client->request('POST', $importPath, [
+                '_token' => $token,
+                'action' => 'import_url',
+                'thumbnail_url' => 'https://images.example.test/video/cover.png',
+            ]);
+            self::assertResponseRedirects($editPath);
+            self::assertIsString($storedObjectId);
+
+            $client->followRedirect();
+            self::assertSelectorTextContains('.flash-message.is-error', 'während des Imports geändert');
+            $entityManager->clear();
+            $storedVideo = $entityManager->getRepository(Video::class)->find($video->getId());
+            self::assertInstanceOf(Video::class, $storedVideo);
+            self::assertSame($concurrentObjectId, $storedVideo->getThumbnailObjectId());
+            self::assertSame([
+                VideoSocialPreviewGenerator::cacheObjectIdForSourceObjectId($storedObjectId),
+                $storedObjectId,
+            ], $deletedObjectIds);
+        } finally {
+            $connection->executeStatement('DELETE FROM videos WHERE id = :id', ['id' => $video->getId()]);
+            $connection->executeStatement('DELETE FROM admin_users WHERE email = :email', ['email' => $email]);
+        }
+    }
+
     public function testProviderImportDiscardsThumbnailWhenVideoSourceChangesDuringFetch(): void
     {
         $client = static::createClient();
