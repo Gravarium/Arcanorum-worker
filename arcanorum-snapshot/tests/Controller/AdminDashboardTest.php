@@ -1605,7 +1605,7 @@ final class AdminDashboardTest extends WebTestCase
             self::assertSelectorTextContains('nav[aria-label="Hauptnavigation"]', 'Kommentare');
             self::assertSelectorTextContains('nav[aria-label="Hauptnavigation"]', 'Einstellungen');
             self::assertCount(12, $client->getCrawler()->filter('details.navigation-group'));
-            self::assertSelectorExists('details.navigation-group:not([open])');
+            self::assertSelectorCount(0, 'details.navigation-group:not([open])');
             self::assertCount(1, $client->getCrawler()->filterXPath('//nav[@aria-label="Hauptnavigation"]//a[normalize-space()="Video und Wiedergabe"]'));
             self::assertSelectorExists('nav[aria-label="Hauptnavigation"] > a.navigation-dashboard[href="/admin"]');
             self::assertSelectorTextContains('nav[aria-label="Hauptnavigation"] > details.navigation-group:nth-of-type(1) > summary', 'Videos');
@@ -3813,7 +3813,6 @@ final class AdminDashboardTest extends WebTestCase
             $client->submitForm('Video speichern', [
                 'title' => 'Doppeltes Testvideo '.$token,
                 'description' => 'Diese URL ist bereits als Quelle gespeichert.',
-                'category' => $categoryName,
                 'source_type' => 'url',
                 'source_url' => 'https://youtu.be/dQw4w9WgXcQ',
                 'status' => 'draft',
@@ -3853,7 +3852,6 @@ final class AdminDashboardTest extends WebTestCase
             $client->submitForm('Änderungen speichern', [
                 'title' => $videoTitle,
                 'description' => 'Testvideo mit einer HTTPS-Quelle.',
-                'category' => $categoryName,
                 'source_type' => 'url',
                 'source_url' => 'https://youtu.be/dQw4w9WgXcQ',
                 'status' => 'draft',
@@ -3873,7 +3871,6 @@ final class AdminDashboardTest extends WebTestCase
             $client->submitForm('Video speichern', [
                 'title' => $embeddedVideoTitle,
                 'description' => 'Allowlisted provider embed.',
-                'category' => $categoryName,
                 'source_type' => 'embed',
                 'source_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
                 'status' => 'draft',
@@ -4176,7 +4173,6 @@ final class AdminDashboardTest extends WebTestCase
             $client->submitForm('Video speichern', [
                 'title' => $uploadedVideoTitle,
                 'description' => 'Uploaded into private storage.',
-                'category' => '',
                 'source_type' => 'file',
                 'source_url' => '',
                 'status' => 'published',
@@ -4349,7 +4345,6 @@ final class AdminDashboardTest extends WebTestCase
             $client->submitForm('Video speichern', [
                 'title' => 'Ungültige Quelle '.$token,
                 'description' => '',
-                'category' => '',
                 'source_type' => 'url',
                 'source_url' => 'https://127.0.0.1/private',
                 'status' => 'draft',
@@ -4362,7 +4357,6 @@ final class AdminDashboardTest extends WebTestCase
             $client->submitForm('Video speichern', [
                 'title' => $invalidEmbedAdminTitle,
                 'description' => '',
-                'category' => '',
                 'source_type' => 'embed',
                 'source_url' => 'https://attacker.example.test/embed/dQw4w9WgXcQ',
                 'status' => 'draft',
@@ -7413,7 +7407,7 @@ final class AdminDashboardTest extends WebTestCase
             self::assertSelectorExists('textarea[name="description"]');
             self::assertSelectorExists('input[name="duration_minutes"][type="number"]');
             self::assertSelectorExists('input[name="duration_seconds_part"][type="number"]');
-            self::assertSelectorExists('select[name="category"]');
+            self::assertSelectorExists('select[name="category_ids[]"][multiple]');
             self::assertSelectorExists('input[name="tags"]');
             self::assertSelectorExists('input[name="language_code"][list="video-language-codes"]');
             self::assertSelectorExists('select[name="status"]');

@@ -67,6 +67,16 @@ final class AdminVideoThumbnailFlowTest extends WebTestCase
         self::assertIsString($thumbnailPng);
         self::assertSame(strlen($thumbnailPng), file_put_contents($temporaryPath, $thumbnailPng));
         $storedThumbnailObjectId = null;
+        $privateStorage = $this->createMock(PrivateObjectStorageInterface::class);
+        $privateStorage->expects(self::once())->method('write')->willReturnCallback(
+            static function (string $objectId, string $contents) use (&$storedThumbnailObjectId, $thumbnailPng): void {
+                self::assertMatchesRegularExpression('/\A[a-f0-9]{64}\z/D', $objectId);
+                self::assertSame($thumbnailPng, $contents);
+                $storedThumbnailObjectId = $objectId;
+            },
+        );
+        $client->getContainer()->set(PrivateObjectStorageInterface::class, $privateStorage);
+        $client->getContainer()->set(VideoThumbnailUploadService::class, new VideoThumbnailUploadService($privateStorage));
         $entityManager->persist($firstCategory);
         $entityManager->persist($secondCategory);
         $entityManager->persist($newsCategory);
@@ -117,16 +127,6 @@ final class AdminVideoThumbnailFlowTest extends WebTestCase
             $payload['category_ids'] = [$firstCategory->getId(), $secondCategory->getId()];
             $payload['title'] = 'Multiple category video '.$suffix;
             $payload['slug'] = 'multiple-category-'.$suffix;
-            $privateStorage = $this->createMock(PrivateObjectStorageInterface::class);
-            $privateStorage->expects(self::once())->method('write')->willReturnCallback(
-                static function (string $objectId, string $contents) use (&$storedThumbnailObjectId, $thumbnailPng): void {
-                    self::assertMatchesRegularExpression('/\A[a-f0-9]{64}\z/D', $objectId);
-                    self::assertSame($thumbnailPng, $contents);
-                    $storedThumbnailObjectId = $objectId;
-                },
-            );
-            $client->getContainer()->set(PrivateObjectStorageInterface::class, $privateStorage);
-            $client->getContainer()->set(VideoThumbnailUploadService::class, new VideoThumbnailUploadService($privateStorage));
             $client->request(
                 'POST',
                 $newVideoPath,

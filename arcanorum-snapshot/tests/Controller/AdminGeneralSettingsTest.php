@@ -499,7 +499,6 @@ final class AdminGeneralSettingsTest extends WebTestCase
             $client->submitForm('Video speichern', [
                 'title' => $adminVideoTitle,
                 'description' => 'A new editorial video draft with the configured comment default.',
-                'category' => '',
                 'tags' => '',
                 'source_type' => 'url',
                 'source_url' => 'https://video.example.test/admin-created.mp4',
