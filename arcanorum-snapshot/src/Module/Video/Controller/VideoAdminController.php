@@ -792,8 +792,10 @@ final class VideoAdminController extends AbstractController
                         $publicationAt = $parsedPublicationAt->setTimezone(new \DateTimeZone('UTC'));
                     }
                 }
-            } elseif ('' !== $values['publish_at']) {
-                $errors[] = 'Ein Veröffentlichungszeitpunkt ist nur für veröffentlichte oder geplante Videos zulässig.';
+            } else {
+                // A published video's old schedule is present in the edit form;
+                // changing it to a draft must discard that now-irrelevant value.
+                $values['publish_at'] = '';
             }
             $viewCount = ctype_digit($values['view_count'])
                 && strlen($values['view_count']) <= 10

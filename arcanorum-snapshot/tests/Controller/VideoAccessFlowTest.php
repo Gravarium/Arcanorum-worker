@@ -68,7 +68,7 @@ final class VideoAccessFlowTest extends WebTestCase
         $connection = $entityManager->getConnection();
 
         try {
-            $client->request('GET', '/watch/'.$slug);
+            $client->request('GET', '/videos/watch/'.$slug);
             self::assertResponseIsSuccessful();
             self::assertSelectorTextContains('main', 'Dieses Video ist registrierten Mitgliedern vorbehalten.');
             self::assertStringNotContainsString($sourceUrl, (string) $client->getResponse()->getContent());
@@ -86,14 +86,14 @@ final class VideoAccessFlowTest extends WebTestCase
             self::assertResponseStatusCodeSame(404);
 
             $client->loginUser($inactiveMember, 'members');
-            $client->request('GET', '/watch/'.$slug);
+            $client->request('GET', '/videos/watch/'.$slug);
             self::assertResponseIsSuccessful();
             self::assertSelectorTextContains('main', 'Dieses Video ist registrierten Mitgliedern vorbehalten.');
             $client->request('GET', '/videos/'.$videoId.'/thumbnail');
             self::assertResponseStatusCodeSame(404);
 
             $client->loginUser($member, 'members');
-            $client->request('GET', '/watch/'.$slug);
+            $client->request('GET', '/videos/watch/'.$slug);
             self::assertResponseIsSuccessful();
             self::assertStringContainsString('youtube-nocookie.com/embed/', (string) $client->getResponse()->getContent());
             self::assertStringContainsString('no-store', (string) $client->getResponse()->headers->get('Cache-Control'));

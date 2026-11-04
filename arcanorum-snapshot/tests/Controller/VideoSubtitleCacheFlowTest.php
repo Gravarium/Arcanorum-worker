@@ -12,6 +12,7 @@ use App\Platform\Hosting\PrivateObjectStorageInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
 final class VideoSubtitleCacheFlowTest extends WebTestCase
 {
@@ -19,6 +20,9 @@ final class VideoSubtitleCacheFlowTest extends WebTestCase
     {
         $client = static::createClient();
         $client->disableReboot();
+        $tokenStorage = $client->getContainer()->get(TokenStorageInterface::class);
+        self::assertInstanceOf(TokenStorageInterface::class, $tokenStorage);
+        $tokenStorage->setToken(null);
         $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
         $storage = $client->getContainer()->get(PrivateObjectStorageInterface::class);
         self::assertInstanceOf(EntityManagerInterface::class, $entityManager);

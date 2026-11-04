@@ -12,6 +12,7 @@ use App\Service\VideoSocialPreviewGenerator;
 use App\Service\VideoThumbnailUploadService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
 final class VideoSocialPreviewFlowTest extends WebTestCase
 {
@@ -19,6 +20,9 @@ final class VideoSocialPreviewFlowTest extends WebTestCase
     {
         $client = static::createClient();
         $client->disableReboot();
+        $tokenStorage = $client->getContainer()->get(TokenStorageInterface::class);
+        self::assertInstanceOf(TokenStorageInterface::class, $tokenStorage);
+        $tokenStorage->setToken(null);
         $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
         $storage = $client->getContainer()->get(PrivateObjectStorageInterface::class);
         self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
@@ -66,6 +70,9 @@ final class VideoSocialPreviewFlowTest extends WebTestCase
     {
         $client = static::createClient();
         $client->disableReboot();
+        $tokenStorage = $client->getContainer()->get(TokenStorageInterface::class);
+        self::assertInstanceOf(TokenStorageInterface::class, $tokenStorage);
+        $tokenStorage->setToken(null);
         $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
         $uploads = $client->getContainer()->get(VideoThumbnailUploadService::class);
         self::assertInstanceOf(EntityManagerInterface::class, $entityManager);

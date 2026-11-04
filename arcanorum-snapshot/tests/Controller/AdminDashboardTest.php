@@ -3860,6 +3860,13 @@ final class AdminDashboardTest extends WebTestCase
                 'comments_enabled' => '1',
             ]);
             self::assertResponseRedirects('/admin/videos');
+            $revisedVideo = $entityManager->getConnection()->fetchAssociative(
+                'SELECT status, published_at FROM videos WHERE id = :id',
+                ['id' => $videoId],
+            );
+            self::assertIsArray($revisedVideo);
+            self::assertSame('draft', $revisedVideo['status']);
+            self::assertNull($revisedVideo['published_at']);
 
             $client->request('GET', '/admin/videos/new');
             self::assertResponseIsSuccessful();

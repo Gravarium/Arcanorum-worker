@@ -31,6 +31,7 @@ final class VideoEditorialMetadataTest extends TestCase
     public function testEditorialMetadataRejectsMalformedSlugAndAuthor(): void
     {
         $video = $this->publishedVideo();
+        $video->updateEditorialMetadata('original-slug', 'Editorial Desk', false, true);
 
         try {
             $video->updateEditorialMetadata('Not safe', 'Editorial Desk', false, false);

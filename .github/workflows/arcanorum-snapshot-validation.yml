@@ -1417,7 +1417,7 @@ jobs:
 
   validate-published-media-cache:
     if: github.event_name == 'workflow_dispatch' && (inputs.validation_scope == 'video-social-preview-cache-followup' || inputs.validation_scope == 'public-media-cache-followup')
-    name: Focused published media cache checks
+    name: Focused video and media regression checks
     runs-on: ubuntu-26.04
     timeout-minutes: 45
     permissions:
@@ -1554,8 +1554,14 @@ jobs:
       - name: Check affected PHP syntax
         run: |
           if [[ "$VALIDATION_SCOPE" == 'video-social-preview-cache-followup' ]]; then
+            php -l src/Module/Video/Controller/VideoAdminController.php
             php -l src/Module/Video/Controller/VideoThumbnailController.php
+            php -l src/Module/Video/Controller/VideoSubtitleController.php
+            php -l tests/Controller/AdminDashboardTest.php
+            php -l tests/Controller/VideoAccessFlowTest.php
             php -l tests/Controller/VideoSocialPreviewFlowTest.php
+            php -l tests/Controller/VideoSubtitleCacheFlowTest.php
+            php -l tests/Entity/VideoEditorialMetadataTest.php
           else
             php -l src/Module/News/Controller/NewsArticleThumbnailController.php
             php -l src/Module/Content/Controller/ContentInlineImageController.php
@@ -1591,8 +1597,14 @@ jobs:
         run: |
           if [[ "$VALIDATION_SCOPE" == 'video-social-preview-cache-followup' ]]; then
             vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --no-progress --error-format=table --memory-limit=1G \
+              src/Module/Video/Controller/VideoAdminController.php \
               src/Module/Video/Controller/VideoThumbnailController.php \
-              tests/Controller/VideoSocialPreviewFlowTest.php
+              src/Module/Video/Controller/VideoSubtitleController.php \
+              tests/Controller/AdminDashboardTest.php \
+              tests/Controller/VideoAccessFlowTest.php \
+              tests/Controller/VideoSocialPreviewFlowTest.php \
+              tests/Controller/VideoSubtitleCacheFlowTest.php \
+              tests/Entity/VideoEditorialMetadataTest.php
           else
             vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --no-progress --error-format=table --memory-limit=1G \
               src/Module/News/Controller/NewsArticleThumbnailController.php \
@@ -1622,8 +1634,14 @@ jobs:
         run: |
           if [[ "$VALIDATION_SCOPE" == 'video-social-preview-cache-followup' ]]; then
             vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --diff --using-cache=no \
+              src/Module/Video/Controller/VideoAdminController.php \
               src/Module/Video/Controller/VideoThumbnailController.php \
-              tests/Controller/VideoSocialPreviewFlowTest.php
+              src/Module/Video/Controller/VideoSubtitleController.php \
+              tests/Controller/AdminDashboardTest.php \
+              tests/Controller/VideoAccessFlowTest.php \
+              tests/Controller/VideoSocialPreviewFlowTest.php \
+              tests/Controller/VideoSubtitleCacheFlowTest.php \
+              tests/Entity/VideoEditorialMetadataTest.php
           else
             vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --diff --using-cache=no \
               src/Module/News/Controller/NewsArticleThumbnailController.php \
@@ -1653,8 +1671,14 @@ jobs:
         run: |
           if [[ "$VALIDATION_SCOPE" == 'video-social-preview-cache-followup' ]]; then
             vendor/bin/rector process \
+              src/Module/Video/Controller/VideoAdminController.php \
               src/Module/Video/Controller/VideoThumbnailController.php \
+              src/Module/Video/Controller/VideoSubtitleController.php \
+              tests/Controller/AdminDashboardTest.php \
+              tests/Controller/VideoAccessFlowTest.php \
               tests/Controller/VideoSocialPreviewFlowTest.php \
+              tests/Controller/VideoSubtitleCacheFlowTest.php \
+              tests/Entity/VideoEditorialMetadataTest.php \
               --config=rector.php --dry-run --no-progress-bar
           else
             vendor/bin/rector process \
@@ -1687,8 +1711,14 @@ jobs:
           mkdir -p var/test-results
           if [[ "$VALIDATION_SCOPE" == 'video-social-preview-cache-followup' ]]; then
             vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm.sarif \
+              src/Module/Video/Controller/VideoAdminController.php \
               src/Module/Video/Controller/VideoThumbnailController.php \
-              tests/Controller/VideoSocialPreviewFlowTest.php
+              src/Module/Video/Controller/VideoSubtitleController.php \
+              tests/Controller/AdminDashboardTest.php \
+              tests/Controller/VideoAccessFlowTest.php \
+              tests/Controller/VideoSocialPreviewFlowTest.php \
+              tests/Controller/VideoSubtitleCacheFlowTest.php \
+              tests/Entity/VideoEditorialMetadataTest.php
           else
             vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm.sarif \
               src/Module/News/Controller/NewsArticleThumbnailController.php \
@@ -1714,15 +1744,21 @@ jobs:
               tests/Controller/CommentFlowTest.php
           fi
 
-      - name: Run published media cache regression
+      - name: Run targeted video and editorial regressions
         run: |
           mkdir -p var/test-results
           if [[ "$VALIDATION_SCOPE" == 'video-social-preview-cache-followup' ]]; then
-            php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
+            if php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
               --fail-on-risky --fail-on-warning --fail-on-deprecation \
               --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
               --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
-              tests/Controller/VideoSocialPreviewFlowTest.php
+              --filter='testFirstNewsAndVideoIterationPersistsContentAndRejectsUnsafeSources|VideoAccessFlowTest|VideoSocialPreviewFlowTest|VideoSubtitleCacheFlowTest|VideoEditorialMetadataTest' \
+              tests > var/test-results/phpunit-video-editorial.log 2>&1; then
+              echo 'Targeted video and editorial regressions: PASS; detailed results withheld.'
+            else
+              echo 'Targeted video and editorial regressions: FAIL; detailed results withheld.'
+              exit 1
+            fi
           else
             php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
               --fail-on-risky --fail-on-warning --fail-on-deprecation \
