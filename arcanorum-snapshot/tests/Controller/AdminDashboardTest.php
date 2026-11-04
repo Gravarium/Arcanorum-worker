@@ -7466,6 +7466,9 @@ final class AdminDashboardTest extends WebTestCase
         $marker = bin2hex(random_bytes(6));
         $categoryName = 'Video topic '.$marker;
         $categorySlug = 'video-topic-'.$marker;
+        $editCategoryName = 'Edited video topic '.$marker;
+        $editCategorySlug = 'edited-video-topic-'.$marker;
+        $sourceUrl = 'https://www.youtube.com/watch?v='.substr(bin2hex(random_bytes(8)), 0, 11);
         $email = 'video-category-quick-add-'.$marker.'@example.test';
         $password = 'VideoCategory!'.bin2hex(random_bytes(6)).'-A9!';
         $videoTitles = [
@@ -7495,7 +7498,7 @@ final class AdminDashboardTest extends WebTestCase
                 'new_category_slug' => $categorySlug,
                 'tags' => '',
                 'source_type' => 'embed',
-                'source_url' => 'https://www.youtube.com/watch?v='.substr(bin2hex(random_bytes(8)), 0, 11),
+                'source_url' => $sourceUrl,
                 'duration_minutes' => '',
                 'duration_seconds_part' => '',
                 'status' => 'draft',
@@ -7525,6 +7528,93 @@ final class AdminDashboardTest extends WebTestCase
                 'SELECT COUNT(*) FROM video_categories WHERE video_id = :video AND category_id = :category',
                 ['video' => $videoId, 'category' => $categoryId],
             ), [1, '1'], true));
+
+            $client->request('GET', '/admin/videos/'.$videoId.'/edit');
+            self::assertResponseIsSuccessful();
+            $editToken = $client->getCrawler()->filter('form[data-video-source-metadata] input[name="_token"]')->attr('value');
+            self::assertIsString($editToken);
+            $client->request('POST', '/admin/videos/'.$videoId.'/edit', [
+                '_token' => $editToken,
+                'title' => $videoTitles['created'],
+                'slug' => 'video-category-'.$marker,
+                'description' => 'A category is added while editing this video.',
+                'category_ids_present' => '1',
+                'category_ids' => [$categoryId],
+                'new_category_name' => $editCategoryName,
+                'new_category_slug' => $editCategorySlug,
+                'tags' => '',
+                'source_type' => 'embed',
+                'source_url' => $sourceUrl,
+                'duration_minutes' => '',
+                'duration_seconds_part' => '',
+                'status' => 'draft',
+                'publish_at' => '',
+                'author_name' => 'Video Desk',
+                'language_code' => '',
+                'members_only' => '0',
+                'view_count' => '0',
+                'embed_origins' => '',
+                'custom_fields_present' => '1',
+                'custom_fields' => [],
+            ]);
+            self::assertResponseRedirects('/admin/videos');
+
+            $editedCategoryId = $connection->fetchOne(
+                'SELECT id FROM content_categories WHERE name = :name AND content_type = :type',
+                ['name' => $editCategoryName, 'type' => ContentCategoryType::Video->value],
+            );
+            self::assertIsString($editedCategoryId);
+            self::assertSame($editCategorySlug, $connection->fetchOne(
+                'SELECT slug FROM content_categories WHERE id = :id',
+                ['id' => $editedCategoryId],
+            ));
+            self::assertTrue(in_array($connection->fetchOne(
+                'SELECT COUNT(*) FROM video_categories WHERE video_id = :video AND category_id = :category',
+                ['video' => $videoId, 'category' => $editedCategoryId],
+            ), [1, '1'], true));
+            self::assertTrue(in_array($connection->fetchOne(
+                'SELECT COUNT(*) FROM video_categories WHERE video_id = :video AND category_id = :category',
+                ['video' => $videoId, 'category' => $categoryId],
+            ), [1, '1'], true), 'Adding a category during editing must preserve existing category assignments.');
+
+            $client->request('GET', '/admin/videos/'.$videoId.'/edit');
+            self::assertResponseIsSuccessful();
+            $editToken = $client->getCrawler()->filter('form[data-video-source-metadata] input[name="_token"]')->attr('value');
+            self::assertIsString($editToken);
+            $client->request('POST', '/admin/videos/'.$videoId.'/edit', [
+                '_token' => $editToken,
+                'title' => 'Changed despite category conflict '.$marker,
+                'slug' => 'changed-despite-category-conflict-'.$marker,
+                'description' => 'This attempted update must roll back.',
+                'category_ids_present' => '1',
+                'category_ids' => [$categoryId, $editedCategoryId],
+                'new_category_name' => 'Failed edit category '.$marker,
+                'new_category_slug' => $categorySlug,
+                'tags' => '',
+                'source_type' => 'embed',
+                'source_url' => $sourceUrl,
+                'duration_minutes' => '',
+                'duration_seconds_part' => '',
+                'status' => 'draft',
+                'publish_at' => '',
+                'author_name' => 'Video Desk',
+                'language_code' => '',
+                'members_only' => '0',
+                'view_count' => '0',
+                'embed_origins' => '',
+                'custom_fields_present' => '1',
+                'custom_fields' => [],
+            ]);
+            self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+            self::assertSelectorTextContains('[role="alert"]', 'bereits von einer Videokategorie verwendet');
+            self::assertSame($videoTitles['created'], $connection->fetchOne(
+                'SELECT title FROM videos WHERE id = :id',
+                ['id' => $videoId],
+            ));
+            self::assertTrue(in_array($connection->fetchOne(
+                'SELECT COUNT(*) FROM content_categories WHERE name = :name AND content_type = :type',
+                ['name' => 'Failed edit category '.$marker, 'type' => ContentCategoryType::Video->value],
+            ), [0, '0'], true));
 
             $client->request('GET', '/admin/videos/new');
             self::assertResponseIsSuccessful();
@@ -7609,8 +7699,10 @@ final class AdminDashboardTest extends WebTestCase
                 $connection->delete('videos', ['title' => $title]);
             }
             $connection->delete('content_categories', ['name' => $categoryName, 'content_type' => ContentCategoryType::Video->value]);
+            $connection->delete('content_categories', ['name' => $editCategoryName, 'content_type' => ContentCategoryType::Video->value]);
             $connection->delete('content_categories', ['name' => 'Different category '.$marker, 'content_type' => ContentCategoryType::Video->value]);
             $connection->delete('content_categories', ['name' => 'Invalid slug category '.$marker, 'content_type' => ContentCategoryType::Video->value]);
+            $connection->delete('content_categories', ['name' => 'Failed edit category '.$marker, 'content_type' => ContentCategoryType::Video->value]);
             $this->removeUser($client, $email);
         }
     }
