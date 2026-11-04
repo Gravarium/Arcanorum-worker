@@ -68,6 +68,7 @@ function createHarness(response) {
     const description = new FakeTextarea();
     const durationMinutes = new FakeInput();
     const durationSeconds = new FakeInput();
+    const thumbnailUrl = new FakeInput();
     const sourceType = new FakeSelect();
     const sourceUrlField = new FakeElement();
     const sourceUrlLabel = new FakeElement();
@@ -99,6 +100,7 @@ function createHarness(response) {
                 ['[name="description"]', description],
                 ['[name="duration_minutes"]', durationMinutes],
                 ['[name="duration_seconds_part"]', durationSeconds],
+                ['[name="thumbnail_url"]', thumbnailUrl],
                 ['[data-video-source-type]', sourceType],
                 ['[data-video-source-url-field]', sourceUrlField],
                 ['[data-video-source-url-label]', sourceUrlLabel],
@@ -129,7 +131,7 @@ function createHarness(response) {
     });
 
     return {
-        button, status, source, title, description, durationMinutes, durationSeconds,
+        button, status, source, title, description, durationMinutes, durationSeconds, thumbnailUrl,
         sourceType, sourceUrlField, sourceUrlLabel, sourceFileField, sourceFile, sourceHelp, calls,
     };
 }
@@ -141,6 +143,7 @@ test('imports provider fields through the same-origin CSRF endpoint after an exp
             title: 'Video title',
             description: 'Description',
             duration_seconds: 3723,
+            thumbnail_url: 'https://i.ytimg.com/vi/dQw4w9WgXcQ/mqdefault.jpg',
         }),
     });
 
@@ -159,19 +162,43 @@ test('imports provider fields through the same-origin CSRF endpoint after an exp
     assert.equal(state.description.value, 'Description');
     assert.equal(state.durationMinutes.value, '62');
     assert.equal(state.durationSeconds.value, '3');
+    assert.equal(state.thumbnailUrl.value, 'https://i.ytimg.com/vi/dQw4w9WgXcQ/mqdefault.jpg');
     assert.equal(state.status.textContent, 'Metadata imported.');
     assert.equal(state.button.disabled, false);
+});
+
+test('keeps a manually entered thumbnail address when provider metadata is applied', async () => {
+    const state = createHarness({
+        ok: true,
+        json: async () => ({
+            title: 'Video title',
+            description: 'Description',
+            duration_seconds: null,
+            thumbnail_url: 'https://i.ytimg.com/vi/dQw4w9WgXcQ/mqdefault.jpg',
+        }),
+    });
+    state.thumbnailUrl.value = 'https://images.example.test/custom-cover.webp';
+
+    await state.button.click();
+
+    assert.equal(state.thumbnailUrl.value, 'https://images.example.test/custom-cover.webp');
 });
 
 test('fails closed for invalid provider responses without replacing the administrator’s fields', async () => {
     const state = createHarness({
         ok: true,
-        json: async () => ({title: '<script>bad</script>', description: 'x'.repeat(20001), duration_seconds: -1}),
+        json: async () => ({
+            title: 'Provider title',
+            description: 'Provider description',
+            duration_seconds: 60,
+            thumbnail_url: 'https://outside.example.test/image.png',
+        }),
     });
     state.title.value = 'Manual title';
     state.description.value = 'Manual description';
     state.durationMinutes.value = '1';
     state.durationSeconds.value = '0';
+    state.thumbnailUrl.value = 'https://images.example.test/manual.png';
 
     await state.button.click();
 
@@ -179,6 +206,7 @@ test('fails closed for invalid provider responses without replacing the administ
     assert.equal(state.description.value, 'Manual description');
     assert.equal(state.durationMinutes.value, '1');
     assert.equal(state.durationSeconds.value, '0');
+    assert.equal(state.thumbnailUrl.value, 'https://images.example.test/manual.png');
     assert.equal(state.status.textContent, 'Metadata could not be imported.');
     assert.equal(state.button.disabled, false);
 });

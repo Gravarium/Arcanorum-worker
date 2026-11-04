@@ -1,4 +1,25 @@
 (() => {
+    const isSafeProviderThumbnailUrl = value => {
+        if ('string' !== typeof value || value.length < 1 || value.length > 2048) {
+            return false;
+        }
+
+        try {
+            const url = new URL(value);
+            const allowedHost = ['i.ytimg.com', 'img.youtube.com', 'i.vimeocdn.com'].includes(url.hostname)
+                || /^s[1-5]\.dmcdn\.net$/.test(url.hostname);
+
+            return 'https:' === url.protocol
+                && '' === url.username
+                && '' === url.password
+                && '' === url.port
+                && '' === url.hash
+                && allowedHost;
+        } catch {
+            return false;
+        }
+    };
+
     for (const form of document.querySelectorAll('[data-video-source-metadata]')) {
         const button = form.querySelector('[data-video-metadata-fetch]');
         const status = form.querySelector('[data-video-metadata-status]');
@@ -7,6 +28,7 @@
         const descriptionInput = form.querySelector('[name="description"]');
         const durationMinutesInput = form.querySelector('[name="duration_minutes"]');
         const durationSecondsInput = form.querySelector('[name="duration_seconds_part"]');
+        const thumbnailUrlInput = form.querySelector('[name="thumbnail_url"]');
         const sourceTypeInput = form.querySelector('[data-video-source-type]');
         const sourceUrlField = form.querySelector('[data-video-source-url-field]');
         const sourceUrlLabel = form.querySelector('[data-video-source-url-label]');
@@ -120,6 +142,7 @@
                     || metadata.title.length > 180
                     || metadata.description.length > 20000
                     || (null !== metadata.duration_seconds && (metadata.duration_seconds < 0 || metadata.duration_seconds > 2147483647))
+                    || (Object.hasOwn(metadata, 'thumbnail_url') && !isSafeProviderThumbnailUrl(metadata.thumbnail_url))
                 ) {
                     throw new Error('provider-metadata-rejected');
                 }
@@ -129,6 +152,12 @@
                 if (null !== metadata.duration_seconds) {
                     durationMinutesInput.value = String(Math.floor(metadata.duration_seconds / 60));
                     durationSecondsInput.value = String(metadata.duration_seconds % 60);
+                }
+                if (thumbnailUrlInput instanceof HTMLInputElement
+                    && '' === thumbnailUrlInput.value.trim()
+                    && 'string' === typeof metadata.thumbnail_url
+                ) {
+                    thumbnailUrlInput.value = metadata.thumbnail_url;
                 }
                 status.textContent = form.dataset.metadataLoaded || '';
             } catch {

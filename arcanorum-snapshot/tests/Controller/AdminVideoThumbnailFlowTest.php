@@ -309,6 +309,110 @@ final class AdminVideoThumbnailFlowTest extends WebTestCase
         }
     }
 
+    public function testAdministratorCanSetThumbnailUrlWhileCreatingVideoAndItIsStoredPrivately(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $client->getContainer()->set(
+            RuntimeAttestationReportProviderInterface::class,
+            new VerifiedRuntimeAttestationReportProvider(),
+        );
+
+        $suffix = bin2hex(random_bytes(8));
+        $email = 'video-create-thumbnail-url-'.$suffix.'@example.test';
+        $password = 'CreateThumbnailUrl-'.$suffix.'-G4!';
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        $thumbnailPng = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/WioAAAAASUVORK5CYII=', true);
+        self::assertIsString($thumbnailPng);
+        $storedObjectId = null;
+        $privateStorage = $this->createMock(PrivateObjectStorageInterface::class);
+        $privateStorage->expects(self::once())->method('write')->willReturnCallback(
+            static function (string $objectId, string $contents) use (&$storedObjectId, $thumbnailPng): void {
+                self::assertMatchesRegularExpression('/\A[a-f0-9]{64}\z/D', $objectId);
+                self::assertSame($thumbnailPng, $contents);
+                $storedObjectId = $objectId;
+            },
+        );
+        $thumbnailUploads = new VideoThumbnailUploadService($privateStorage);
+        $thumbnailRequests = 0;
+        $thumbnailImports = new VideoThumbnailImportService(
+            new MockHttpClient(static function (string $method, string $url, array $options) use (&$thumbnailRequests, $thumbnailPng): MockResponse {
+                ++$thumbnailRequests;
+                self::assertSame('GET', $method);
+                self::assertSame(0, $options['max_redirects'] ?? null);
+                $parts = parse_url($url);
+                self::assertIsArray($parts);
+                self::assertSame('i.ytimg.com', $parts['host'] ?? null);
+                self::assertSame('/vi/dQw4w9WgXcQ/mqdefault.jpg', $parts['path'] ?? null);
+
+                return new MockResponse($thumbnailPng, ['http_code' => Response::HTTP_OK]);
+            }),
+            $thumbnailUploads,
+        );
+        $client->getContainer()->set(PrivateObjectStorageInterface::class, $privateStorage);
+        $client->getContainer()->set(VideoThumbnailUploadService::class, $thumbnailUploads);
+        $client->getContainer()->set(VideoThumbnailImportService::class, $thumbnailImports);
+
+        try {
+            $admin = $this->persistAdministrator($client, $email, $password);
+            $this->submitLogin($client, $admin, $password);
+            self::assertResponseRedirects('/admin');
+
+            $newVideoPath = '/admin/videos/new';
+            $client->request('GET', $newVideoPath);
+            self::assertResponseIsSuccessful();
+            self::assertSelectorExists('input[name="thumbnail_url"][type="url"]');
+            self::assertSelectorExists('input[name="thumbnail_file"][type="file"]');
+            $token = $client->getCrawler()->filter('form.admin-form input[name="_token"]')->first()->attr('value');
+            self::assertIsString($token);
+            $payload = [
+                '_token' => $token,
+                'category_ids_present' => '1',
+                'category_ids' => [],
+                'title' => 'Video with thumbnail URL '.$suffix,
+                'slug' => 'video-thumbnail-url-'.$suffix,
+                'description' => 'A video whose thumbnail URL is imported into private storage.',
+                'tags' => 'Classic form, video',
+                'source_type' => 'embed',
+                'source_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                'thumbnail_url' => 'https://i.ytimg.com/vi/dQw4w9WgXcQ/mqdefault.jpg',
+                'duration_minutes' => '',
+                'duration_seconds_part' => '',
+                'status' => 'draft',
+                'publish_at' => '',
+                'author_name' => 'Editorial Desk',
+                'language_code' => '',
+                'view_count' => '0',
+                'embed_origins' => '',
+                'custom_fields_present' => '1',
+            ];
+
+            $payload['thumbnail_url'] = 'https://127.0.0.1/internal.png';
+            $client->request('POST', $newVideoPath, $payload);
+            self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+            self::assertSame(0, $thumbnailRequests);
+            self::assertNull($entityManager->getRepository(Video::class)->findOneBy(['slug' => 'video-thumbnail-url-'.$suffix]));
+
+            $client->request('GET', $newVideoPath);
+            $validToken = $client->getCrawler()->filter('form.admin-form input[name="_token"]')->first()->attr('value');
+            self::assertIsString($validToken);
+            $payload['_token'] = $validToken;
+            $payload['thumbnail_url'] = 'https://i.ytimg.com/vi/dQw4w9WgXcQ/mqdefault.jpg';
+            $client->request('POST', $newVideoPath, $payload);
+            self::assertResponseRedirects('/admin/videos');
+            self::assertSame(1, $thumbnailRequests);
+
+            $entityManager->clear();
+            $savedVideo = $entityManager->getRepository(Video::class)->findOneBy(['slug' => 'video-thumbnail-url-'.$suffix]);
+            self::assertInstanceOf(Video::class, $savedVideo);
+            self::assertSame($storedObjectId, $savedVideo->getThumbnailObjectId());
+        } finally {
+            $entityManager->getConnection()->executeStatement('DELETE FROM videos WHERE slug = :slug', ['slug' => 'video-thumbnail-url-'.$suffix]);
+            $entityManager->getConnection()->executeStatement('DELETE FROM admin_users WHERE email = :email', ['email' => $email]);
+        }
+    }
+
     public function testAdministratorCanImportAValidatedThumbnailFromPublicHttpsUrl(): void
     {
         $client = static::createClient();

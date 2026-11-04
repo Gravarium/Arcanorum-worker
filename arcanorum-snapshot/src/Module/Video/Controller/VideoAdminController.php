@@ -34,6 +34,8 @@ use App\Service\VideoProviderImportService;
 use App\Service\VideoSlugLock;
 use App\Service\VideoSourceUrlLock;
 use App\Service\VideoSubtitleUploadService;
+use App\Service\VideoThumbnailImportBudget;
+use App\Service\VideoThumbnailImportService;
 use App\Service\VideoThumbnailUploadService;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
@@ -427,6 +429,7 @@ final class VideoAdminController extends AbstractController
         ContentTagManager $tagManager,
         VideoMediaUploadService $mediaUploads,
         VideoThumbnailUploadService $thumbnailUploads,
+        VideoThumbnailImportService $thumbnailImports,
         ExternalVideoEmbedResolver $embedResolver,
         VideoStreamSourceResolver $streamResolver,
         EntityManagerInterface $entityManager,
@@ -446,6 +449,7 @@ final class VideoAdminController extends AbstractController
             $tagManager,
             $mediaUploads,
             $thumbnailUploads,
+            $thumbnailImports,
             $embedResolver,
             $streamResolver,
             $entityManager,
@@ -473,6 +477,7 @@ final class VideoAdminController extends AbstractController
         ContentTagManager $tagManager,
         VideoMediaUploadService $mediaUploads,
         VideoThumbnailUploadService $thumbnailUploads,
+        VideoThumbnailImportService $thumbnailImports,
         ExternalVideoEmbedResolver $embedResolver,
         VideoStreamSourceResolver $streamResolver,
         EntityManagerInterface $entityManager,
@@ -497,6 +502,7 @@ final class VideoAdminController extends AbstractController
             $tagManager,
             $mediaUploads,
             $thumbnailUploads,
+            $thumbnailImports,
             $embedResolver,
             $streamResolver,
             $entityManager,
@@ -518,6 +524,7 @@ final class VideoAdminController extends AbstractController
         ContentTagManager $tagManager,
         VideoMediaUploadService $mediaUploads,
         VideoThumbnailUploadService $thumbnailUploads,
+        VideoThumbnailImportService $thumbnailImports,
         ExternalVideoEmbedResolver $embedResolver,
         VideoStreamSourceResolver $streamResolver,
         EntityManagerInterface $entityManager,
@@ -555,6 +562,7 @@ final class VideoAdminController extends AbstractController
             'source_type' => $video?->getSourceType()->value
                 ?? (VideoSourceType::tryFrom(self::input($request->query, 'source_type')) ?? VideoSourceType::Embed)->value,
             'source_url' => $video?->getSourceUrl() ?? '',
+            'thumbnail_url' => '',
             'duration_minutes' => null === $storedDurationSeconds ? '' : (string) intdiv($storedDurationSeconds, 60),
             'duration_seconds_part' => null === $storedDurationSeconds ? '' : (string) ($storedDurationSeconds % 60),
             'status' => $video?->getStatus()->value ?? PublishingStatus::Draft->value,
@@ -593,10 +601,13 @@ final class VideoAdminController extends AbstractController
                 'featured', 'comments_enabled', 'members_only', 'embedding_enabled', 'view_count', 'embed_origins',
                 'custom_fields_present', 'custom_fields',
             ];
+            if (null === $video) {
+                $allowedFields[] = 'thumbnail_url';
+            }
             if ([] !== array_diff(array_keys($rawPayload), $allowedFields)) {
                 $errors[] = 'Die Anfrage enthält unerwartete Eingabefelder.';
             }
-            foreach (['_token', 'title', 'slug', 'description', 'category', 'category_ids_present', 'tags', 'source_type', 'source_url', 'duration_seconds', 'duration_minutes', 'duration_seconds_part', 'status', 'publish_at', 'author_name', 'language_code', 'view_count', 'embed_origins'] as $field) {
+            foreach (['_token', 'title', 'slug', 'description', 'category', 'category_ids_present', 'tags', 'source_type', 'source_url', 'thumbnail_url', 'duration_seconds', 'duration_minutes', 'duration_seconds_part', 'status', 'publish_at', 'author_name', 'language_code', 'view_count', 'embed_origins'] as $field) {
                 if (isset($rawPayload[$field]) && !is_string($rawPayload[$field])) {
                     $errors[] = 'Die Eingabe enthält einen ungültigen Wert.';
                 }
@@ -634,6 +645,7 @@ final class VideoAdminController extends AbstractController
                 'tags' => self::input($request->request, 'tags'),
                 'source_type' => self::input($request->request, 'source_type'),
                 'source_url' => trim(self::input($request->request, 'source_url')),
+                'thumbnail_url' => trim(self::input($request->request, 'thumbnail_url')),
                 'duration_minutes' => trim(self::input($request->request, 'duration_minutes')),
                 'duration_seconds_part' => trim(self::input($request->request, 'duration_seconds_part')),
                 'status' => self::input($request->request, 'status'),
@@ -736,6 +748,19 @@ final class VideoAdminController extends AbstractController
             }
             if (null !== $video && $thumbnailFile instanceof UploadedFile) {
                 $errors[] = 'Bitte verwende beim Bearbeiten den gesonderten Vorschaubildbereich.';
+            }
+            if (null !== $video && '' !== $values['thumbnail_url']) {
+                $errors[] = 'Bitte verwende beim Bearbeiten den gesonderten Vorschaubildbereich.';
+            }
+            if ('' !== $values['thumbnail_url']
+                && (strlen($values['thumbnail_url']) > 2048
+                    || 1 === preg_match('/[\x00-\x20\x7f]/', $values['thumbnail_url'])
+                    || !Video::isSafeHttpsSource($values['thumbnail_url']))
+            ) {
+                $errors[] = 'Die Vorschaubild-Adresse muss eine gültige HTTPS-Adresse ohne Zugangsdaten sein.';
+            }
+            if ($thumbnailFile instanceof UploadedFile && '' !== $values['thumbnail_url']) {
+                $errors[] = 'Bitte wähle entweder eine Bilddatei oder eine Vorschaubild-Adresse aus.';
             }
 
             $sourceType = VideoSourceType::tryFrom($values['source_type']);
@@ -914,6 +939,19 @@ final class VideoAdminController extends AbstractController
             if ([] === $errors && $thumbnailFile instanceof UploadedFile) {
                 try {
                     $uploadedThumbnail = $thumbnailUploads->store($thumbnailFile);
+                } catch (\InvalidArgumentException $exception) {
+                    $errors[] = $exception->getMessage();
+                } catch (PrivateStorageOperationFailed) {
+                    $errors[] = 'Der sichere private Bildspeicher ist derzeit nicht verfügbar; das Vorschaubild wurde nicht gespeichert.';
+                    $storageUnavailable = true;
+                }
+            }
+            if ([] === $errors && '' !== $values['thumbnail_url']) {
+                try {
+                    $uploadedThumbnail = $thumbnailImports->storeFromUrl(
+                        $values['thumbnail_url'],
+                        new VideoThumbnailImportBudget(4_194_304, 8.0),
+                    );
                 } catch (\InvalidArgumentException $exception) {
                     $errors[] = $exception->getMessage();
                 } catch (PrivateStorageOperationFailed) {
