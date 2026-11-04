@@ -86,7 +86,9 @@ final class InstallerSecurityProfileController extends AbstractController
                 return $this->privateResponse(new Response('', Response::HTTP_NOT_FOUND));
             }
 
-            $this->selectionManager->replaceSelection($input['selected_features'] ?? []);
+            if (!$this->selectionManager->replaceSelectionDuringInstallation($input['selected_features'] ?? [])) {
+                return $this->privateResponse(new Response('', Response::HTTP_NOT_FOUND));
+            }
         } catch (\InvalidArgumentException) {
             try {
                 $overview = $this->selectionManager->overview();

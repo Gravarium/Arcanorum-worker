@@ -63,6 +63,7 @@ final class InstallerSecurityProfileControllerTest extends WebTestCase
 
         try {
             $connection->executeStatement('DELETE FROM admin_users');
+            $connection->executeStatement("UPDATE hosting_security_selection SET selected_feature_ids = '[]'::json WHERE id = 1");
             $entityManager->clear();
 
             $adminUsers = $client->getContainer()->get(AdminUserRepository::class);
@@ -146,6 +147,18 @@ final class InstallerSecurityProfileControllerTest extends WebTestCase
         $email = 'installer-gate-'.bin2hex(random_bytes(6)).'@example.test';
 
         try {
+            $connection->executeStatement('DELETE FROM admin_users');
+            $connection->executeStatement("UPDATE hosting_security_selection SET selected_feature_ids = '[]'::json WHERE id = 1");
+            $entityManager->clear();
+            $client->getContainer()->set(
+                HostingSecurityFeatureSelectionManager::class,
+                $this->managerWithVerifiedPrivateStorage($client),
+            );
+            $client->request('GET', '/install/security-profile');
+            self::assertResponseIsSuccessful();
+            $token = (string) $client->getCrawler()->filter('form input[name="token"]')->attr('value');
+            self::assertNotSame('', $token);
+
             $admin = new AdminUser($email);
             $admin->setRoles([AdminRole::Administrator->value]);
             $admin->setPassword($hasher->hashPassword($admin, 'InstallerSecurity!2026'));
@@ -156,10 +169,16 @@ final class InstallerSecurityProfileControllerTest extends WebTestCase
             self::assertSame('noindex, nofollow', $client->getResponse()->headers->get('X-Robots-Tag'));
 
             $client->request('POST', '/install/security-profile', [
-                'token' => 'untrusted',
+                'token' => $token,
                 'selected_features' => ['private_storage'],
             ]);
             self::assertResponseStatusCodeSame(404);
+
+            $selectionRepository = $client->getContainer()->get(HostingSecuritySelectionRepository::class);
+            self::assertInstanceOf(HostingSecuritySelectionRepository::class, $selectionRepository);
+            $saved = $selectionRepository->findCurrent();
+            self::assertInstanceOf(\App\Entity\HostingSecuritySelection::class, $saved);
+            self::assertSame([], $saved->getSelectedFeatureIds());
         } finally {
             if ($connection->isTransactionActive()) {
                 $connection->rollBack();
@@ -186,8 +205,10 @@ final class InstallerSecurityProfileControllerTest extends WebTestCase
     {
         $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
         $repository = $client->getContainer()->get(HostingSecuritySelectionRepository::class);
+        $adminUsers = $client->getContainer()->get(AdminUserRepository::class);
         self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
         self::assertInstanceOf(HostingSecuritySelectionRepository::class, $repository);
+        self::assertInstanceOf(AdminUserRepository::class, $adminUsers);
         $evidence = [new CapabilityEvidence(
             HostingCapability::PrivateStorage,
             CapabilityStatus::Verified,
@@ -211,6 +232,7 @@ final class InstallerSecurityProfileControllerTest extends WebTestCase
         return new HostingSecurityFeatureSelectionManager(
             $entityManager,
             $repository,
+            $adminUsers,
             new HostingProfileDetector([$probe]),
             new HostingSecurityFeatureCatalog(),
         );

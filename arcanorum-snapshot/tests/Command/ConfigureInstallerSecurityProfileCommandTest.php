@@ -15,6 +15,7 @@ use App\Platform\Hosting\HostingSecurityFeature;
 use App\Platform\Hosting\HostingSecurityFeatureCatalog;
 use App\Platform\Hosting\HostingSecurityFeatureChoice;
 use App\Platform\Security\InteractiveConsoleTerminalInterface;
+use App\Repository\AdminUserRepository;
 use App\Repository\HostingSecuritySelectionRepository;
 use App\Service\HostingSecurityFeatureSelectionManager;
 use Doctrine\ORM\EntityManagerInterface;
@@ -65,8 +66,10 @@ final class ConfigureInstallerSecurityProfileCommandTest extends KernelTestCase
     {
         $entityManager = static::getContainer()->get(EntityManagerInterface::class);
         $repository = static::getContainer()->get(HostingSecuritySelectionRepository::class);
+        $adminUsers = static::getContainer()->get(AdminUserRepository::class);
         self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
         self::assertInstanceOf(HostingSecuritySelectionRepository::class, $repository);
+        self::assertInstanceOf(AdminUserRepository::class, $adminUsers);
 
         $connection = $entityManager->getConnection();
         $connection->beginTransaction();
@@ -88,6 +91,7 @@ final class ConfigureInstallerSecurityProfileCommandTest extends KernelTestCase
             $manager = new HostingSecurityFeatureSelectionManager(
                 $entityManager,
                 $repository,
+                $adminUsers,
                 new HostingProfileDetector([$probe]),
                 new HostingSecurityFeatureCatalog(),
             );

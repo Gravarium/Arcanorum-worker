@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Service;
 
+use App\Entity\AdminRole;
 use App\Entity\HostingSecuritySelection;
 use App\Platform\Hosting\CapabilityEvidence;
 use App\Platform\Hosting\CapabilityProbeInterface;
@@ -12,6 +13,7 @@ use App\Platform\Hosting\HostingCapability;
 use App\Platform\Hosting\HostingProfileDetector;
 use App\Platform\Hosting\HostingSecurityFeature;
 use App\Platform\Hosting\HostingSecurityFeatureCatalog;
+use App\Repository\AdminUserRepository;
 use App\Repository\HostingSecuritySelectionRepository;
 use App\Service\HostingSecurityFeatureSelectionManager;
 use Doctrine\ORM\EntityManagerInterface;
@@ -102,6 +104,48 @@ final class HostingSecurityFeatureSelectionManagerTest extends KernelTestCase
         }
     }
 
+    public function testInstallerSelectionCannotChangeAfterTheFirstAdministratorExists(): void
+    {
+        self::bootKernel();
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $repository = static::getContainer()->get(HostingSecuritySelectionRepository::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        self::assertInstanceOf(HostingSecuritySelectionRepository::class, $repository);
+        $connection = $entityManager->getConnection();
+        $connection->beginTransaction();
+
+        try {
+            $connection->executeStatement('DELETE FROM admin_users');
+            $entityManager->clear();
+            $manager = $this->manager($entityManager, $repository, [
+                HostingCapability::PrivateStorage->value => CapabilityStatus::Verified,
+            ]);
+            self::assertTrue($manager->replaceSelectionDuringInstallation([]));
+
+            $connection->insert('admin_users', [
+                'id' => bin2hex(random_bytes(16)),
+                'email' => 'first-admin-'.bin2hex(random_bytes(6)).'@example.test',
+                'roles' => json_encode([AdminRole::Administrator->value], JSON_THROW_ON_ERROR),
+                'password' => 'test-only-hash',
+            ]);
+
+            self::assertFalse($manager->replaceSelectionDuringInstallation(['private_storage']));
+            $closedSelection = $repository->findCurrent();
+            self::assertInstanceOf(HostingSecuritySelection::class, $closedSelection);
+            self::assertSame([], $closedSelection->getSelectedFeatureIds());
+
+            $manager->replaceSelection(['private_storage']);
+            $adminSelection = $repository->findCurrent();
+            self::assertInstanceOf(HostingSecuritySelection::class, $adminSelection);
+            self::assertSame(['private_storage'], $adminSelection->getSelectedFeatureIds());
+        } finally {
+            if ($connection->isTransactionActive()) {
+                $connection->rollBack();
+            }
+            $entityManager->clear();
+        }
+    }
+
     /**
      * @param array<string, CapabilityStatus> $statuses
      */
@@ -136,9 +180,13 @@ final class HostingSecurityFeatureSelectionManagerTest extends KernelTestCase
             }
         };
 
+        $adminUsers = static::getContainer()->get(AdminUserRepository::class);
+        self::assertInstanceOf(AdminUserRepository::class, $adminUsers);
+
         return new HostingSecurityFeatureSelectionManager(
             $entityManager,
             $repository,
+            $adminUsers,
             new HostingProfileDetector([$probe]),
             new HostingSecurityFeatureCatalog(),
         );

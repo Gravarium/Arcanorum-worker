@@ -18,6 +18,7 @@ use App\Platform\Security\AdminMfaProvisioningService;
 use App\Platform\Security\AdminMfaSecretCipher;
 use App\Platform\Security\RuntimeAttestationReportProviderInterface;
 use App\Platform\Security\TotpVerifier;
+use App\Repository\AdminUserRepository;
 use App\Repository\HostingSecuritySelectionRepository;
 use App\Service\HostingSecurityFeatureSelectionManager;
 use App\Tests\Support\VerifiedRuntimeAttestationReportProvider;
@@ -158,8 +159,10 @@ final class AdminHostingSecurityControllerTest extends WebTestCase
     {
         $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
         $repository = $client->getContainer()->get(HostingSecuritySelectionRepository::class);
+        $adminUsers = $client->getContainer()->get(AdminUserRepository::class);
         self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
         self::assertInstanceOf(HostingSecuritySelectionRepository::class, $repository);
+        self::assertInstanceOf(AdminUserRepository::class, $adminUsers);
         $evidence = [new CapabilityEvidence(
             HostingCapability::PrivateStorage,
             CapabilityStatus::Verified,
@@ -183,6 +186,7 @@ final class AdminHostingSecurityControllerTest extends WebTestCase
         return new HostingSecurityFeatureSelectionManager(
             $entityManager,
             $repository,
+            $adminUsers,
             new HostingProfileDetector([$probe]),
             new HostingSecurityFeatureCatalog(),
         );

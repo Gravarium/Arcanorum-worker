@@ -292,8 +292,10 @@ final class InstallerBootstrapFlowTest extends WebTestCase
     {
         $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
         $repository = $client->getContainer()->get(HostingSecuritySelectionRepository::class);
+        $adminUsers = $client->getContainer()->get(AdminUserRepository::class);
         self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
         self::assertInstanceOf(HostingSecuritySelectionRepository::class, $repository);
+        self::assertInstanceOf(AdminUserRepository::class, $adminUsers);
 
         $evidence = [new CapabilityEvidence(
             HostingCapability::PrivateStorage,
@@ -318,6 +320,7 @@ final class InstallerBootstrapFlowTest extends WebTestCase
         return new HostingSecurityFeatureSelectionManager(
             $entityManager,
             $repository,
+            $adminUsers,
             new HostingProfileDetector([$probe]),
             new HostingSecurityFeatureCatalog(),
         );
