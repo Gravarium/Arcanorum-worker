@@ -1035,7 +1035,7 @@ final class VideoAdminController extends AbstractController
             return 'video';
         }
 
-        $slug = (new AsciiSlugger('en'))->slug(trim($title))->lower()->toString();
+        $slug = new AsciiSlugger('en')->slug(trim($title))->lower()->toString();
         $slug = rtrim(mb_substr($slug, 0, 200, 'UTF-8'), '-');
 
         return '' === $slug ? 'video' : $slug;
