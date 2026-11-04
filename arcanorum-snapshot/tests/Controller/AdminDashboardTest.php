@@ -7468,7 +7468,7 @@ final class AdminDashboardTest extends WebTestCase
             self::assertResponseIsSuccessful();
             self::assertSelectorExists('input[name="duration_minutes"][value="2"]');
             self::assertSelectorExists('input[name="duration_seconds_part"][value="3"]');
-            self::assertSelectorTextContains('label', 'Aufrufe');
+            self::assertSelectorTextContains('[data-testid="video-view-count"]', 'Aufrufe');
             self::assertSelectorExists('input[readonly][aria-readonly="true"]');
 
             $client->request('GET', '/admin/videos/new');

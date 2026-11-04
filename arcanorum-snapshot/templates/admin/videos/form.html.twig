@@ -130,7 +130,7 @@
             </div>
 
             {% if is_edit %}
-                <label>
+                <label data-testid="video-view-count">
                     <span>{{ 'Aufrufe'|trans }}</span>
                     <input type="text" value="{{ video_view_count }}" readonly aria-readonly="true">
                 </label>
