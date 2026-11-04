@@ -138,7 +138,10 @@ final class VideoSocialPreviewFlowTest extends WebTestCase
             self::assertResponseIsSuccessful();
             self::assertSame('image/jpeg', $client->getResponse()->headers->get('Content-Type'));
             self::assertSame('nosniff', $client->getResponse()->headers->get('X-Content-Type-Options'));
-            self::assertTrue($client->getResponse()->headers->getCacheControlDirective('public'));
+            self::assertTrue(
+                $client->getResponse()->headers->getCacheControlDirective('public'),
+                'Cache-Control value: '.(string) $client->getResponse()->headers->get('Cache-Control'),
+            );
             self::assertSame('0', $client->getResponse()->headers->getCacheControlDirective('max-age'));
             self::assertTrue($client->getResponse()->headers->getCacheControlDirective('must-revalidate'));
             self::assertFalse((bool) $client->getResponse()->headers->getCacheControlDirective('immutable'));

@@ -80,7 +80,10 @@ final class VideoAccessFlowTest extends WebTestCase
 
             $client->request('GET', '/videos/'.$videoId.'/thumbnail');
             self::assertResponseStatusCodeSame(404);
-            self::assertResponseHeaderSame('Cache-Control', 'no-store');
+            self::assertTrue(
+                $client->getResponse()->headers->getCacheControlDirective('no-store'),
+                'Cache-Control value: '.(string) $client->getResponse()->headers->get('Cache-Control'),
+            );
 
             $client->request('POST', '/comments/video/'.$videoId);
             self::assertResponseStatusCodeSame(404);

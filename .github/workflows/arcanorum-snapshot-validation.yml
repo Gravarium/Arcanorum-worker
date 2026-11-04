@@ -1759,40 +1759,73 @@ jobs:
               echo 'Targeted video and editorial regressions: FAIL; reporting test names and coordinates only.'
               python3 - <<'PY'
           import re
+          import xml.etree.ElementTree as ET
           from pathlib import Path
 
-          log = Path('var/test-results/phpunit-video-editorial.log').read_text(encoding='utf-8', errors='replace')
-          failures = []
-          current = None
-          test_pattern = re.compile(r'^\s*\d+\)\s+([A-Za-z0-9_\\]+::[A-Za-z0-9_]+)\s*$')
-          location_pattern = re.compile(r'(?:^|/)tests/([A-Za-z0-9_./-]+\.php):(\d+)(?:\s|$)')
+          report = Path('var/test-results/junit.xml')
+          if not report.is_file():
+              print('JUnit report unavailable; detailed PHPUnit output remains withheld.')
+          else:
+              try:
+                  root = ET.parse(report).getroot()
+              except (ET.ParseError, OSError):
+                  print('JUnit report could not be parsed; detailed PHPUnit output remains withheld.')
+              else:
+                  cases = root.findall('.//testcase')
+                  failures = [
+                      (case, child)
+                      for case in cases
+                      for child in case
+                      if child.tag in {'failure', 'error'}
+                  ]
+                  safe_name = re.compile(r'\A[A-Za-z0-9_\\]+\Z')
+                  safe_method = re.compile(r'\A[A-Za-z0-9_]+\Z')
+                  safe_location = re.compile(r'(?:^|/)tests/([A-Za-z0-9_./-]+\.php)\Z')
 
-          for line in log.splitlines():
-              match = test_pattern.match(line)
-              if match:
-                  current = {'test': match.group(1), 'location': None}
-                  failures.append(current)
-                  continue
-              if current is not None and current['location'] is None:
-                  match = location_pattern.search(line)
-                  if match:
-                      current['location'] = f"tests/{match.group(1)}:{match.group(2)}"
+                  for case, failure in failures:
+                      class_name = case.get('classname', '')
+                      method_name = case.get('name', '')
+                      name = (
+                          f'{class_name}::{method_name}'
+                          if safe_name.fullmatch(class_name) and safe_method.fullmatch(method_name)
+                          else 'test name withheld'
+                      )
+                      file_name = case.get('file', '')
+                      line = case.get('line', '')
+                      location_match = safe_location.search(file_name)
+                      location = (
+                          f'tests/{location_match.group(1)}:{line}'
+                          if location_match and line.isdigit()
+                          else 'location unavailable'
+                      )
+                      print(f'PHPUnit failure: {name} ({location})')
+                      cache_match = re.search(
+                          r'Cache-Control value:\s*([A-Za-z0-9 ,=.-]{0,120})',
+                          failure.get('message', ''),
+                      )
+                      if cache_match:
+                          observed_cache_control = cache_match.group(1).strip().rstrip('.') or '(empty)'
+                          print(f'Observed Cache-Control directives: {observed_cache_control}')
 
-          for failure in failures:
-              location = failure['location'] or 'location unavailable'
-              print(f"PHPUnit failure: {failure['test']} ({location})")
-          if not failures:
-              print('PHPUnit failed without a parseable test name; detailed output remains withheld.')
+                  if not failures:
+                      print('No failed test coordinates were present in the JUnit report.')
 
-          for line in log.splitlines():
-              if re.match(r'^Tests:\s+\d+\b', line):
-                  match = re.match(r'^Tests:\s+(\d+)(?:,\s+Assertions:\s+(\d+))?(.*)$', line)
-                  if match:
-                      assertions = match.group(2) or 'unreported'
-                      outcomes = re.sub(r'[^A-Za-z0-9 ,.:]+', '', match.group(3)).strip(' ,.')
-                      suffix = f", {outcomes}" if outcomes else ''
-                      print(f"PHPUnit summary: {match.group(1)} tests, {assertions} assertions{suffix}.")
-                  break
+                  suites = root.findall('.//testsuite')
+                  summary_suites = [root] if root.get('tests', '').isdigit() else [
+                      suite for suite in suites if not suite.findall('./testsuite')
+                  ]
+                  totals = {key: 0 for key in ('tests', 'assertions', 'failures', 'errors')}
+                  for suite in summary_suites:
+                      for key in totals:
+                          raw = suite.get(key)
+                          if raw is not None and raw.isdigit():
+                              totals[key] += int(raw)
+                  if 'tests' in totals:
+                      print(
+                          'PHPUnit summary: '
+                          f"{totals['tests']} tests, {totals.get('assertions', 0)} assertions, "
+                          f"{totals.get('failures', 0)} failures, {totals.get('errors', 0)} errors."
+                      )
           PY
               exit 1
             fi
