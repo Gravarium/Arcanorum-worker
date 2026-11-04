@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Entity;
 
-use App\Entity\PublishingStatus;
 use App\Entity\ContentCategory;
 use App\Entity\ContentCategoryType;
+use App\Entity\PublishingStatus;
 use App\Entity\Video;
 use App\Entity\VideoSourceType;
 use PHPUnit\Framework\TestCase;
