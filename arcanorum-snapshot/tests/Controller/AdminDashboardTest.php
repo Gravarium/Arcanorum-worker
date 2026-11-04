@@ -1605,7 +1605,7 @@ final class AdminDashboardTest extends WebTestCase
             self::assertSelectorTextContains('nav[aria-label="Hauptnavigation"]', 'Kommentare');
             self::assertSelectorTextContains('nav[aria-label="Hauptnavigation"]', 'Einstellungen');
             self::assertCount(12, $client->getCrawler()->filter('details.navigation-group'));
-            self::assertCount(12, $client->getCrawler()->filter('details.navigation-group:not([open])'));
+            self::assertCount(0, $client->getCrawler()->filter('details.navigation-group:not([open])'));
             self::assertCount(1, $client->getCrawler()->filterXPath('//nav[@aria-label="Hauptnavigation"]//a[normalize-space()="Video und Wiedergabe"]'));
             self::assertSelectorExists('nav[aria-label="Hauptnavigation"] > a.navigation-dashboard[href="/admin"]');
             self::assertSelectorTextContains('nav[aria-label="Hauptnavigation"] > details.navigation-group:nth-of-type(1) > summary', 'Videos');
