@@ -226,5 +226,4 @@ final class InMemoryVideoSocialPreviewStorage implements PrivateObjectStorageInt
     {
         unset($this->objects[$objectId]);
     }
-
 }
