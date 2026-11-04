@@ -16,7 +16,7 @@ final readonly class RuntimeAttestationRequestGuardSubscriber implements EventSu
         private RuntimeAttestationActionGuard $actionGuard,
         private RuntimeAttestationRequestPolicy $requestPolicy,
         private RuntimeAttestationIncidentReporterInterface $incidentReporter,
-        private bool $runtimeAttestationRequired = true,
+        private bool $runtimeAttestationRequired = false,
     ) {
     }
 

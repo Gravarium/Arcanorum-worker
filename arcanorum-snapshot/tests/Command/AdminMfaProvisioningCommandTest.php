@@ -179,7 +179,6 @@ final class AdminMfaProvisioningCommandTest extends KernelTestCase
                 new RuntimeAttestationActionGuard(),
                 $incidentReporter,
                 $terminal,
-                false,
             );
             $createTester = new CommandTester($createCommand);
             $createTester->setInputs([$email, $password, $password]);
@@ -198,7 +197,6 @@ final class AdminMfaProvisioningCommandTest extends KernelTestCase
                 new RuntimeAttestationActionGuard(),
                 $incidentReporter,
                 $terminal,
-                false,
             );
             $provisionTester = new CommandTester($provisionCommand);
             $provisionTester->setInputs([$email, $email]);
@@ -226,6 +224,30 @@ final class AdminMfaProvisioningCommandTest extends KernelTestCase
         $command = new CreateAdminUserCommand(
             $users,
             $this->passwordHasher(),
+            $this->mfaProvisioner($users),
+            new UnconfiguredRuntimeAttestationReportProvider(),
+            new RuntimeAttestationActionGuard(),
+            $incidentReporter,
+            $terminal,
+            true,
+        );
+        $tester = new CommandTester($command);
+
+        self::assertSame(Command::FAILURE, $tester->execute([], ['interactive' => true]));
+        self::assertStringContainsString('fehlender Sicherheitsnachweise', $tester->getDisplay());
+        self::assertStringContainsString('gesperrt.', $tester->getDisplay());
+    }
+
+    public function testExplicitStrictProfileStillBlocksMfaProvisioningWhenAttestationIsUnknown(): void
+    {
+        $users = $this->userRepository();
+        $terminal = self::createStub(InteractiveConsoleTerminalInterface::class);
+        $terminal->method('isAttachedToTerminal')->willReturn(true);
+        $incidentReporter = $this->createMock(RuntimeAttestationIncidentReporterInterface::class);
+        $incidentReporter->expects(self::once())->method('report');
+
+        $command = new ProvisionAdminMfaCommand(
+            $users,
             $this->mfaProvisioner($users),
             new UnconfiguredRuntimeAttestationReportProvider(),
             new RuntimeAttestationActionGuard(),

@@ -24,7 +24,7 @@ final class RuntimeAttestationRequestGuardSubscriberTest extends TestCase
     {
         $event = $this->requestEvent('/admin', Request::METHOD_GET);
 
-        $this->subscriber(new UnconfiguredRuntimeAttestationReportProvider())->onKernelRequest($event);
+        $this->subscriber(new UnconfiguredRuntimeAttestationReportProvider(), null, true)->onKernelRequest($event);
 
         $response = $event->getResponse();
         self::assertNotNull($response);
@@ -44,7 +44,7 @@ final class RuntimeAttestationRequestGuardSubscriberTest extends TestCase
         foreach ([['/admin', Request::METHOD_GET], ['/admin/videos', Request::METHOD_POST]] as [$path, $method]) {
             $event = $this->requestEvent($path, $method);
 
-            $this->subscriber($provider, $reporter, false)->onKernelRequest($event);
+            $this->subscriber($provider, $reporter)->onKernelRequest($event);
 
             self::assertNull($event->getResponse());
         }
@@ -64,7 +64,7 @@ final class RuntimeAttestationRequestGuardSubscriberTest extends TestCase
             )
             ->willThrowException(new RuntimeAttestationIncidentDeliveryUnavailable());
 
-        $this->subscriber(new UnconfiguredRuntimeAttestationReportProvider(), $reporter)->onKernelRequest($event);
+        $this->subscriber(new UnconfiguredRuntimeAttestationReportProvider(), $reporter, true)->onKernelRequest($event);
 
         $response = $event->getResponse();
         self::assertNotNull($response);
@@ -81,7 +81,7 @@ final class RuntimeAttestationRequestGuardSubscriberTest extends TestCase
         $reporter = self::createMock(RuntimeAttestationIncidentReporterInterface::class);
         $reporter->expects(self::never())->method('report');
 
-        $this->subscriber(new UnconfiguredRuntimeAttestationReportProvider(), $reporter)->onKernelRequest($event);
+        $this->subscriber(new UnconfiguredRuntimeAttestationReportProvider(), $reporter, true)->onKernelRequest($event);
 
         self::assertNull($event->getResponse());
     }
@@ -99,7 +99,7 @@ final class RuntimeAttestationRequestGuardSubscriberTest extends TestCase
                 self::callback(static fn (array $ids): bool => in_array('INV-CSRF-001', $ids, true)),
             );
 
-        $this->subscriber(new UnconfiguredRuntimeAttestationReportProvider(), $reporter)->onKernelRequest($event);
+        $this->subscriber(new UnconfiguredRuntimeAttestationReportProvider(), $reporter, true)->onKernelRequest($event);
 
         $response = $event->getResponse();
         self::assertNotNull($response);
@@ -114,7 +114,7 @@ final class RuntimeAttestationRequestGuardSubscriberTest extends TestCase
             ->method('verifyCurrent')
             ->willReturn($this->verifiedReport());
 
-        $this->subscriber($provider)->onKernelRequest($event);
+        $this->subscriber($provider, null, true)->onKernelRequest($event);
 
         self::assertNull($event->getResponse());
     }
@@ -127,7 +127,7 @@ final class RuntimeAttestationRequestGuardSubscriberTest extends TestCase
             new \DateTimeImmutable('-61 seconds', new \DateTimeZone('UTC')),
         ));
 
-        $this->subscriber($provider)->onKernelRequest($event);
+        $this->subscriber($provider, null, true)->onKernelRequest($event);
 
         self::assertSame(503, $event->getResponse()?->getStatusCode());
     }
@@ -140,7 +140,7 @@ final class RuntimeAttestationRequestGuardSubscriberTest extends TestCase
             new \RuntimeException('secret attestor path /srv/private'),
         );
 
-        $this->subscriber($provider)->onKernelRequest($event);
+        $this->subscriber($provider, null, true)->onKernelRequest($event);
 
         $response = $event->getResponse();
         self::assertNotNull($response);
@@ -154,7 +154,7 @@ final class RuntimeAttestationRequestGuardSubscriberTest extends TestCase
         $provider = self::createMock(RuntimeAttestationReportProviderInterface::class);
         $provider->expects(self::never())->method('verifyCurrent');
 
-        $this->subscriber($provider)->onKernelRequest($event);
+        $this->subscriber($provider, null, true)->onKernelRequest($event);
 
         self::assertNull($event->getResponse());
     }
@@ -163,7 +163,7 @@ final class RuntimeAttestationRequestGuardSubscriberTest extends TestCase
     {
         $event = $this->requestEvent('/admin', Request::METHOD_GET, HttpKernelInterface::SUB_REQUEST);
 
-        $this->subscriber(new UnconfiguredRuntimeAttestationReportProvider())->onKernelRequest($event);
+        $this->subscriber(new UnconfiguredRuntimeAttestationReportProvider(), null, true)->onKernelRequest($event);
 
         $response = $event->getResponse();
         self::assertNotNull($response);
@@ -175,7 +175,7 @@ final class RuntimeAttestationRequestGuardSubscriberTest extends TestCase
     private function subscriber(
         RuntimeAttestationReportProviderInterface $reportProvider,
         ?RuntimeAttestationIncidentReporterInterface $incidentReporter = null,
-        bool $runtimeAttestationRequired = true,
+        bool $runtimeAttestationRequired = false,
     ): RuntimeAttestationRequestGuardSubscriber {
         $incidentReporter ??= self::createStub(RuntimeAttestationIncidentReporterInterface::class);
 

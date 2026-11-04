@@ -60,6 +60,7 @@ on:
           - rollback-guard-final-pending-gates
           - rollback-guard-advertising-assertion-retry
           - admin-login-mfa-configuration-followup
+          - admin-bootstrap-attestation-defaults-focused
 
 permissions:
   contents: read
@@ -1733,8 +1734,8 @@ jobs:
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
 
   validate-admin-login-mfa-configuration:
-    if: github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'admin-login-mfa-configuration-followup'
-    name: Focused admin login configuration checks
+    if: github.event_name == 'workflow_dispatch' && (inputs.validation_scope == 'admin-login-mfa-configuration-followup' || inputs.validation_scope == 'admin-bootstrap-attestation-defaults-focused')
+    name: Focused admin bootstrap and login security checks
     runs-on: ubuntu-26.04
     timeout-minutes: 45
     permissions:
@@ -1866,7 +1867,12 @@ jobs:
       - name: Check affected PHP syntax
         run: |
           php -l src/Module/Admin/Controller/LoginController.php
+          php -l src/Command/CreateAdminUserCommand.php
+          php -l src/Command/ProvisionAdminMfaCommand.php
+          php -l src/Platform/Security/RuntimeAttestationRequestGuardSubscriber.php
           php -l src/Platform/Security/AdminMfaSecretCipher.php
+          php -l tests/Command/AdminMfaProvisioningCommandTest.php
+          php -l tests/Platform/Security/RuntimeAttestationRequestGuardSubscriberTest.php
           php -l tests/Platform/Security/AdminMfaSecretCipherTest.php
           php -l tests/Platform/Security/AdminLoginMfaConfigurationTest.php
 
@@ -1886,7 +1892,12 @@ jobs:
           vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --no-progress
           --error-format=github --memory-limit=1G
           src/Module/Admin/Controller/LoginController.php
+          src/Command/CreateAdminUserCommand.php
+          src/Command/ProvisionAdminMfaCommand.php
+          src/Platform/Security/RuntimeAttestationRequestGuardSubscriber.php
           src/Platform/Security/AdminMfaSecretCipher.php
+          tests/Command/AdminMfaProvisioningCommandTest.php
+          tests/Platform/Security/RuntimeAttestationRequestGuardSubscriberTest.php
           tests/Platform/Security/AdminMfaSecretCipherTest.php
           tests/Platform/Security/AdminLoginMfaConfigurationTest.php
 
@@ -1894,7 +1905,12 @@ jobs:
         run: >-
           vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --diff --using-cache=no
           src/Module/Admin/Controller/LoginController.php
+          src/Command/CreateAdminUserCommand.php
+          src/Command/ProvisionAdminMfaCommand.php
+          src/Platform/Security/RuntimeAttestationRequestGuardSubscriber.php
           src/Platform/Security/AdminMfaSecretCipher.php
+          tests/Command/AdminMfaProvisioningCommandTest.php
+          tests/Platform/Security/RuntimeAttestationRequestGuardSubscriberTest.php
           tests/Platform/Security/AdminMfaSecretCipherTest.php
           tests/Platform/Security/AdminLoginMfaConfigurationTest.php
 
@@ -1902,7 +1918,12 @@ jobs:
         run: >-
           vendor/bin/rector process --config=rector.php --dry-run --no-progress-bar --output-format=github
           src/Module/Admin/Controller/LoginController.php
+          src/Command/CreateAdminUserCommand.php
+          src/Command/ProvisionAdminMfaCommand.php
+          src/Platform/Security/RuntimeAttestationRequestGuardSubscriber.php
           src/Platform/Security/AdminMfaSecretCipher.php
+          tests/Command/AdminMfaProvisioningCommandTest.php
+          tests/Platform/Security/RuntimeAttestationRequestGuardSubscriberTest.php
           tests/Platform/Security/AdminMfaSecretCipherTest.php
           tests/Platform/Security/AdminLoginMfaConfigurationTest.php
 
@@ -1911,7 +1932,12 @@ jobs:
           mkdir -p var/test-results
           vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm.sarif \
             src/Module/Admin/Controller/LoginController.php \
+            src/Command/CreateAdminUserCommand.php \
+            src/Command/ProvisionAdminMfaCommand.php \
+            src/Platform/Security/RuntimeAttestationRequestGuardSubscriber.php \
             src/Platform/Security/AdminMfaSecretCipher.php \
+            tests/Command/AdminMfaProvisioningCommandTest.php \
+            tests/Platform/Security/RuntimeAttestationRequestGuardSubscriberTest.php \
             tests/Platform/Security/AdminMfaSecretCipherTest.php \
             tests/Platform/Security/AdminLoginMfaConfigurationTest.php
 
@@ -1922,6 +1948,8 @@ jobs:
             --fail-on-risky --fail-on-warning --fail-on-deprecation \
             --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
             --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
+            tests/Command/AdminMfaProvisioningCommandTest.php \
+            tests/Platform/Security/RuntimeAttestationRequestGuardSubscriberTest.php \
             tests/Platform/Security/AdminMfaSecretCipherTest.php \
             tests/Platform/Security/AdminLoginMfaConfigurationTest.php
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml

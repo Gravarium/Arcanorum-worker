@@ -45,7 +45,7 @@ final class CreateAdminUserCommand extends Command
         private readonly RuntimeAttestationActionGuard $runtimeAttestationActionGuard,
         private readonly RuntimeAttestationIncidentReporterInterface $incidentReporter,
         private readonly InteractiveConsoleTerminalInterface $interactiveTerminal,
-        private readonly bool $runtimeAttestationRequired = true,
+        private readonly bool $runtimeAttestationRequired = false,
     ) {
         parent::__construct();
     }
