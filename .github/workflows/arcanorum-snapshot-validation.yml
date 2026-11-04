@@ -988,6 +988,10 @@ jobs:
                           if not re.fullmatch(r'[A-Za-z0-9_]+', error_type):
                               error_type = 'details withheld'
                           print(f'Failed test: {class_name}::{test_name} ({outcome}: {error_type})')
+                          file_name = Path(case.attrib.get('file', '')).name
+                          line_number = case.attrib.get('line', '')
+                          if re.fullmatch(r'[A-Za-z0-9_.-]+\.php', file_name) and line_number.isdigit():
+                              print(f'Failure location: {file_name}:{line_number}')
                           shown += 1
                           if shown >= 12:
                               print('Further failed test identifiers omitted.')
