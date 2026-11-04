@@ -7409,13 +7409,17 @@ final class AdminDashboardTest extends WebTestCase
             self::assertSelectorExists('input[name="duration_minutes"][type="number"]');
             self::assertSelectorExists('input[name="duration_seconds_part"][type="number"]');
             self::assertSelectorExists('select[name="category_ids[]"][multiple]');
+            self::assertSelectorExists('input[name="new_category_name"][maxlength="100"]');
+            self::assertSelectorExists('input[name="new_category_slug"][maxlength="120"]');
+            self::assertSelectorTextContains('[data-testid="video-category-quick-add"]', 'beim Speichern angelegt');
             self::assertSelectorExists('input[name="tags"]');
             self::assertSelectorExists('input[name="language_code"][list="video-language-codes"]');
             self::assertSelectorExists('select[name="status"]');
             self::assertSelectorExists('input[name="publish_at"][type="datetime-local"]');
             self::assertSelectorExists('input[name="author_name"]');
             self::assertSelectorExists('input[name="view_count"]');
-            self::assertSelectorExists('input[name="members_only"][type="checkbox"]');
+            self::assertSelectorExists('fieldset[data-testid="video-visibility"] input[name="members_only"][type="radio"][value="0"][checked]');
+            self::assertSelectorExists('fieldset[data-testid="video-visibility"] input[name="members_only"][type="radio"][value="1"]');
             self::assertSelectorExists('input[name="featured"][type="checkbox"]');
             self::assertSelectorExists('input[name="comments_enabled"][type="checkbox"]');
             self::assertSelectorExists('input[name="embedding_enabled"][type="checkbox"]');
@@ -7444,6 +7448,169 @@ final class AdminDashboardTest extends WebTestCase
             self::assertResponseIsSuccessful();
             self::assertSelectorExists('select[name="source_type"] option[value="embed"][selected]');
         } finally {
+            $this->removeUser($client, $email);
+        }
+    }
+
+    public function testAdminVideoFormCreatesAndAssignsCategoriesAtomically(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $client->getContainer()->set(
+            RuntimeAttestationReportProviderInterface::class,
+            new VerifiedRuntimeAttestationReportProvider(),
+        );
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        $connection = $entityManager->getConnection();
+        $marker = bin2hex(random_bytes(6));
+        $categoryName = 'Video topic '.$marker;
+        $categorySlug = 'video-topic-'.$marker;
+        $email = 'video-category-quick-add-'.$marker.'@example.test';
+        $password = 'VideoCategory!'.bin2hex(random_bytes(6)).'-A9!';
+        $videoTitles = [
+            'created' => 'Video category success '.$marker,
+            'duplicate-name' => 'Video category duplicate name '.$marker,
+            'duplicate-slug' => 'Video category duplicate slug '.$marker,
+            'invalid-slug' => 'Video category invalid slug '.$marker,
+        ];
+
+        try {
+            $this->persistUser($client, $email, $password, ['ROLE_ADMIN']);
+            $this->submitLogin($client, $email, $password);
+            self::assertResponseRedirects('/admin');
+
+            $client->request('GET', '/admin/videos/new');
+            self::assertResponseIsSuccessful();
+            $csrfToken = $client->getCrawler()->filter('form[data-video-source-metadata] input[name="_token"]')->attr('value');
+            self::assertIsString($csrfToken);
+            $client->request('POST', '/admin/videos/new', [
+                '_token' => $csrfToken,
+                'title' => $videoTitles['created'],
+                'slug' => 'video-category-'.$marker,
+                'description' => 'A category is created together with this video.',
+                'category_ids_present' => '1',
+                'category_ids' => [],
+                'new_category_name' => $categoryName,
+                'new_category_slug' => $categorySlug,
+                'tags' => '',
+                'source_type' => 'embed',
+                'source_url' => 'https://www.youtube.com/watch?v='.substr(bin2hex(random_bytes(8)), 0, 11),
+                'duration_minutes' => '',
+                'duration_seconds_part' => '',
+                'status' => 'draft',
+                'publish_at' => '',
+                'author_name' => 'Video Desk',
+                'language_code' => '',
+                'members_only' => '0',
+                'view_count' => '0',
+                'embed_origins' => '',
+                'custom_fields_present' => '1',
+                'custom_fields' => [],
+            ]);
+            self::assertResponseRedirects('/admin/videos');
+
+            $categoryId = $connection->fetchOne(
+                'SELECT id FROM content_categories WHERE name = :name AND content_type = :type',
+                ['name' => $categoryName, 'type' => ContentCategoryType::Video->value],
+            );
+            self::assertIsString($categoryId);
+            self::assertSame($categorySlug, $connection->fetchOne(
+                'SELECT slug FROM content_categories WHERE id = :id',
+                ['id' => $categoryId],
+            ));
+            $videoId = $connection->fetchOne('SELECT id FROM videos WHERE title = :title', ['title' => $videoTitles['created']]);
+            self::assertIsString($videoId);
+            self::assertTrue(in_array($connection->fetchOne(
+                'SELECT COUNT(*) FROM video_categories WHERE video_id = :video AND category_id = :category',
+                ['video' => $videoId, 'category' => $categoryId],
+            ), [1, '1'], true));
+
+            $client->request('GET', '/admin/videos/new');
+            self::assertResponseIsSuccessful();
+            $csrfToken = $client->getCrawler()->filter('form[data-video-source-metadata] input[name="_token"]')->attr('value');
+            self::assertIsString($csrfToken);
+            $client->request('POST', '/admin/videos/new', [
+                '_token' => $csrfToken,
+                'title' => $videoTitles['duplicate-name'],
+                'slug' => 'video-category-duplicate-name-'.$marker,
+                'description' => '',
+                'category_ids_present' => '1',
+                'category_ids' => [],
+                'new_category_name' => $categoryName,
+                'new_category_slug' => 'different-category-slug-'.$marker,
+                'tags' => '',
+                'source_type' => 'embed',
+                'source_url' => 'https://www.youtube.com/watch?v='.substr(bin2hex(random_bytes(8)), 0, 11),
+                'status' => 'draft',
+                'author_name' => 'Video Desk',
+                'embed_origins' => '',
+            ]);
+            self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+            self::assertSelectorTextContains('[role="alert"]', 'Videokategorie mit diesem Namen ist bereits vorhanden');
+            self::assertTrue(in_array($connection->fetchOne(
+                'SELECT COUNT(*) FROM content_categories WHERE name = :name AND content_type = :type',
+                ['name' => $categoryName, 'type' => ContentCategoryType::Video->value],
+            ), [1, '1'], true));
+            self::assertTrue(in_array($connection->fetchOne('SELECT COUNT(*) FROM videos WHERE title = :title', ['title' => $videoTitles['duplicate-name']]), [0, '0'], true));
+
+            $client->request('GET', '/admin/videos/new');
+            self::assertResponseIsSuccessful();
+            $csrfToken = $client->getCrawler()->filter('form[data-video-source-metadata] input[name="_token"]')->attr('value');
+            self::assertIsString($csrfToken);
+            $client->request('POST', '/admin/videos/new', [
+                '_token' => $csrfToken,
+                'title' => $videoTitles['duplicate-slug'],
+                'slug' => 'video-category-duplicate-slug-'.$marker,
+                'description' => '',
+                'category_ids_present' => '1',
+                'category_ids' => [],
+                'new_category_name' => 'Different category '.$marker,
+                'new_category_slug' => $categorySlug,
+                'tags' => '',
+                'source_type' => 'embed',
+                'source_url' => 'https://www.youtube.com/watch?v='.substr(bin2hex(random_bytes(8)), 0, 11),
+                'status' => 'draft',
+                'author_name' => 'Video Desk',
+                'embed_origins' => '',
+            ]);
+            self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+            self::assertSelectorTextContains('[role="alert"]', 'bereits von einer Videokategorie verwendet');
+            self::assertTrue(in_array($connection->fetchOne('SELECT COUNT(*) FROM videos WHERE title = :title', ['title' => $videoTitles['duplicate-slug']]), [0, '0'], true));
+
+            $client->request('GET', '/admin/videos/new');
+            self::assertResponseIsSuccessful();
+            $csrfToken = $client->getCrawler()->filter('form[data-video-source-metadata] input[name="_token"]')->attr('value');
+            self::assertIsString($csrfToken);
+            $client->request('POST', '/admin/videos/new', [
+                '_token' => $csrfToken,
+                'title' => $videoTitles['invalid-slug'],
+                'slug' => 'video-category-invalid-slug-'.$marker,
+                'description' => '',
+                'category_ids_present' => '1',
+                'category_ids' => [],
+                'new_category_name' => 'Invalid slug category '.$marker,
+                'new_category_slug' => '../invalid',
+                'tags' => '',
+                'source_type' => 'embed',
+                'source_url' => 'https://www.youtube.com/watch?v='.substr(bin2hex(random_bytes(8)), 0, 11),
+                'status' => 'draft',
+                'author_name' => 'Video Desk',
+                'embed_origins' => '',
+            ]);
+            self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+            self::assertSelectorTextContains('[role="alert"]', 'Kategorien-Permalink darf höchstens 120 Zeichen');
+            self::assertTrue(in_array($connection->fetchOne(
+                'SELECT COUNT(*) FROM content_categories WHERE name = :name AND content_type = :type',
+                ['name' => 'Invalid slug category '.$marker, 'type' => ContentCategoryType::Video->value],
+            ), [0, '0'], true));
+        } finally {
+            foreach ($videoTitles as $title) {
+                $connection->delete('videos', ['title' => $title]);
+            }
+            $connection->delete('content_categories', ['name' => $categoryName, 'content_type' => ContentCategoryType::Video->value]);
+            $connection->delete('content_categories', ['name' => 'Different category '.$marker, 'content_type' => ContentCategoryType::Video->value]);
+            $connection->delete('content_categories', ['name' => 'Invalid slug category '.$marker, 'content_type' => ContentCategoryType::Video->value]);
             $this->removeUser($client, $email);
         }
     }
@@ -7521,11 +7688,63 @@ final class AdminDashboardTest extends WebTestCase
             self::assertSelectorExists('select[name="status"] option[value="published"][selected]');
             self::assertSelectorExists('input[name="featured"][checked]');
             self::assertSelectorExists('input[name="comments_enabled"][checked]');
-            self::assertSelectorExists('input[name="members_only"][checked]');
+            self::assertSelectorExists('input[name="members_only"][type="radio"][value="1"][checked]');
             self::assertSelectorExists('input[name="embedding_enabled"][checked]');
             self::assertSelectorTextContains('[data-testid="video-view-count"]', 'Aufrufe');
             self::assertSelectorExists('[data-testid="video-view-count"] input[name="view_count"][type="number"]');
             self::assertSelectorNotExists('[data-testid="video-view-count"] input[readonly]');
+
+            $client->request('GET', '/admin/videos/'.$videoId.'/edit');
+            self::assertResponseIsSuccessful();
+            $editToken = $client->getCrawler()->filter('form[data-video-source-metadata] input[name="_token"]')->attr('value');
+            self::assertIsString($editToken);
+            $editableValues = [
+                '_token' => $editToken,
+                'title' => $validTitle,
+                'slug' => $videoSlug,
+                'description' => 'Duration fields regression.',
+                'category_ids_present' => '1',
+                'category_ids' => [],
+                'tags' => '',
+                'source_type' => 'embed',
+                'source_url' => $sourceUrl,
+                'duration_minutes' => '2',
+                'duration_seconds_part' => '3',
+                'status' => 'published',
+                'publish_at' => '',
+                'author_name' => 'Video Desk',
+                'language_code' => 'de-AT',
+                'featured' => '1',
+                'comments_enabled' => '1',
+                'members_only' => '0',
+                'embedding_enabled' => '1',
+                'view_count' => '73',
+                'embed_origins' => '',
+                'custom_fields_present' => '1',
+                'custom_fields' => [],
+            ];
+            $client->request('POST', '/admin/videos/'.$videoId.'/edit', $editableValues);
+            self::assertResponseRedirects('/admin/videos');
+            self::assertSame('public', $connection->fetchOne(
+                "SELECT CASE WHEN members_only THEN 'members' ELSE 'public' END FROM videos WHERE id = :id",
+                ['id' => $videoId],
+            ));
+
+            $client->request('GET', '/admin/videos/'.$videoId.'/edit');
+            self::assertResponseIsSuccessful();
+            self::assertSelectorExists('input[name="members_only"][type="radio"][value="0"][checked]');
+            $editToken = $client->getCrawler()->filter('form[data-video-source-metadata] input[name="_token"]')->attr('value');
+            self::assertIsString($editToken);
+            $invalidVisibilityValues = $editableValues;
+            $invalidVisibilityValues['_token'] = $editToken;
+            $invalidVisibilityValues['members_only'] = '2';
+            $client->request('POST', '/admin/videos/'.$videoId.'/edit', $invalidVisibilityValues);
+            self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+            self::assertSelectorTextContains('[role="alert"]', 'ungültigen Wert');
+            self::assertSame('public', $connection->fetchOne(
+                "SELECT CASE WHEN members_only THEN 'members' ELSE 'public' END FROM videos WHERE id = :id",
+                ['id' => $videoId],
+            ));
 
             $client->request('GET', '/admin/videos/new');
             self::assertResponseIsSuccessful();

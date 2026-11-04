@@ -4389,9 +4389,99 @@ html[data-public-theme="arcanorum"][data-public-view="compact"] .public-navigati
     border-bottom: 1px solid #ededed;
 }
 
+.video-editor-section .video-visibility-options {
+    display: grid;
+    grid-template-columns: minmax(11rem, 0.28fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 0.4rem 0.8rem;
+    min-inline-size: 0;
+    margin: 0;
+    padding: 0.5rem 0.75rem;
+    border: 0;
+    border-bottom: 1px solid #ededed;
+    background: #fff;
+}
+
+.video-visibility-options legend {
+    grid-column: 1;
+    padding-top: 0.35rem;
+    color: #384650;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.video-visibility-choices {
+    display: flex;
+    grid-column: 2;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1.25rem;
+}
+
+.video-visibility-choices label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: #384650;
+    font-size: 0.84rem;
+}
+
+.video-visibility-choices input[type="radio"] {
+    width: 1rem;
+    height: 1rem;
+    margin: 0;
+    accent-color: #3c718f;
+}
+
 .video-category-manage,
 .video-category-help {
     padding-left: calc(0.75rem + min(28%, 11rem));
+}
+
+.video-category-quick-add {
+    display: grid;
+    gap: 0.4rem;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #ededed;
+    background: #f7f9fa;
+}
+
+.video-category-quick-add label {
+    display: grid;
+    grid-template-columns: minmax(0, 0.28fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 0.35rem 0.8rem;
+    color: #384650;
+    font-size: 0.82rem;
+}
+
+.video-category-quick-add label > span {
+    grid-column: 1;
+    padding-top: 0.35rem;
+    font-weight: 600;
+}
+
+.video-category-quick-add input {
+    grid-column: 2;
+    min-height: 2.25rem;
+    padding: 0.4rem 0.55rem;
+    border: 1px solid #aeb7bf;
+    border-radius: 0;
+    background: #fff;
+    color: #26333c;
+    font-size: 0.86rem;
+}
+
+.video-category-quick-add small,
+.video-category-quick-add > p {
+    grid-column: 2;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.video-category-quick-add > p {
+    color: #66727b;
+    font-size: 0.78rem;
 }
 
 .video-duration-field {
@@ -4434,6 +4524,34 @@ html[data-public-theme="arcanorum"][data-public-view="compact"] .public-navigati
     .video-editor-section > label,
     .video-editor-section > .video-source-url-field > label {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    .video-editor-section .video-visibility-options {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .video-visibility-options legend,
+    .video-visibility-choices {
+        grid-column: 1;
+    }
+
+    .video-visibility-options legend {
+        padding-top: 0;
+    }
+
+    .video-category-quick-add label {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .video-category-quick-add label > span,
+    .video-category-quick-add input,
+    .video-category-quick-add small,
+    .video-category-quick-add > p {
+        grid-column: 1;
+    }
+
+    .video-category-quick-add label > span {
+        padding-top: 0;
     }
 
     .video-editor-section > label > span,

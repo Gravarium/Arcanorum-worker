@@ -25,6 +25,7 @@ use App\Repository\ContentTagRepository;
 use App\Repository\VideoQualitySourceRepository;
 use App\Repository\VideoRepository;
 use App\Repository\VideoSubtitleTrackRepository;
+use App\Service\ContentCategoryIdentityLock;
 use App\Service\ContentTagManager;
 use App\Service\ExternalVideoEmbedResolver;
 use App\Service\SiteSettingsProvider;
@@ -426,6 +427,7 @@ final class VideoAdminController extends AbstractController
         Request $request,
         VideoRepository $videos,
         ContentCategoryRepository $categories,
+        ContentCategoryIdentityLock $categoryIdentityLock,
         ContentTagManager $tagManager,
         VideoMediaUploadService $mediaUploads,
         VideoThumbnailUploadService $thumbnailUploads,
@@ -446,6 +448,7 @@ final class VideoAdminController extends AbstractController
             null,
             $videos,
             $categories,
+            $categoryIdentityLock,
             $tagManager,
             $mediaUploads,
             $thumbnailUploads,
@@ -474,6 +477,7 @@ final class VideoAdminController extends AbstractController
         Request $request,
         VideoRepository $videos,
         ContentCategoryRepository $categories,
+        ContentCategoryIdentityLock $categoryIdentityLock,
         ContentTagManager $tagManager,
         VideoMediaUploadService $mediaUploads,
         VideoThumbnailUploadService $thumbnailUploads,
@@ -499,6 +503,7 @@ final class VideoAdminController extends AbstractController
             $video,
             $videos,
             $categories,
+            $categoryIdentityLock,
             $tagManager,
             $mediaUploads,
             $thumbnailUploads,
@@ -521,6 +526,7 @@ final class VideoAdminController extends AbstractController
         ?Video $video,
         VideoRepository $videos,
         ContentCategoryRepository $categories,
+        ContentCategoryIdentityLock $categoryIdentityLock,
         ContentTagManager $tagManager,
         VideoMediaUploadService $mediaUploads,
         VideoThumbnailUploadService $thumbnailUploads,
@@ -558,6 +564,8 @@ final class VideoAdminController extends AbstractController
             'description' => $video?->getDescription() ?? '',
             'category' => $video?->getCategory() ?? '',
             'category_ids' => $selectedCategoryIds,
+            'new_category_name' => '',
+            'new_category_slug' => '',
             'tags' => $video?->getTagNames() ?? '',
             'source_type' => $video?->getSourceType()->value
                 ?? (VideoSourceType::tryFrom(self::input($request->query, 'source_type')) ?? VideoSourceType::Embed)->value,
@@ -596,7 +604,7 @@ final class VideoAdminController extends AbstractController
 
             $rawPayload = $request->request->all();
             $allowedFields = [
-                '_token', 'title', 'slug', 'description', 'category', 'category_ids_present', 'category_ids', 'tags', 'source_type', 'source_url',
+                '_token', 'title', 'slug', 'description', 'category', 'category_ids_present', 'category_ids', 'new_category_name', 'new_category_slug', 'tags', 'source_type', 'source_url',
                 'duration_seconds', 'duration_minutes', 'duration_seconds_part', 'status', 'publish_at', 'author_name', 'language_code',
                 'featured', 'comments_enabled', 'members_only', 'embedding_enabled', 'view_count', 'embed_origins',
                 'custom_fields_present', 'custom_fields',
@@ -612,10 +620,20 @@ final class VideoAdminController extends AbstractController
                     $errors[] = 'Die Eingabe enthält einen ungültigen Wert.';
                 }
             }
-            foreach (['featured', 'comments_enabled', 'members_only', 'embedding_enabled'] as $field) {
-                if (isset($rawPayload[$field]) && '1' !== $rawPayload[$field]) {
+            foreach (['new_category_name', 'new_category_slug'] as $field) {
+                if (array_key_exists($field, $rawPayload) && !is_string($rawPayload[$field])) {
                     $errors[] = 'Die Eingabe enthält einen ungültigen Wert.';
                 }
+            }
+            foreach (['featured', 'comments_enabled', 'embedding_enabled'] as $field) {
+                if (array_key_exists($field, $rawPayload)
+                    && (!is_string($rawPayload[$field]) || '1' !== $rawPayload[$field])) {
+                    $errors[] = 'Die Eingabe enthält einen ungültigen Wert.';
+                }
+            }
+            if (array_key_exists('members_only', $rawPayload)
+                && (!is_string($rawPayload['members_only']) || !in_array($rawPayload['members_only'], ['0', '1'], true))) {
+                $errors[] = 'Die Eingabe enthält einen ungültigen Wert.';
             }
             if (array_key_exists('custom_fields', $rawPayload) && !array_key_exists('custom_fields_present', $rawPayload)) {
                 $errors[] = 'Die benutzerdefinierten Felder benötigen eine gültige Formularmarkierung.';
@@ -642,6 +660,8 @@ final class VideoAdminController extends AbstractController
                 'description' => self::input($request->request, 'description'),
                 'category' => trim(self::input($request->request, 'category')),
                 'category_ids' => [],
+                'new_category_name' => trim(self::input($request->request, 'new_category_name')),
+                'new_category_slug' => trim(self::input($request->request, 'new_category_slug')),
                 'tags' => self::input($request->request, 'tags'),
                 'source_type' => self::input($request->request, 'source_type'),
                 'source_url' => trim(self::input($request->request, 'source_url')),
@@ -654,7 +674,9 @@ final class VideoAdminController extends AbstractController
                 'language_code' => array_key_exists('language_code', $rawPayload) ? trim(self::input($request->request, 'language_code')) : $values['language_code'],
                 'featured' => $request->request->has('featured'),
                 'comments_enabled' => $request->request->has('comments_enabled'),
-                'members_only' => array_key_exists('members_only', $rawPayload) ? $request->request->has('members_only') : $values['members_only'],
+                'members_only' => array_key_exists('members_only', $rawPayload)
+                    ? '1' === $rawPayload['members_only']
+                    : $values['members_only'],
                 'embedding_enabled' => array_key_exists('embedding_enabled', $rawPayload)
                     ? $request->request->has('embedding_enabled')
                     : ('' !== trim(self::input($request->request, 'embed_origins')) || $values['embedding_enabled']),
@@ -698,6 +720,34 @@ final class VideoAdminController extends AbstractController
             }
             $values['category_ids'] = $categoryIds;
             $selectedCategoryIds = $categoryIds;
+            $newCategoryName = $values['new_category_name'];
+            $newCategorySlug = $values['new_category_slug'];
+            if ('' === $newCategoryName && '' !== $newCategorySlug) {
+                $errors[] = 'Für den Kategorien-Permalink ist ein Kategoriename erforderlich.';
+            } elseif ('' !== $newCategoryName) {
+                $validNewCategoryName = 1 === preg_match('//u', $newCategoryName)
+                    && mb_strlen($newCategoryName, 'UTF-8') <= 100
+                    && 1 !== preg_match('/[\x00-\x1F\x7F]/u', $newCategoryName);
+                if (!$validNewCategoryName) {
+                    $errors[] = 'Der Name der neuen Kategorie muss gültiges UTF-8 enthalten und darf höchstens 100 Zeichen lang sein.';
+                }
+                if ('' === $newCategorySlug && $validNewCategoryName) {
+                    try {
+                        $newCategorySlug = ContentCategory::slugFromName($newCategoryName);
+                    } catch (\InvalidArgumentException) {
+                        $errors[] = 'Der Kategorien-Permalink konnte nicht aus dem Namen gebildet werden.';
+                    }
+                }
+                if ('' !== $newCategorySlug && (1 !== preg_match('/\A[a-z0-9]+(?:-[a-z0-9]+)*\z/', $newCategorySlug)
+                    || strlen($newCategorySlug) > 120
+                )) {
+                    $errors[] = 'Der Kategorien-Permalink darf höchstens 120 Zeichen sowie Kleinbuchstaben, Ziffern und einzelne Bindestriche enthalten.';
+                }
+                $values['new_category_slug'] = $newCategorySlug;
+                if (count($categoryIds) >= 50) {
+                    $errors[] = 'Ein Video darf einschließlich einer neuen Kategorie höchstens 50 Kategorien erhalten.';
+                }
+            }
             $categoriesById = [];
             foreach ($categories->findVideoCategoriesByIds($categoryIds) as $selectedCategory) {
                 $categoriesById[$selectedCategory->getId()] = $selectedCategory;
@@ -1000,7 +1050,10 @@ final class VideoAdminController extends AbstractController
                         $sourceLock,
                         $slugLock,
                         $categories,
+                        $categoryIdentityLock,
                         $selectedCategoryIds,
+                        $newCategoryName,
+                        $newCategorySlug,
                         $values,
                         $slug,
                         $durationSeconds,
@@ -1018,6 +1071,16 @@ final class VideoAdminController extends AbstractController
                         $tagNames,
                         $entityManager,
                     ): string {
+                        if ('' !== $newCategoryName) {
+                            $categoryIdentityLock->lock($connection, ContentCategoryType::Video, $newCategoryName, $newCategorySlug);
+                            if (null !== $categories->findForTypeAndName(ContentCategoryType::Video, $newCategoryName)) {
+                                return 'duplicate_category_name';
+                            }
+                            if (null !== $categories->findForTypeAndSlug(ContentCategoryType::Video, $newCategorySlug)) {
+                                return 'duplicate_category_slug';
+                            }
+                        }
+
                         $lockedCategoriesById = [];
                         foreach ($categories->findVideoCategoriesByIdsForUpdate($selectedCategoryIds) as $lockedCategory) {
                             $lockedCategoriesById[$lockedCategory->getId()] = $lockedCategory;
@@ -1029,7 +1092,6 @@ final class VideoAdminController extends AbstractController
                         foreach ($selectedCategoryIds as $selectedCategoryId) {
                             $lockedCategories[] = $lockedCategoriesById[$selectedCategoryId];
                         }
-                        $primaryCategoryName = isset($lockedCategories[0]) ? $lockedCategories[0]->getName() : '';
 
                         $slugLock->lock($connection, $slug);
                         if (VideoSourceType::File !== $sourceType) {
@@ -1063,6 +1125,14 @@ final class VideoAdminController extends AbstractController
                         ) {
                             return 'missing_media';
                         }
+
+                        if ('' !== $newCategoryName) {
+                            $newCategory = new ContentCategory($newCategoryName, ContentCategoryType::Video);
+                            $newCategory->updateTaxonomy($newCategorySlug, '', null, null, null, 0);
+                            $entityManager->persist($newCategory);
+                            $lockedCategories[] = $newCategory;
+                        }
+                        $primaryCategoryName = isset($lockedCategories[0]) ? $lockedCategories[0]->getName() : '';
 
                         $previousObjectId = $video->getUploadedObjectId();
                         $video->revise(
@@ -1151,6 +1221,8 @@ final class VideoAdminController extends AbstractController
                         'missing_media' => 'Für einen Datei-Upload ist weiterhin eine geprüfte Mediendatei erforderlich.',
                         'missing_video' => 'Das Video wurde zwischenzeitlich entfernt. Bitte lade die Seite neu.',
                         'missing_category' => 'Mindestens eine ausgewählte Kategorie wurde zwischenzeitlich geändert. Bitte lade die Seite neu.',
+                        'duplicate_category_name' => 'Eine Videokategorie mit diesem Namen ist bereits vorhanden.',
+                        'duplicate_category_slug' => 'Der Permalink wird bereits von einer Videokategorie verwendet.',
                     ];
                     $errors[] = $errorMessages[$saveResult];
                 } else {

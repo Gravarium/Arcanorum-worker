@@ -131,6 +131,18 @@
                         </label>
                         <small id="video-category-help" class="video-category-help">{{ 'Wähle mehrere Kategorien mit Strg- oder Umschalttaste.'|trans }}</small>
                         <p class="video-category-manage"><a href="{{ path('admin_category_index', {type: 'video'}) }}">{{ 'Videokategorien verwalten'|trans }}</a></p>
+                        <div class="video-category-quick-add" data-testid="video-category-quick-add">
+                            <label>
+                                <span>{{ 'Neue Videokategorie'|trans }}</span>
+                                <input name="new_category_name" value="{{ values.new_category_name }}" maxlength="100" autocomplete="off">
+                            </label>
+                            <label>
+                                <span>{{ 'Kategorien-Permalink'|trans }}</span>
+                                <input name="new_category_slug" value="{{ values.new_category_slug }}" maxlength="120" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" autocomplete="off">
+                                <small>{{ 'Optional. Leer lassen, um den Permalink aus dem Kategorienamen zu bilden.'|trans }}</small>
+                            </label>
+                            <p class="muted">{{ 'Die neue Kategorie wird beim Speichern angelegt und diesem Video zugeordnet.'|trans }}</p>
+                        </div>
                         <label>
                             <span>{{ 'Status'|trans }}</span>
                             <select name="status">
@@ -171,8 +183,14 @@
 
                     <section class="video-editor-section">
                         <h3>{{ 'Zugriff und Wiedergabe'|trans }}</h3>
+                        <fieldset class="video-visibility-options" data-testid="video-visibility">
+                            <legend>{{ 'Sichtbarkeit'|trans }}</legend>
+                            <div class="video-visibility-choices">
+                                <label><input type="radio" name="members_only" value="0" required {{ not values.members_only ? 'checked' : '' }}> {{ 'Öffentlich'|trans }}</label>
+                                <label><input type="radio" name="members_only" value="1" required {{ values.members_only ? 'checked' : '' }}> {{ 'Nur registrierte Mitglieder'|trans }}</label>
+                            </div>
+                        </fieldset>
                         <div class="form-checks">
-                            <label><input type="checkbox" name="members_only" value="1" {{ values.members_only ? 'checked' : '' }}> {{ 'Nur registrierte Mitglieder'|trans }}</label>
                             <label><input type="checkbox" name="featured" value="1" {{ values.featured ? 'checked' : '' }}> {{ 'Auf der Startseite hervorheben'|trans }}</label>
                             <label><input type="checkbox" name="comments_enabled" value="1" {{ values.comments_enabled ? 'checked' : '' }}> {{ 'Kommentare erlauben'|trans }}</label>
                             <label><input type="checkbox" name="embedding_enabled" value="1" {{ values.embedding_enabled ? 'checked' : '' }}> {{ 'Einbettung auf anderen Websites erlauben'|trans }}</label>
