@@ -8,7 +8,7 @@ use App\Platform\Hosting\PrivateFileStorage;
 use App\Platform\Hosting\PrivateObjectStorageInterface;
 use App\Platform\Hosting\PrivateStorageOperationFailed;
 
-final class PrivateObjectStorageGateway implements PrivateObjectStorageInterface
+final readonly class PrivateObjectStorageGateway implements PrivateObjectStorageInterface
 {
     public function __construct(
         private readonly PrivateFileStorage $storage,
