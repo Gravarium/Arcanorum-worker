@@ -1098,7 +1098,7 @@ final class AdminDashboardTest extends WebTestCase
             ->willThrowException(new RuntimeAttestationIncidentDeliveryUnavailable());
         $client->getContainer()->set(RuntimeAttestationIncidentReporterInterface::class, $incidentReporter);
 
-        $tester = new CommandTester($this->createAdminUserCommand($client));
+        $tester = new CommandTester($this->createAdminUserCommand($client, runtimeAttestationRequired: true));
         $tester->setInputs(['must-not-be-requested@example.test', 'Test-only-long-passphrase-456!', 'Test-only-long-passphrase-456!']);
 
         self::assertSame(Command::FAILURE, $tester->execute([], ['interactive' => true]));
@@ -1132,7 +1132,7 @@ final class AdminDashboardTest extends WebTestCase
             );
         $client->getContainer()->set(RuntimeAttestationIncidentReporterInterface::class, $incidentReporter);
 
-        $tester = new CommandTester($this->createAdminUserCommand($client));
+        $tester = new CommandTester($this->createAdminUserCommand($client, runtimeAttestationRequired: true));
         $tester->setInputs([$email, $password, $password]);
 
         self::assertSame(Command::FAILURE, $tester->execute([], ['interactive' => true]));
@@ -4465,7 +4465,11 @@ final class AdminDashboardTest extends WebTestCase
         self::assertFalse($headers->has('Content-Security-Policy'));
     }
 
-    private function createAdminUserCommand(KernelBrowser $client, bool $terminalAttached = true): CreateAdminUserCommand
+    private function createAdminUserCommand(
+        KernelBrowser $client,
+        bool $terminalAttached = true,
+        bool $runtimeAttestationRequired = false,
+    ): CreateAdminUserCommand
     {
         $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
         self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
@@ -4482,7 +4486,16 @@ final class AdminDashboardTest extends WebTestCase
         $incidentReporter = $client->getContainer()->get(RuntimeAttestationIncidentReporterInterface::class);
         self::assertInstanceOf(RuntimeAttestationIncidentReporterInterface::class, $incidentReporter);
 
-        return new CreateAdminUserCommand($repository, $passwordHasher, $mfaProvisioner, $provider, $guard, $incidentReporter, $this->interactiveConsoleTerminal($terminalAttached));
+        return new CreateAdminUserCommand(
+            $repository,
+            $passwordHasher,
+            $mfaProvisioner,
+            $provider,
+            $guard,
+            $incidentReporter,
+            $this->interactiveConsoleTerminal($terminalAttached),
+            $runtimeAttestationRequired,
+        );
     }
 
     private function provisionAdminMfaCommand(KernelBrowser $client, bool $terminalAttached = true): ProvisionAdminMfaCommand

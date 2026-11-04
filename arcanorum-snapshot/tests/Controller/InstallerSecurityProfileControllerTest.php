@@ -62,6 +62,9 @@ final class InstallerSecurityProfileControllerTest extends WebTestCase
         );
 
         try {
+            $connection->executeStatement('DELETE FROM admin_users');
+            $entityManager->clear();
+
             $adminUsers = $client->getContainer()->get(AdminUserRepository::class);
             self::assertInstanceOf(AdminUserRepository::class, $adminUsers);
             self::assertSame(0, $adminUsers->countAdministratorsForRoleManagement());

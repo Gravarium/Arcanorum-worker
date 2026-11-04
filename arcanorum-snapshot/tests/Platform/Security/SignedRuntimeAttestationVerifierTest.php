@@ -584,6 +584,7 @@ final class SignedRuntimeAttestationVerifierTest extends TestCase
             new RuntimeAttestationActionGuard(),
             new RuntimeAttestationRequestPolicy(),
             $reporter,
+            runtimeAttestationRequired: true,
         )->onKernelRequest($event);
 
         $response = $event->getResponse();
