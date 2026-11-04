@@ -1778,8 +1778,8 @@ jobs:
                       for child in case
                       if child.tag in {'failure', 'error'}
                   ]
-                  safe_name = re.compile(r'\A[A-Za-z0-9_\\]+\Z')
-                  safe_method = re.compile(r'\A[A-Za-z0-9_]+\Z')
+                  safe_name = re.compile(r'\A[A-Za-z0-9_.\\]+\Z')
+                  safe_method = re.compile(r'\A[A-Za-z0-9_]+(?: with data set #[0-9]+)?\Z')
                   safe_location = re.compile(r'(?:^|/)tests/([A-Za-z0-9_./-]+\.php)\Z')
 
                   for case, failure in failures:
@@ -1790,18 +1790,28 @@ jobs:
                           if safe_name.fullmatch(class_name) and safe_method.fullmatch(method_name)
                           else 'test name withheld'
                       )
+                      failure_text = failure.text or ''
+                      trace_location = re.search(
+                          r'(?:^|/)(tests/[A-Za-z0-9_./-]+\.php):(\d+)(?:\D|$)',
+                          failure_text,
+                          re.MULTILINE,
+                      )
                       file_name = case.get('file', '')
                       line = case.get('line', '')
                       location_match = safe_location.search(file_name)
                       location = (
-                          f'tests/{location_match.group(1)}:{line}'
-                          if location_match and line.isdigit()
-                          else 'location unavailable'
+                          f'{trace_location.group(1)}:{trace_location.group(2)}'
+                          if trace_location
+                          else (
+                              f'tests/{location_match.group(1)}:{line}'
+                              if location_match and line.isdigit()
+                              else 'location unavailable'
+                          )
                       )
                       print(f'PHPUnit failure: {name} ({location})')
                       cache_match = re.search(
                           r'Cache-Control value:\s*([A-Za-z0-9 ,=.-]{0,120})',
-                          failure.get('message', ''),
+                          f"{failure.get('message', '')} {failure_text}",
                       )
                       if cache_match:
                           observed_cache_control = cache_match.group(1).strip().rstrip('.') or '(empty)'
