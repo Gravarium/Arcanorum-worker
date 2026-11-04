@@ -9,22 +9,30 @@ use App\Platform\Hosting\HostingSecurityFeatureSelectionStoreInterface;
 use App\Platform\Hosting\PrivateFileStorage;
 use App\Platform\Hosting\PrivateObjectStorageInterface;
 use App\Platform\Hosting\PrivateStorageOperationFailed;
+use Symfony\Contracts\Service\ResetInterface;
 
-final readonly class PrivateObjectStorageGateway implements PrivateObjectStorageInterface
+final class PrivateObjectStorageGateway implements PrivateObjectStorageInterface, ResetInterface
 {
-    private bool $enabled;
+    private bool $enabled = false;
 
     public function __construct(
-        private PrivateFileStorage $storage,
-        HostingSecurityFeatureSelectionStoreInterface $selectionStore,
+        private readonly PrivateFileStorage $storage,
+        private readonly HostingSecurityFeatureSelectionStoreInterface $selectionStore,
     ) {
+        $this->reset();
+    }
+
+    public function reset(): void
+    {
         try {
-            $enabled = in_array(HostingSecurityFeature::PrivateStorage, $selectionStore->selectedFeatures(), true);
+            $selectedFeatures = $this->selectionStore->selectedFeatures();
         } catch (\Throwable) {
-            $enabled = false;
+            $this->enabled = false;
+
+            return;
         }
 
-        $this->enabled = $enabled;
+        $this->enabled = in_array(HostingSecurityFeature::PrivateStorage, $selectedFeatures, true);
     }
 
     public function write(string $objectId, string $contents): void

@@ -89,6 +89,37 @@ final class PrivateObjectStorageGatewayTest extends TestCase
         }
     }
 
+    public function testResetReloadsTheSelectionWithoutCheckingItForEachFileOperation(): void
+    {
+        $paths = $this->createStorageRoot();
+        $selectionStore = $this->createMock(HostingSecurityFeatureSelectionStoreInterface::class);
+        $selectionStore->expects(self::exactly(3))
+            ->method('selectedFeatures')
+            ->willReturnOnConsecutiveCalls(
+                [],
+                [HostingSecurityFeature::PrivateStorage],
+                [],
+            );
+
+        try {
+            $gateway = new PrivateObjectStorageGateway($this->createStorage($paths['public'], $paths['storage']), $selectionStore);
+            $this->assertOperationIsBlocked(static fn () => $gateway->write('before-reset', 'blocked'));
+
+            $gateway->reset();
+            $gateway->write('after-reset', 'allowed-after-selection');
+            self::assertSame(
+                'allowed-after-selection',
+                $gateway->read('after-reset', strlen('allowed-after-selection')),
+            );
+
+            $gateway->reset();
+            $this->assertOperationIsBlocked(static fn () => $gateway->read('after-reset', 64));
+            self::assertFileExists($paths['storage'].DIRECTORY_SEPARATOR.'after-reset.bin');
+        } finally {
+            $this->removeTree($paths['root']);
+        }
+    }
+
     private function assertOperationIsBlocked(callable $operation): void
     {
         try {
