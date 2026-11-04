@@ -56,7 +56,11 @@ final class VideoSubtitleCacheFlowTest extends WebTestCase
                 'Cache-Control value: '.(string) $client->getResponse()->headers->get('Cache-Control'),
             );
             self::assertNull($client->getResponse()->headers->getCacheControlDirective('public'));
-            self::assertSame(0, $client->getResponse()->headers->getCacheControlDirective('max-age'));
+            self::assertSame(
+                '0',
+                $client->getResponse()->headers->getCacheControlDirective('max-age'),
+                'Cache-Control value: '.(string) $client->getResponse()->headers->get('Cache-Control'),
+            );
             self::assertTrue($client->getResponse()->headers->getCacheControlDirective('must-revalidate'));
             self::assertSame($contents, $client->getResponse()->getContent());
             $etag = (string) $client->getResponse()->headers->get('ETag');
