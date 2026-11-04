@@ -142,8 +142,8 @@ final class VideoSocialPreviewFlowTest extends WebTestCase
                 $client->getResponse()->headers->getCacheControlDirective('private'),
                 'Cache-Control value: '.(string) $client->getResponse()->headers->get('Cache-Control'),
             );
-            self::assertFalse($client->getResponse()->headers->getCacheControlDirective('public'));
-            self::assertSame('0', $client->getResponse()->headers->getCacheControlDirective('max-age'));
+            self::assertNull($client->getResponse()->headers->getCacheControlDirective('public'));
+            self::assertSame(0, $client->getResponse()->headers->getCacheControlDirective('max-age'));
             self::assertTrue($client->getResponse()->headers->getCacheControlDirective('must-revalidate'));
             self::assertFalse((bool) $client->getResponse()->headers->getCacheControlDirective('immutable'));
             $previewEtag = (string) $client->getResponse()->headers->get('ETag');
@@ -163,8 +163,8 @@ final class VideoSocialPreviewFlowTest extends WebTestCase
             self::assertResponseIsSuccessful();
             $thumbnailCacheControl = $client->getResponse()->headers;
             self::assertTrue($thumbnailCacheControl->getCacheControlDirective('private'));
-            self::assertFalse($thumbnailCacheControl->getCacheControlDirective('public'));
-            self::assertSame('0', $thumbnailCacheControl->getCacheControlDirective('max-age'));
+            self::assertNull($thumbnailCacheControl->getCacheControlDirective('public'));
+            self::assertSame(0, $thumbnailCacheControl->getCacheControlDirective('max-age'));
             self::assertTrue($thumbnailCacheControl->getCacheControlDirective('must-revalidate'));
             $thumbnailEtag = (string) $client->getResponse()->headers->get('ETag');
             self::assertNotSame('', $thumbnailEtag);
