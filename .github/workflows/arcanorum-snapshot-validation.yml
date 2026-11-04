@@ -568,12 +568,29 @@ jobs:
                   continue
               class_name = case.attrib.get('classname', '').rsplit('\\', 1)[-1]
               test_name = case.attrib.get('name', '')
+              case_path = Path(case.attrib.get('file', ''))
+              case_line = case.attrib.get('line', '')
               if not re.fullmatch(r'[A-Za-z0-9_]{1,120}', class_name):
-                  class_name = 'unknown-test-class'
+                  class_name = case_path.stem if re.fullmatch(r'[A-Za-z0-9_]{1,120}', case_path.stem) else 'unknown-test-class'
               if not re.fullmatch(r'[A-Za-z0-9_]{1,160}', test_name):
                   test_name = 'unknown-test'
-              file_name = Path(case.attrib.get('file', '')).name
-              line_number = case.attrib.get('line', '')
+              details = issue.attrib.get('message', '') + ' ' + ''.join(issue.itertext())
+              references = re.findall(
+                  r'((?:src|tests)/[A-Za-z0-9_./-]+\.php)(?:\((\d+)\)|:(\d+))',
+                  details,
+              )
+              references = [
+                  (Path(path), line_a or line_b)
+                  for path, line_a, line_b in references
+                  if '..' not in Path(path).parts
+              ]
+              test_references = [(path, line) for path, line in references if 'tests' in path.parts]
+              if test_references:
+                  source_path, line_number = test_references[0]
+                  file_name = source_path.name
+              else:
+                  file_name = case_path.name
+                  line_number = case_line
               if not re.fullmatch(r'[A-Za-z0-9_.-]{1,120}\.php', file_name):
                   file_name = 'unknown.php'
               if not line_number.isdigit():
