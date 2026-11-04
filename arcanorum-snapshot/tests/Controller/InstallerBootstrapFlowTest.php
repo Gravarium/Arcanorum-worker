@@ -34,7 +34,7 @@ final class InstallerBootstrapFlowTest extends WebTestCase
 
     public static function setUpBeforeClass(): void
     {
-        foreach (['ADMIN_MFA_ENCRYPTION_KEY', 'APP_SECRET'] as $name) {
+        foreach (['ADMIN_MFA_ENCRYPTION_KEY', 'APP_SECRET', 'RUNTIME_ATTESTATION_REQUIRED'] as $name) {
             self::$originalEnvironment[$name] = [
                 'process' => getenv($name),
                 'env_present' => array_key_exists($name, $_ENV),
@@ -51,6 +51,9 @@ final class InstallerBootstrapFlowTest extends WebTestCase
         putenv('APP_SECRET='.$testApplicationSecret);
         $_ENV['APP_SECRET'] = $testApplicationSecret;
         $_SERVER['APP_SECRET'] = $testApplicationSecret;
+        putenv('RUNTIME_ATTESTATION_REQUIRED=false');
+        $_ENV['RUNTIME_ATTESTATION_REQUIRED'] = 'false';
+        $_SERVER['RUNTIME_ATTESTATION_REQUIRED'] = 'false';
 
         parent::setUpBeforeClass();
     }
