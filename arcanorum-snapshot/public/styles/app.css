@@ -3705,6 +3705,63 @@ html[data-public-theme="arcanorum"][data-public-view="compact"] .public-navigati
     font-weight: 700;
 }
 
+.navigation-group > summary::after {
+    content: "⌄";
+    margin-left: 0.75rem;
+    color: #65758a;
+    transition: transform 140ms ease;
+}
+
+.navigation-group[open] > summary::after {
+    transform: rotate(180deg);
+}
+
+.navigation-subgroup > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 2rem;
+    padding: 0.35rem 0.7rem 0.35rem 1rem;
+    color: #304963;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+}
+
+.navigation-subgroup > summary::-webkit-details-marker {
+    display: none;
+}
+
+.navigation-subgroup > summary::after {
+    content: "⌄";
+    margin-left: 0.5rem;
+    color: #65758a;
+    transition: transform 140ms ease;
+}
+
+.navigation-subgroup[open] > summary::after {
+    transform: rotate(180deg);
+}
+
+.navigation-subgroup .navigation-items {
+    margin-left: 0.5rem;
+    padding-left: 0.3rem;
+    border-left: 1px solid #c4cdd6;
+}
+
+.admin-form[data-video-edit="1"] .video-editor-main > [data-video-form-section="title"] {
+    order: 1;
+}
+
+.admin-form[data-video-edit="1"] .video-editor-main > [data-video-form-section="details"] {
+    order: 2;
+}
+
+.admin-form[data-video-edit="1"] .video-editor-main > [data-video-form-section="source"] {
+    order: 3;
+}
+
 .public-navigation a:focus-visible,
 .pagination a:focus-visible {
     border-radius: 0.35rem;

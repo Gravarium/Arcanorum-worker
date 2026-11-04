@@ -832,7 +832,7 @@ final class VideoAdminController extends AbstractController
                 }
             }
 
-            if ([] === $errors && null !== $sourceType) {
+            if ([] === $errors && null !== $sourceType && null !== $status) {
                 $isNew = null === $video;
                 $previousObjectId = null;
                 $viewCountValue = $viewCount ?? 0;

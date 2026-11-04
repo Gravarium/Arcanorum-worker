@@ -73,7 +73,10 @@ final class VideoAccessFlowTest extends WebTestCase
             self::assertSelectorTextContains('main', 'Dieses Video ist registrierten Mitgliedern vorbehalten.');
             self::assertStringNotContainsString($sourceUrl, (string) $client->getResponse()->getContent());
             self::assertStringNotContainsString('This description must remain hidden', (string) $client->getResponse()->getContent());
-            self::assertSame(0, (int) $connection->fetchOne('SELECT view_count FROM videos WHERE id = :id', ['id' => $videoId]));
+            self::assertTrue(
+                in_array($connection->fetchOne('SELECT view_count FROM videos WHERE id = :id', ['id' => $videoId]), [0, '0'], true),
+                'An anonymous visit must not increment a members-only video view count.',
+            );
 
             $client->request('GET', '/videos/'.$videoId.'/thumbnail');
             self::assertResponseStatusCodeSame(404);

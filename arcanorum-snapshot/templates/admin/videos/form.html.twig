@@ -35,7 +35,7 @@
 
             <div class="video-editor-layout">
                 <div class="video-editor-main">
-                    <section class="video-editor-section" aria-labelledby="video-source-heading">
+                    <section class="video-editor-section" aria-labelledby="video-source-heading" data-video-form-section="source">
                         <h3 id="video-source-heading">{{ 'Videoquelle'|trans }}</h3>
                         <label>
                             <span>{{ 'Quelltyp'|trans }}</span>
@@ -70,7 +70,7 @@
                         </label>
                     </section>
 
-                    <section class="video-editor-section">
+                    <section class="video-editor-section" data-video-form-section="title">
                         <h3>{{ 'Titel und Beschreibung'|trans }}</h3>
                         <label>
                             <span>{{ 'Titel'|trans }}</span>
@@ -88,7 +88,7 @@
                         </label>
                     </section>
 
-                    <section class="video-editor-section">
+                    <section class="video-editor-section" data-video-form-section="details">
                         <h3>{{ 'Video-Details'|trans }}</h3>
                         <fieldset class="video-duration-field">
                             <legend>{{ 'Medienlaufzeit'|trans }}</legend>

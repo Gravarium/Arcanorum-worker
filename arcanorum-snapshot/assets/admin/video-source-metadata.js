@@ -56,6 +56,31 @@
         };
 
         sourceTypeInput.addEventListener('change', updateSourceFields);
+        sourceInput.addEventListener('input', () => {
+            if ('file' === sourceTypeInput.value || '' === sourceInput.value.trim()) {
+                return;
+            }
+
+            let inferredSourceType = 'embed';
+            try {
+                const url = new URL(sourceInput.value.trim());
+                if ('https:' !== url.protocol || '' !== url.username || '' !== url.password) {
+                    return;
+                }
+                if (/\.m3u8$/i.test(url.pathname)) {
+                    inferredSourceType = 'stream';
+                } else if (/\.(?:mp4|m4v|webm|ogv|ogg|mp3)$/i.test(url.pathname)) {
+                    inferredSourceType = 'url';
+                }
+            } catch {
+                return;
+            }
+
+            if (sourceTypeInput.value !== inferredSourceType) {
+                sourceTypeInput.value = inferredSourceType;
+                updateSourceFields();
+            }
+        });
         updateSourceFields();
 
         button.addEventListener('click', async () => {

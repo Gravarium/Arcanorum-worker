@@ -28,6 +28,17 @@ class FakeButton extends FakeElement {
 class FakeInput extends FakeElement {
     value = '';
     required = false;
+    listener = null;
+
+    addEventListener(name, listener) {
+        assert.equal(name, 'input');
+        this.listener = listener;
+    }
+
+    input(value) {
+        this.value = value;
+        this.listener?.();
+    }
 }
 
 class FakeTextarea extends FakeInput {}
@@ -112,6 +123,7 @@ function createHarness(response) {
         HTMLInputElement: FakeInput,
         HTMLSelectElement: FakeSelect,
         HTMLTextAreaElement: FakeTextarea,
+        URL,
         URLSearchParams,
         fetch,
     });
@@ -199,4 +211,23 @@ test('shows only the fields for the selected video source and requires a new upl
     assert.equal(state.sourceFile.value, '');
     assert.equal(state.source.required, true);
     assert.equal(state.sourceUrlLabel.textContent, 'Direct media URL');
+});
+
+test('recognizes pasted provider, direct media and HLS URLs without fetching an arbitrary address', () => {
+    const state = createHarness({ok: true, json: async () => ({})});
+
+    state.source.input('https://cdn.example.test/video.mp4?token=not-fetched');
+    assert.equal(state.sourceType.value, 'url');
+    assert.equal(state.sourceUrlLabel.textContent, 'Direct media URL');
+    assert.equal(state.button.hidden, true);
+
+    state.source.input('https://stream.example.test/live/master.m3u8');
+    assert.equal(state.sourceType.value, 'stream');
+    assert.equal(state.button.hidden, true);
+
+    state.source.input('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+    assert.equal(state.sourceType.value, 'embed');
+    assert.equal(state.sourceUrlLabel.textContent, 'Provider video URL');
+    assert.equal(state.button.hidden, false);
+    assert.equal(state.calls.length, 0);
 });
