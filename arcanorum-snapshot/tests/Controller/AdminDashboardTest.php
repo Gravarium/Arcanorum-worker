@@ -4469,8 +4469,7 @@ final class AdminDashboardTest extends WebTestCase
         KernelBrowser $client,
         bool $terminalAttached = true,
         bool $runtimeAttestationRequired = false,
-    ): CreateAdminUserCommand
-    {
+    ): CreateAdminUserCommand {
         $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
         self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
         $repository = $entityManager->getRepository(AdminUser::class);
