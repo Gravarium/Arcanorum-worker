@@ -992,6 +992,16 @@ jobs:
                           line_number = case.attrib.get('line', '')
                           if re.fullmatch(r'[A-Za-z0-9_.-]+\.php', file_name) and line_number.isdigit():
                               print(f'Failure location: {file_name}:{line_number}')
+                          details = issue.attrib.get('message', '') + ' ' + ''.join(issue.itertext())
+                          if re.search(r'http|status code|response', details, re.IGNORECASE):
+                              print('Failure category: HTTP response assertion.')
+                          elif re.search(r'expect|invok|call count|was called', details, re.IGNORECASE):
+                              print('Failure category: interaction expectation.')
+                          else:
+                              print('Failure category: assertion details withheld.')
+                          source_location = re.search(r'((?:src|tests)/[A-Za-z0-9_./-]+\.php):(\d+)', details)
+                          if source_location and '..' not in Path(source_location.group(1)).parts:
+                              print(f'Failure source: {Path(source_location.group(1)).name}:{source_location.group(2)}')
                           shown += 1
                           if shown >= 12:
                               print('Further failed test identifiers omitted.')
