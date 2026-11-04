@@ -543,6 +543,49 @@ jobs:
           grep -E '^(OK|Tests:|Time:)' var/test-results/phpunit-installer-bootstrap.log
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit-installer-bootstrap.xml
 
+      - name: Record sanitized installer PHPUnit coordinates
+        if: failure()
+        run: |
+          python3 - <<'PY'
+          import re
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          report = Path('var/test-results/junit-installer-bootstrap.xml')
+          if not report.is_file():
+              print('No installer JUnit failure report was available.')
+              raise SystemExit(0)
+          try:
+              root = ET.parse(report).getroot()
+          except ET.ParseError:
+              print('Installer JUnit failure report could not be parsed.')
+              raise SystemExit(0)
+
+          count = 0
+          for case in root.iter('testcase'):
+              issue = next((child for child in case if child.tag in {'failure', 'error'}), None)
+              if issue is None:
+                  continue
+              class_name = case.attrib.get('classname', '').rsplit('\\', 1)[-1]
+              test_name = case.attrib.get('name', '')
+              if not re.fullmatch(r'[A-Za-z0-9_]{1,120}', class_name):
+                  class_name = 'unknown-test-class'
+              if not re.fullmatch(r'[A-Za-z0-9_]{1,160}', test_name):
+                  test_name = 'unknown-test'
+              file_name = Path(case.attrib.get('file', '')).name
+              line_number = case.attrib.get('line', '')
+              if not re.fullmatch(r'[A-Za-z0-9_.-]{1,120}\.php', file_name):
+                  file_name = 'unknown.php'
+              if not line_number.isdigit():
+                  line_number = '0'
+              print(f'Failed installer test: {class_name}::{test_name} ({file_name}:{line_number})')
+              count += 1
+              if count >= 6:
+                  break
+          if count == 0:
+              print('No safe installer test coordinates were available; raw diagnostics withheld.')
+          PY
+
   validate-hosting-security-selection-focused:
     if: github.event_name == 'workflow_dispatch' && (inputs.validation_scope == 'hosting-security-selection-focused' || inputs.validation_scope == 'hosting-security-selection-tests-only' || inputs.validation_scope == 'hosting-security-selection-test-quality-only')
     name: Focused hosting security selection and adapter checks
