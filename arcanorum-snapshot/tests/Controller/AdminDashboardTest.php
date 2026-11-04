@@ -7424,8 +7424,8 @@ final class AdminDashboardTest extends WebTestCase
             self::assertSelectorExists('input[name="custom_fields[0][value]"]');
             self::assertSelectorExists('a[href="/admin/categories?type=video"]');
             self::assertSelectorNotExists('.admin-navigation-icon');
-            self::assertCount(11, $client->getCrawler()->filter('details.navigation-group:not([open])'));
-            self::assertCount(1, $client->getCrawler()->filter('details.navigation-subgroup:not([open])'));
+            self::assertCount(0, $client->getCrawler()->filter('details.navigation-group:not([open])'));
+            self::assertCount(0, $client->getCrawler()->filter('details.navigation-subgroup:not([open])'));
             self::assertSelectorExists('details.navigation-group[open] > summary[title="Videos"]');
             self::assertSelectorTextContains('details.navigation-subgroup[open] > summary', 'Video hinzufügen');
             self::assertSelectorExists('nav[aria-label="Hauptnavigation"] a[href="/admin/videos/new?source_type=embed"][aria-current="page"]');

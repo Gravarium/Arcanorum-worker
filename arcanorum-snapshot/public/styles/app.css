@@ -4113,3 +4113,350 @@ html[data-public-theme="arcanorum"][data-public-view="compact"] .public-navigati
         grid-column: 1 / -1;
     }
 }
+
+/* Klassischer Redaktionsbereich: ruhige Seitenleiste und zeilenbasierte Formulare. */
+.admin-shell {
+    grid-template-columns: 14rem minmax(0, 1fr);
+    grid-template-rows: 3.5rem minmax(0, 1fr);
+    background: #f3f3f3;
+    color: #333;
+}
+
+.admin-topbar {
+    min-height: 3.5rem;
+    padding-inline: 1rem;
+    border-bottom: 1px solid #c9c9c9;
+    background: #f8f8f8;
+}
+
+.admin-topbar .brand-name,
+.admin-topbar .topbar-label,
+.admin-topbar .topbar-label strong {
+    color: #333;
+}
+
+.admin-sidebar {
+    padding: 0.85rem 0.55rem 0.75rem;
+    border-right: 1px solid #c9c9c9;
+    background: #ededed;
+    color: #333;
+    box-shadow: none;
+}
+
+.admin-sidebar > .brand {
+    padding: 0 0.5rem 0.75rem;
+    border-bottom: 1px solid #ccc;
+    color: #263746;
+}
+
+.admin-sidebar .brand-caption,
+.admin-sidebar .brand-tagline,
+.admin-sidebar .sidebar-footer {
+    color: #606a73;
+}
+
+.admin-navigation {
+    gap: 0;
+    margin-top: 0.35rem;
+}
+
+.navigation-dashboard,
+.navigation-group > summary {
+    min-height: 2rem;
+    padding: 0.4rem 0.55rem;
+    border-radius: 0;
+    color: #3d4a55;
+    font-size: 0.83rem;
+    font-weight: 700;
+}
+
+.navigation-group > summary {
+    border-top: 0;
+    border-bottom: 1px solid #d2d2d2;
+    background: transparent !important;
+    letter-spacing: normal;
+    text-transform: none;
+}
+
+.navigation-group > summary:hover,
+.navigation-group > summary:focus-visible,
+.navigation-group[open] > summary,
+.navigation-dashboard:hover,
+.navigation-dashboard:focus-visible {
+    background: #e1e5e8 !important;
+    color: #1e3f59;
+}
+
+.navigation-group > summary::after {
+    content: "▾";
+    color: #687782;
+}
+
+.navigation-group[open] > summary::after {
+    transform: none;
+}
+
+.navigation-items {
+    margin: 0 0 0.35rem;
+    padding: 0.1rem 0 0.1rem 0.35rem;
+    border-left: 1px solid #c9c9c9;
+}
+
+.navigation-items .navigation-link {
+    min-height: 1.8rem;
+    padding: 0.28rem 0.55rem;
+    border-left: 3px solid transparent;
+    background: transparent;
+    color: #44515c;
+    font-size: 0.8rem;
+    font-weight: 400;
+}
+
+.navigation-items .navigation-link:hover,
+.navigation-items .navigation-link:focus-visible {
+    background: #e1e5e8;
+    color: #183c57;
+}
+
+.navigation-items .navigation-link.is-active {
+    border-left-color: #3c718f;
+    background: #e1e9ee;
+    color: #193f59;
+    font-weight: 700;
+}
+
+.navigation-subgroup > summary {
+    min-height: 1.85rem;
+    padding: 0.28rem 0.5rem 0.28rem 0.65rem;
+    color: #44515c;
+    font-size: 0.79rem;
+}
+
+.navigation-subgroup > summary::after {
+    content: "▾";
+    color: #687782;
+}
+
+.navigation-subgroup[open] > summary::after {
+    transform: none;
+}
+
+.navigation-subgroup .navigation-items {
+    margin-left: 0.25rem;
+    padding-left: 0.25rem;
+    border-left-color: #d0d0d0;
+}
+
+.sidebar-footer {
+    padding-top: 0.55rem;
+    border-top-color: #ccc;
+    font-size: 0.72rem;
+}
+
+.admin-main {
+    background: #f7f7f7;
+}
+
+.admin-page {
+    padding: 1rem 1.25rem 2rem;
+    background: #f7f7f7;
+}
+
+.admin-page .eyebrow {
+    display: none;
+}
+
+.admin-page .page-heading {
+    align-items: center;
+    margin-bottom: 0.85rem;
+    padding-bottom: 0.65rem;
+    border-bottom: 1px solid #d1d1d1;
+}
+
+.admin-page .page-heading h1 {
+    margin-block: 0;
+    color: #303c46;
+    font-size: 1.45rem;
+    letter-spacing: normal;
+}
+
+.admin-page .page-heading .muted {
+    margin-top: 0.25rem;
+    font-size: 0.85rem;
+}
+
+.admin-panel,
+.admin-toolbar .admin-filter-form,
+.activity-clear-form,
+.admin-toolbar > form {
+    border: 1px solid #c9c9c9;
+    border-radius: 0;
+    background: #fff;
+    box-shadow: none;
+}
+
+.panel-heading {
+    min-height: 2.75rem;
+    padding: 0.55rem 0.75rem;
+    border-bottom: 1px solid #c9c9c9;
+    background: #e9e9e9;
+}
+
+.video-editor-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.65rem;
+}
+
+.video-editor-main,
+.video-editor-sidebar {
+    gap: 0.65rem;
+}
+
+.video-editor-section {
+    gap: 0;
+    padding: 0;
+    border-color: #c9c9c9;
+    background: #fff;
+}
+
+.video-editor-section > h3 {
+    margin: 0;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #c9c9c9;
+    background: #e9e9e9;
+    color: #34424c;
+    font-size: 0.88rem;
+    font-weight: 700;
+}
+
+.video-editor-section > label,
+.video-editor-section > .video-source-url-field > label {
+    grid-template-columns: minmax(11rem, 0.28fr) minmax(0, 1fr);
+    gap: 0.4rem 0.8rem;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #ededed;
+}
+
+.video-editor-section > label > span,
+.video-editor-section > .video-source-url-field > label > span {
+    grid-column: 1;
+    padding-top: 0.35rem;
+    color: #384650;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.video-editor-section > label > input,
+.video-editor-section > label > select,
+.video-editor-section > label > textarea,
+.video-editor-section > label > small,
+.video-editor-section > label > a,
+.video-editor-section > .video-source-url-field > label > input,
+.video-editor-section > .video-source-url-field > label > small {
+    grid-column: 2;
+}
+
+.video-editor-section .video-source-url-field > label > input,
+.video-editor-section > label > input,
+.video-editor-section > label > select,
+.video-editor-section > label > textarea,
+.video-editor-section select[multiple] {
+    min-height: 2.25rem;
+    padding: 0.4rem 0.55rem;
+    border: 1px solid #aeb7bf;
+    border-radius: 0;
+    background: #fff;
+    color: #26333c;
+    font-size: 0.86rem;
+}
+
+.video-editor-section select[multiple] {
+    min-height: 8rem;
+}
+
+.video-source-url-field > small,
+.video-metadata-actions {
+    padding: 0.4rem 0.75rem 0.4rem calc(0.75rem + min(28%, 11rem));
+}
+
+.video-source-url-field > small {
+    display: block;
+    line-height: 1.4;
+}
+
+.video-editor-section .form-checks {
+    padding: 0.55rem 0.75rem;
+    border-bottom: 1px solid #ededed;
+}
+
+.video-category-manage,
+.video-category-help {
+    padding-left: calc(0.75rem + min(28%, 11rem));
+}
+
+.video-duration-field {
+    border: 0;
+    border-bottom: 1px solid #ededed;
+    border-radius: 0;
+    background: #fff;
+}
+
+.video-duration-field legend {
+    color: #384650;
+    font-size: 0.82rem;
+}
+
+@media (max-width: 48rem) {
+    .admin-shell {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto minmax(0, 1fr);
+    }
+
+    .admin-sidebar {
+        grid-column: 1;
+        grid-row: 2;
+        max-height: 55vh;
+        padding: 0.35rem 0.75rem;
+        border-right: 0;
+        border-bottom: 1px solid #c9c9c9;
+        background: #ededed;
+    }
+
+    .admin-main {
+        grid-column: 1;
+        grid-row: 3;
+    }
+
+    .admin-page {
+        padding: 0.8rem;
+    }
+
+    .video-editor-section > label,
+    .video-editor-section > .video-source-url-field > label {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .video-editor-section > label > span,
+    .video-editor-section > label > input,
+    .video-editor-section > label > select,
+    .video-editor-section > label > textarea,
+    .video-editor-section > label > small,
+    .video-editor-section > label > a,
+    .video-editor-section > .video-source-url-field > label > span,
+    .video-editor-section > .video-source-url-field > label > input,
+    .video-editor-section > .video-source-url-field > label > small {
+        grid-column: 1;
+    }
+
+    .video-editor-section > label > span,
+    .video-editor-section > .video-source-url-field > label > span {
+        padding-top: 0;
+    }
+
+    .video-source-url-field > small,
+    .video-metadata-actions,
+    .video-category-manage,
+    .video-category-help {
+        padding-left: 0.75rem;
+    }
+}
