@@ -86,6 +86,11 @@ final class InstallerSecurityProfileControllerTest extends WebTestCase
             self::assertStringNotContainsString('/private/config', (string) $client->getResponse()->getContent());
             self::assertSelectorTextContains('#mandatory-security-heading', 'Verbindlicher Basisschutz');
             self::assertSelectorTextContains('.hosting-capability-explanation', 'Unbekannt heißt: Arcanorum kann diese Fähigkeit derzeit nicht nachweisen. Das bedeutet nicht automatisch, dass der Hoster sie nicht unterstützt.');
+            self::assertSelectorTextContains('#installer-hosting-capabilities', 'Diese Fähigkeit wird direkt in der aktiven PHP-Weblaufzeit geprüft.');
+            self::assertSelectorTextContains('#installer-hosting-capabilities', 'Die Serverversion wird über die von der Anwendung verwendete Datenbankverbindung abgefragt.');
+            self::assertSelectorTextContains('#installer-hosting-capabilities', 'DNS-Namen, Unix-Sockets und Cluster bleiben unbekannt.');
+            self::assertSelectorTextContains('#installer-hosting-capabilities', 'Arcanorum kann sie in dieser Installation nicht unabhängig prüfen; sie bleibt unbekannt und wird nicht aktiviert.');
+            self::assertSelectorTextContains('#installer-hosting-capabilities', 'Es liegt kein ausreichender aktueller Nachweis vor. Behandeln Sie diese Fähigkeit nicht als verfügbar.');
             self::assertSelectorExists('input[name="selected_features[]"][value="private_storage"]:not([disabled])');
             self::assertSelectorExists('input[name="selected_features[]"][value="secret_store"][disabled]');
             self::assertSelectorTextContains('#installer-hosting-security-form', 'Erforderliche Hosting-Fähigkeiten');
@@ -94,6 +99,7 @@ final class InstallerSecurityProfileControllerTest extends WebTestCase
             self::assertSelectorTextContains('#installer-hosting-security-form', 'Privater Dateispeicher: Bestanden');
             self::assertSelectorTextContains('#installer-hosting-security-form', 'Redis 8: Unbekannt');
             self::assertStringNotContainsString('Test-only verified host capability.', (string) $client->getResponse()->getContent());
+            self::assertStringNotContainsString('App\\Platform\\Hosting\\', (string) $client->getResponse()->getContent());
 
             $client->request('POST', '/install/security-profile', ['selected_features' => ['private_storage']]);
             self::assertResponseStatusCodeSame(403);

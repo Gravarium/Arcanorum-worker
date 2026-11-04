@@ -36,11 +36,16 @@
         </ul>
     </section>
 
-    <section class="admin-panel" aria-labelledby="capability-report-heading">
+    <section id="installer-hosting-capabilities" class="admin-panel" aria-labelledby="capability-report-heading">
         <header class="panel-heading"><h2 id="capability-report-heading">{{ 'Geprüfte Hosting-Fähigkeiten'|trans }}</h2></header>
         <ul>
             {% for evidence in overview.capabilityReport.all() %}
-                <li><strong>{{ evidence.capability.label|trans }}</strong>: {{ evidence.status.label|trans }}</li>
+                <li>
+                    <strong>{{ evidence.capability.label|trans }}</strong>:
+                    <span class="status-pill {{ evidence.status.cssClass() }}">{{ evidence.status.label|trans }}</span>
+                    <p class="muted">{{ evidence.capability.operatorGuidance|trans }}</p>
+                    <p class="muted">{{ evidence.status.operatorGuidance|trans }}</p>
+                </li>
             {% endfor %}
         </ul>
         <p class="muted hosting-capability-explanation">{{ 'Unbekannt heißt: Arcanorum kann diese Fähigkeit derzeit nicht nachweisen. Das bedeutet nicht automatisch, dass der Hoster sie nicht unterstützt.'|trans }}</p>

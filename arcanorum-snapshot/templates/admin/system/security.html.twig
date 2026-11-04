@@ -34,10 +34,24 @@
         <p class="muted hosting-capability-explanation">{{ 'Unbekannt heißt: Arcanorum kann diese Fähigkeit derzeit nicht nachweisen. Das bedeutet nicht automatisch, dass der Hoster sie nicht unterstützt.'|trans }}</p>
         <p>{{ 'Diese Seite speichert den Auswahlwunsch. Arcanorum verwendet eine Zusatzfunktion erst, wenn ihre Integration eingerichtet und ihre Voraussetzung aktuell nachgewiesen ist.'|trans }}</p>
 
+        <section id="admin-hosting-capability-report" aria-labelledby="admin-hosting-capability-report-heading">
+            <h3 id="admin-hosting-capability-report-heading">{{ 'Geprüfte Hosting-Fähigkeiten'|trans }}</h3>
+            <ul>
+                {% for evidence in overview.capabilityReport.all() %}
+                    <li>
+                        <strong>{{ evidence.capability.label|trans }}</strong>:
+                        <span class="status-pill {{ evidence.status.cssClass() }}">{{ evidence.status.label|trans }}</span>
+                        <p class="muted">{{ evidence.capability.operatorGuidance|trans }}</p>
+                        <p class="muted">{{ evidence.status.operatorGuidance|trans }}</p>
+                    </li>
+                {% endfor %}
+            </ul>
+        </section>
+
         <form id="hosting-security-form" method="post" action="{{ path('admin_hosting_security_update') }}" class="admin-form">
             <input type="hidden" name="token" value="{{ csrf_token('admin_hosting_security') }}">
 
-            {% for choice in choices %}
+            {% for choice in overview.optionalFeatures %}
                 {% set feature_id = choice.feature.value %}
                 {% set input_id = 'hosting-feature-' ~ feature_id %}
                 <div class="form-field">

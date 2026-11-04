@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Module\Admin\Controller;
 
-use App\Platform\Hosting\HostingSecurityFeatureChoice;
+use App\Platform\Hosting\HostingSecurityFeatureSelectionOverview;
 use App\Service\HostingSecurityFeatureSelectionManager;
 use Doctrine\DBAL\Exception as DbalException;
 use Psr\Log\LoggerInterface;
@@ -82,7 +82,7 @@ final class AdminHostingSecurityController extends AbstractController
         int $status = Response::HTTP_OK,
     ): Response {
         try {
-            $choices = $this->selectionManager->choices();
+            $overview = $this->selectionManager->overview();
         } catch (DbalException|\RuntimeException $exception) {
             $logger->error('Die Host-Sicherheitsauswahl konnte nicht gelesen werden.', [
                 'failure_type' => $exception::class,
@@ -94,20 +94,19 @@ final class AdminHostingSecurityController extends AbstractController
             ));
         }
 
-        return $this->renderSelection($choices, $errors, $status);
+        return $this->renderSelection($overview, $errors, $status);
     }
 
     /**
-     * @param list<HostingSecurityFeatureChoice> $choices
-     * @param array<string, string>              $errors
+     * @param array<string, string> $errors
      */
     private function renderSelection(
-        array $choices,
+        HostingSecurityFeatureSelectionOverview $overview,
         array $errors = [],
         int $status = Response::HTTP_OK,
     ): Response {
         return $this->privateResponse($this->render('admin/system/security.html.twig', [
-            'choices' => $choices,
+            'overview' => $overview,
             'errors' => $errors,
         ], new Response(status: $status)));
     }

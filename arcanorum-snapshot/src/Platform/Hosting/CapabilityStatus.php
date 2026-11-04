@@ -30,4 +30,14 @@ enum CapabilityStatus: string
             self::Unknown => 'is-unknown',
         };
     }
+
+    public function operatorGuidance(): string
+    {
+        return match ($this) {
+            self::Verified => 'Der technische Nachweis ist aktuell erfolgreich. Eine Zusatzfunktion wird trotzdem nur mit vorhandener Integration und gespeicherter Auswahl verwendet.',
+            self::Failed => 'Der Nachweis widerspricht einer Projektvorgabe. Die abhängige Zusatzfunktion bleibt gesperrt.',
+            self::NotAvailable => 'Der Prüfdienst oder die benötigte Funktion ist nicht erreichbar. Die abhängige Zusatzfunktion bleibt aus.',
+            self::Unknown => 'Es liegt kein ausreichender aktueller Nachweis vor. Behandeln Sie diese Fähigkeit nicht als verfügbar.',
+        };
+    }
 }

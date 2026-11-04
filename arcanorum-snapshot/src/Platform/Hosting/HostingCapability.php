@@ -53,4 +53,30 @@ enum HostingCapability: string
             self::VerifiedBackupRestore => 'Geprüfte Sicherungswiederherstellung',
         };
     }
+
+    public function operatorGuidance(): string
+    {
+        return match ($this) {
+            self::PhpRuntime,
+            self::CtypeExtension,
+            self::IconvExtension,
+            self::IntlExtension,
+            self::JsonExtension,
+            self::MbstringExtension,
+            self::PdoExtension,
+            self::PdoPgsqlExtension,
+            self::SodiumExtension,
+            self::ZipExtension => 'Diese Fähigkeit wird direkt in der aktiven PHP-Weblaufzeit geprüft.',
+            self::PostgreSqlServer18 => 'Die Serverversion wird über die von der Anwendung verwendete Datenbankverbindung abgefragt.',
+            self::RedisServer8 => 'Die Redis-Version wird über die konfigurierte Redis-Verbindung abgefragt.',
+            self::PrivateStorage => 'Arcanorum prüft den Speicher außerhalb des öffentlichen Webpfads, seine Dateirechte und einen Schreibtest.',
+            self::RedisPrivateEndpoint => 'Der Redis-Endpunkt wird ohne DNS-Auflösung nur als direkte private oder lokale IP-Adresse verifiziert. DNS-Namen, Unix-Sockets und Cluster bleiben unbekannt.',
+            self::DatabaseRoleSeparation,
+            self::BackgroundWorker,
+            self::ProcessIsolation,
+            self::OutboundNetworkPolicy,
+            self::SecretStore,
+            self::VerifiedBackupRestore => 'Diese Fähigkeit liegt beim Hoster oder Betriebssystem. Arcanorum kann sie in dieser Installation nicht unabhängig prüfen; sie bleibt unbekannt und wird nicht aktiviert.',
+        };
+    }
 }
