@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Tests\Platform\Hosting;
 
 use App\Platform\Hosting\ArrayCachePoolAdapter;
+use App\Platform\Hosting\CachePoolAdapterInterface;
 use App\Platform\Hosting\CapabilityEvidence;
 use App\Platform\Hosting\CapabilityProbeInterface;
 use App\Platform\Hosting\CapabilityStatus;
-use App\Platform\Hosting\CachePoolAdapterInterface;
 use App\Platform\Hosting\HostingAdapterSelector;
 use App\Platform\Hosting\HostingCachePoolProvider;
 use App\Platform\Hosting\HostingCapability;
