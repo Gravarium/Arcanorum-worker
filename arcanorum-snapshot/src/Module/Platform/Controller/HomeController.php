@@ -89,6 +89,14 @@ final class HomeController extends AbstractController
                 0,
                 $settings->getHomepageVideoLimit(),
             );
+        $popularVideos = 0 === $settings->getHomepageVideoLimit()
+            ? []
+            : $videos->findPopular(
+                min(4, $settings->getHomepageVideoLimit()),
+                0,
+                $settings->getPopularVideoSort(),
+                $settings->getPopularVideoPeriodDays(),
+            );
         $featuredVideoCategorySections = [];
         foreach ($categories->findFeaturedVideoCategories(10) as $category) {
             $categoryVideos = $videos->findPublishedForCategory($category->getName(), 10);
@@ -114,6 +122,7 @@ final class HomeController extends AbstractController
         $response = $this->render('home/index.html.twig', [
             'articles' => $newsItems,
             'videos' => $latestVideos,
+            'top_videos' => $popularVideos,
             'featured_video' => $featuredVideo,
             'featured_video_cards' => array_slice($featuredVideos, 1),
             'featured_video_category_sections' => $featuredVideoCategorySections,

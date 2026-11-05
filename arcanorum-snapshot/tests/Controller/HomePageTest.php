@@ -48,6 +48,11 @@ final class HomePageTest extends WebTestCase
         $client->request('GET', '/');
 
         self::assertResponseStatusCodeSame(200);
+        self::assertSelectorExists('.portal-home[data-testid="home-portal"]');
+        self::assertSelectorExists('.portal-layout[data-testid="home-portal-layout"]');
+        self::assertSelectorExists('.portal-layout > aside[data-testid="home-left-rail"]');
+        self::assertSelectorExists('.portal-layout > main[data-testid="home-main-column"]');
+        self::assertSelectorExists('.portal-layout > aside[data-testid="home-right-rail"]');
         self::assertSelectorTextContains('h1', 'Arcanorum');
         self::assertSelectorTextContains('main', 'Neueste Videos');
     }
