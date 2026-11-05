@@ -2282,7 +2282,6 @@ Admin: Administration
 "Der Sprachcode muss ein gültiger BCP-47-Code sein, zum Beispiel de oder en-US.": "Enter a valid BCP 47 language code, such as de or en-US."
 "Falls der Anbieterabruf nicht eingerichtet ist, trage die Videodaten manuell ein; den geprüften Link kannst du trotzdem speichern.": "If provider lookup is not configured, enter the video details manually; you can still save the validated link."
 "Wähle eine oder mehrere Kategorien aus.": "Select one or more categories."
-"Noch keine Videokategorien vorhanden.": "No video categories are available yet."
 "Ein Video darf höchstens 50 Kategorien erhalten.": "A video may have at most 50 categories."
 "Videos können nur Videokategorien zugeordnet werden.": "Videos can only be assigned to video categories."
 "Die Video-Kategorien wurden mit einem ungültigen Formularwert übermittelt.": "The video categories were submitted with an invalid form value."
