@@ -3636,7 +3636,7 @@ jobs:
             tests/Controller/AdminDashboardTest.php
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
 
-      - name: Run changed administrator video form contract test
+      - name: Run affected administrator video form contract tests
         if: inputs.validation_scope == 'admin-content-tests-only'
         run: |
           mkdir -p var/test-results
@@ -3644,8 +3644,9 @@ jobs:
             --fail-on-risky --fail-on-warning --fail-on-deprecation \
             --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
             --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
-            --filter='testAdminVideoFormPrefillsSafeSourceModesAndShowsMinuteAndSecondFields' \
-            tests/Controller/AdminDashboardTest.php
+            --filter='testAdminVideoFormPrefillsSafeSourceModesAndShowsMinuteAndSecondFields|testAdministratorCanAssignSeveralVideoCategoriesAndRejectsNewsCategories' \
+            tests/Controller/AdminDashboardTest.php \
+            tests/Controller/AdminVideoThumbnailFlowTest.php
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
 
   validate-private-artwork-concurrency:

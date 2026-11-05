@@ -141,11 +141,31 @@ final class AdminVideoThumbnailFlowTest extends WebTestCase
             self::assertSame([$firstCategory->getName(), $secondCategory->getName()], $savedVideo->getCategoryNames());
             self::assertSame($storedThumbnailObjectId, $savedVideo->getThumbnailObjectId());
 
-            $client->request('GET', '/admin/videos/'.$savedVideo->getId().'/edit');
+            $editPath = '/admin/videos/'.$savedVideo->getId().'/edit';
+            $client->request('GET', $editPath);
             self::assertResponseIsSuccessful();
             self::assertSelectorExists('fieldset[data-testid="video-category-selection"] input[name="category_ids[]"][value="'.$firstCategory->getId().'"][checked]');
             self::assertSelectorExists('fieldset[data-testid="video-category-selection"] input[name="category_ids[]"][value="'.$secondCategory->getId().'"][checked]');
             self::assertSelectorNotExists('fieldset[data-testid="video-category-selection"] input[name="category_ids[]"][value="'.$newsCategory->getId().'"]');
+
+            $editToken = $client->getCrawler()->filter('form.admin-form input[name="_token"]')->first()->attr('value');
+            self::assertIsString($editToken);
+            $client->request('POST', $editPath, [
+                '_token' => $editToken,
+                'category_ids_present' => '1',
+                'title' => $savedVideo->getTitle(),
+                'description' => $savedVideo->getDescription(),
+                'source_type' => VideoSourceType::Embed->value,
+                'source_url' => $savedVideo->getSourceUrl(),
+                'status' => PublishingStatus::Draft->value,
+                'author_name' => $savedVideo->getAuthorName(),
+            ]);
+            self::assertResponseRedirects('/admin/videos');
+
+            $entityManager->clear();
+            $savedVideo = $entityManager->getRepository(Video::class)->findOneBy(['slug' => 'multiple-category-'.$suffix]);
+            self::assertInstanceOf(Video::class, $savedVideo);
+            self::assertSame([], $savedVideo->getCategoryNames());
         } finally {
             $entityManager->getConnection()->executeStatement(
                 'DELETE FROM videos WHERE slug IN (:rejected_slug, :saved_slug)',
