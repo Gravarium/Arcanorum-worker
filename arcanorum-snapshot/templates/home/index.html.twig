@@ -8,6 +8,7 @@
 
 {% block body %}
     {% set latest_public_article = articles|first %}
+    {% set portal_headline = site_settings().tagline is not empty ? site_settings().tagline : site_settings().siteName %}
     <div class="portal-home" data-testid="home-portal">
         <section class="portal-hero" aria-labelledby="home-site-heading">
             {% if featured_video and featured_video.thumbnailObjectId and not featured_video.membersOnly %}
@@ -15,7 +16,7 @@
             {% endif %}
             <div class="portal-hero-shade">
                 <div class="portal-topbar">
-                    <span>{{ site_settings().siteName }}</span>
+                    <span>{{ 'News und Videos'|trans }}</span>
                     <nav aria-label="{{ 'Hauptnavigation'|trans }}">
                         <a href="{{ path('public_member_index') }}">{{ 'Mitglieder'|trans }}</a>
                         {% if module_enabled('contact') %}<a href="{{ path('contact_new') }}">{{ 'Kontakt'|trans }}</a>{% endif %}
@@ -23,11 +24,9 @@
                 </div>
                 {{ include('partials/public_site_header.html.twig') }}
                 <div class="portal-hero-copy">
-                    <p class="portal-eyebrow">{{ 'News und Videos'|trans }}</p>
-                    <h1 id="home-site-heading">{{ site_settings().siteName }}</h1>
-                    {% if site_settings().tagline is not empty %}
-                        <p>{{ site_settings().tagline }}</p>
-                    {% elseif site_settings().seoDescription is not empty %}
+                    <p class="portal-eyebrow">{{ 'Startseite'|trans }}</p>
+                    <h1 id="home-site-heading">{{ portal_headline }}</h1>
+                    {% if site_settings().seoDescription is not empty %}
                         <p>{{ site_settings().seoDescription }}</p>
                     {% endif %}
                     <div class="portal-hero-actions">
@@ -233,7 +232,7 @@
                             <a href="{{ path('video_popular') }}">{{ 'Alle Videos'|trans }}</a>
                         </div>
                         {% for video in top_videos %}
-                            <article class="portal-mini">
+                            <article class="portal-mini{% if video.thumbnailObjectId and not video.membersOnly %} portal-mini-with-thumbnail{% endif %}">
                                 {% if video.thumbnailObjectId and not video.membersOnly %}<img src="{{ path('video_thumbnail', {id: video.id}) }}" alt="" loading="lazy" decoding="async">{% endif %}
                                 <div>
                                     <a href="{{ path('video_show', {id: video.id}) }}">{{ video.title }}</a>
@@ -248,7 +247,7 @@
                     <section class="portal-widget" aria-labelledby="currently-watching-heading">
                         <h2 id="currently-watching-heading">{{ 'Kürzlich angesehen'|trans }}</h2>
                         {% for video in currently_watching_videos %}
-                            <article class="portal-mini">
+                            <article class="portal-mini{% if video.thumbnailObjectId and not video.membersOnly %} portal-mini-with-thumbnail{% endif %}">
                                 {% if video.thumbnailObjectId and not video.membersOnly %}<img src="{{ path('video_thumbnail', {id: video.id}) }}" alt="" loading="lazy" decoding="async">{% endif %}
                                 <div><a href="{{ path('video_show', {id: video.id}) }}">{{ video.title }}</a></div>
                             </article>

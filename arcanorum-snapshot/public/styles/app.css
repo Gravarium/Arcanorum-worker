@@ -4746,7 +4746,7 @@ html[data-public-theme="arcanorum"][data-public-view="compact"] .public-navigati
 
 .portal-hero {
     position: relative;
-    min-height: 38rem;
+    min-height: 47.5rem;
     overflow: hidden;
     isolation: isolate;
     background:
@@ -4767,6 +4767,7 @@ html[data-public-theme="arcanorum"][data-public-view="compact"] .public-navigati
 
 .portal-hero-shade {
     min-height: inherit;
+    position: relative;
     background:
         linear-gradient(90deg, rgb(5 8 12 / 94%) 0%, rgb(5 8 12 / 72%) 40%, rgb(5 8 12 / 20%) 78%),
         linear-gradient(0deg, #0a0e14 0%, rgb(10 14 20 / 8%) 48%);
@@ -4804,9 +4805,13 @@ html[data-public-theme="arcanorum"][data-public-view="compact"] .public-navigati
 }
 
 .portal-home .public-header {
-    display: block;
+    display: grid;
+    grid-template-columns: minmax(10rem, max-content) minmax(0, 1fr) minmax(8rem, 13rem) max-content;
+    grid-template-rows: minmax(5.25rem, auto);
+    align-items: center;
+    gap: 1rem;
     width: min(1560px, 100%);
-    min-height: 0;
+    min-height: 5.25rem;
     margin: 0 auto;
     padding: 0 clamp(1rem, 3.5vw, 3rem);
     border: 0;
@@ -4815,17 +4820,13 @@ html[data-public-theme="arcanorum"][data-public-view="compact"] .public-navigati
 }
 
 .portal-home .public-header-top {
-    display: grid;
-    grid-template-columns: minmax(10rem, 1fr) minmax(14rem, 30rem) minmax(7rem, 1fr);
-    align-items: center;
-    gap: 1.25rem;
-    width: 100%;
-    min-height: 5.1rem;
-    margin: 0;
+    display: contents;
 }
 
 .portal-home .public-brand,
 .portal-home .public-brand-tagline {
+    grid-column: 1;
+    grid-row: 1;
     color: #f0d793;
 }
 
@@ -4847,6 +4848,13 @@ html[data-public-theme="arcanorum"][data-public-view="compact"] .public-navigati
     color: #f3eee4;
 }
 
+.portal-home .public-header-search {
+    grid-column: 3;
+    grid-row: 1;
+    width: 100%;
+    margin: 0;
+}
+
 .portal-home .public-header-search input::placeholder {
     color: #b5b0a6;
 }
@@ -4859,7 +4867,20 @@ html[data-public-theme="arcanorum"][data-public-view="compact"] .public-navigati
 
 .portal-home .public-account,
 .portal-home .public-account > summary {
+    grid-column: 4;
+    grid-row: 1;
     color: #ece4d3;
+}
+
+.portal-home .public-account > summary {
+    min-height: 2.8rem;
+    border-color: #efd68c;
+    background: linear-gradient(180deg, #d3b267, #9c7836);
+    color: #0a0d11;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
 }
 
 .portal-home .public-account > summary:hover,
@@ -4890,13 +4911,15 @@ html[data-public-theme="arcanorum"][data-public-view="compact"] .public-navigati
 
 .portal-home .public-navigation {
     display: flex;
-    justify-content: flex-start;
-    gap: 0.3rem;
+    grid-column: 2;
+    grid-row: 1;
+    justify-content: center;
+    gap: 0.15rem;
     width: 100%;
     margin: 0;
     padding: 0;
     overflow-x: auto;
-    border-top: 1px solid rgb(255 255 255 / 5%);
+    border-top: 0;
     border-radius: 0;
     background: transparent;
     scrollbar-width: thin;
@@ -4904,8 +4927,9 @@ html[data-public-theme="arcanorum"][data-public-view="compact"] .public-navigati
 
 .portal-home .public-navigation a {
     flex: 0 0 auto;
-    min-height: 3rem;
-    padding: 0.9rem 0.85rem 0.65rem;
+    min-height: 5.25rem;
+    align-content: center;
+    padding: 0.75rem 0.58rem;
     border-bottom: 2px solid transparent;
     color: #d4ccbc;
     font-size: 0.79rem;
@@ -5250,12 +5274,16 @@ html[data-public-theme="arcanorum"][data-public-view="compact"] .public-navigati
 
 .portal-mini {
     display: grid;
-    grid-template-columns: 3.45rem minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     align-items: center;
     gap: 0.7rem;
     min-width: 0;
     padding: 0.7rem 0;
     border-bottom: 1px solid rgb(255 255 255 / 6%);
+}
+
+.portal-mini-with-thumbnail {
+    grid-template-columns: 3.45rem minmax(0, 1fr);
 }
 
 .portal-mini:last-child {
@@ -5348,6 +5376,32 @@ html[data-public-theme="arcanorum"][data-public-view="compact"] .public-navigati
 }
 
 @media (max-width: 68rem) {
+    .portal-home .public-header {
+        grid-template-columns: minmax(10rem, max-content) minmax(0, 1fr) max-content;
+        grid-template-rows: minmax(5rem, auto) auto;
+    }
+
+    .portal-home .public-navigation {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        justify-content: flex-start;
+    }
+
+    .portal-home .public-navigation a {
+        min-height: 2.9rem;
+    }
+
+    .portal-home .public-header-search {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .portal-home .public-account,
+    .portal-home .public-account > summary {
+        grid-column: 3;
+        grid-row: 1;
+    }
+
     .portal-layout {
         grid-template-columns: minmax(12rem, 0.72fr) minmax(0, 1.7fr);
     }
@@ -5366,11 +5420,11 @@ html[data-public-theme="arcanorum"][data-public-view="compact"] .public-navigati
 
 @media (max-width: 48rem) {
     .portal-hero {
-        min-height: 34rem;
+        min-height: 42.5rem;
     }
 
     .portal-hero-shade {
-        min-height: 34rem;
+        min-height: 42.5rem;
     }
 
     .portal-topbar {
@@ -5379,13 +5433,14 @@ html[data-public-theme="arcanorum"][data-public-view="compact"] .public-navigati
     }
 
     .portal-home .public-header {
+        grid-template-columns: minmax(0, 1fr) max-content;
+        grid-template-rows: auto auto auto;
+        gap: 0;
         padding-inline: 1rem;
     }
 
     .portal-home .public-header-top {
-        grid-template-columns: minmax(0, 1fr) auto;
-        gap: 0.7rem;
-        padding-block: 0.6rem;
+        display: contents;
     }
 
     .portal-home .public-brand {
@@ -5404,11 +5459,18 @@ html[data-public-theme="arcanorum"][data-public-view="compact"] .public-navigati
         grid-column: 1 / -1;
         grid-row: 2;
         width: 100%;
+        margin: 0.25rem 0 0.4rem;
     }
 
     .portal-home .public-account {
         grid-column: 2;
         grid-row: 1;
+    }
+
+    .portal-home .public-navigation {
+        grid-column: 1 / -1;
+        grid-row: 3;
+        justify-content: flex-start;
     }
 
     .portal-home .public-navigation a {
