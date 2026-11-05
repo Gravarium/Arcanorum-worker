@@ -259,3 +259,19 @@ test('recognizes pasted provider, direct media and HLS URLs without fetching an 
     assert.equal(state.button.hidden, false);
     assert.equal(state.calls.length, 0);
 });
+
+test('keeps an administrator-selected source type for URLs without a recognized provider or media suffix', () => {
+    const state = createHarness({ok: true, json: async () => ({})});
+
+    state.sourceType.change('stream');
+    state.source.input('https://media.example.test/live?channel=main');
+    assert.equal(state.sourceType.value, 'stream');
+    assert.equal(state.sourceUrlLabel.textContent, 'Stream URL');
+    assert.equal(state.sourceHelp[2].hidden, false);
+
+    state.sourceType.change('url');
+    state.source.input('https://media.example.test/resolve?id=42');
+    assert.equal(state.sourceType.value, 'url');
+    assert.equal(state.sourceUrlLabel.textContent, 'Direct media URL');
+    assert.equal(state.calls.length, 0);
+});

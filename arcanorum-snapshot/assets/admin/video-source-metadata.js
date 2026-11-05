@@ -1,4 +1,14 @@
 (() => {
+    const providerHosts = new Set([
+        'youtu.be', 'youtube.com', 'www.youtube.com', 'youtube-nocookie.com', 'www.youtube-nocookie.com',
+        'vimeo.com', 'www.vimeo.com', 'player.vimeo.com',
+        'dailymotion.com', 'www.dailymotion.com',
+        'facebook.com', 'www.facebook.com', 'drive.google.com',
+        'rutube.ru', 'www.rutube.ru',
+        'vk.com', 'www.vk.com', 'vk.ru', 'www.vk.ru', 'vkvideo.ru', 'www.vkvideo.ru',
+        'youku.com', 'www.youku.com', 'v.youku.com', 'player.youku.com',
+    ]);
+
     const isSafeProviderThumbnailUrl = value => {
         if ('string' !== typeof value || value.length < 1 || value.length > 2048) {
             return false;
@@ -83,7 +93,7 @@
                 return;
             }
 
-            let inferredSourceType = 'embed';
+            let inferredSourceType = null;
             try {
                 const url = new URL(sourceInput.value.trim());
                 if ('https:' !== url.protocol || '' !== url.username || '' !== url.password) {
@@ -93,12 +103,14 @@
                     inferredSourceType = 'stream';
                 } else if (/\.(?:mp4|m4v|webm|ogv|ogg|mp3)$/i.test(url.pathname)) {
                     inferredSourceType = 'url';
+                } else if (providerHosts.has(url.hostname.toLowerCase())) {
+                    inferredSourceType = 'embed';
                 }
             } catch {
                 return;
             }
 
-            if (sourceTypeInput.value !== inferredSourceType) {
+            if (null !== inferredSourceType && sourceTypeInput.value !== inferredSourceType) {
                 sourceTypeInput.value = inferredSourceType;
                 updateSourceFields();
             }
