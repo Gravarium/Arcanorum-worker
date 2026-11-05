@@ -391,12 +391,12 @@ final class HomePageTest extends WebTestCase
             self::assertResponseIsSuccessful();
             self::assertSame(1, $client->getCrawler()->filter('[data-testid="home-featured-video-section"] .content-card')->count());
             self::assertSelectorTextContains('main', 'Display latest '.$suffix);
-            self::assertSelectorTextContains('main', $tag->getName());
+            self::assertSelectorTextContains('[data-testid="home-left-rail"]', $tag->getName());
             self::assertSelectorExists('a[href="/videos?tag='.rawurlencode($tag->getName()).'"]');
             self::assertSelectorExists('#currently-watching-heading');
             self::assertSelectorTextContains('main', 'Display latest '.$suffix);
-            self::assertSelectorExists('#public-statistics-heading');
-            $statisticsValues = $client->getCrawler()->filter('.public-statistics dd');
+            self::assertSelectorExists('#home-public-statistics-heading');
+            $statisticsValues = $client->getCrawler()->filter('.portal-statistics dd');
             self::assertCount(3, $statisticsValues);
             self::assertSame((string) $expectedPublicVideos, $statisticsValues->eq(0)->text());
             self::assertStringNotContainsString('Display draft '.$suffix, (string) $client->getResponse()->getContent());
