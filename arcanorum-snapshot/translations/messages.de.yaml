@@ -553,6 +553,7 @@
 "Öffentlich": "Öffentlich"
 "Nur registrierte Mitglieder": "Nur registrierte Mitglieder"
 "Einbettung auf anderen Websites erlauben": "Einbettung auf anderen Websites erlauben"
+"Ein HTTPS-Ursprung pro Zeile, ohne Pfad. Zum Deaktivieren die Liste leeren. Nur Administratoren können diese Freigabe ändern; Entwürfe und Mitgliedervideos werden nicht extern ausgegeben.": "Ein HTTPS-Ursprung pro Zeile, ohne Pfad. Zum Deaktivieren die Liste leeren. Nur Administratoren können diese Freigabe ändern; Entwürfe und Mitgliedervideos werden nicht extern ausgegeben."
 "Trage Einbettungsseiten nur ein, wenn die Einbettung für dieses Video erlaubt ist.": "Trage Einbettungsseiten nur ein, wenn die Einbettung für dieses Video erlaubt ist."
 "Die Einsenderangabe ist ungültig.": "Die Einsenderangabe ist ungültig."
 "Der Video-Permalink ist ungültig.": "Der Video-Permalink ist ungültig."

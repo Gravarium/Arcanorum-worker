@@ -307,6 +307,7 @@
 "Öffentlich": "عام"
 "Nur registrierte Mitglieder": "للأعضاء المسجلين فقط"
 "Einbettung auf anderen Websites erlauben": "السماح بالتضمين على مواقع أخرى"
+"Ein HTTPS-Ursprung pro Zeile, ohne Pfad. Zum Deaktivieren die Liste leeren. Nur Administratoren können diese Freigabe ändern; Entwürfe und Mitgliedervideos werden nicht extern ausgegeben.": "أدخل أصل HTTPS واحدًا في كل سطر دون مسار. امسح القائمة لتعطيل التضمين. لا يمكن تعديل هذه الصلاحية إلا للمسؤولين؛ ولا تُشارك المسودات وفيديوهات الأعضاء خارجيًا."
 "Trage Einbettungsseiten nur ein, wenn die Einbettung für dieses Video erlaubt ist.": "أضف مواقع التضمين المسموح بها فقط عند تفعيل التضمين لهذا الفيديو."
 "Die Einsenderangabe ist ungültig.": "قيمة مقدم المحتوى غير صالحة."
 "Der Video-Permalink ist ungültig.": "الرابط الثابت للفيديو غير صالح."

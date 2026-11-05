@@ -7423,6 +7423,7 @@ final class AdminDashboardTest extends WebTestCase
             self::assertSelectorExists('fieldset[data-testid="video-visibility"] input[name="members_only"][type="radio"][value="1"]');
             self::assertSelectorExists('input[name="featured"][type="checkbox"]');
             self::assertSelectorExists('input[name="comments_enabled"][type="checkbox"]');
+            self::assertSelectorExists('input[name="embedding_enabled_present"][type="hidden"][value="1"]');
             self::assertSelectorExists('input[name="embedding_enabled"][type="checkbox"]');
             self::assertSelectorExists('textarea[name="embed_origins"]');
             self::assertSelectorExists('input[name="custom_fields[0][key]"]');

@@ -603,10 +603,11 @@ final class VideoAdminController extends AbstractController
             }
 
             $rawPayload = $request->request->all();
+            $hasEmbeddingEnabledMarker = array_key_exists('embedding_enabled_present', $rawPayload);
             $allowedFields = [
                 '_token', 'title', 'slug', 'description', 'category', 'category_ids_present', 'category_ids', 'new_category_name', 'new_category_slug', 'tags', 'source_type', 'source_url',
                 'duration_seconds', 'duration_minutes', 'duration_seconds_part', 'status', 'publish_at', 'author_name', 'language_code',
-                'featured', 'comments_enabled', 'members_only', 'embedding_enabled', 'view_count', 'embed_origins',
+                'featured', 'comments_enabled', 'members_only', 'embedding_enabled', 'embedding_enabled_present', 'view_count', 'embed_origins',
                 'custom_fields_present', 'custom_fields',
             ];
             if (null === $video) {
@@ -614,6 +615,11 @@ final class VideoAdminController extends AbstractController
             }
             if ([] !== array_diff(array_keys($rawPayload), $allowedFields)) {
                 $errors[] = 'Die Anfrage enthält unerwartete Eingabefelder.';
+            }
+            if ($hasEmbeddingEnabledMarker
+                && (!is_string($rawPayload['embedding_enabled_present']) || '1' !== $rawPayload['embedding_enabled_present'])
+            ) {
+                $errors[] = 'Die Eingabe enthält einen ungültigen Wert.';
             }
             foreach (['_token', 'title', 'slug', 'description', 'category', 'category_ids_present', 'tags', 'source_type', 'source_url', 'thumbnail_url', 'duration_seconds', 'duration_minutes', 'duration_seconds_part', 'status', 'publish_at', 'author_name', 'language_code', 'view_count', 'embed_origins'] as $field) {
                 if (isset($rawPayload[$field]) && !is_string($rawPayload[$field])) {
@@ -677,7 +683,7 @@ final class VideoAdminController extends AbstractController
                 'members_only' => array_key_exists('members_only', $rawPayload)
                     ? '1' === $rawPayload['members_only']
                     : $values['members_only'],
-                'embedding_enabled' => array_key_exists('embedding_enabled', $rawPayload)
+                'embedding_enabled' => ($hasEmbeddingEnabledMarker || array_key_exists('embedding_enabled', $rawPayload))
                     ? $request->request->has('embedding_enabled')
                     : ('' !== trim(self::input($request->request, 'embed_origins')) || $values['embedding_enabled']),
                 'view_count' => array_key_exists('view_count', $rawPayload) ? trim(self::input($request->request, 'view_count')) : $values['view_count'],

@@ -127,6 +127,18 @@ final class AdminVideoThumbnailFlowTest extends WebTestCase
             $payload['category_ids'] = [$firstCategory->getId(), $secondCategory->getId()];
             $payload['title'] = 'Multiple category video '.$suffix;
             $payload['slug'] = 'multiple-category-'.$suffix;
+            $payload['tags'] = 'Culture, Interviews';
+            $payload['duration_minutes'] = '12';
+            $payload['duration_seconds_part'] = '34';
+            $payload['status'] = PublishingStatus::Published->value;
+            $payload['language_code'] = 'de-DE';
+            $payload['members_only'] = '0';
+            $payload['featured'] = '1';
+            $payload['comments_enabled'] = '1';
+            $payload['embedding_enabled_present'] = '1';
+            $payload['embedding_enabled'] = '1';
+            $payload['embed_origins'] = 'https://example.org';
+            $payload['custom_fields'] = [['key' => 'Producer', 'value' => 'Editorial Unit']];
             $client->request(
                 'POST',
                 $newVideoPath,
@@ -140,6 +152,19 @@ final class AdminVideoThumbnailFlowTest extends WebTestCase
             self::assertInstanceOf(Video::class, $savedVideo);
             self::assertSame([$firstCategory->getName(), $secondCategory->getName()], $savedVideo->getCategoryNames());
             self::assertSame($storedThumbnailObjectId, $savedVideo->getThumbnailObjectId());
+            self::assertSame(754, $savedVideo->getDurationSeconds());
+            self::assertSame('Culture, Interviews', $savedVideo->getTagNames());
+            self::assertSame('de-DE', $savedVideo->getLanguageCode());
+            self::assertSame('Editorial Desk', $savedVideo->getAuthorName());
+            self::assertSame(PublishingStatus::Published, $savedVideo->getStatus());
+            self::assertNotNull($savedVideo->getPublishedAt());
+            self::assertTrue($savedVideo->isFeatured());
+            self::assertTrue($savedVideo->isCommentsEnabled());
+            self::assertFalse($savedVideo->isMembersOnly());
+            self::assertTrue($savedVideo->isEmbeddingEnabled());
+            self::assertSame(['https://example.org'], $savedVideo->getEmbedAllowedOrigins());
+            self::assertTrue($savedVideo->isExternallyEmbeddable());
+            self::assertSame([['key' => 'Producer', 'value' => 'Editorial Unit']], $savedVideo->getCustomFields());
 
             $editPath = '/admin/videos/'.$savedVideo->getId().'/edit';
             $client->request('GET', $editPath);
@@ -153,6 +178,7 @@ final class AdminVideoThumbnailFlowTest extends WebTestCase
             $client->request('POST', $editPath, [
                 '_token' => $editToken,
                 'category_ids_present' => '1',
+                'embedding_enabled_present' => '1',
                 'title' => $savedVideo->getTitle(),
                 'description' => $savedVideo->getDescription(),
                 'source_type' => VideoSourceType::Embed->value,
@@ -166,6 +192,7 @@ final class AdminVideoThumbnailFlowTest extends WebTestCase
             $savedVideo = $entityManager->getRepository(Video::class)->findOneBy(['slug' => 'multiple-category-'.$suffix]);
             self::assertInstanceOf(Video::class, $savedVideo);
             self::assertSame([], $savedVideo->getCategoryNames());
+            self::assertFalse($savedVideo->isEmbeddingEnabled(), 'An unchecked embedding checkbox must clear the stored setting.');
         } finally {
             $entityManager->getConnection()->executeStatement(
                 'DELETE FROM videos WHERE slug IN (:rejected_slug, :saved_slug)',

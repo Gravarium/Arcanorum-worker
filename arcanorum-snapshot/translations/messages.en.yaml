@@ -1080,6 +1080,7 @@ Admin: Administration
 "Quellart": "Source type"
 "Einbettungs-URL": "Embed URL"
 "Erlaubte Einbettungsseiten": "Allowed embedding sites"
+"Ein HTTPS-Ursprung pro Zeile, ohne Pfad. Zum Deaktivieren die Liste leeren. Nur Administratoren können diese Freigabe ändern; Entwürfe und Mitgliedervideos werden nicht extern ausgegeben.": "Enter one HTTPS origin per line, without a path. Clear the list to disable embedding. Only administrators can change this grant; drafts and member videos are not shared externally."
 "Ein HTTPS-Ursprung pro Zeile, ohne Pfad. Nur Administratoren können diese Freigabe ändern. Entwürfe und widerrufene Videos lassen sich nicht einbetten.": "Enter one HTTPS origin per line, without a path. Only administrators can change this grant. Draft and revoked videos cannot be embedded."
 "Die Freigabeliste für Videoeinbettungen muss aus Text bestehen.": "The video embedding allowlist must be plain text."
 "Die Freigabeliste darf höchstens 20 gültige HTTPS-Ursprünge ohne Pfad enthalten.": "The allowlist can contain at most 20 valid HTTPS origins without paths."

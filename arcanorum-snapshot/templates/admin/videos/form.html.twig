@@ -33,6 +33,7 @@
         <form class="admin-form" method="post" enctype="multipart/form-data" data-video-source-metadata data-video-edit="{{ is_edit ? '1' : '0' }}" data-provider-url-label="{{ 'YouTube- oder Videoanbieter-URL'|trans }}" data-direct-url-label="{{ 'Direkte Medien-URL'|trans }}" data-stream-url-label="{{ 'Stream-URL'|trans }}" data-metadata-endpoint="{{ path('admin_video_metadata') }}" data-metadata-csrf-token="{{ csrf_token('admin_video_metadata') }}" data-metadata-error="{{ 'Provider-Metadaten konnten nicht abgerufen werden.'|trans }}" data-metadata-loaded="{{ 'Provider-Daten und Vorschaubildadresse wurden übernommen.'|trans }}" data-metadata-loading="{{ 'Provider-Metadaten werden abgerufen.'|trans }}">
             <input type="hidden" name="_token" value="{{ csrf_token('admin_video_save') }}">
             <input type="hidden" name="category_ids_present" value="1">
+            <input type="hidden" name="embedding_enabled_present" value="1">
 
             <div class="video-editor-layout">
                 <div class="video-editor-main">
@@ -205,7 +206,7 @@
                         <label>
                             <span>{{ 'Erlaubte Einbettungsseiten'|trans }}</span>
                             <textarea name="embed_origins" rows="4" maxlength="4000" placeholder="https://example.org&#10;https://video.example.net">{{ values.embed_origins }}</textarea>
-                            <small>{{ 'Ein HTTPS-Ursprung pro Zeile, ohne Pfad. Nur Administratoren können diese Freigabe ändern. Entwürfe, Mitgliederinhalte und deaktivierte Einbettung werden nicht extern ausgegeben.'|trans }}</small>
+                            <small>{{ 'Ein HTTPS-Ursprung pro Zeile, ohne Pfad. Zum Deaktivieren die Liste leeren. Nur Administratoren können diese Freigabe ändern; Entwürfe und Mitgliedervideos werden nicht extern ausgegeben.'|trans }}</small>
                         </label>
                     </section>
                 </aside>
