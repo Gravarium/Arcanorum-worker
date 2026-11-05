@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Service;
 
+use App\Entity\PublishingStatus;
+use App\Entity\Video;
+use App\Entity\VideoSourceType;
 use App\Service\ExternalVideoEmbedResolver;
 use PHPUnit\Framework\TestCase;
 
@@ -25,6 +28,50 @@ final class ExternalVideoEmbedResolverTest extends TestCase
                 $resolver->resolve($source),
             );
         }
+    }
+
+    public function testResolvesKnownProvidersForVideosSavedAsGenericUrls(): void
+    {
+        $resolver = new ExternalVideoEmbedResolver();
+        $video = new Video(
+            'Legacy YouTube URL',
+            'A known provider URL is still rendered in the site player.',
+            null,
+            VideoSourceType::Url,
+            'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            PublishingStatus::Published,
+            false,
+            false,
+        );
+
+        self::assertSame(
+            'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ',
+            $resolver->resolveForVideo($video),
+        );
+
+        $unsafeLegacyProvider = new Video(
+            'Unknown legacy provider',
+            'An unknown host must remain an external link.',
+            null,
+            VideoSourceType::Url,
+            'https://www.metacafe.com/watch/123/video-title/',
+            PublishingStatus::Published,
+            false,
+            false,
+        );
+        self::assertNull($resolver->resolveForVideo($unsafeLegacyProvider));
+
+        $uploadedVideo = new Video(
+            'File video',
+            'Uploaded media must not be mistaken for an embed.',
+            null,
+            VideoSourceType::File,
+            '',
+            PublishingStatus::Published,
+            false,
+            false,
+        );
+        self::assertNull($resolver->resolveForVideo($uploadedVideo));
     }
 
     public function testCanonicalizesVimeoAndKeepsOnlyAValidPrivacyHash(): void

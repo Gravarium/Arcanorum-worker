@@ -2602,7 +2602,7 @@ jobs:
       - name: Verify exact source commit and exclude credentials
         shell: bash
         env:
-          EXPECTED_SOURCE_SHA: ${{ inputs.validation_scope == 'classic-public-shell-followup' && inputs.source_commit || 'c96df1383aa1377bba3cf7ac3016a4ea5eb3742c' }}
+          EXPECTED_SOURCE_SHA: ${{ (inputs.validation_scope == 'classic-public-shell-followup' || inputs.validation_scope == 'video-provider-player-followup') && inputs.source_commit || 'c96df1383aa1377bba3cf7ac3016a4ea5eb3742c' }}
         run: |
           set -euo pipefail
           printf '%s\n' "$EXPECTED_SOURCE_SHA" | cmp -s - SOURCE_BASE_SHA
@@ -2655,6 +2655,12 @@ jobs:
           tools: composer:v2
           ini-values: memory_limit=1G
 
+      - name: Set up Node 24 for provider player regression
+        if: inputs.validation_scope == 'video-provider-player-followup'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0; Node 24
+        with:
+          node-version: '24'
+
       - name: Validate and install locked Composer dependencies
         if: inputs.validation_scope == 'member-activity-focused' || inputs.validation_scope == 'admin-password-change-followup' || inputs.validation_scope == 'video-provider-player-followup' || inputs.validation_scope == 'auto-feature-threshold-followup' || inputs.validation_scope == 'admin-design-settings-followup' || inputs.validation_scope == 'classic-public-shell-followup'
         run: |
@@ -2687,7 +2693,17 @@ jobs:
 
       - name: Check video provider player regression PHP syntax
         if: inputs.validation_scope == 'video-provider-player-followup'
-        run: php -l tests/Controller/VideoEmbedFlowTest.php
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in \
+            src/Module/Series/Controller/PublicSeriesController.php \
+            src/Module/Video/Controller/VideoPublicController.php \
+            src/Service/ExternalVideoEmbedResolver.php \
+            tests/Controller/VideoEmbedFlowTest.php \
+            tests/Service/ExternalVideoEmbedResolverTest.php; do
+            php -l "$file"
+          done
 
       - name: Check automatic feature threshold PHP syntax
         if: inputs.validation_scope == 'auto-feature-threshold-followup'
@@ -2788,7 +2804,8 @@ jobs:
       - name: Lint video page and service containers
         if: inputs.validation_scope == 'video-provider-player-followup'
         run: |
-          php bin/console lint:twig templates/videos/show.html.twig
+          php bin/console lint:yaml translations/messages.de.yaml translations/messages.en.yaml translations/messages.ar.yaml
+          php bin/console lint:twig templates/videos/show.html.twig templates/series/episode.html.twig templates/partials/provider_video_embed.html.twig
           php bin/console lint:container --env=dev
           APP_ENV=prod APP_DEBUG=0 php bin/console lint:container --env=prod
 
@@ -2877,7 +2894,11 @@ jobs:
           --no-progress
           --error-format=table
           --memory-limit=1G
+          src/Module/Series/Controller/PublicSeriesController.php
+          src/Module/Video/Controller/VideoPublicController.php
+          src/Service/ExternalVideoEmbedResolver.php
           tests/Controller/VideoEmbedFlowTest.php
+          tests/Service/ExternalVideoEmbedResolverTest.php
 
       - name: PHPStan on automatic feature threshold
         if: inputs.validation_scope == 'auto-feature-threshold-followup'
@@ -2993,7 +3014,11 @@ jobs:
           --config=.php-cs-fixer.dist.php
           --diff
           --using-cache=no
+          src/Module/Series/Controller/PublicSeriesController.php
+          src/Module/Video/Controller/VideoPublicController.php
+          src/Service/ExternalVideoEmbedResolver.php
           tests/Controller/VideoEmbedFlowTest.php
+          tests/Service/ExternalVideoEmbedResolverTest.php
 
       - name: PHP CS Fixer on automatic feature threshold
         if: inputs.validation_scope == 'auto-feature-threshold-followup'
@@ -3102,7 +3127,11 @@ jobs:
         if: inputs.validation_scope == 'video-provider-player-followup'
         run: >-
           vendor/bin/rector process
+          src/Module/Series/Controller/PublicSeriesController.php
+          src/Module/Video/Controller/VideoPublicController.php
+          src/Service/ExternalVideoEmbedResolver.php
           tests/Controller/VideoEmbedFlowTest.php
+          tests/Service/ExternalVideoEmbedResolverTest.php
           --config=rector.php
           --dry-run
           --no-progress-bar
@@ -3222,9 +3251,13 @@ jobs:
             --fail-on-risky --fail-on-warning --fail-on-deprecation \
             --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
             --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
-            --filter='testSiteWideEmbeddingSwitchAndPlayerOptionsApplyToArcanorumPlayer|testProviderEmbedsIgnoreSiteWideVideoJsEngineAndRemainConsentGated' \
+            tests/Service/ExternalVideoEmbedResolverTest.php \
             tests/Controller/VideoEmbedFlowTest.php
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
+
+      - name: Run provider player browser-script regressions
+        if: inputs.validation_scope == 'video-provider-player-followup'
+        run: node --test tests/JavaScript/provider-embed-consent.test.mjs
 
       - name: Run automatic feature threshold regressions
         if: inputs.validation_scope == 'auto-feature-threshold-followup'

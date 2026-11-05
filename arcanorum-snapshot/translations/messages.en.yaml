@@ -1089,6 +1089,8 @@ Admin: Administration
 "Der Player funktioniert nur auf den oben freigegebenen HTTPS-Ursprüngen.": "The player only works on the HTTPS origins approved above."
 "HTML-Code zum Kopieren": "HTML code to copy"
 "Das externe Video wird erst nach deiner Auswahl beim Anbieter geladen. Dabei erhält der Anbieter deine Verbindungsdaten.": "The external video only loads from its provider after you choose to load it. The provider will receive your connection data."
+"Video im Player laden": "Load video in player"
+"Video-Player wird geladen.": "Loading video player."
 "Externes Video laden": "Load external video"
 "Externes Video wird geladen.": "Loading external video."
 "Diese externe Videoquelle ist ungültig.": "This external video source is invalid."

@@ -253,7 +253,7 @@ final class VideoPublicController extends AbstractController
                 && $member->isActive()
                 && $member->isEmailVerified()
                 && $videoEmailShareSender->isReady(),
-            'embed_url' => VideoSourceType::Embed === $video->getSourceType() ? $embedResolver->resolve($video->getSourceUrl()) : null,
+            'embed_url' => $embedResolver->resolveForVideo($video),
             'embed_code' => $embedCodeGenerator->generate($video),
             'stream_source' => $streamSource,
             'comments' => $approvedComments,

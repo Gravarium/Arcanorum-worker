@@ -88,7 +88,7 @@
             frame.loading = 'lazy';
             frame.referrerPolicy = 'no-referrer';
             frame.sandbox.add('allow-scripts', 'allow-same-origin', 'allow-presentation');
-            frame.allow = 'fullscreen; picture-in-picture';
+            frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
             frame.allowFullscreen = true;
             container.append(frame);
             button.remove();

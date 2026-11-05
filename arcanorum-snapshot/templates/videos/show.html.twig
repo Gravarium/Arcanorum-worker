@@ -88,7 +88,7 @@
                     {% else %}
                         <p>{{ 'Dieser Stream ist derzeit nicht verfügbar oder für diese Website nicht freigegeben.'|trans }}</p>
                     {% endif %}
-                {% elseif video.sourceType.value == 'embed' %}
+                {% elseif video.sourceType.value == 'embed' or embed_url is not null %}
                     {% if embed_url is not null %}
                         {{ include('partials/provider_video_embed.html.twig', {embed_url: embed_url, embed_title: video.title}) }}
                     {% else %}
@@ -311,7 +311,7 @@
     {% elseif video.sourceType.value == 'stream' and stream_source is not null and stream_source.mimeType == 'application/vnd.apple.mpegurl' %}
         <script src="{{ asset('third-party/hls.js-1.7.3/hls.min.js') }}" defer></script>
         <script src="{{ asset('video/hls-player.js') }}" defer></script>
-    {% elseif video.sourceType.value == 'embed' and embed_url is not null %}
+    {% elseif embed_url is not null %}
         <script src="{{ asset('video/provider-embed-consent.js') }}" defer></script>
     {% endif %}
     {% if quality_sources is not empty %}<script src="{{ asset('video/video-quality-selector.js') }}" defer></script>{% endif %}

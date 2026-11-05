@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Entity\Video;
+use App\Entity\VideoSourceType;
 
 final readonly class ExternalVideoEmbedResolver
 {
@@ -116,6 +117,19 @@ final readonly class ExternalVideoEmbedResolver
         }
 
         return 'https://geo.dailymotion.com/player/'.$this->dailymotionPlayerId.'.html?video='.$dailymotionId;
+    }
+
+    /**
+     * Resolves provider URLs from both current embed records and older records
+     * saved as generic URLs. Unknown legacy providers remain ordinary links.
+     */
+    public function resolveForVideo(Video $video): ?string
+    {
+        if (!in_array($video->getSourceType(), [VideoSourceType::Embed, VideoSourceType::Url], true)) {
+            return null;
+        }
+
+        return $this->resolve($video->getSourceUrl());
     }
 
     /** @return list<string> */

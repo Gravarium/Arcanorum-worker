@@ -164,7 +164,7 @@ final class PublicSeriesController extends AbstractController
             'episode' => $episode,
             'video' => $video,
             'stream_source' => $streamSource,
-            'embed_url' => VideoSourceType::Embed === $video->getSourceType() ? $embedResolver->resolve($video->getSourceUrl()) : null,
+            'embed_url' => $embedResolver->resolveForVideo($video),
             'subtitle_tracks' => $subtitleTracks->findForVideo($video),
             'quality_sources' => $qualitySources,
             'share_widget_enabled' => $siteSettings->current()->isVideoShareWidgetEnabled(),

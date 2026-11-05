@@ -308,6 +308,48 @@ final class VideoEmbedFlowTest extends WebTestCase
         }
     }
 
+    public function testYoutubeVideoSavedAsGenericUrlStillGetsAnInPagePlayer(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+
+        $video = new Video(
+            'YouTube URL player '.bin2hex(random_bytes(8)),
+            'A YouTube URL saved through the generic URL source must still use the in-page player.',
+            null,
+            VideoSourceType::Url,
+            'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            PublishingStatus::Published,
+            false,
+            false,
+        );
+
+        try {
+            $entityManager->persist($video);
+            $entityManager->flush();
+
+            $client->request('GET', '/videos/'.$video->getId());
+
+            self::assertResponseIsSuccessful();
+            self::assertSelectorExists('[data-testid="video-embed-provider"] button[data-provider-embed-load]');
+            self::assertSelectorNotExists('[data-testid="video-source"]');
+            self::assertSelectorNotExists('iframe[data-testid="video-embed-provider"]');
+            self::assertSame(
+                'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ',
+                $client->getCrawler()->filter('[data-testid="video-embed-provider"]')->attr('data-embed-url'),
+            );
+            self::assertStringContainsString('provider-embed-consent.js', (string) $client->getResponse()->getContent());
+        } finally {
+            $entityManager->getConnection()->executeStatement(
+                'DELETE FROM videos WHERE id = :id',
+                ['id' => $video->getId()],
+                ['id' => \Doctrine\DBAL\ParameterType::STRING],
+            );
+        }
+    }
+
     public function testSiteWideEmbeddingSwitchAndPlayerOptionsApplyToArcanorumPlayer(): void
     {
         $client = static::createClient();

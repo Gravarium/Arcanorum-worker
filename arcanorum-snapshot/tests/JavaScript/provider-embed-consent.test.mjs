@@ -99,7 +99,7 @@ test('loads a YouTube embed only after the visitor chooses', () => {
     assert.equal(state.container.frame.loading, 'lazy');
     assert.equal(state.container.frame.referrerPolicy, 'no-referrer');
     assert.deepEqual(state.container.frame.sandbox.values, ['allow-scripts', 'allow-same-origin', 'allow-presentation']);
-    assert.equal(state.container.frame.allow, 'fullscreen; picture-in-picture');
+    assert.equal(state.container.frame.allow, 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
     assert.equal(state.container.frame.allowFullscreen, true);
     assert.equal(state.button.removed, true);
     assert.equal(state.status.textContent, 'Provider loaded');
