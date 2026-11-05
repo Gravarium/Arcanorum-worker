@@ -6,7 +6,7 @@
     {% set current_route = app.request.attributes.get('_route') %}
     {% set requested_video_source = app.request.query.all['source_type']|default('embed') %}
     {% if requested_video_source not in ['embed', 'url', 'stream', 'file'] %}{% set requested_video_source = 'embed' %}{% endif %}
-    <div class="admin-shell">
+    <div class="admin-shell" data-admin-navigation-placement="right">
         <a class="skip-link" href="#hauptinhalt">{{ 'Zum Inhalt springen'|trans }}</a>
         <header class="admin-topbar">
             <a class="brand brand-compact" href="{{ path('platform_home') }}">

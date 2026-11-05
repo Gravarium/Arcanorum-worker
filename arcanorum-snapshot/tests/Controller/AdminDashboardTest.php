@@ -1600,6 +1600,9 @@ final class AdminDashboardTest extends WebTestCase
             self::assertSelectorTextContains('section[aria-labelledby="webserver-integrity-heading"]', 'Unabhängige Host-Prüfung');
             self::assertSelectorTextContains('section[aria-labelledby="webserver-integrity-heading"]', 'Für diese Anfrage bestätigt');
             self::assertSelectorExists('aside.admin-sidebar nav[aria-label="Hauptnavigation"] a[aria-current="page"]');
+            self::assertSame('right', $client->getCrawler()->filter('.admin-shell')->attr('data-admin-navigation-placement'));
+            self::assertSelectorExists('.admin-shell > aside.admin-sidebar');
+            self::assertSelectorExists('.admin-shell > main.admin-main > section.admin-page');
             self::assertSelectorTextContains('nav[aria-label="Hauptnavigation"]', 'Videos');
             self::assertSelectorTextContains('nav[aria-label="Hauptnavigation"]', 'News');
             self::assertSelectorTextContains('nav[aria-label="Hauptnavigation"]', 'Kommentare');
