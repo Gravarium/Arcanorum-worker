@@ -123,13 +123,20 @@
                 <aside class="video-editor-sidebar">
                     <section class="video-editor-section">
                         <h3>{{ 'Veröffentlichung'|trans }}</h3>
-                        <label>
-                            <span>{{ 'Videokategorien'|trans }}</span>
-                            <select name="category_ids[]" multiple size="8" aria-describedby="video-category-help">
-                                {% for category in categories %}<option value="{{ category.id }}" {{ category.id in values.category_ids ? 'selected' : '' }}>{{ category.name }}</option>{% endfor %}
-                            </select>
-                        </label>
-                        <small id="video-category-help" class="video-category-help">{{ 'Wähle mehrere Kategorien mit Strg- oder Umschalttaste.'|trans }}</small>
+                        <fieldset class="video-category-options" data-testid="video-category-selection" aria-describedby="video-category-help">
+                            <legend>{{ 'Videokategorien'|trans }}</legend>
+                            <div class="video-category-checkboxes">
+                                {% for category in categories %}
+                                    <label>
+                                        <input type="checkbox" name="category_ids[]" value="{{ category.id }}" {{ category.id in values.category_ids ? 'checked' : '' }}>
+                                        <span>{{ category.name }}</span>
+                                    </label>
+                                {% else %}
+                                    <p class="muted">{{ 'Noch keine Videokategorien vorhanden.'|trans }}</p>
+                                {% endfor %}
+                            </div>
+                        </fieldset>
+                        <small id="video-category-help" class="video-category-help">{{ 'Wähle eine oder mehrere Kategorien aus.'|trans }}</small>
                         <p class="video-category-manage"><a href="{{ path('admin_category_index', {type: 'video'}) }}">{{ 'Videokategorien verwalten'|trans }}</a></p>
                         <div class="video-category-quick-add" data-testid="video-category-quick-add">
                             <label>

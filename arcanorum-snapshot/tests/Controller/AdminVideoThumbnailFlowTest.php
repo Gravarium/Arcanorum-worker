@@ -90,8 +90,8 @@ final class AdminVideoThumbnailFlowTest extends WebTestCase
             $newVideoPath = '/admin/videos/new';
             $client->request('GET', $newVideoPath);
             self::assertResponseIsSuccessful();
-            self::assertSelectorExists('select[name="category_ids[]"][multiple][size="8"]');
-            self::assertSelectorExists('select[name="category_ids[]"] option[value="'.$firstCategory->getId().'"]');
+            self::assertSelectorExists('fieldset[data-testid="video-category-selection"] input[name="category_ids[]"][type="checkbox"]');
+            self::assertSelectorExists('fieldset[data-testid="video-category-selection"] input[name="category_ids[]"][value="'.$firstCategory->getId().'"]');
 
             $token = $client->getCrawler()->filter('form.admin-form input[name="_token"]')->first()->attr('value');
             self::assertIsString($token);
@@ -140,6 +140,12 @@ final class AdminVideoThumbnailFlowTest extends WebTestCase
             self::assertInstanceOf(Video::class, $savedVideo);
             self::assertSame([$firstCategory->getName(), $secondCategory->getName()], $savedVideo->getCategoryNames());
             self::assertSame($storedThumbnailObjectId, $savedVideo->getThumbnailObjectId());
+
+            $client->request('GET', '/admin/videos/'.$savedVideo->getId().'/edit');
+            self::assertResponseIsSuccessful();
+            self::assertSelectorExists('fieldset[data-testid="video-category-selection"] input[name="category_ids[]"][value="'.$firstCategory->getId().'"][checked]');
+            self::assertSelectorExists('fieldset[data-testid="video-category-selection"] input[name="category_ids[]"][value="'.$secondCategory->getId().'"][checked]');
+            self::assertSelectorNotExists('fieldset[data-testid="video-category-selection"] input[name="category_ids[]"][value="'.$newsCategory->getId().'"]');
         } finally {
             $entityManager->getConnection()->executeStatement(
                 'DELETE FROM videos WHERE slug IN (:rejected_slug, :saved_slug)',
