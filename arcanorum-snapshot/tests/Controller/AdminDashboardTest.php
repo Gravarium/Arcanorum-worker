@@ -7408,7 +7408,7 @@ final class AdminDashboardTest extends WebTestCase
             self::assertSelectorExists('textarea[name="description"]');
             self::assertSelectorExists('input[name="duration_minutes"][type="number"]');
             self::assertSelectorExists('input[name="duration_seconds_part"][type="number"]');
-            self::assertSelectorExists('fieldset[data-testid="video-category-selection"] input[name="category_ids[]"][type="checkbox"]');
+            self::assertSelectorExists('fieldset[data-testid="video-category-selection"]');
             self::assertSelectorTextContains('[data-testid="video-category-selection"]', 'Noch keine Videokategorien vorhanden.');
             self::assertSelectorExists('input[name="new_category_name"][maxlength="100"]');
             self::assertSelectorExists('input[name="new_category_slug"][maxlength="120"]');

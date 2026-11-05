@@ -39,6 +39,7 @@ on:
           - private-artwork-concurrency-followup
           - site-logo-concurrency-followup
           - admin-content-concurrency-followup
+          - admin-content-tests-only
           - video-social-preview-cache-followup
           - public-media-cache-followup
           - auto-feature-threshold-followup
@@ -3353,7 +3354,7 @@ jobs:
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
 
   validate-video-thumbnail-concurrency:
-    if: github.event_name == 'workflow_dispatch' && (inputs.validation_scope == 'video-thumbnail-concurrency-followup' || inputs.validation_scope == 'admin-content-concurrency-followup')
+    if: github.event_name == 'workflow_dispatch' && (inputs.validation_scope == 'video-thumbnail-concurrency-followup' || inputs.validation_scope == 'admin-content-concurrency-followup' || inputs.validation_scope == 'admin-content-tests-only')
     name: Focused admin content concurrency checks
     runs-on: ubuntu-26.04
     timeout-minutes: 45
@@ -3486,6 +3487,7 @@ jobs:
           composer audit --locked --no-interaction
 
       - name: Check affected PHP syntax
+        if: inputs.validation_scope != 'admin-content-tests-only'
         run: |
           php -l src/Module/Video/Controller/VideoAdminController.php
           php -l src/Module/Video/Controller/AdminVideoThumbnailController.php
@@ -3510,6 +3512,7 @@ jobs:
           php -l tests/Service/ContentTagNameLockTest.php
 
       - name: Lint video editor translations, Twig and service containers
+        if: inputs.validation_scope != 'admin-content-tests-only'
         run: |
           php bin/console lint:yaml translations/messages.de.yaml translations/messages.en.yaml translations/messages.ar.yaml
           php bin/console lint:twig templates/admin/videos/form.html.twig
@@ -3522,6 +3525,7 @@ jobs:
           php bin/console doctrine:schema:validate --skip-sync
 
       - name: PHPStan level 10 on affected PHP files
+        if: inputs.validation_scope != 'admin-content-tests-only'
         run: >-
           vendor/bin/phpstan analyse
           --configuration=phpstan.neon.dist
@@ -3551,6 +3555,7 @@ jobs:
           tests/Service/ContentTagNameLockTest.php
 
       - name: PHP CS Fixer on affected PHP files
+        if: inputs.validation_scope != 'admin-content-tests-only'
         run: >-
           vendor/bin/php-cs-fixer check
           --config=.php-cs-fixer.dist.php
@@ -3579,6 +3584,7 @@ jobs:
           tests/Service/ContentTagNameLockTest.php
 
       - name: Rector dry run on affected PHP files
+        if: inputs.validation_scope != 'admin-content-tests-only'
         run: >-
           vendor/bin/rector process
           src/Module/Video/Controller/VideoAdminController.php
@@ -3607,11 +3613,13 @@ jobs:
           --no-progress-bar
 
       - name: Psalm taint analysis
+        if: inputs.validation_scope != 'admin-content-tests-only'
         run: |
           mkdir -p var/test-results
           vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm.sarif
 
       - name: Run admin content concurrency regressions
+        if: inputs.validation_scope != 'admin-content-tests-only'
         run: |
           mkdir -p var/test-results
           php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
@@ -3625,6 +3633,18 @@ jobs:
             tests/Service/StaticPageSlugLockTest.php \
             tests/Service/ContentCategoryIdentityLockTest.php \
             tests/Service/ContentTagNameLockTest.php \
+            tests/Controller/AdminDashboardTest.php
+          python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
+
+      - name: Run changed administrator video form contract test
+        if: inputs.validation_scope == 'admin-content-tests-only'
+        run: |
+          mkdir -p var/test-results
+          php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
+            --fail-on-risky --fail-on-warning --fail-on-deprecation \
+            --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
+            --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
+            --filter='testAdminVideoFormPrefillsSafeSourceModesAndShowsMinuteAndSecondFields' \
             tests/Controller/AdminDashboardTest.php
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
 
