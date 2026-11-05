@@ -5551,3 +5551,525 @@ html[data-public-theme="arcanorum"][data-public-view="compact"] .public-navigati
         border-color: rgb(213 181 106 / 42%);
     }
 }
+
+/* Portal homepage finish: bounded canvas, full-width header, editorial image cards. */
+html[data-public-theme="arcanorum"] body.public-site {
+    background: #070a0e;
+    color-scheme: dark;
+}
+
+html[data-public-theme="arcanorum"] .portal-home {
+    width: min(1200px, calc(100% - 2rem));
+    max-width: 1200px;
+    margin-inline: auto;
+    border-inline: 1px solid #20272a;
+    background: #080b0f;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .public-header {
+    display: grid;
+    grid-template-columns: minmax(9rem, 11.5rem) minmax(0, 1fr) minmax(7.5rem, 10rem) max-content;
+    grid-template-rows: minmax(4rem, auto);
+    gap: 0.45rem;
+    width: 100%;
+    max-width: none;
+    min-height: 4rem;
+    margin: 0;
+    padding-inline: clamp(1rem, 3.2vw, 2.35rem);
+    border: 0;
+    border-bottom: 1px solid rgb(213 181 106 / 26%);
+    background: linear-gradient(180deg, #171719, #090b0e);
+}
+
+html[data-public-theme="arcanorum"] .portal-home .public-header-top {
+    display: contents;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .public-brand {
+    grid-column: 1;
+    grid-row: 1;
+    color: #f0d793;
+    font-size: 1.25rem;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .public-brand-tagline {
+    color: #93bfcd;
+    font-size: 0.63rem;
+    letter-spacing: 0.16em;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .public-navigation a {
+    color: #d4ccbc;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .public-navigation a:hover,
+html[data-public-theme="arcanorum"] .portal-home .public-navigation a:focus-visible,
+html[data-public-theme="arcanorum"] .portal-home .public-navigation a[aria-current="page"] {
+    color: #f0d793;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .public-navigation {
+    grid-column: 2;
+    grid-row: 1;
+    justify-content: space-between;
+    gap: 0.1rem;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    overflow-x: auto;
+    border: 0;
+    background: transparent;
+    font-size: 0.68rem;
+    scrollbar-width: thin;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .public-navigation a {
+    min-height: 4rem;
+    padding-inline: 0.32rem;
+    font-size: 0.66rem;
+    letter-spacing: 0.07em;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .public-header-search {
+    grid-column: 3;
+    grid-row: 1;
+    min-width: 0;
+    margin: 0;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .public-header-search input,
+html[data-public-theme="arcanorum"] .portal-home .public-header-search button {
+    min-height: 2.35rem;
+    border-color: #51462d;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .public-header-search input {
+    background: #090b0e;
+    color: #eee8db;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .public-header-search input::placeholder {
+    color: #a49b88;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .public-header-search button {
+    background: #17191b;
+    color: #dfca91;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .public-account {
+    grid-column: 4;
+    grid-row: 1;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .public-account > summary {
+    min-height: 2.35rem;
+    padding: 0.45rem 0.8rem;
+    border-radius: 0;
+    color: #111;
+    font-size: 0.68rem;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-hero {
+    min-height: 30rem;
+    background: #161b1c;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-hero-image {
+    z-index: 0;
+    opacity: 1;
+    object-position: center 44%;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-hero-shade {
+    z-index: 1;
+    display: flex;
+    min-height: 30rem;
+    align-items: center;
+    padding: 3rem clamp(2rem, 4.5vw, 3.4rem);
+    background:
+        linear-gradient(90deg, rgb(5 8 11 / 82%) 0%, rgb(5 8 11 / 52%) 43%, rgb(5 8 11 / 8%) 82%),
+        linear-gradient(0deg, rgb(5 8 11 / 75%) 0%, transparent 63%);
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-hero-copy {
+    width: min(35rem, 100%);
+    margin: 0;
+    padding: 1.25rem 0;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-hero-copy h1 {
+    max-width: 12ch;
+    margin: 0.9rem 0 1rem;
+    color: #f2ead9;
+    font-size: clamp(3rem, 5.5vw, 4.4rem);
+    letter-spacing: 0;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-hero-copy > p:not(.portal-eyebrow) {
+    max-width: 32rem;
+    color: #f0eadc;
+    font-size: 1rem;
+    line-height: 1.55;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-ticker {
+    display: grid;
+    grid-template-columns: max-content max-content minmax(10rem, max-content) minmax(0, 1fr);
+    min-height: 2.35rem;
+    gap: 0.65rem;
+    padding: 0.45rem clamp(1rem, 3.2vw, 2.35rem);
+    border-color: #282d2e;
+    background: #0a0e12;
+    font-size: 0.72rem;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-ticker > p {
+    min-width: 0;
+    color: #a8a297;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-layout {
+    grid-template-columns: minmax(10.5rem, 12rem) minmax(0, 1fr) minmax(11.5rem, 14rem);
+    gap: clamp(1rem, 1.8vw, 1.45rem);
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 2rem clamp(1rem, 3vw, 2.2rem) 3rem;
+    background:
+        radial-gradient(ellipse at 50% 0, rgb(75 108 128 / 8%), transparent 38%),
+        #0a0e12;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-widget {
+    border-color: #303436;
+    background: linear-gradient(180deg, #11171d, #0b1015);
+    box-shadow: none;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-widget h2 {
+    border-color: #403b2c;
+    color: #e8d6a6;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-main {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    margin: 0;
+    padding: 0 1.15rem 1rem;
+    border-inline: 1px solid rgb(213 181 106 / 27%);
+    background: linear-gradient(180deg, #10161c, #0c1116);
+    color: #ded8ca;
+    box-shadow: 0 0 1.6rem rgb(0 0 0 / 20%);
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-main h1,
+html[data-public-theme="arcanorum"] .portal-home .portal-main h2,
+html[data-public-theme="arcanorum"] .portal-home .portal-main h3 {
+    color: #f0e3c5;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-main .public-section {
+    margin-top: 2rem;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-main .public-section:first-child {
+    margin-top: 0;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-main .public-section-heading {
+    align-items: end;
+    gap: 0.75rem;
+    margin-bottom: 0.9rem;
+    padding-bottom: 0.65rem;
+    border-bottom: 1px solid #3b3629;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-main .public-section-heading h2 {
+    margin: 0;
+    color: #edd9a8;
+    font: 700 clamp(1.35rem, 2vw, 1.65rem) / 1.15 Georgia, "Times New Roman", serif;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-main .public-section-heading .eyebrow,
+html[data-public-theme="arcanorum"] .portal-home .portal-feature-copy .card-kicker {
+    color: #8fc8d8;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-main .public-section-heading > a {
+    color: #d5c28d;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-feature-story {
+    position: relative;
+    min-height: 18rem;
+    overflow: hidden;
+    border: 1px solid #353a3c;
+    background: #10171d;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-feature-art,
+html[data-public-theme="arcanorum"] .portal-home .portal-feature-art img,
+html[data-public-theme="arcanorum"] .portal-home .portal-feature-art-fallback {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-feature-art img {
+    object-fit: cover;
+    object-position: center 47%;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-feature-art-fallback,
+html[data-public-theme="arcanorum"] .portal-home .portal-card-art {
+    background-color: #20292c;
+    background-image: linear-gradient(0deg, rgb(5 8 11 / 46%), rgb(5 8 11 / 4%)), url("/images/portal-fortress.webp");
+    background-position: center 55%;
+    background-size: cover;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-feature-art::after {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(0deg, rgb(5 8 11 / 95%) 0%, rgb(5 8 11 / 55%) 35%, transparent 76%);
+    content: "";
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-feature-copy {
+    position: absolute;
+    z-index: 1;
+    inset: auto 0 0;
+    padding: 1.15rem 1.25rem 1.25rem;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-feature-copy h3 {
+    max-width: 44rem;
+    margin: 0 0 0.4rem;
+    color: #f4ead5;
+    font: 700 clamp(1.45rem, 2.5vw, 2rem) / 1.12 Georgia, "Times New Roman", serif;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-feature-copy h3 a {
+    color: inherit;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-feature-copy > p:last-child {
+    max-width: 42rem;
+    margin: 0;
+    color: #e2ddd1;
+    font-size: 0.83rem;
+    line-height: 1.5;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-main .content-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-main .content-card {
+    min-width: 0;
+    overflow: hidden;
+    padding: 0.85rem;
+    border: 1px solid #30383c;
+    border-radius: 0;
+    background: linear-gradient(180deg, #10171d, #0a0f14);
+    color: #c7c2b7;
+    box-shadow: none;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-main .content-card > .video-thumbnail,
+html[data-public-theme="arcanorum"] .portal-home .portal-main .content-card > .portal-card-art {
+    display: block;
+    width: calc(100% + 1.7rem);
+    height: 8.1rem;
+    max-width: none;
+    margin: -0.85rem -0.85rem 0.8rem;
+    border: 0;
+    border-radius: 0;
+    object-fit: cover;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-main .portal-card-art-0 {
+    background-image: linear-gradient(0deg, rgb(5 8 11 / 35%), transparent 70%), url("/images/portal-highlands.webp");
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-main .portal-card-art-1 {
+    background-image: linear-gradient(0deg, rgb(5 8 11 / 35%), transparent 70%), url("/images/portal-fortress.webp");
+    background-position: 70% 50%;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-main .portal-card-art-2 {
+    background-image: linear-gradient(0deg, rgb(5 8 11 / 35%), transparent 70%), url("/images/portal-starlake.webp");
+    background-position: 50% 65%;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-main .content-card p:not(.card-kicker) {
+    color: #b8b2a5;
+    font-size: 0.82rem;
+    line-height: 1.55;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-main .content-card .card-kicker {
+    color: #8fc8d8;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-mini-art,
+html[data-public-theme="arcanorum"] .portal-home .portal-mini img {
+    width: 3.45rem;
+    height: 3.45rem;
+    object-fit: cover;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-mini {
+    grid-template-columns: 3.45rem minmax(0, 1fr);
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-footer {
+    width: 100%;
+    padding: 2rem clamp(1rem, 3vw, 2.2rem) 1rem;
+    background: #070a0e;
+}
+
+html[data-public-theme="arcanorum"] .portal-home .portal-footer-grid,
+html[data-public-theme="arcanorum"] .portal-home .portal-copyright {
+    width: 100%;
+    max-width: none;
+}
+
+@media (max-width: 68rem) {
+    html[data-public-theme="arcanorum"] .portal-home .public-header {
+        grid-template-columns: minmax(8rem, 1fr) minmax(7rem, 10rem) max-content;
+        grid-template-rows: minmax(3.8rem, auto) auto;
+    }
+
+    html[data-public-theme="arcanorum"] .portal-home .public-navigation {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        justify-content: flex-start;
+    }
+
+    html[data-public-theme="arcanorum"] .portal-home .public-navigation a {
+        min-height: 2.8rem;
+    }
+
+    html[data-public-theme="arcanorum"] .portal-home .public-header-search {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    html[data-public-theme="arcanorum"] .portal-home .public-account {
+        grid-column: 3;
+        grid-row: 1;
+    }
+
+    html[data-public-theme="arcanorum"] .portal-home .portal-layout {
+        grid-template-columns: minmax(10rem, 12rem) minmax(0, 1fr);
+    }
+
+    html[data-public-theme="arcanorum"] .portal-home .portal-rail-right {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    }
+}
+
+@media (max-width: 48rem) {
+    html[data-public-theme="arcanorum"] .portal-home {
+        width: 100%;
+        border: 0;
+    }
+
+    html[data-public-theme="arcanorum"] .portal-home .public-header {
+        grid-template-columns: minmax(0, 1fr) max-content;
+        grid-template-rows: auto auto auto;
+        gap: 0;
+        padding-inline: 1rem;
+    }
+
+    html[data-public-theme="arcanorum"] .portal-home .public-navigation {
+        grid-column: 1 / -1;
+        grid-row: 3;
+    }
+
+    html[data-public-theme="arcanorum"] .portal-home .public-header-search {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        margin-block: 0.35rem;
+    }
+
+    html[data-public-theme="arcanorum"] .portal-home .public-account {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    html[data-public-theme="arcanorum"] .portal-home .public-navigation a {
+        min-height: 2.65rem;
+        padding-inline: 0.55rem;
+        font-size: 0.63rem;
+    }
+
+    html[data-public-theme="arcanorum"] .portal-home .portal-hero,
+    html[data-public-theme="arcanorum"] .portal-home .portal-hero-shade {
+        min-height: 28rem;
+    }
+
+    html[data-public-theme="arcanorum"] .portal-home .portal-hero-shade {
+        padding: 2.4rem 1.2rem;
+        background:
+            linear-gradient(90deg, rgb(5 8 11 / 76%), rgb(5 8 11 / 28%)),
+            linear-gradient(0deg, rgb(5 8 11 / 76%), transparent 68%);
+    }
+
+    html[data-public-theme="arcanorum"] .portal-home .portal-hero-copy h1 {
+        font-size: clamp(2.65rem, 11vw, 3.65rem);
+    }
+
+    html[data-public-theme="arcanorum"] .portal-home .portal-ticker {
+        grid-template-columns: max-content max-content minmax(0, 1fr);
+        row-gap: 0.35rem;
+    }
+
+    html[data-public-theme="arcanorum"] .portal-home .portal-ticker > p {
+        grid-column: 1 / -1;
+        white-space: normal;
+    }
+
+    html[data-public-theme="arcanorum"] .portal-home .portal-layout {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 1rem;
+        padding: 1rem 0.75rem 2.2rem;
+    }
+
+    html[data-public-theme="arcanorum"] .portal-home .portal-main {
+        order: 1;
+        padding: 1rem 0.75rem;
+    }
+
+    html[data-public-theme="arcanorum"] .portal-home .portal-rail-left {
+        order: 2;
+    }
+
+    html[data-public-theme="arcanorum"] .portal-home .portal-rail-right {
+        order: 3;
+        grid-column: auto;
+    }
+
+    html[data-public-theme="arcanorum"] .portal-home .portal-main .content-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    html[data-public-theme="arcanorum"] .portal-home .portal-feature-story {
+        min-height: 17rem;
+    }
+
+    html[data-public-theme="arcanorum"] .portal-home .portal-feature-copy {
+        padding: 0.9rem;
+    }
+}

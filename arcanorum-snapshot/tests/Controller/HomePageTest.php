@@ -49,6 +49,8 @@ final class HomePageTest extends WebTestCase
 
         self::assertResponseStatusCodeSame(200);
         self::assertSelectorExists('.portal-home[data-testid="home-portal"]');
+        self::assertSelectorExists('.portal-home > header.public-header nav.public-navigation');
+        self::assertSelectorExists('.portal-home > .portal-hero img.portal-hero-image[src*="portal-highlands.webp"]');
         self::assertSelectorExists('.portal-layout[data-testid="home-portal-layout"]');
         self::assertSelectorExists('.portal-layout > aside[data-testid="home-left-rail"]');
         self::assertSelectorExists('.portal-layout > main[data-testid="home-main-column"]');
