@@ -137,9 +137,7 @@ final class HomeController extends AbstractController
             ? $newsItems
             : array_values(array_filter(
                 $newsItems,
-                static function (NewsArticle $article) use ($homeFocusArticleId): bool {
-                    return $article->getId() !== $homeFocusArticleId;
-                },
+                static fn (NewsArticle $article): bool => $article->getId() !== $homeFocusArticleId,
             ));
         $homeNewsCommentCountsEnabled = $settings->isFeatureModuleEnabled(FeatureModule::Comments)
             && CommentProvider::Native === $settings->getCommentProvider();
