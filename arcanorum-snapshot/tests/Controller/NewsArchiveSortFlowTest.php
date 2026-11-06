@@ -116,18 +116,29 @@ final class NewsArchiveSortFlowTest extends WebTestCase
         $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
         self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
         $connection = $entityManager->getConnection();
-        $previousProviderValue = $connection->fetchOne('SELECT comment_provider FROM site_settings WHERE id = 1');
-        self::assertIsString($previousProviderValue);
-        $previousProvider = $previousProviderValue;
+        $previousSettings = $connection->fetchAssociative(
+            'SELECT comment_provider, disqus_comments_shortname, cookie_consent_enabled::text AS cookie_consent_enabled FROM site_settings WHERE id = 1',
+        );
+        self::assertIsArray($previousSettings);
+        self::assertIsString($previousSettings['comment_provider']);
+        self::assertIsString($previousSettings['disqus_comments_shortname']);
+        self::assertContains($previousSettings['cookie_consent_enabled'], ['true', 'false']);
 
         try {
-            $connection->executeStatement("UPDATE site_settings SET comment_provider = 'disqus' WHERE id = 1");
+            $connection->executeStatement("UPDATE site_settings SET comment_provider = 'disqus', disqus_comments_shortname = 'test-news-archive', cookie_consent_enabled = TRUE WHERE id = 1");
             $client->request('GET', '/news?order=comments');
             self::assertResponseIsSuccessful();
             self::assertSame('newest', $client->getCrawler()->filter('#news-order option[selected]')->attr('value'));
             self::assertSame(0, $client->getCrawler()->filter('#news-order option[value="comments"]')->count());
         } finally {
-            $connection->executeStatement('UPDATE site_settings SET comment_provider = :provider WHERE id = 1', ['provider' => $previousProvider]);
+            $connection->executeStatement(
+                'UPDATE site_settings SET comment_provider = :provider, disqus_comments_shortname = :shortname, cookie_consent_enabled = :cookie_consent WHERE id = 1',
+                [
+                    'provider' => $previousSettings['comment_provider'],
+                    'shortname' => $previousSettings['disqus_comments_shortname'],
+                    'cookie_consent' => 'true' === $previousSettings['cookie_consent_enabled'],
+                ],
+            );
         }
     }
 }
