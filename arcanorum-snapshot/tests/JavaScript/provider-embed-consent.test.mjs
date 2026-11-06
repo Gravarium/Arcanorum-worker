@@ -11,7 +11,8 @@ class FakeElement {
 }
 
 class FakeButton extends FakeElement {
-    disabled = false;
+    disabled = true;
+    hidden = true;
     removed = false;
     listener = null;
     listenerOptions = null;
@@ -52,6 +53,11 @@ class FakeFrame {
 function createHarness(embedUrl) {
     const button = new FakeButton();
     const status = new FakeElement();
+    const player = new FakeElement();
+    player.frame = null;
+    player.append = function (frame) {
+        this.frame = frame;
+    };
     const container = {
         dataset: {
             embedUrl,
@@ -59,12 +65,15 @@ function createHarness(embedUrl) {
             loadLabel: 'Provider loaded',
             errorLabel: 'Provider rejected',
         },
-        frame: null,
         querySelector(selector) {
-            return '[data-provider-embed-load]' === selector ? button : status;
-        },
-        append(frame) {
-            this.frame = frame;
+            if ('[data-provider-embed-load]' === selector) {
+                return button;
+            }
+            if ('[data-provider-embed-status]' === selector) {
+                return status;
+            }
+
+            return player;
         },
     };
     const document = {
@@ -85,22 +94,24 @@ function createHarness(embedUrl) {
         URL,
     });
 
-    return {button, container, status};
+    return {button, container, player, status};
 }
 
 test('loads a YouTube embed only after the visitor chooses', () => {
     const state = createHarness('https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ');
 
-    assert.equal(state.container.frame, null);
+    assert.equal(state.player.frame, null);
+    assert.equal(state.button.disabled, false);
+    assert.equal(state.button.hidden, false);
     state.button.click();
 
-    assert.equal(state.container.frame.src, 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ');
-    assert.equal(state.container.frame.title, 'External video');
-    assert.equal(state.container.frame.loading, 'lazy');
-    assert.equal(state.container.frame.referrerPolicy, 'no-referrer');
-    assert.deepEqual(state.container.frame.sandbox.values, ['allow-scripts', 'allow-same-origin', 'allow-presentation']);
-    assert.equal(state.container.frame.allow, 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
-    assert.equal(state.container.frame.allowFullscreen, true);
+    assert.equal(state.player.frame.src, 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ');
+    assert.equal(state.player.frame.title, 'External video');
+    assert.equal(state.player.frame.loading, 'lazy');
+    assert.equal(state.player.frame.referrerPolicy, 'no-referrer');
+    assert.deepEqual(state.player.frame.sandbox.values, ['allow-scripts', 'allow-same-origin', 'allow-presentation']);
+    assert.equal(state.player.frame.allow, 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
+    assert.equal(state.player.frame.allowFullscreen, true);
     assert.equal(state.button.removed, true);
     assert.equal(state.status.textContent, 'Provider loaded');
 });
@@ -139,13 +150,14 @@ test('loads the additional canonical video providers only after the visitor choo
     for (const source of approved) {
         const state = createHarness(source);
 
-        assert.equal(state.container.frame, null, source);
+        assert.equal(state.player.frame, null, source);
+        assert.equal(state.button.hidden, false, source);
         state.button.click();
 
-        assert.equal(state.container.frame.src, source, source);
-        assert.equal(state.container.frame.loading, 'lazy', source);
-        assert.equal(state.container.frame.referrerPolicy, 'no-referrer', source);
-        assert.deepEqual(state.container.frame.sandbox.values, ['allow-scripts', 'allow-same-origin', 'allow-presentation'], source);
+        assert.equal(state.player.frame.src, source, source);
+        assert.equal(state.player.frame.loading, 'lazy', source);
+        assert.equal(state.player.frame.referrerPolicy, 'no-referrer', source);
+        assert.deepEqual(state.player.frame.sandbox.values, ['allow-scripts', 'allow-same-origin', 'allow-presentation'], source);
         assert.equal(state.status.textContent, 'Provider loaded', source);
     }
 });
@@ -185,10 +197,9 @@ test('fails closed for unapproved hosts, malformed identifiers, and extra parame
 
     for (const source of rejected) {
         const state = createHarness(source);
-        state.button.click();
-
-        assert.equal(state.container.frame, null, source);
+        assert.equal(state.player.frame, null, source);
         assert.equal(state.button.disabled, true, source);
+        assert.equal(state.button.hidden, true, source);
         assert.equal(state.status.textContent, 'Provider rejected', source);
     }
 });

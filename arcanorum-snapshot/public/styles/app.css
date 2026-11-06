@@ -1858,6 +1858,15 @@ html[data-public-theme="arcanorum"] .news-article-meta time,html[data-public-the
 .video-embed-document .video-stage{min-height:100vh;box-sizing:border-box;align-content:center;margin:0;padding:0;border-radius:0;background:#000}
 .video-embed-document .video-stage .video-player-watermark{top:.75rem;inset-inline-end:.75rem}
 .video-stage iframe[data-testid="video-embed-provider"]{display:block;width:100%;aspect-ratio:16/9;border:0;border-radius:.6rem;background:#000}
+.video-stage .provider-video-player{display:grid;place-items:center;position:relative;box-sizing:border-box;width:100%;min-width:0;aspect-ratio:16/9;overflow:hidden;border:1px solid rgb(235 205 127 / 34%);border-radius:.6rem;background:radial-gradient(ellipse at center,rgb(235 205 127 / 12%),transparent 62%),linear-gradient(145deg,#111b25,#080d12 70%)}
+.video-stage .provider-video-play-button{display:inline-flex;align-items:center;justify-content:center;gap:.65rem;min-height:3.25rem;padding:.8rem 1.2rem;border:1px solid #e5c97c;border-radius:.25rem;background:linear-gradient(180deg,#d8b865,#a77f31);color:#101317;font-weight:800;box-shadow:0 .4rem 1.25rem rgb(0 0 0 / 34%);cursor:pointer}
+.video-stage .provider-video-play-button[hidden]{display:none}
+.video-stage .provider-video-play-button svg{width:1.2rem;height:1.2rem;flex:0 0 auto}
+.video-stage .provider-video-play-button:hover{filter:brightness(1.08)}
+.video-stage .provider-video-play-button:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.video-stage .provider-video-player iframe[data-testid="video-embed-provider"]{display:block;width:100%;height:100%;aspect-ratio:16/9;border:0;background:#000}
+.video-stage .provider-video-noscript-link{color:#f0d689}
+.video-stage .provider-video-embed [data-provider-embed-status]{font-size:.9rem;line-height:1.5}
 .video-embed-document .video-stage iframe[data-testid="video-embed-provider"]{border-radius:0}
 .video-embed-document .video-stage video{width:100%;max-height:100vh;border-radius:0}
 .video-embed-document .video-stage audio{max-width:100%;border-radius:0}

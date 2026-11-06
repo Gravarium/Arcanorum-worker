@@ -1,4 +1,5 @@
 <section
+    class="provider-video-embed"
     data-provider-embed
     data-testid="video-embed-provider"
     data-embed-url="{{ embed_url }}"
@@ -6,7 +7,12 @@
     data-load-label="{{ 'Video-Player wird geladen.'|trans }}"
     data-error-label="{{ 'Diese externe Videoquelle ist ungültig.'|trans }}"
 >
-    <p data-provider-embed-status role="status">{{ 'Das externe Video wird erst nach deiner Auswahl beim Anbieter geladen. Dabei erhält der Anbieter deine Verbindungsdaten.'|trans }}</p>
-    <button class="button" type="button" data-provider-embed-load>{{ 'Video im Player laden'|trans }}</button>
-    <noscript><a href="{{ embed_url }}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">{{ 'Video beim Anbieter öffnen'|trans }}</a></noscript>
+    <div class="provider-video-player" data-provider-embed-player>
+        <button class="button provider-video-play-button" type="button" data-provider-embed-load disabled hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5.5v13l10-6.5z" fill="currentColor"/></svg>
+            <span>{{ 'Video im Player starten'|trans }}</span>
+        </button>
+        <noscript><a class="provider-video-noscript-link" href="{{ embed_url }}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">{{ 'Video beim Anbieter öffnen'|trans }}</a></noscript>
+    </div>
+    <p data-provider-embed-status role="status">{{ 'Wähle „Video im Player starten“, um das Video hier wiederzugeben. Erst danach erhält der Anbieter deine Verbindungsdaten.'|trans }}</p>
 </section>

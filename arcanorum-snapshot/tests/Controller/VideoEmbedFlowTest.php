@@ -38,6 +38,53 @@ final class VideoEmbedFlowTest extends WebTestCase
         parent::setUpBeforeClass();
     }
 
+    public function testYoutubeUrlSourceRendersTheConsentGatedPlayerOnThePublicVideoPage(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+
+        $suffix = bin2hex(random_bytes(6));
+        $slug = 'youtube-player-'.$suffix;
+        $video = new Video(
+            'YouTube player '.$suffix,
+            'A supported provider URL must use the page player.',
+            null,
+            VideoSourceType::Url,
+            'https://www.youtube.com/watch?v=dQw4w9WgXcQ&feature=shared',
+            PublishingStatus::Published,
+            false,
+            false,
+        );
+        $video->updateEditorialMetadata($slug, 'Editorial Desk', false, false);
+        $video->setPublicationAt(new \DateTimeImmutable('-1 minute', new \DateTimeZone('UTC')));
+
+        try {
+            $entityManager->persist($video);
+            $entityManager->flush();
+
+            $client->request('GET', '/videos/watch/'.$slug);
+
+            self::assertResponseIsSuccessful();
+            self::assertSelectorExists('.video-stage [data-provider-embed-player]');
+            self::assertSelectorExists('.video-stage button[data-provider-embed-load]');
+            self::assertSelectorNotExists('.video-stage iframe[data-testid="video-embed-provider"]');
+            self::assertSelectorNotExists('[data-testid="video-source"]');
+            self::assertSame(
+                'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ',
+                $client->getCrawler()->filter('[data-testid="video-embed-provider"]')->attr('data-embed-url'),
+            );
+            self::assertStringContainsString('video/provider-embed-consent.js', (string) $client->getResponse()->getContent());
+        } finally {
+            $entityManager->getConnection()->executeStatement(
+                'DELETE FROM videos WHERE id = :id',
+                ['id' => $video->getId()],
+                ['id' => \Doctrine\DBAL\ParameterType::STRING],
+            );
+        }
+    }
+
     public function testPublicPlayerNeedsExplicitOriginGrantAndRevocationIsImmediate(): void
     {
         $client = static::createClient();

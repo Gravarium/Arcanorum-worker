@@ -68,19 +68,21 @@
     for (const container of document.querySelectorAll('[data-provider-embed]')) {
         const button = container.querySelector('[data-provider-embed-load]');
         const status = container.querySelector('[data-provider-embed-status]');
+        const player = container.querySelector('[data-provider-embed-player]');
         const url = container.dataset.embedUrl;
 
-        if (!(button instanceof HTMLButtonElement) || !(status instanceof HTMLElement)) {
+        if (!(button instanceof HTMLButtonElement) || !(status instanceof HTMLElement) || !(player instanceof HTMLElement)) {
             continue;
         }
 
-        button.addEventListener('click', () => {
-            if (!isApprovedEmbedUrl(url)) {
-                status.textContent = container.dataset.errorLabel || '';
-                button.disabled = true;
-                return;
-            }
+        if (!isApprovedEmbedUrl(url)) {
+            status.textContent = container.dataset.errorLabel || '';
+            continue;
+        }
 
+        button.hidden = false;
+        button.disabled = false;
+        button.addEventListener('click', () => {
             const frame = document.createElement('iframe');
             frame.dataset.testid = 'video-embed-provider';
             frame.src = url;
@@ -90,7 +92,7 @@
             frame.sandbox.add('allow-scripts', 'allow-same-origin', 'allow-presentation');
             frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
             frame.allowFullscreen = true;
-            container.append(frame);
+            player.append(frame);
             button.remove();
             status.textContent = container.dataset.loadLabel || '';
         }, { once: true });
