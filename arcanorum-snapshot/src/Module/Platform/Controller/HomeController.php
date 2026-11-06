@@ -7,6 +7,7 @@ namespace App\Module\Platform\Controller;
 use App\Entity\CommentContentType;
 use App\Entity\CommentProvider;
 use App\Entity\FeatureModule;
+use App\Entity\NewsArticle;
 use App\Entity\Video;
 use App\Entity\VideoSourceType;
 use App\Module\Video\Service\VideoQualitySourceResolver;
@@ -112,20 +113,52 @@ final class HomeController extends AbstractController
             }
         }
         $newsEnabled = $settings->isFeatureModuleEnabled(FeatureModule::News);
-        $newsItems = !$newsEnabled || 0 === $settings->getHomepageNewsLimit()
+        $homepageNewsEnabled = $newsEnabled && $settings->getHomepageNewsLimit() > 0;
+        $newsItems = !$homepageNewsEnabled
             ? []
             : $articles->findPublished(limit: $settings->getHomepageNewsLimit());
+        $latestPublicNewsArticle = null;
+        foreach ($newsItems as $article) {
+            if (!$article->isMembersOnly()) {
+                $latestPublicNewsArticle = $article;
+
+                break;
+            }
+        }
+        if ($homepageNewsEnabled && [] !== $newsItems && null === $latestPublicNewsArticle) {
+            $latestPublicNewsArticle = $articles->findLatestPublicPublished();
+        }
+        $featuredPublicNewsArticle = $homepageNewsEnabled && [] !== $newsItems
+            ? $articles->findLatestFeaturedPublicPublished()
+            : null;
+        $homeFocusArticle = $featuredPublicNewsArticle ?? $latestPublicNewsArticle;
+        $homeFocusArticleId = $homeFocusArticle?->getId();
+        $homeNewsItems = null === $homeFocusArticleId
+            ? $newsItems
+            : array_values(array_filter(
+                $newsItems,
+                static function (NewsArticle $article) use ($homeFocusArticleId): bool {
+                    return $article->getId() !== $homeFocusArticleId;
+                },
+            ));
         $homeNewsCommentCountsEnabled = $settings->isFeatureModuleEnabled(FeatureModule::Comments)
             && CommentProvider::Native === $settings->getCommentProvider();
         $homeNewsCommentCounts = [];
         if ($homeNewsCommentCountsEnabled) {
             $commentableNewsIds = [];
-            foreach ($newsItems as $article) {
+            $articlesWithCommentCounts = $newsItems;
+            if (null !== $homeFocusArticle) {
+                $articlesWithCommentCounts[] = $homeFocusArticle;
+            }
+            foreach ($articlesWithCommentCounts as $article) {
                 if (!$article->isMembersOnly() && $article->isCommentsEnabled()) {
-                    $commentableNewsIds[] = $article->getId();
+                    $commentableNewsIds[$article->getId()] = $article->getId();
                 }
             }
-            $homeNewsCommentCounts = $comments->countApprovedForContents(CommentContentType::News, $commentableNewsIds);
+            $homeNewsCommentCounts = $comments->countApprovedForContents(
+                CommentContentType::News,
+                array_values($commentableNewsIds),
+            );
         }
         $publicStatistics = $settings->isPublicStatisticsEnabled()
             ? [
@@ -137,6 +170,9 @@ final class HomeController extends AbstractController
 
         $response = $this->render('home/index.html.twig', [
             'articles' => $newsItems,
+            'latest_public_news_article' => $latestPublicNewsArticle,
+            'home_focus_article' => $homeFocusArticle,
+            'home_news_articles' => $homeNewsItems,
             'home_news_comment_counts' => $homeNewsCommentCounts,
             'home_news_comment_counts_enabled' => $homeNewsCommentCountsEnabled,
             'videos' => $latestVideos,

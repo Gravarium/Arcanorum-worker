@@ -262,13 +262,6 @@ final class HomePageTest extends WebTestCase
                 [
                     'card' => $crawler->filterXPath(sprintf(
                         '//article[contains(concat(" ", normalize-space(@class), " "), " content-card ")][.//a[@href="/news/%s"]]',
-                        $publicArticleWithoutThumbnail->getSlug(),
-                    )),
-                    'label' => 'public news without thumbnail',
-                ],
-                [
-                    'card' => $crawler->filterXPath(sprintf(
-                        '//article[contains(concat(" ", normalize-space(@class), " "), " content-card ")][.//a[@href="/news/%s"]]',
                         $membersOnlyArticle->getSlug(),
                     )),
                     'label' => 'members-only news',
@@ -280,12 +273,24 @@ final class HomePageTest extends WebTestCase
                 self::assertStringContainsString('portal-', (string) $artwork->attr('src'));
             }
 
-            $publicNewsWithoutThumbnailCard = $crawler->filterXPath(sprintf(
+            $homeFocusStory = $crawler->filter('[data-testid="home-focus-story"]');
+            self::assertSame(1, $homeFocusStory->count());
+            self::assertSame(
+                '/news/'.$publicArticleWithoutThumbnail->getSlug(),
+                $homeFocusStory->filter('.portal-feature-art')->attr('href'),
+            );
+            self::assertStringContainsString(
+                'portal-fortress.webp',
+                (string) $homeFocusStory->filter('.portal-feature-art img')->attr('src'),
+            );
+            self::assertSame(1, $homeFocusStory->filter('.news-article-meta .byline')->count());
+            self::assertSame(1, $homeFocusStory->filter('.news-article-meta time')->count());
+            self::assertSame(1, $homeFocusStory->filter('.news-article-meta .news-reading-time')->count());
+            self::assertStringEndsWith('1', trim($homeFocusStory->filter('.news-article-meta .news-comment-count')->text()));
+            self::assertSame(0, $crawler->filterXPath(sprintf(
                 '//article[contains(concat(" ", normalize-space(@class), " "), " content-card ")][.//a[@href="/news/%s"]]',
                 $publicArticleWithoutThumbnail->getSlug(),
-            ));
-            self::assertSame(1, $publicNewsWithoutThumbnailCard->filter('.news-article-meta .news-reading-time')->count());
-            self::assertStringEndsWith('1', trim($publicNewsWithoutThumbnailCard->filter('.news-article-meta .news-comment-count')->text()));
+            ))->count());
             $membersNewsCard = $crawler->filterXPath(sprintf(
                 '//article[contains(concat(" ", normalize-space(@class), " "), " content-card ")][.//a[@href="/news/%s"]]',
                 $membersOnlyArticle->getSlug(),
@@ -336,6 +341,152 @@ final class HomePageTest extends WebTestCase
             ]));
             self::assertSame([], $settingsManager->updateFeatureModules($originalFeatureModules));
             self::assertSame([], $settingsManager->update([...$originalGeneralSettings, ...$originalCommentSettings]));
+        }
+    }
+
+    public function testFeaturedPublicNewsBecomesTheHomeLeadWithoutDuplicatingTheLatestStory(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        $settingsManager = $client->getContainer()->get(SiteSettingsManager::class);
+        $settingsProvider = $client->getContainer()->get(SiteSettingsProvider::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        self::assertInstanceOf(SiteSettingsManager::class, $settingsManager);
+        self::assertInstanceOf(SiteSettingsProvider::class, $settingsProvider);
+
+        $settings = $settingsProvider->current();
+        $originalNewsLimit = $settings->getHomepageNewsLimit();
+        $originalFeatureModules = [];
+        foreach (FeatureModule::cases() as $module) {
+            $originalFeatureModules[$module->inputName()] = $settings->isFeatureModuleEnabled($module) ? '1' : '0';
+        }
+        $suffix = bin2hex(random_bytes(6));
+        $latestPublicArticle = new NewsArticle(
+            'Latest public homepage news '.$suffix,
+            'latest-public-homepage-news-'.$suffix,
+            'News',
+            'The latest public article must remain in the ticker.',
+            'Latest public article body.',
+            PublishingStatus::Published,
+            false,
+            true,
+            'Latest Desk',
+        );
+        $featuredPublicArticle = new NewsArticle(
+            'Featured public homepage news '.$suffix,
+            'featured-public-homepage-news-'.$suffix,
+            'News',
+            'An older article explicitly selected by the editorial team.',
+            'Featured public article body.',
+            PublishingStatus::Published,
+            true,
+            true,
+            'Featured Desk',
+        );
+        $olderFeaturedPublicArticle = new NewsArticle(
+            'Older featured homepage news '.$suffix,
+            'older-featured-homepage-news-'.$suffix,
+            'News',
+            'An older editorial selection.',
+            'Older featured public article body.',
+            PublishingStatus::Published,
+            true,
+            true,
+            'Older Desk',
+        );
+        $membersOnlyFeaturedArticle = new NewsArticle(
+            'Private featured homepage news '.$suffix,
+            'private-featured-homepage-news-'.$suffix,
+            'News',
+            'Private article summary.',
+            'Private featured article body.',
+            PublishingStatus::Published,
+            true,
+            true,
+            'Private Desk',
+            membersOnly: true,
+        );
+        $futureFeaturedArticle = new NewsArticle(
+            'Future featured homepage news '.$suffix,
+            'future-featured-homepage-news-'.$suffix,
+            'News',
+            'A scheduled editorial selection.',
+            'Future featured article body.',
+            PublishingStatus::Published,
+            true,
+            true,
+            'Future Desk',
+        );
+        $latestPublicArticle->setPublicationAt(new \DateTimeImmutable('-5 seconds', new \DateTimeZone('UTC')));
+        $featuredPublicArticle->setPublicationAt(new \DateTimeImmutable('-15 seconds', new \DateTimeZone('UTC')));
+        $olderFeaturedPublicArticle->setPublicationAt(new \DateTimeImmutable('-30 seconds', new \DateTimeZone('UTC')));
+        $membersOnlyFeaturedArticle->setPublicationAt(new \DateTimeImmutable('-1 second', new \DateTimeZone('UTC')));
+        $futureFeaturedArticle->setPublicationAt(new \DateTimeImmutable('+1 day', new \DateTimeZone('UTC')));
+        $articles = [
+            $latestPublicArticle,
+            $featuredPublicArticle,
+            $olderFeaturedPublicArticle,
+            $membersOnlyFeaturedArticle,
+            $futureFeaturedArticle,
+        ];
+        $enabledFeatureModules = $originalFeatureModules;
+        $enabledFeatureModules[FeatureModule::News->inputName()] = '1';
+
+        try {
+            self::assertSame([], $settingsManager->updateFeatureModules($enabledFeatureModules));
+            foreach ($articles as $article) {
+                $entityManager->persist($article);
+            }
+            $entityManager->flush();
+            self::assertSame([], $settingsManager->updatePublicDisplayOptions([
+                'homepage_news_limit' => '2',
+            ]));
+
+            $client->request('GET', '/');
+
+            self::assertResponseIsSuccessful();
+            $crawler = $client->getCrawler();
+            $homeFocusStory = $crawler->filter('[data-testid="home-focus-story"]');
+            self::assertSame(
+                '/news/'.$featuredPublicArticle->getSlug(),
+                $homeFocusStory->filter('.portal-feature-art')->attr('href'),
+            );
+            self::assertSame(
+                '/news/'.$latestPublicArticle->getSlug(),
+                $crawler->filter('[data-testid="home-latest-ticker"] a')->attr('href'),
+            );
+            self::assertSame(1, $crawler->filterXPath(sprintf(
+                '//article[contains(concat(" ", normalize-space(@class), " "), " content-card ")][.//a[@href="/news/%s"]]',
+                $latestPublicArticle->getSlug(),
+            ))->count());
+            self::assertSame(0, $crawler->filterXPath(sprintf(
+                '//article[contains(concat(" ", normalize-space(@class), " "), " content-card ")][.//a[@href="/news/%s"]]',
+                $featuredPublicArticle->getSlug(),
+            ))->count());
+            self::assertSame(1, $homeFocusStory->filter('.news-article-meta .byline')->count());
+            self::assertStringContainsString(
+                'Featured Desk',
+                $homeFocusStory->filter('.news-article-meta')->text(),
+            );
+            self::assertSame(1, $homeFocusStory->filter('.news-article-meta .news-reading-time')->count());
+            self::assertStringNotContainsString($membersOnlyFeaturedArticle->getTitle(), $homeFocusStory->text());
+            self::assertStringNotContainsString($futureFeaturedArticle->getTitle(), (string) $client->getResponse()->getContent());
+        } finally {
+            $entityManager->getConnection()->executeStatement(
+                'DELETE FROM news_articles WHERE id IN (:latest, :featured, :older_featured, :members_featured, :future_featured)',
+                [
+                    'latest' => $latestPublicArticle->getId(),
+                    'featured' => $featuredPublicArticle->getId(),
+                    'older_featured' => $olderFeaturedPublicArticle->getId(),
+                    'members_featured' => $membersOnlyFeaturedArticle->getId(),
+                    'future_featured' => $futureFeaturedArticle->getId(),
+                ],
+            );
+            self::assertSame([], $settingsManager->updatePublicDisplayOptions([
+                'homepage_news_limit' => (string) $originalNewsLimit,
+            ]));
+            self::assertSame([], $settingsManager->updateFeatureModules($originalFeatureModules));
         }
     }
 

@@ -188,6 +188,43 @@ final class NewsArticleRepository extends ServiceEntityRepository
         return 1 === $updated;
     }
 
+    public function findLatestPublicPublished(): ?NewsArticle
+    {
+        $article = $this->createQueryBuilder('article')
+            ->andWhere('article.status = :status')
+            ->andWhere('article.publishedAt IS NOT NULL')
+            ->andWhere('article.publishedAt <= :now')
+            ->andWhere('article.membersOnly = false')
+            ->setParameter('status', PublishingStatus::Published)
+            ->setParameter('now', new \DateTimeImmutable('now', new \DateTimeZone('UTC')))
+            ->orderBy('article.publishedAt', \SortDirection::Descending)
+            ->addOrderBy('article.id', \SortDirection::Ascending)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        return $article instanceof NewsArticle ? $article : null;
+    }
+
+    public function findLatestFeaturedPublicPublished(): ?NewsArticle
+    {
+        $article = $this->createQueryBuilder('article')
+            ->andWhere('article.status = :status')
+            ->andWhere('article.publishedAt IS NOT NULL')
+            ->andWhere('article.publishedAt <= :now')
+            ->andWhere('article.membersOnly = false')
+            ->andWhere('article.featured = true')
+            ->setParameter('status', PublishingStatus::Published)
+            ->setParameter('now', new \DateTimeImmutable('now', new \DateTimeZone('UTC')))
+            ->orderBy('article.publishedAt', \SortDirection::Descending)
+            ->addOrderBy('article.id', \SortDirection::Ascending)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        return $article instanceof NewsArticle ? $article : null;
+    }
+
     public function countPublicPublished(): int
     {
         return (int) $this->createQueryBuilder('article')

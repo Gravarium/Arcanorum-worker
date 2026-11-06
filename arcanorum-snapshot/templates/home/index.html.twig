@@ -7,11 +7,6 @@
 {% endblock %}
 
 {% block body %}
-    {% set latest_public_article = articles|first %}
-    {% set home_news_articles = articles %}
-    {% if latest_public_article and not latest_public_article.membersOnly %}
-        {% set home_news_articles = articles|slice(1) %}
-    {% endif %}
     {% set portal_headline = site_settings().tagline is not empty ? site_settings().tagline : site_settings().siteName %}
     {% set portal_card_artwork = ['images/portal-highlands.webp', 'images/portal-fortress.webp', 'images/portal-starlake.webp'] %}
     <div class="portal-home" data-testid="home-portal">
@@ -34,12 +29,12 @@
             </div>
         </section>
 
-        {% if latest_public_article and not latest_public_article.membersOnly %}
+        {% if latest_public_news_article %}
             <div class="portal-ticker" data-testid="home-latest-ticker">
                 <span>{{ 'Neueste News'|trans }}</span>
                 <span aria-hidden="true">›</span>
-                <a href="{{ path('news_show', {slug: latest_public_article.slug}) }}">{{ latest_public_article.title }}</a>
-                {% if latest_public_article.summary %}<p>{{ latest_public_article.summary }}</p>{% endif %}
+                <a href="{{ path('news_show', {slug: latest_public_news_article.slug}) }}">{{ latest_public_news_article.title }}</a>
+                {% if latest_public_news_article.summary %}<p>{{ latest_public_news_article.summary }}</p>{% endif %}
             </div>
         {% endif %}
 
@@ -94,24 +89,30 @@
 
             <main class="public-main portal-main" data-testid="home-main-column">
 
-                {% if latest_public_article and not latest_public_article.membersOnly %}
+                {% if home_focus_article %}
                     <section class="public-section portal-focus-section" aria-labelledby="home-focus-heading" data-testid="home-focus-story">
                         <div class="public-section-heading">
                             <div><p class="eyebrow">{{ 'Redaktion'|trans }}</p><h2 id="home-focus-heading">{{ 'Im Fokus'|trans }}</h2></div>
                             <a href="{{ path('news_index') }}">{{ 'Alle Beiträge'|trans }}</a>
                         </div>
                         <article class="portal-feature-story">
-                            <a class="portal-feature-art" href="{{ path('news_show', {slug: latest_public_article.slug}) }}" aria-label="{{ latest_public_article.title }}">
-                                {% if latest_public_article.thumbnailObjectId %}
-                                    <img src="{{ path('news_thumbnail', {id: latest_public_article.id}) }}" alt="" loading="eager" decoding="async">
+                            <a class="portal-feature-art" href="{{ path('news_show', {slug: home_focus_article.slug}) }}" aria-label="{{ home_focus_article.title }}">
+                                {% if home_focus_article.thumbnailObjectId %}
+                                    <img src="{{ path('news_thumbnail', {id: home_focus_article.id}) }}" alt="" loading="eager" decoding="async">
                                 {% else %}
                                     <img class="portal-feature-art-fallback" src="{{ asset('images/portal-fortress.webp') }}" alt="" aria-hidden="true" decoding="async">
                                 {% endif %}
                             </a>
                             <div class="portal-feature-copy">
-                                <p class="card-kicker">{{ latest_public_article.category ?? ('News'|trans) }} · {{ 'Welt und Community'|trans }}</p>
-                                <h3><a href="{{ path('news_show', {slug: latest_public_article.slug}) }}">{{ latest_public_article.title }}</a></h3>
-                                {% if latest_public_article.summary %}<p>{{ latest_public_article.summary }}</p>{% else %}<p>{{ latest_public_article.body|striptags|slice(0, 220) }}</p>{% endif %}
+                                <p class="card-kicker">{{ home_focus_article.category ?? ('News'|trans) }} · {{ 'Welt und Community'|trans }}</p>
+                                <h3><a href="{{ path('news_show', {slug: home_focus_article.slug}) }}">{{ home_focus_article.title }}</a></h3>
+                                {% if home_focus_article.summary %}<p>{{ home_focus_article.summary }}</p>{% else %}<p>{{ home_focus_article.body|striptags|slice(0, 220) }}</p>{% endif %}
+                                <div class="news-article-meta">
+                                    <p class="byline">{{ 'Von %author%'|trans({'%author%': home_focus_article.authorName}) }}</p>
+                                    <time datetime="{{ home_focus_article.publishedAt|date('c') }}">{{ home_focus_article.publishedAt|date('d.m.Y') }}</time>
+                                    <span class="news-reading-time">{{ 'Ca. %minutes% Min. Lesezeit'|trans({'%minutes%': home_focus_article.estimatedReadingMinutes}) }}</span>
+                                    {% if home_news_comment_counts_enabled and home_focus_article.commentsEnabled %}<span class="news-comment-count">{{ 'Kommentare'|trans }}: {{ home_news_comment_counts[home_focus_article.id] ?? 0 }}</span>{% endif %}
+                                </div>
                             </div>
                         </article>
                     </section>

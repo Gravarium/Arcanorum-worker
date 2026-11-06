@@ -3737,6 +3737,7 @@ jobs:
           set -euo pipefail
           php_files=(
             src/Module/Platform/Controller/HomeController.php
+            src/Repository/NewsArticleRepository.php
             tests/Controller/HomePageTest.php
           )
           for file in "${php_files[@]}"; do php -l "$file"; done
