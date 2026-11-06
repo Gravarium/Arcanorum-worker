@@ -226,7 +226,6 @@ final class NewsArchiveSortFlowTest extends WebTestCase
             self::assertSame('archive-sort-'.$suffix, $previousQuery['tag'] ?? null);
             self::assertSame($selectedOrder, $previousQuery['order'] ?? null);
             self::assertSame('1', $previousQuery['page'] ?? null);
-
         } finally {
             $entityManager->getConnection()->executeStatement(
                 'DELETE FROM news_articles WHERE id IN (:ids)',
