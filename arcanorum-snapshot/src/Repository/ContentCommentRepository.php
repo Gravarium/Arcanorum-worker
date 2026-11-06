@@ -109,6 +109,9 @@ final class ContentCommentRepository extends ServiceEntityRepository
 
         $counts = [];
         foreach ($rows as $row) {
+            if (!is_array($row)) {
+                throw new \UnexpectedValueException('Eine gruppierte Kommentarzahl hat ein ungültiges Datenbankformat.');
+            }
             $contentId = $row['contentId'] ?? null;
             $commentCount = $row['commentCount'] ?? null;
             if (!is_string($contentId) || !is_numeric($commentCount)) {
