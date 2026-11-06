@@ -12,11 +12,14 @@ use App\Entity\MemberAccount;
 use App\Entity\NewsArticle;
 use App\Module\Comment\CommentPagination;
 use App\Module\Feed\Service\CanonicalPublicUrlGenerator;
+use App\Module\News\NewsArchiveSort;
 use App\Module\News\Service\NewsArticleAccessPolicy;
+use App\Module\Settings\Service\ModuleAvailability;
 use App\Repository\ContentCategoryRepository;
 use App\Repository\ContentCommentRepository;
 use App\Repository\ContentRatingRepository;
 use App\Repository\NewsArticleRepository;
+use App\Service\NewsViewCounter;
 use App\Service\PublicShareMetadataFactory;
 use App\Service\SiteSettingsProvider;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -42,6 +45,8 @@ final class NewsPublicController extends AbstractController
         ContentCategoryRepository $categories,
         NewsArticleAccessPolicy $articleAccess,
         CanonicalPublicUrlGenerator $publicUrls,
+        ModuleAvailability $modules,
+        SiteSettingsProvider $siteSettings,
         ?string $slug = null,
     ): Response {
         $categoryPage = null;
@@ -62,6 +67,13 @@ final class NewsPublicController extends AbstractController
             : null;
         $tag = mb_substr(trim($request->query->getString('tag')), 0, 100);
         $page = self::pageNumber($request);
+        $commentsSortAvailable = $modules->isEnabled('comments')
+            && CommentProvider::Native === $siteSettings->current()->getCommentProvider();
+        $query = $request->query->all();
+        $sort = NewsArchiveSort::fromQuery($query['order'] ?? null);
+        if (NewsArchiveSort::Comments === $sort && !$commentsSortAvailable) {
+            $sort = NewsArchiveSort::Newest;
+        }
         $items = $articles->findPublished(
             search: $search,
             limit: self::PAGE_SIZE + 1,
@@ -69,6 +81,7 @@ final class NewsPublicController extends AbstractController
             category: '' === $category ? null : $category,
             tag: '' === $tag ? null : $tag,
             includeMemberOnlyBodyMatches: $articleAccess->canReadMembersOnly($this->getUser()),
+            sort: $sort,
         );
 
         return $this->render('news/index.html.twig', [
@@ -82,6 +95,8 @@ final class NewsPublicController extends AbstractController
             'categories' => $categories->findForAdmin(ContentCategoryType::News),
             'page' => $page,
             'has_next' => count($items) > self::PAGE_SIZE,
+            'sort' => $sort,
+            'comments_sort_available' => $commentsSortAvailable,
         ]);
     }
 
@@ -100,6 +115,7 @@ final class NewsPublicController extends AbstractController
         SiteSettingsProvider $siteSettings,
         NewsArticleAccessPolicy $articleAccess,
         PublicShareMetadataFactory $shareMetadata,
+        NewsViewCounter $viewCounter,
     ): Response {
         $article = $articles->findPublishedBySlug($slug);
         if (!$article instanceof NewsArticle) {
@@ -111,6 +127,9 @@ final class NewsPublicController extends AbstractController
         $member = $this->getUser();
         $settings = $siteSettings->current();
         $canReadArticle = $articleAccess->canRead($article, $member);
+        if ($canReadArticle && !$article->isMembersOnly()) {
+            $viewCounter->record($article, $request);
+        }
         $memberId = $member instanceof MemberAccount ? $member->getId() : null;
         $commentsAvailable = $canReadArticle && CommentProvider::Native === $settings->getCommentProvider();
         $commentCount = $commentsAvailable

@@ -17,6 +17,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\UniqueConstraint(name: 'uniq_news_articles_thumbnail_object_id', columns: ['thumbnail_object_id'])]
 #[ORM\Index(name: 'idx_news_articles_status_created', columns: ['status', 'created_at'])]
 #[ORM\Index(name: 'idx_news_articles_status_published', columns: ['status', 'published_at'])]
+#[ORM\Index(name: 'idx_news_articles_status_views', columns: ['status', 'view_count', 'published_at'])]
 final class NewsArticle
 {
     #[ORM\Id]
@@ -52,6 +53,9 @@ final class NewsArticle
 
     #[ORM\Column(name: 'members_only', type: Types::BOOLEAN, options: ['default' => false])]
     private bool $membersOnly = false;
+
+    #[ORM\Column(name: 'view_count', type: Types::INTEGER, options: ['default' => 0])]
+    private int $viewCount = 0;
 
     #[ORM\Column(name: 'thumbnail_object_id', length: 64, nullable: true)]
     private ?string $thumbnailObjectId = null;
@@ -257,6 +261,11 @@ final class NewsArticle
     public function isMembersOnly(): bool
     {
         return $this->membersOnly;
+    }
+
+    public function getViewCount(): int
+    {
+        return $this->viewCount;
     }
 
     public function getThumbnailObjectId(): ?string

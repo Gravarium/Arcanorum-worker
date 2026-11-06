@@ -22,6 +22,11 @@ framework:
             limit: 50
             interval: '1 day'
             cache_pool: cache.app
+        news_view:
+            policy: fixed_window
+            limit: 50
+            interval: '1 day'
+            cache_pool: cache.app
         content_rating:
             policy: sliding_window
             limit: 30

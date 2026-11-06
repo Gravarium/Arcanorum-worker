@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Entity\CommentContentType;
+use App\Entity\CommentStatus;
+use App\Entity\ContentComment;
 use App\Entity\NewsArticle;
 use App\Entity\PublishingStatus;
+use App\Module\News\NewsArchiveSort;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\QueryBuilder;
@@ -104,6 +108,7 @@ final class NewsArticleRepository extends ServiceEntityRepository
         ?string $tag = null,
         bool $includeMemberOnlyBodyMatches = true,
         bool $excludeMembersOnly = false,
+        NewsArchiveSort $sort = NewsArchiveSort::Newest,
     ): array {
         $queryBuilder = $this->createQueryBuilder('article')
             ->andWhere('article.status = :status')
@@ -138,15 +143,49 @@ final class NewsArticleRepository extends ServiceEntityRepository
                 ->setParameter('tag', mb_strtolower(trim($tag)));
         }
 
+        if (NewsArchiveSort::Comments === $sort) {
+            $approvedComments = $this->getEntityManager()->createQueryBuilder()
+                ->select('COUNT(comment.id)')
+                ->from(ContentComment::class, 'comment')
+                ->where('comment.contentType = :newsContentType')
+                ->andWhere('comment.contentId = article.id')
+                ->andWhere('comment.status = :approvedCommentStatus')
+                ->andWhere('article.commentsEnabled = true');
+
+            $queryBuilder
+                ->addSelect('('.$approvedComments->getDQL().') AS HIDDEN approvedCommentCount')
+                ->setParameter('newsContentType', CommentContentType::News)
+                ->setParameter('approvedCommentStatus', CommentStatus::Approved)
+                ->orderBy('approvedCommentCount', \SortDirection::Descending);
+        } elseif (NewsArchiveSort::Popular === $sort) {
+            $queryBuilder->orderBy('article.viewCount', \SortDirection::Descending);
+        } else {
+            $queryBuilder->orderBy('article.publishedAt', \SortDirection::Descending);
+        }
+
         /** @var list<NewsArticle> $articles */
         $articles = $queryBuilder
-            ->orderBy('article.publishedAt', \SortDirection::Descending)
+            ->addOrderBy('article.publishedAt', \SortDirection::Descending)
+            ->addOrderBy('article.id', \SortDirection::Ascending)
             ->setFirstResult(max(0, $offset))
             ->setMaxResults(max(1, min(1000, $limit)))
             ->getQuery()
             ->getResult();
 
         return $articles;
+    }
+
+    public function recordPublicView(string $id): bool
+    {
+        $updated = $this->getEntityManager()->getConnection()->executeStatement(
+            'UPDATE news_articles SET view_count = view_count + 1 '
+                .'WHERE id = :id AND status = :status AND published_at IS NOT NULL '
+                .'AND published_at <= CURRENT_TIMESTAMP AND members_only = FALSE '
+                .'AND view_count < 2147483647',
+            ['id' => $id, 'status' => PublishingStatus::Published->value],
+        );
+
+        return 1 === $updated;
     }
 
     public function countPublicPublished(): int
