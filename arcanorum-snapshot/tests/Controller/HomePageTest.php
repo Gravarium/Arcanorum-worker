@@ -876,25 +876,23 @@ final class HomePageTest extends WebTestCase
         }
 
         $suffix = bin2hex(random_bytes(6));
-        $makeArticle = static function (
+        $makeArticle = static fn (
             string $key,
             PublishingStatus $status = PublishingStatus::Published,
             bool $featured = false,
             bool $membersOnly = false,
-        ) use ($suffix): NewsArticle {
-            return new NewsArticle(
-                $key.' homepage article '.$suffix,
-                $key.'-homepage-'.$suffix,
-                'News',
-                'Homepage article used to verify public popularity ordering.',
-                'Article body '.$key,
-                $status,
-                $featured,
-                true,
-                'Homepage Desk',
-                membersOnly: $membersOnly,
-            );
-        };
+        ): NewsArticle => new NewsArticle(
+            $key.' homepage article '.$suffix,
+            $key.'-homepage-'.$suffix,
+            'News',
+            'Homepage article used to verify public popularity ordering.',
+            'Article body '.$key,
+            $status,
+            $featured,
+            true,
+            'Homepage Desk',
+            membersOnly: $membersOnly,
+        );
 
         $featuredLead = $makeArticle('featured-lead', featured: true);
         $popularOne = $makeArticle('most-viewed');
