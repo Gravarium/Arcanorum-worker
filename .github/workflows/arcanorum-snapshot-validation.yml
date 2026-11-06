@@ -2695,7 +2695,7 @@ jobs:
           node-version: '24'
 
       - name: Validate and install locked Composer dependencies
-        if: inputs.validation_scope == 'member-activity-focused' || inputs.validation_scope == 'admin-password-change-followup' || inputs.validation_scope == 'video-provider-player-followup' || inputs.validation_scope == 'auto-feature-threshold-followup' || inputs.validation_scope == 'admin-design-settings-followup' || inputs.validation_scope == 'classic-public-shell-followup' || inputs.validation_scope == 'news-archive-filter-testfix-followup' || inputs.validation_scope == 'news-module-disabled-followup'
+        if: inputs.validation_scope == 'member-activity-focused' || inputs.validation_scope == 'admin-password-change-followup' || inputs.validation_scope == 'video-provider-player-followup' || inputs.validation_scope == 'auto-feature-threshold-followup' || inputs.validation_scope == 'admin-design-settings-followup' || inputs.validation_scope == 'classic-public-shell-followup' || inputs.validation_scope == 'news-archive-filter-testfix-followup'
         run: |
           touch .env
           composer validate --strict --no-interaction
@@ -2703,7 +2703,7 @@ jobs:
           composer audit --locked --no-interaction
 
       - name: Install unchanged locked Composer dependencies
-        if: inputs.validation_scope == 'member-activity-followup' || inputs.validation_scope == 'dashboard-latest-content' || inputs.validation_scope == 'dashboard-latest-content-followup' || inputs.validation_scope == 'public-share-widget-followup' || inputs.validation_scope == 'public-share-widget-testfix-followup' || inputs.validation_scope == 'video-report-heading-testfix-followup'
+        if: inputs.validation_scope == 'member-activity-followup' || inputs.validation_scope == 'dashboard-latest-content' || inputs.validation_scope == 'dashboard-latest-content-followup' || inputs.validation_scope == 'public-share-widget-followup' || inputs.validation_scope == 'public-share-widget-testfix-followup' || inputs.validation_scope == 'video-report-heading-testfix-followup' || inputs.validation_scope == 'news-module-disabled-followup'
         run: |
           touch .env
           composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader

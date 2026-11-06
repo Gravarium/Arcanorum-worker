@@ -85,11 +85,11 @@ final class NewsModuleAvailabilityFlowTest extends WebTestCase
 
             $client->request('GET', '/videos.rss');
             self::assertResponseIsSuccessful();
-            self::assertStringContainsString($videoTitle, (string) $client->getResponse()->getContent());
+            self::assertStringContainsString($videoTitle, $client->getResponse()->getContent());
 
             $client->request('GET', '/sitemap.xml');
             self::assertResponseIsSuccessful();
-            $sitemap = (string) $client->getResponse()->getContent();
+            $sitemap = $client->getResponse()->getContent();
             self::assertStringNotContainsString('/news/'.$newsSlug, $sitemap);
             self::assertStringContainsString('/videos/'.$video->getId(), $sitemap);
             $sitemapDocument = new \DOMDocument();
@@ -97,30 +97,30 @@ final class NewsModuleAvailabilityFlowTest extends WebTestCase
 
             $client->request('GET', '/sitemap-index.xml');
             self::assertResponseIsSuccessful();
-            self::assertStringContainsString('/sitemap.xml', (string) $client->getResponse()->getContent());
-            self::assertStringNotContainsString('/news/'.$newsSlug, (string) $client->getResponse()->getContent());
+            self::assertStringContainsString('/sitemap.xml', $client->getResponse()->getContent());
+            self::assertStringNotContainsString('/news/'.$newsSlug, $client->getResponse()->getContent());
 
             $client->request('GET', '/robots.txt');
             self::assertResponseIsSuccessful();
-            self::assertStringNotContainsString('/news/'.$newsSlug, (string) $client->getResponse()->getContent());
+            self::assertStringNotContainsString('/news/'.$newsSlug, $client->getResponse()->getContent());
 
             $client->request('GET', '/search?q='.rawurlencode($term));
             self::assertResponseIsSuccessful();
-            self::assertStringNotContainsString($newsTitle, (string) $client->getResponse()->getContent());
-            self::assertStringContainsString($videoTitle, (string) $client->getResponse()->getContent());
+            self::assertStringNotContainsString($newsTitle, $client->getResponse()->getContent());
+            self::assertStringContainsString($videoTitle, $client->getResponse()->getContent());
 
             $client->request('GET', '/search/suggestions?q='.rawurlencode($term));
             self::assertResponseIsSuccessful();
-            $payload = json_decode((string) $client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
-            if (!is_array($payload) || !is_array($payload['suggestions'] ?? null)) {
+            $payload = json_decode($client->getResponse()->getContent(), flags: JSON_THROW_ON_ERROR);
+            if (!($payload instanceof \stdClass) || !is_array($payload->suggestions ?? null)) {
                 throw new \UnexpectedValueException('The live-search response must contain a suggestions list.');
             }
             $suggestionTitles = [];
-            foreach ($payload['suggestions'] as $suggestion) {
-                if (!is_array($suggestion) || !is_string($suggestion['title'] ?? null)) {
+            foreach ($payload->suggestions as $suggestion) {
+                if (!($suggestion instanceof \stdClass) || !is_string($suggestion->title ?? null)) {
                     throw new \UnexpectedValueException('Every live-search suggestion must contain a title.');
                 }
-                $suggestionTitles[] = $suggestion['title'];
+                $suggestionTitles[] = $suggestion->title;
             }
             self::assertNotContains($newsTitle, $suggestionTitles);
             self::assertContains($videoTitle, $suggestionTitles);
@@ -130,10 +130,10 @@ final class NewsModuleAvailabilityFlowTest extends WebTestCase
             self::assertResponseIsSuccessful('Re-enabling News must restore already published content.');
             $client->request('GET', '/news.rss');
             self::assertResponseIsSuccessful();
-            self::assertStringContainsString('/news/'.$newsSlug, (string) $client->getResponse()->getContent());
+            self::assertStringContainsString('/news/'.$newsSlug, $client->getResponse()->getContent());
             $client->request('GET', '/sitemap.xml');
             self::assertResponseIsSuccessful();
-            self::assertStringContainsString('/news/'.$newsSlug, (string) $client->getResponse()->getContent());
+            self::assertStringContainsString('/news/'.$newsSlug, $client->getResponse()->getContent());
         } finally {
             self::assertSame([], $settingsManager->updateFeatureModules($originalModuleSettings));
             $connection->executeStatement('DELETE FROM search_term_daily WHERE day = CURRENT_DATE AND term = :term', ['term' => $term]);
