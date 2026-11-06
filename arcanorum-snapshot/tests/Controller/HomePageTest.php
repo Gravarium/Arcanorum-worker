@@ -18,6 +18,7 @@ use App\Entity\VideoSourceType;
 use App\Module\Video\Service\VideoStreamSourceResolver;
 use App\Platform\Hosting\HostingCachePoolProvider;
 use App\Repository\ContentTagRepository;
+use App\Repository\NewsArticleRepository;
 use App\Service\SiteSettingsManager;
 use App\Service\SiteSettingsProvider;
 use Doctrine\ORM\EntityManagerInterface;
@@ -60,7 +61,10 @@ final class HomePageTest extends WebTestCase
         self::assertSelectorExists('.portal-layout > aside[data-testid="home-left-rail"]');
         self::assertSelectorExists('.portal-layout > main[data-testid="home-main-column"]');
         self::assertSelectorExists('.portal-layout > aside[data-testid="home-right-rail"]');
-        self::assertSelectorTextContains('h1', 'Arcanorum');
+        self::assertSelectorTextContains('h1', 'Betritt eine');
+        self::assertSelectorTextContains('h1', 'Geschichten.');
+        self::assertSelectorTextContains('.portal-hero-intro', 'News, Gilden, Welten');
+        self::assertSelectorExists('link[rel="stylesheet"][href*="portal-home.css?v=20261106-2"]');
         self::assertSelectorTextContains('main', 'Neueste Videos');
     }
 
@@ -851,6 +855,135 @@ final class HomePageTest extends WebTestCase
             ]);
             $entityManager->getConnection()->executeStatement('DELETE FROM content_tags WHERE id = :id', ['id' => $tag->getId()]);
             self::assertSame([], $settingsManager->updatePublicDisplayOptions($originalOptions));
+        }
+    }
+
+    public function testPopularHomeNewsIsRankedPublicOnlyAndDisabledWithTheNewsListing(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        $settingsManager = $client->getContainer()->get(SiteSettingsManager::class);
+        $settingsProvider = $client->getContainer()->get(SiteSettingsProvider::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        self::assertInstanceOf(SiteSettingsManager::class, $settingsManager);
+        self::assertInstanceOf(SiteSettingsProvider::class, $settingsProvider);
+
+        $settings = $settingsProvider->current();
+        $originalNewsLimit = $settings->getHomepageNewsLimit();
+        $originalFeatureModules = [];
+        foreach (FeatureModule::cases() as $module) {
+            $originalFeatureModules[$module->inputName()] = $settings->isFeatureModuleEnabled($module) ? '1' : '0';
+        }
+
+        $suffix = bin2hex(random_bytes(6));
+        $makeArticle = static function (
+            string $key,
+            PublishingStatus $status = PublishingStatus::Published,
+            bool $featured = false,
+            bool $membersOnly = false,
+        ) use ($suffix): NewsArticle {
+            return new NewsArticle(
+                $key.' homepage article '.$suffix,
+                $key.'-homepage-'.$suffix,
+                'News',
+                'Homepage article used to verify public popularity ordering.',
+                'Article body '.$key,
+                $status,
+                $featured,
+                true,
+                'Homepage Desk',
+                membersOnly: $membersOnly,
+            );
+        };
+
+        $featuredLead = $makeArticle('featured-lead', featured: true);
+        $popularOne = $makeArticle('most-viewed');
+        $popularTwo = $makeArticle('second-most-viewed');
+        $popularThree = $makeArticle('third-most-viewed');
+        $popularFour = $makeArticle('fourth-most-viewed');
+        $membersOnly = $makeArticle('private-high-count', membersOnly: true);
+        $draft = $makeArticle('draft-high-count', PublishingStatus::Draft);
+        $future = $makeArticle('future-high-count');
+        $membersOnly->attachThumbnail(hash('sha256', 'members-only-news-'.$suffix), 'image/webp', 256);
+
+        $featuredLead->setPublicationAt(new \DateTimeImmutable('-1 second', new \DateTimeZone('UTC')));
+        foreach ([$popularOne, $popularTwo, $popularThree, $popularFour, $membersOnly, $future] as $article) {
+            $article->setPublicationAt(new \DateTimeImmutable('-1 minute', new \DateTimeZone('UTC')));
+        }
+        $future->setPublicationAt(new \DateTimeImmutable('+1 day', new \DateTimeZone('UTC')));
+        $articles = [$featuredLead, $popularOne, $popularTwo, $popularThree, $popularFour, $membersOnly, $draft, $future];
+
+        $enabledFeatureModules = $originalFeatureModules;
+        $enabledFeatureModules[FeatureModule::News->inputName()] = '1';
+
+        try {
+            self::assertSame([], $settingsManager->updateFeatureModules($enabledFeatureModules));
+            foreach ($articles as $article) {
+                $entityManager->persist($article);
+            }
+            $entityManager->flush();
+            $connection = $entityManager->getConnection();
+            $connection->executeStatement(
+                'UPDATE news_articles SET published_at = CURRENT_TIMESTAMP + CAST(:future_offset AS INTERVAL) WHERE id = :id',
+                ['future_offset' => '1 day', 'id' => $future->getId()],
+            );
+            foreach ([[$featuredLead, 100], [$popularOne, 90], [$popularTwo, 80], [$popularThree, 70], [$popularFour, 60], [$membersOnly, 2147483647], [$draft, 2147483647], [$future, 2147483647]] as [$article, $viewCount]) {
+                $connection->executeStatement(
+                    'UPDATE news_articles SET view_count = :view_count WHERE id = :id',
+                    ['view_count' => $viewCount, 'id' => $article->getId()],
+                );
+            }
+            self::assertSame([], $settingsManager->updatePublicDisplayOptions([
+                'homepage_news_limit' => '5',
+            ]));
+
+            $client->request('GET', '/');
+            self::assertResponseIsSuccessful();
+
+            $popularRail = $client->getCrawler()->filter('[data-testid="home-popular-news"]');
+            self::assertSame(1, $popularRail->count());
+            $popularLinks = $popularRail->filter('article.portal-mini a');
+            self::assertSame(4, $popularLinks->count());
+            self::assertSame('/news/'.$popularOne->getSlug(), $popularLinks->eq(0)->attr('href'));
+            self::assertSame('/news/'.$popularTwo->getSlug(), $popularLinks->eq(1)->attr('href'));
+            self::assertSame('/news/'.$popularThree->getSlug(), $popularLinks->eq(2)->attr('href'));
+            self::assertSame('/news/'.$popularFour->getSlug(), $popularLinks->eq(3)->attr('href'));
+            self::assertStringNotContainsString($featuredLead->getSlug(), $popularRail->html());
+
+            $html = (string) $client->getResponse()->getContent();
+            self::assertStringNotContainsString($membersOnly->getSlug(), $popularRail->html());
+            self::assertStringNotContainsString('/news/'.$membersOnly->getId().'/thumbnail', $html);
+            self::assertStringNotContainsString($draft->getSlug(), $html);
+            self::assertStringNotContainsString($future->getSlug(), $html);
+
+            self::assertSame([], $settingsManager->updatePublicDisplayOptions([
+                'homepage_news_limit' => '0',
+            ]));
+            $client->request('GET', '/');
+            self::assertResponseIsSuccessful();
+            self::assertSelectorNotExists('[data-testid="home-popular-news"]');
+
+            self::assertSame([], $settingsManager->updatePublicDisplayOptions([
+                'homepage_news_limit' => '5',
+            ]));
+            $disabledFeatureModules = $enabledFeatureModules;
+            $disabledFeatureModules[FeatureModule::News->inputName()] = '0';
+            self::assertSame([], $settingsManager->updateFeatureModules($disabledFeatureModules));
+            $client->request('GET', '/');
+            self::assertResponseIsSuccessful();
+            self::assertSelectorNotExists('[data-testid="home-popular-news"]');
+        } finally {
+            foreach ($articles as $article) {
+                $entityManager->getConnection()->executeStatement(
+                    'DELETE FROM news_articles WHERE id = :id',
+                    ['id' => $article->getId()],
+                );
+            }
+            self::assertSame([], $settingsManager->updatePublicDisplayOptions([
+                'homepage_news_limit' => (string) $originalNewsLimit,
+            ]));
+            self::assertSame([], $settingsManager->updateFeatureModules($originalFeatureModules));
         }
     }
 

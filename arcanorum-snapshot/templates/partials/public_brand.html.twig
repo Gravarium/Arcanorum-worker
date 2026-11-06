@@ -5,5 +5,9 @@
     {% else %}
         <span class="public-brand-name">{{ site_identity.siteName }}</span>
     {% endif %}
-    {% if site_identity.tagline is not empty %}<small class="public-brand-tagline">{{ site_identity.tagline }}</small>{% endif %}
+    {% if site_identity.tagline is not empty %}
+        <small class="public-brand-tagline">{{ site_identity.tagline }}</small>
+    {% elseif current_route == 'platform_home' %}
+        <small class="public-brand-tagline">{{ 'Gaming Universe'|trans }}</small>
+    {% endif %}
 </a>

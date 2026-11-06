@@ -10,6 +10,7 @@ use App\Entity\FeatureModule;
 use App\Entity\NewsArticle;
 use App\Entity\Video;
 use App\Entity\VideoSourceType;
+use App\Module\News\NewsArchiveSort;
 use App\Module\Video\Service\VideoQualitySourceResolver;
 use App\Module\Video\Service\VideoStreamSource;
 use App\Module\Video\Service\VideoStreamSourceResolver;
@@ -158,6 +159,23 @@ final class HomeController extends AbstractController
                 array_values($commentableNewsIds),
             );
         }
+        $popularNewsArticles = [];
+        if ($homepageNewsEnabled && [] !== $newsItems) {
+            foreach ($articles->findPublished(
+                limit: 5,
+                excludeMembersOnly: true,
+                sort: NewsArchiveSort::Popular,
+            ) as $article) {
+                if ($article->getId() === $homeFocusArticleId) {
+                    continue;
+                }
+
+                $popularNewsArticles[] = $article;
+                if (4 === count($popularNewsArticles)) {
+                    break;
+                }
+            }
+        }
         $publicStatistics = $settings->isPublicStatisticsEnabled()
             ? [
                 'videos' => $videos->countPublicPublished(),
@@ -173,6 +191,7 @@ final class HomeController extends AbstractController
             'home_news_articles' => $homeNewsItems,
             'home_news_comment_counts' => $homeNewsCommentCounts,
             'home_news_comment_counts_enabled' => $homeNewsCommentCountsEnabled,
+            'popular_news_articles' => $popularNewsArticles,
             'videos' => $latestVideos,
             'top_videos' => $popularVideos,
             'featured_video' => $featuredVideo,

@@ -3,11 +3,13 @@
 {% block title %}{{ site_settings().siteName }} – {{ 'News und Videos'|trans }}{% endblock %}
 
 {% block stylesheets %}
+    <link rel="stylesheet" href="{{ asset('styles/portal-home.css') }}?v=20261106-2">
     {% if featured_uses_videojs %}<link rel="stylesheet" href="{{ asset('third-party/video.js-8.23.4/video-js.min.css') }}">{% endif %}
 {% endblock %}
 
 {% block body %}
-    {% set portal_headline = site_settings().tagline is not empty ? site_settings().tagline : site_settings().siteName %}
+    {% set portal_headline = site_settings().tagline is not empty ? site_settings().tagline : null %}
+    {% set portal_intro = 'News, Gilden, Welten, Videos, Events und Community an einem Ort – als frei konfigurierbares Gaming-Portal.'|trans %}
     {% set portal_card_artwork = ['images/portal-highlands.webp', 'images/portal-fortress.webp', 'images/portal-starlake.webp'] %}
     <div class="portal-home" data-testid="home-portal">
         {{ include('partials/public_site_header.html.twig') }}
@@ -16,15 +18,22 @@
             <img class="portal-hero-image" src="{{ asset('images/portal-highlands.webp') }}" alt="" aria-hidden="true" fetchpriority="high">
             <div class="portal-hero-shade">
                 <div class="portal-hero-copy">
-                    <p class="portal-eyebrow">{{ 'Startseite'|trans }}</p>
-                    <h1 id="home-site-heading">{{ portal_headline }}</h1>
-                    {% if site_settings().seoDescription is not empty %}
-                        <p>{{ site_settings().seoDescription }}</p>
+                    <p class="portal-eyebrow">{{ 'Eine Welt. Deine Community.'|trans }}</p>
+                    {% if portal_headline is not null %}
+                        <h1 id="home-site-heading">{{ portal_headline }}</h1>
+                    {% else %}
+                        <h1 id="home-site-heading"><span>{{ 'Betritt eine'|trans }}</span><span>{{ 'Welt'|trans }} <em>{{ 'voller'|trans }}</em></span><span class="portal-title-accent">{{ 'Geschichten.'|trans }}</span></h1>
                     {% endif %}
+                    <p class="portal-hero-intro">{{ portal_intro }}</p>
                     <div class="portal-hero-actions">
-                        <a class="portal-action portal-action-primary" href="{{ path('video_index') }}">{{ 'Videos entdecken'|trans }}</a>
-                        {% if module_enabled('news') %}<a class="portal-action" href="{{ path('news_index') }}">{{ 'Alle News'|trans }}</a>{% endif %}
+                        <a class="portal-action portal-action-primary" href="{{ path('video_index') }}">{{ 'Jetzt entdecken'|trans }}</a>
+                        <a class="portal-action" href="{{ path('public_member_index') }}">{{ 'Community ansehen'|trans }}</a>
                     </div>
+                    <nav class="portal-hero-topics" aria-label="{{ 'Portalbereiche'|trans }}">
+                        {% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}
+                        <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
+                        {% if module_enabled('series') %}<a href="{{ path('series_index') }}">{{ 'Serien'|trans }}</a>{% endif %}
+                    </nav>
                 </div>
             </div>
         </section>
@@ -43,7 +52,7 @@
         <div class="portal-layout" data-testid="home-portal-layout">
             <aside class="portal-rail portal-rail-left" aria-label="{{ 'Hauptnavigation'|trans }}" data-testid="home-left-rail">
                 <section class="portal-widget">
-                    <h2>{{ 'Hauptnavigation'|trans }}</h2>
+                    <h2>{{ 'Portal'|trans }}</h2>
                     <nav class="portal-link-list" aria-label="{{ 'Hauptnavigation'|trans }}">
                         <a href="{{ path('platform_home') }}" aria-current="page">{{ 'Startseite'|trans }}</a>
                         <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
@@ -252,6 +261,26 @@
             </main>
 
             <aside class="portal-rail portal-rail-right" data-testid="home-right-rail">
+                {% if popular_news_articles is not empty %}
+                    <section class="portal-widget" aria-labelledby="home-popular-news-heading" data-testid="home-popular-news">
+                        <div class="portal-widget-heading">
+                            <h2 id="home-popular-news-heading">{{ 'Beliebte News'|trans }}</h2>
+                            <a href="{{ path('news_index') }}">{{ 'Alle News'|trans }}</a>
+                        </div>
+                        {% for article in popular_news_articles %}
+                            {% if not article.membersOnly %}
+                                <article class="portal-mini portal-mini-with-thumbnail">
+                                    {% if article.thumbnailObjectId %}<img src="{{ path('news_thumbnail', {id: article.id}) }}" alt="" loading="lazy" decoding="async">{% else %}<img class="portal-mini-art" src="{{ asset('images/portal-fortress.webp') }}" alt="" aria-hidden="true" loading="lazy" decoding="async">{% endif %}
+                                    <div>
+                                        <a href="{{ path('news_show', {slug: article.slug}) }}">{{ article.title }}</a>
+                                        <small>{{ '%count% Aufrufe'|trans({'%count%': article.viewCount}) }}</small>
+                                    </div>
+                                </article>
+                            {% endif %}
+                        {% endfor %}
+                    </section>
+                {% endif %}
+
                 {% if top_videos is not empty %}
                     <section class="portal-widget" aria-labelledby="home-popular-videos-heading" data-testid="home-popular-videos">
                         <div class="portal-widget-heading">
