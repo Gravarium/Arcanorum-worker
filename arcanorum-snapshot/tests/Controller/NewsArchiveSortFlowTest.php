@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
+use App\Entity\CommentContentType;
+use App\Entity\ContentComment;
 use App\Entity\ContentTag;
 use App\Entity\NewsArticle;
 use App\Entity\PublishingStatus;
@@ -44,7 +46,7 @@ final class NewsArchiveSortFlowTest extends WebTestCase
             'A regular public article.',
             PublishingStatus::Published,
             false,
-            true,
+            false,
             'Redaktion',
         );
         $membersArticle = new NewsArticle(
@@ -59,11 +61,33 @@ final class NewsArchiveSortFlowTest extends WebTestCase
             'Redaktion',
             true,
         );
+        $approvedPublicComment = new ContentComment(CommentContentType::News, $publicArticle->getId(), $publicTitle, 'Reviewer', 'Approved public comment.');
+        $approvedPublicComment->approve();
+        $pendingPublicComment = new ContentComment(CommentContentType::News, $publicArticle->getId(), $publicTitle, 'Reviewer', 'Pending public comment.');
+        $reportedPublicComment = new ContentComment(CommentContentType::News, $publicArticle->getId(), $publicTitle, 'Reviewer', 'Reported public comment.');
+        $reportedPublicComment->approve();
+        $reportedPublicComment->report();
+        $reportedPublicComment->report();
+        $reportedPublicComment->report();
+        $approvedDisabledArticleComment = new ContentComment(CommentContentType::News, $normalArticle->getId(), $normalTitle, 'Reviewer', 'Comment on disabled comments.');
+        $approvedDisabledArticleComment->approve();
+        $approvedMemberComment = new ContentComment(CommentContentType::News, $membersArticle->getId(), $memberTitle, 'Reviewer', 'Private article comment.');
+        $approvedMemberComment->approve();
+        $comments = [
+            $approvedPublicComment,
+            $pendingPublicComment,
+            $reportedPublicComment,
+            $approvedDisabledArticleComment,
+            $approvedMemberComment,
+        ];
 
         try {
             $entityManager->persist($publicArticle);
             $entityManager->persist($normalArticle);
             $entityManager->persist($membersArticle);
+            foreach ($comments as $comment) {
+                $entityManager->persist($comment);
+            }
             $entityManager->flush();
 
             $client->request('GET', '/news?q='.urlencode($suffix));
@@ -75,10 +99,15 @@ final class NewsArchiveSortFlowTest extends WebTestCase
             self::assertCount(1, $publicCard);
             self::assertCount(1, $normalCard);
             self::assertCount(1, $membersCard);
+            self::assertSelectorExists('#news-order option[value="comments"]');
             self::assertCount(1, $publicCard->filter('.news-featured-badge'));
             self::assertSame('Hervorgehoben', $publicCard->filter('.news-featured-badge')->text());
             self::assertCount(0, $normalCard->filter('.news-featured-badge'));
             self::assertCount(0, $membersCard->filter('.news-featured-badge'));
+            self::assertCount(1, $publicCard->filter('.news-comment-count'));
+            self::assertStringContainsString('1', $publicCard->filter('.news-comment-count')->text());
+            self::assertCount(0, $normalCard->filter('.news-comment-count'));
+            self::assertCount(0, $membersCard->filter('.news-comment-count'));
             self::assertCount(1, $publicCard->filter('.news-reading-time'));
             self::assertStringContainsString('2', $publicCard->filter('.news-reading-time')->text());
             self::assertCount(1, $normalCard->filter('.news-reading-time'));
@@ -104,6 +133,11 @@ final class NewsArchiveSortFlowTest extends WebTestCase
             self::assertSelectorNotExists('.public-article .news-reading-time');
             self::assertStringNotContainsString($memberBodyMarker, (string) $client->getResponse()->getContent());
         } finally {
+            $connection->executeStatement(
+                'DELETE FROM content_comments WHERE content_type = :type AND content_id IN (:ids)',
+                ['type' => 'news', 'ids' => [$publicArticle->getId(), $normalArticle->getId(), $membersArticle->getId()]],
+                ['ids' => ArrayParameterType::STRING],
+            );
             $connection->executeStatement(
                 'DELETE FROM news_articles WHERE id IN (:ids)',
                 ['ids' => [$publicArticle->getId(), $normalArticle->getId(), $membersArticle->getId()]],
@@ -215,29 +249,59 @@ final class NewsArchiveSortFlowTest extends WebTestCase
         $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
         self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
         $connection = $entityManager->getConnection();
+        $suffix = bin2hex(random_bytes(6));
+        $title = 'External comment count '.$suffix;
+        $article = new NewsArticle(
+            $title,
+            'external-comment-count-'.$suffix,
+            'News',
+            'Public summary.',
+            'Public body.',
+            PublishingStatus::Published,
+            false,
+            true,
+        );
+        $comment = new ContentComment(CommentContentType::News, $article->getId(), $title, 'Reviewer', 'Approved comment.');
+        $comment->approve();
         $previousSettings = $connection->fetchAssociative(
-            'SELECT comment_provider, disqus_comments_shortname, cookie_consent_enabled::text AS cookie_consent_enabled FROM site_settings WHERE id = 1',
+            'SELECT comment_provider, disqus_comments_shortname, cookie_consent_enabled::text AS cookie_consent_enabled, module_comments_enabled::text AS module_comments_enabled FROM site_settings WHERE id = 1',
         );
         self::assertIsArray($previousSettings);
         self::assertIsString($previousSettings['comment_provider']);
         self::assertIsString($previousSettings['disqus_comments_shortname']);
         self::assertContains($previousSettings['cookie_consent_enabled'], ['true', 'false']);
+        self::assertContains($previousSettings['module_comments_enabled'], ['true', 'false']);
 
         try {
+            $entityManager->persist($article);
+            $entityManager->persist($comment);
+            $entityManager->flush();
             $connection->executeStatement("UPDATE site_settings SET comment_provider = 'disqus', disqus_comments_shortname = 'test-news-archive', cookie_consent_enabled = TRUE WHERE id = 1");
-            $client->request('GET', '/news?order=comments');
+            $client->request('GET', '/news?'.http_build_query(['q' => $suffix, 'order' => 'comments']));
             self::assertResponseIsSuccessful();
             self::assertSame('newest', $client->getCrawler()->filter('#news-order option[selected]')->attr('value'));
             self::assertSame(0, $client->getCrawler()->filter('#news-order option[value="comments"]')->count());
+            self::assertCount(0, $client->getCrawler()->filter('.content-card .news-comment-count'));
+
+            $connection->executeStatement("UPDATE site_settings SET comment_provider = 'native', module_comments_enabled = FALSE WHERE id = 1");
+            $client->request('GET', '/news?q='.urlencode($suffix));
+            self::assertResponseIsSuccessful();
+            self::assertCount(0, $client->getCrawler()->filter('.content-card .news-comment-count'));
         } finally {
             $connection->executeStatement(
-                'UPDATE site_settings SET comment_provider = :provider, disqus_comments_shortname = :shortname, cookie_consent_enabled = :cookie_consent WHERE id = 1',
+                'UPDATE site_settings SET comment_provider = :provider, disqus_comments_shortname = :shortname, cookie_consent_enabled = :cookie_consent, module_comments_enabled = :comments_enabled WHERE id = 1',
                 [
                     'provider' => $previousSettings['comment_provider'],
                     'shortname' => $previousSettings['disqus_comments_shortname'],
                     'cookie_consent' => 'true' === $previousSettings['cookie_consent_enabled'],
+                    'comments_enabled' => 'true' === $previousSettings['module_comments_enabled'],
                 ],
             );
+            $connection->executeStatement(
+                'DELETE FROM content_comments WHERE content_type = :type AND content_id = :id',
+                ['type' => 'news', 'id' => $article->getId()],
+            );
+            $connection->executeStatement('DELETE FROM news_articles WHERE id = :id', ['id' => $article->getId()]);
         }
     }
 }

@@ -81,6 +81,46 @@ final class ContentCommentRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
     }
 
+    /** @param list<string> $contentIds
+     * @return array<string, int>
+     */
+    public function countApprovedForContents(CommentContentType $type, array $contentIds): array
+    {
+        $contentIds = array_values(array_unique($contentIds));
+        if ([] === $contentIds) {
+            return [];
+        }
+        if (count($contentIds) > 100) {
+            throw new \InvalidArgumentException('Kommentarzahlen dürfen höchstens für 100 Inhalte gebündelt werden.');
+        }
+
+        $rows = $this->createQueryBuilder('comment')
+            ->select('comment.contentId AS contentId')
+            ->addSelect('COUNT(comment.id) AS commentCount')
+            ->andWhere('comment.contentType = :type')
+            ->andWhere('comment.contentId IN (:contentIds)')
+            ->andWhere('comment.status = :status')
+            ->setParameter('type', $type)
+            ->setParameter('contentIds', $contentIds)
+            ->setParameter('status', CommentStatus::Approved)
+            ->groupBy('comment.contentId')
+            ->getQuery()
+            ->getScalarResult();
+
+        $counts = [];
+        foreach ($rows as $row) {
+            $contentId = $row['contentId'] ?? null;
+            $commentCount = $row['commentCount'] ?? null;
+            if (!is_string($contentId) || !is_numeric($commentCount)) {
+                throw new \UnexpectedValueException('Die gruppierten Kommentarzahlen haben ein ungültiges Datenbankformat.');
+            }
+
+            $counts[$contentId] = (int) $commentCount;
+        }
+
+        return $counts;
+    }
+
     public function deleteForContent(CommentContentType $type, string $contentId): void
     {
         $this->getEntityManager()->getConnection()->delete('content_comments', [

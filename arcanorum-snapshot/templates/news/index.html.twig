@@ -63,6 +63,7 @@
                         <p class="byline">{{ 'Von %author%'|trans({'%author%': article.authorName}) }}</p>
                         <time datetime="{{ article.publishedAt|date('c') }}">{{ article.publishedAt|date('d.m.Y') }}</time>
                         {% if not article.membersOnly %}<span class="news-reading-time">{{ 'Ca. %minutes% Min. Lesezeit'|trans({'%minutes%': article.estimatedReadingMinutes}) }}</span>{% endif %}
+                        {% if comments_sort_available and not article.membersOnly and article.commentsEnabled %}<span class="news-comment-count">{{ 'Kommentare'|trans }}: {{ comment_counts[article.id] ?? 0 }}</span>{% endif %}
                     </div>
                 </article>
             {% else %}

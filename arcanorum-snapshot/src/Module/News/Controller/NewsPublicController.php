@@ -42,6 +42,7 @@ final class NewsPublicController extends AbstractController
     public function index(
         Request $request,
         NewsArticleRepository $articles,
+        ContentCommentRepository $comments,
         ContentCategoryRepository $categories,
         NewsArticleAccessPolicy $articleAccess,
         CanonicalPublicUrlGenerator $publicUrls,
@@ -83,9 +84,20 @@ final class NewsPublicController extends AbstractController
             includeMemberOnlyBodyMatches: $articleAccess->canReadMembersOnly($this->getUser()),
             sort: $sort,
         );
+        $visibleArticles = array_slice($items, 0, self::PAGE_SIZE);
+        $commentCounts = [];
+        if ($commentsSortAvailable) {
+            $publicCommentableIds = [];
+            foreach ($visibleArticles as $article) {
+                if (!$article->isMembersOnly() && $article->isCommentsEnabled()) {
+                    $publicCommentableIds[] = $article->getId();
+                }
+            }
+            $commentCounts = $comments->countApprovedForContents(CommentContentType::News, $publicCommentableIds);
+        }
 
         return $this->render('news/index.html.twig', [
-            'articles' => array_slice($items, 0, self::PAGE_SIZE),
+            'articles' => $visibleArticles,
             'search' => $search,
             'category' => $category,
             'category_page' => $categoryPage,
@@ -97,6 +109,7 @@ final class NewsPublicController extends AbstractController
             'has_next' => count($items) > self::PAGE_SIZE,
             'sort' => $sort,
             'comments_sort_available' => $commentsSortAvailable,
+            'comment_counts' => $commentCounts,
         ]);
     }
 
