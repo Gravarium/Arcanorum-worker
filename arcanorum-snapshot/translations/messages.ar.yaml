@@ -292,6 +292,8 @@
 'Die Medienlaufzeit muss aus ganzen Zahlen bestehen.': 'يجب إدخال مدة الوسائط كأعداد صحيحة.'
 'System': 'النظام'
 'News und Artikel': 'الأخبار والمقالات'
+'Hervorgehoben': 'مميز'
+'Ca. %minutes% Min. Lesezeit': 'حوالي %minutes% دقيقة قراءة'
 'Unterstützt werden direkte MP4-, M4V-, WebM-, Ogg- und MP3-Dateien sowie HLS-Live-Playlists (M3U8) auf ausdrücklich freigegebenen HTTPS-Hosts. HLS-Segmente und Schlüssel müssen ebenfalls freigegeben sein.': 'تشمل المصادر المدعومة ملفات MP4 وM4V وWebM وOgg وMP3 المباشرة وقوائم HLS الحية (M3U8) على مضيفات HTTPS المسموح بها صراحةً. يجب السماح أيضًا بمقاطع HLS ومفاتيحها.'
 "Titel und Beschreibung": "العنوان والوصف"
 "Permalink": "الرابط الثابت"

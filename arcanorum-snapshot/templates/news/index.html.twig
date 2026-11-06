@@ -56,10 +56,14 @@
                 <article class="content-card">
                     {% if article.thumbnailObjectId and not article.membersOnly %}<img class="video-thumbnail" src="{{ path('news_thumbnail', {id: article.id}) }}" alt="{{ 'Vorschaubild für %title%'|trans({'%title%': article.title}) }}" loading="lazy" decoding="async">{% endif %}
                     <p class="card-kicker">{{ article.category ?? ('News'|trans) }}</p>
+                    {% if article.featured %}<p class="news-card-badges"><span class="news-featured-badge">{{ 'Hervorgehoben'|trans }}</span></p>{% endif %}
                     <h2><a href="{{ path('news_show', {slug: article.slug}) }}">{{ article.title }}</a></h2>
                     {% if article.summary %}<p>{{ article.summary }}</p>{% elseif article.membersOnly %}<p>{{ 'Der vollständige Beitrag ist Mitgliedern vorbehalten.'|trans }}</p>{% else %}<p>{{ article.body|striptags|slice(0, 240) }}</p>{% endif %}
-                    <p class="byline">{{ 'Von %author%'|trans({'%author%': article.authorName}) }}</p>
-                    <time datetime="{{ article.publishedAt|date('c') }}">{{ article.publishedAt|date('d.m.Y') }}</time>
+                    <div class="news-article-meta">
+                        <p class="byline">{{ 'Von %author%'|trans({'%author%': article.authorName}) }}</p>
+                        <time datetime="{{ article.publishedAt|date('c') }}">{{ article.publishedAt|date('d.m.Y') }}</time>
+                        {% if not article.membersOnly %}<span class="news-reading-time">{{ 'Ca. %minutes% Min. Lesezeit'|trans({'%minutes%': article.estimatedReadingMinutes}) }}</span>{% endif %}
+                    </div>
                 </article>
             {% else %}
                 <p class="empty-state">{{ (search or category or tag ? 'Keine Beiträge mit diesen Filtern gefunden.' : 'Noch keine News veröffentlicht.')|trans }}</p>

@@ -1805,6 +1805,14 @@ h1 {
 .content-card h2 a:hover,.content-card h3 a:hover{text-decoration:underline}
 .content-card p:not(.card-kicker){color:var(--site-content-text);line-height:1.65}
 .content-card time,.public-article time{margin-top:auto;color:#66728a;font-size:.85rem}
+.news-card-badges{margin:.35rem 0 .55rem}
+.news-featured-badge{display:inline-flex;align-items:center;min-height:1.8rem;padding:.25rem .65rem;border:1px solid #b38a32;border-radius:999px;background:#fff4d3;color:#503900;font-size:.78rem;font-weight:750;line-height:1.25}
+.news-article-meta{display:flex;align-items:baseline;flex-wrap:wrap;gap:.25rem .75rem;margin-top:auto;padding-top:.65rem;border-top:1px solid #e1e6ef;color:#596783;font-size:.875rem}
+.news-article-meta .byline{margin:0}
+.news-article-meta time,.news-article-meta .news-reading-time{margin:0;color:#596783;font-size:.85rem}
+html[data-public-theme="arcanorum"] .news-featured-badge{border-color:#806a31;background:#3b321d;color:#f3d37a}
+html[data-public-theme="arcanorum"] .news-article-meta{border-color:#34373a;color:#b4bdc2}
+html[data-public-theme="arcanorum"] .news-article-meta time,html[data-public-theme="arcanorum"] .news-article-meta .news-reading-time{color:#b4bdc2}
 .empty-state{grid-column:1/-1;margin:0;padding:1.5rem;border:1px dashed #cbd4e2;border-radius:.8rem;color:#596783;background:#fff}
 .public-article{max-width:54rem;margin:0 auto 2rem;padding:clamp(1.5rem,5vw,3.5rem);border:1px solid #e1e6ef;border-radius:1rem;background:var(--site-content-background);color:var(--site-content-text);box-shadow:0 .75rem 2rem rgb(27 39 67 / 4%)}
 .public-article h1{margin-bottom:1rem}

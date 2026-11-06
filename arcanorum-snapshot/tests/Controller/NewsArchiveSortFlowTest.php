@@ -13,6 +13,105 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class NewsArchiveSortFlowTest extends WebTestCase
 {
+    public function testArchiveAndArticleShowEditorialMetadataWithoutLeakingMembersOnlyReadingTime(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        $connection = $entityManager->getConnection();
+        $suffix = bin2hex(random_bytes(6));
+        $publicTitle = 'Editorial metadata public '.$suffix;
+        $normalTitle = 'Editorial metadata normal '.$suffix;
+        $memberTitle = 'Editorial metadata members '.$suffix;
+        $memberBodyMarker = 'members-only-secret-canary-'.$suffix;
+        $publicArticle = new NewsArticle(
+            $publicTitle,
+            'editorial-metadata-public-'.$suffix,
+            'Editorial '.$suffix,
+            'A public summary.',
+            str_repeat('Leseprobe ', 201),
+            PublishingStatus::Published,
+            true,
+            true,
+            'Redaktion',
+        );
+        $normalArticle = new NewsArticle(
+            $normalTitle,
+            'editorial-metadata-normal-'.$suffix,
+            'Editorial '.$suffix,
+            'A regular public summary.',
+            'A regular public article.',
+            PublishingStatus::Published,
+            false,
+            true,
+            'Redaktion',
+        );
+        $membersArticle = new NewsArticle(
+            $memberTitle,
+            'editorial-metadata-members-'.$suffix,
+            'Editorial '.$suffix,
+            'A members-only summary.',
+            str_repeat($memberBodyMarker.' ', 401),
+            PublishingStatus::Published,
+            false,
+            true,
+            'Redaktion',
+            true,
+        );
+
+        try {
+            $entityManager->persist($publicArticle);
+            $entityManager->persist($normalArticle);
+            $entityManager->persist($membersArticle);
+            $entityManager->flush();
+
+            $client->request('GET', '/news?q='.urlencode($suffix));
+            self::assertResponseIsSuccessful();
+            $archive = $client->getCrawler();
+            $publicCard = $archive->filterXPath(sprintf('//article[contains(@class, "content-card") and contains(., "%s")]', $publicTitle));
+            $normalCard = $archive->filterXPath(sprintf('//article[contains(@class, "content-card") and contains(., "%s")]', $normalTitle));
+            $membersCard = $archive->filterXPath(sprintf('//article[contains(@class, "content-card") and contains(., "%s")]', $memberTitle));
+            self::assertCount(1, $publicCard);
+            self::assertCount(1, $normalCard);
+            self::assertCount(1, $membersCard);
+            self::assertCount(1, $publicCard->filter('.news-featured-badge'));
+            self::assertSame('Hervorgehoben', $publicCard->filter('.news-featured-badge')->text());
+            self::assertCount(0, $normalCard->filter('.news-featured-badge'));
+            self::assertCount(0, $membersCard->filter('.news-featured-badge'));
+            self::assertCount(1, $publicCard->filter('.news-reading-time'));
+            self::assertStringContainsString('2', $publicCard->filter('.news-reading-time')->text());
+            self::assertCount(1, $normalCard->filter('.news-reading-time'));
+            self::assertStringContainsString('1', $normalCard->filter('.news-reading-time')->text());
+            self::assertStringContainsString('Redaktion', $normalCard->filter('.byline')->text());
+            self::assertCount(1, $normalCard->filter('time[datetime]'));
+            self::assertCount(0, $membersCard->filter('.news-reading-time'));
+
+            $client->request('GET', '/news/'.$publicArticle->getSlug());
+            self::assertResponseIsSuccessful();
+            self::assertSelectorExists('.public-article .news-featured-badge');
+            self::assertSelectorExists('.public-article .news-reading-time');
+            self::assertStringContainsString('2', (string) $client->getCrawler()->filter('.public-article .news-reading-time')->text());
+
+            $client->request('GET', '/news/'.$normalArticle->getSlug());
+            self::assertResponseIsSuccessful();
+            self::assertSelectorNotExists('.public-article .news-featured-badge');
+            self::assertSelectorExists('.public-article .news-reading-time');
+
+            $client->request('GET', '/news/'.$membersArticle->getSlug());
+            self::assertResponseIsSuccessful();
+            self::assertSelectorExists('.members-only-notice');
+            self::assertSelectorNotExists('.public-article .news-reading-time');
+            self::assertStringNotContainsString($memberBodyMarker, (string) $client->getResponse()->getContent());
+        } finally {
+            $connection->executeStatement(
+                'DELETE FROM news_articles WHERE id IN (:ids)',
+                ['ids' => [$publicArticle->getId(), $normalArticle->getId(), $membersArticle->getId()]],
+                ['ids' => ArrayParameterType::STRING],
+            );
+        }
+    }
+
     public function testArchiveSortSelectionPreservesSearchFiltersAndPagination(): void
     {
         $client = static::createClient();

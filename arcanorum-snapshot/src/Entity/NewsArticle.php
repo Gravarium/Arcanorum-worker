@@ -20,6 +20,8 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Index(name: 'idx_news_articles_status_views', columns: ['status', 'view_count', 'published_at'])]
 final class NewsArticle
 {
+    private const int ESTIMATED_READING_WORDS_PER_MINUTE = 200;
+
     #[ORM\Id]
     #[ORM\Column(length: 32)]
     private string $id;
@@ -189,6 +191,17 @@ final class NewsArticle
     public function getBody(): string
     {
         return $this->body;
+    }
+
+    public function getEstimatedReadingMinutes(): int
+    {
+        $text = html_entity_decode(strip_tags($this->body), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $wordCount = preg_match_all('/[\p{L}\p{N}]+/u', $text);
+        if (false === $wordCount) {
+            return 1;
+        }
+
+        return max(1, (int) ceil($wordCount / self::ESTIMATED_READING_WORDS_PER_MINUTE));
     }
 
     /** @return list<array{key: string, value: string}> */

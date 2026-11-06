@@ -9,10 +9,14 @@
     <main class="public-main">
         <article class="public-article">
             <p class="eyebrow">{{ article.category ?? ('News'|trans) }}</p>
+            {% if article.featured %}<p class="news-card-badges"><span class="news-featured-badge">{{ 'Hervorgehoben'|trans }}</span></p>{% endif %}
             <h1>{{ article.title }}</h1>
             {% if article.summary %}<p class="lead">{{ article.summary }}</p>{% endif %}
-            <p class="byline">{{ 'Von %author%'|trans({'%author%': article.authorName}) }}</p>
-            <time datetime="{{ article.publishedAt|date('c') }}">{{ article.publishedAt|date('d.m.Y') }}</time>
+            <div class="news-article-meta">
+                <p class="byline">{{ 'Von %author%'|trans({'%author%': article.authorName}) }}</p>
+                <time datetime="{{ article.publishedAt|date('c') }}">{{ article.publishedAt|date('d.m.Y') }}</time>
+                {% if can_read_article %}<span class="news-reading-time">{{ 'Ca. %minutes% Min. Lesezeit'|trans({'%minutes%': article.estimatedReadingMinutes}) }}</span>{% endif %}
+            </div>
             {% if article.thumbnailObjectId and can_read_article %}<img class="video-thumbnail video-thumbnail-feature" src="{{ path('news_thumbnail', {id: article.id}) }}" alt="{{ 'Vorschaubild für %title%'|trans({'%title%': article.title}) }}" decoding="async">{% endif %}
             {% if article.tags is not empty %}
                 <p class="tag-list" aria-label="{{ 'Schlagwörter'|trans }}">
