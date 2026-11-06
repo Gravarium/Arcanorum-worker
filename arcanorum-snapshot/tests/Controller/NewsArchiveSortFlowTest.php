@@ -63,6 +63,8 @@ final class NewsArchiveSortFlowTest extends WebTestCase
             'Redaktion',
             true,
         );
+        $publicArticle->attachThumbnail(str_repeat('a', 64), 'image/webp', 2048);
+        $membersArticle->attachThumbnail(str_repeat('b', 64), 'image/jpeg', 3072);
         $approvedPublicComment = new ContentComment(CommentContentType::News, $publicArticle->getId(), $publicTitle, 'Reviewer', 'Approved public comment.');
         $approvedPublicComment->approve();
         $pendingPublicComment = new ContentComment(CommentContentType::News, $publicArticle->getId(), $publicTitle, 'Reviewer', 'Pending public comment.');
@@ -106,7 +108,10 @@ final class NewsArchiveSortFlowTest extends WebTestCase
             self::assertCount(1, $publicCard);
             self::assertCount(1, $normalCard);
             self::assertCount(1, $membersCard);
-            self::assertCount(1, $publicCard->filter('.news-card-image.news-card-image-placeholder'));
+            self::assertCount(1, $publicCard->filter('.news-card-image img'));
+            $publicThumbnailSource = $publicCard->filter('.news-card-image img')->attr('src');
+            self::assertIsString($publicThumbnailSource);
+            self::assertSame('/news/'.$publicArticle->getId().'/thumbnail', $publicThumbnailSource);
             self::assertCount(1, $membersCard->filter('.news-card-image.news-card-image-placeholder'));
             self::assertCount(0, $membersCard->filter('.news-card-image img'));
             self::assertStringNotContainsString($memberBodyMarker, (string) $archive->html());
