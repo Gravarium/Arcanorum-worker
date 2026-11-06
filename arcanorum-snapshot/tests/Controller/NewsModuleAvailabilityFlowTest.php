@@ -166,7 +166,11 @@ final class NewsModuleAvailabilityFlowTest extends WebTestCase
 
             $client->request('GET', '/');
             self::assertResponseIsSuccessful('A failed capability check must not disable the public platform home page.');
-            self::assertStringNotContainsString('Capability probe diagnostic marker', $client->getResponse()->getContent());
+            $homeBody = $client->getResponse()->getContent();
+            if (!is_string($homeBody)) {
+                throw new \RuntimeException('The platform home response body must be readable.');
+            }
+            self::assertStringNotContainsString('Capability probe diagnostic marker', $homeBody);
 
             foreach (['/news', '/news/category/g54-unavailable', '/news/g54-unavailable', '/news.rss'] as $path) {
                 $client->request('GET', $path);
