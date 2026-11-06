@@ -91,7 +91,7 @@ final class NewsArchiveSortFlowTest extends WebTestCase
             self::assertResponseIsSuccessful();
             self::assertSelectorExists('.public-article .news-featured-badge');
             self::assertSelectorExists('.public-article .news-reading-time');
-            self::assertStringContainsString('2', (string) $client->getCrawler()->filter('.public-article .news-reading-time')->text());
+            self::assertStringContainsString('2', $client->getCrawler()->filter('.public-article .news-reading-time')->text());
 
             $client->request('GET', '/news/'.$normalArticle->getSlug());
             self::assertResponseIsSuccessful();
