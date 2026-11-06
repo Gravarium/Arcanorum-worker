@@ -48,7 +48,6 @@
                 <option value="popular"{% if sort.value == 'popular' %} selected{% endif %}>{{ 'Beliebteste zuerst'|trans }}</option>
                 {% if comments_sort_available %}<option value="comments"{% if sort.value == 'comments' %} selected{% endif %}>{{ 'Meiste freigegebene Kommentare'|trans }}</option>{% endif %}
             </select>
-            {% if page > 1 %}<input type="hidden" name="page" value="{{ page }}">{% endif %}
             <button class="button button-secondary" type="submit">{{ 'Filtern'|trans }}</button>
         </form>
         <div class="content-grid">
