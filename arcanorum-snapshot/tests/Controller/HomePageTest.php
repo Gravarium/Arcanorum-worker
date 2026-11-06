@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Entity\ContentTag;
+use App\Entity\NewsArticle;
 use App\Entity\PublishingStatus;
 use App\Entity\Video;
 use App\Entity\VideoQuality;
@@ -57,6 +58,186 @@ final class HomePageTest extends WebTestCase
         self::assertSelectorExists('.portal-layout > aside[data-testid="home-right-rail"]');
         self::assertSelectorTextContains('h1', 'Arcanorum');
         self::assertSelectorTextContains('main', 'Neueste Videos');
+    }
+
+    public function testHomeCardsUseLocalArtworkWithoutExposingMemberThumbnails(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        $settingsManager = $client->getContainer()->get(SiteSettingsManager::class);
+        $settingsProvider = $client->getContainer()->get(SiteSettingsProvider::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        self::assertInstanceOf(SiteSettingsManager::class, $settingsManager);
+        self::assertInstanceOf(SiteSettingsProvider::class, $settingsProvider);
+
+        $settings = $settingsProvider->current();
+        $originalVideoLimit = $settings->getHomepageVideoLimit();
+        $originalNewsLimit = $settings->getHomepageNewsLimit();
+        $suffix = bin2hex(random_bytes(6));
+        $publicVideoWithThumbnail = new Video(
+            'Public home video thumbnail '.$suffix,
+            'A public home video with its own preview image.',
+            null,
+            VideoSourceType::Url,
+            'https://video.example.test/public-thumbnail-'.$suffix.'.mp4',
+            PublishingStatus::Published,
+            false,
+            true,
+        );
+        $publicVideoWithThumbnail->attachThumbnail(hash('sha256', 'public-video-'.$suffix), 'image/webp', 128);
+        $publicVideoWithoutThumbnail = new Video(
+            'Public home video artwork '.$suffix,
+            'A public home video without a preview image.',
+            null,
+            VideoSourceType::Url,
+            'https://video.example.test/public-artwork-'.$suffix.'.mp4',
+            PublishingStatus::Published,
+            false,
+            true,
+        );
+        $membersOnlyVideo = new Video(
+            'Members home video artwork '.$suffix,
+            'A members-only home video with a private preview image.',
+            null,
+            VideoSourceType::Url,
+            'https://video.example.test/private-thumbnail-'.$suffix.'.mp4',
+            PublishingStatus::Published,
+            false,
+            true,
+        );
+        $membersOnlyVideo->updateEditorialMetadata('members-home-'.$suffix, 'Redaktion', true, false);
+        $membersOnlyVideo->attachThumbnail(hash('sha256', 'private-video-'.$suffix), 'image/webp', 128);
+        $publicVideoWithThumbnail->setPublicationAt(new \DateTimeImmutable('-2 minutes', new \DateTimeZone('UTC')));
+        $publicVideoWithoutThumbnail->setPublicationAt(new \DateTimeImmutable('-1 minute', new \DateTimeZone('UTC')));
+        $membersOnlyVideo->setPublicationAt(new \DateTimeImmutable('-5 seconds', new \DateTimeZone('UTC')));
+        $videos = [$publicVideoWithThumbnail, $publicVideoWithoutThumbnail, $membersOnlyVideo];
+
+        $publicArticleWithThumbnail = new NewsArticle(
+            'Public home news thumbnail '.$suffix,
+            'public-home-thumbnail-'.$suffix,
+            'Portal',
+            'A public news item with its own preview image.',
+            'Public news body.',
+            PublishingStatus::Published,
+            false,
+            true,
+        );
+        $publicArticleWithThumbnail->attachThumbnail(hash('sha256', 'public-news-'.$suffix), 'image/webp', 128);
+        $publicArticleWithoutThumbnail = new NewsArticle(
+            'Public home news artwork '.$suffix,
+            'public-home-artwork-'.$suffix,
+            'Portal',
+            'A public news item without a preview image.',
+            'Public news body.',
+            PublishingStatus::Published,
+            false,
+            true,
+        );
+        $membersOnlyArticle = new NewsArticle(
+            'Members home news artwork '.$suffix,
+            'members-home-news-'.$suffix,
+            'Portal',
+            'A members-only news item with a private preview image.',
+            'Private news body.',
+            PublishingStatus::Published,
+            false,
+            true,
+            membersOnly: true,
+        );
+        $membersOnlyArticle->attachThumbnail(hash('sha256', 'private-news-'.$suffix), 'image/webp', 128);
+        $publicArticleWithThumbnail->setPublicationAt(new \DateTimeImmutable('-2 minutes', new \DateTimeZone('UTC')));
+        $publicArticleWithoutThumbnail->setPublicationAt(new \DateTimeImmutable('-1 minute', new \DateTimeZone('UTC')));
+        $membersOnlyArticle->setPublicationAt(new \DateTimeImmutable('-5 seconds', new \DateTimeZone('UTC')));
+        $articles = [$publicArticleWithThumbnail, $publicArticleWithoutThumbnail, $membersOnlyArticle];
+
+        try {
+            foreach ([...$videos, ...$articles] as $content) {
+                $entityManager->persist($content);
+            }
+            $entityManager->flush();
+            self::assertSame([], $settingsManager->updatePublicDisplayOptions([
+                'homepage_video_limit' => '24',
+                'homepage_news_limit' => '12',
+            ]));
+
+            $client->request('GET', '/');
+
+            self::assertResponseIsSuccessful();
+            $crawler = $client->getCrawler();
+            $publicVideoCard = $crawler->filterXPath(sprintf(
+                '//article[contains(concat(" ", normalize-space(@class), " "), " content-card ")][.//a[@href="/videos/%s"]]',
+                $publicVideoWithThumbnail->getId(),
+            ));
+            self::assertSame(1, $publicVideoCard->count());
+            self::assertSame(
+                '/videos/'.$publicVideoWithThumbnail->getId().'/thumbnail',
+                $publicVideoCard->filter('img.video-thumbnail')->attr('src'),
+            );
+
+            $publicArticleCard = $crawler->filterXPath(sprintf(
+                '//article[contains(concat(" ", normalize-space(@class), " "), " content-card ")][.//a[@href="/news/%s"]]',
+                $publicArticleWithThumbnail->getSlug(),
+            ));
+            self::assertSame(1, $publicArticleCard->count());
+            self::assertSame(
+                '/news/'.$publicArticleWithThumbnail->getId().'/thumbnail',
+                $publicArticleCard->filter('img.video-thumbnail')->attr('src'),
+            );
+
+            foreach ([
+                [
+                    'card' => $crawler->filterXPath(sprintf(
+                        '//article[contains(concat(" ", normalize-space(@class), " "), " content-card ")][.//a[@href="/videos/%s"]]',
+                        $publicVideoWithoutThumbnail->getId(),
+                    )),
+                    'label' => 'public video without thumbnail',
+                ],
+                [
+                    'card' => $crawler->filterXPath(sprintf(
+                        '//article[contains(concat(" ", normalize-space(@class), " "), " content-card ")][.//a[@href="/videos/%s"]]',
+                        $membersOnlyVideo->getId(),
+                    )),
+                    'label' => 'members-only video',
+                ],
+                [
+                    'card' => $crawler->filterXPath(sprintf(
+                        '//article[contains(concat(" ", normalize-space(@class), " "), " content-card ")][.//a[@href="/news/%s"]]',
+                        $publicArticleWithoutThumbnail->getSlug(),
+                    )),
+                    'label' => 'public news without thumbnail',
+                ],
+                [
+                    'card' => $crawler->filterXPath(sprintf(
+                        '//article[contains(concat(" ", normalize-space(@class), " "), " content-card ")][.//a[@href="/news/%s"]]',
+                        $membersOnlyArticle->getSlug(),
+                    )),
+                    'label' => 'members-only news',
+                ],
+            ] as $fallback) {
+                self::assertSame(1, $fallback['card']->count(), sprintf('Expected a homepage card for %s.', $fallback['label']));
+                $artwork = $fallback['card']->filter('img.portal-card-art[alt=""][aria-hidden="true"]');
+                self::assertSame(1, $artwork->count(), sprintf('Expected decorative local artwork for %s.', $fallback['label']));
+                self::assertStringContainsString('portal-', (string) $artwork->attr('src'));
+            }
+
+            $html = (string) $client->getResponse()->getContent();
+            self::assertStringNotContainsString('/videos/'.$membersOnlyVideo->getId().'/thumbnail', $html);
+            self::assertStringNotContainsString('/news/'.$membersOnlyArticle->getId().'/thumbnail', $html);
+        } finally {
+            $entityManager->getConnection()->executeStatement(
+                'DELETE FROM videos WHERE id IN (:first, :second, :third)',
+                ['first' => $publicVideoWithThumbnail->getId(), 'second' => $publicVideoWithoutThumbnail->getId(), 'third' => $membersOnlyVideo->getId()],
+            );
+            $entityManager->getConnection()->executeStatement(
+                'DELETE FROM news_articles WHERE id IN (:first, :second, :third)',
+                ['first' => $publicArticleWithThumbnail->getId(), 'second' => $publicArticleWithoutThumbnail->getId(), 'third' => $membersOnlyArticle->getId()],
+            );
+            self::assertSame([], $settingsManager->updatePublicDisplayOptions([
+                'homepage_video_limit' => (string) $originalVideoLimit,
+                'homepage_news_limit' => (string) $originalNewsLimit,
+            ]));
+        }
     }
 
     public function testNewestHomeVideosKeepAStableOrderWhenPublicationTimesMatch(): void
