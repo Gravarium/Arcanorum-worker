@@ -172,7 +172,13 @@ final class NewsModuleAvailabilityFlowTest extends WebTestCase
             }
             self::assertStringNotContainsString('Capability probe diagnostic marker', $homeBody);
 
-            foreach (['/news', '/news/category/g54-unavailable', '/news/g54-unavailable', '/news.rss'] as $path) {
+            foreach ([
+                '/news',
+                '/news/category/g54-unavailable',
+                '/news/g54-unavailable',
+                '/news.rss',
+                '/news/0123456789abcdef0123456789abcdef/thumbnail',
+            ] as $path) {
                 $client->request('GET', $path);
                 self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND, sprintf('Expected %s to remain unavailable.', $path));
                 self::assertPrivateNoStore($client->getResponse()->headers->get('Cache-Control'));
