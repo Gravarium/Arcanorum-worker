@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Module\Platform\Controller;
 
+use App\Entity\CommentContentType;
+use App\Entity\CommentProvider;
 use App\Entity\FeatureModule;
 use App\Entity\Video;
 use App\Entity\VideoSourceType;
@@ -11,6 +13,7 @@ use App\Module\Video\Service\VideoQualitySourceResolver;
 use App\Module\Video\Service\VideoStreamSource;
 use App\Module\Video\Service\VideoStreamSourceResolver;
 use App\Repository\ContentCategoryRepository;
+use App\Repository\ContentCommentRepository;
 use App\Repository\ContentTagRepository;
 use App\Repository\MemberAccountRepository;
 use App\Repository\NewsArticleRepository;
@@ -28,6 +31,7 @@ final class HomeController extends AbstractController
     public function index(
         Request $request,
         NewsArticleRepository $articles,
+        ContentCommentRepository $comments,
         VideoRepository $videos,
         ContentTagRepository $tags,
         ContentCategoryRepository $categories,
@@ -111,6 +115,18 @@ final class HomeController extends AbstractController
         $newsItems = !$newsEnabled || 0 === $settings->getHomepageNewsLimit()
             ? []
             : $articles->findPublished(limit: $settings->getHomepageNewsLimit());
+        $homeNewsCommentCountsEnabled = $settings->isFeatureModuleEnabled(FeatureModule::Comments)
+            && CommentProvider::Native === $settings->getCommentProvider();
+        $homeNewsCommentCounts = [];
+        if ($homeNewsCommentCountsEnabled) {
+            $commentableNewsIds = [];
+            foreach ($newsItems as $article) {
+                if (!$article->isMembersOnly() && $article->isCommentsEnabled()) {
+                    $commentableNewsIds[] = $article->getId();
+                }
+            }
+            $homeNewsCommentCounts = $comments->countApprovedForContents(CommentContentType::News, $commentableNewsIds);
+        }
         $publicStatistics = $settings->isPublicStatisticsEnabled()
             ? [
                 'videos' => $videos->countPublicPublished(),
@@ -121,6 +137,8 @@ final class HomeController extends AbstractController
 
         $response = $this->render('home/index.html.twig', [
             'articles' => $newsItems,
+            'home_news_comment_counts' => $homeNewsCommentCounts,
+            'home_news_comment_counts_enabled' => $homeNewsCommentCountsEnabled,
             'videos' => $latestVideos,
             'top_videos' => $popularVideos,
             'featured_video' => $featuredVideo,

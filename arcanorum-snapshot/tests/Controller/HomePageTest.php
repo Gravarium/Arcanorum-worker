@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
+use App\Entity\CommentContentType;
+use App\Entity\CommentProvider;
+use App\Entity\ContentComment;
 use App\Entity\ContentTag;
+use App\Entity\FeatureModule;
 use App\Entity\NewsArticle;
 use App\Entity\PublishingStatus;
 use App\Entity\Video;
@@ -74,6 +78,16 @@ final class HomePageTest extends WebTestCase
         $settings = $settingsProvider->current();
         $originalVideoLimit = $settings->getHomepageVideoLimit();
         $originalNewsLimit = $settings->getHomepageNewsLimit();
+        $originalCommentSettings = [
+            'comment_provider' => $settings->getCommentProvider()->value,
+            'facebook_comments_app_id' => $settings->getFacebookCommentsAppId(),
+            'disqus_comments_shortname' => $settings->getDisqusCommentsShortname(),
+            'cookie_consent_enabled' => $settings->isCookieConsentEnabled() ? '1' : '0',
+        ];
+        $originalFeatureModules = [];
+        foreach (FeatureModule::cases() as $module) {
+            $originalFeatureModules[$module->inputName()] = $settings->isFeatureModuleEnabled($module) ? '1' : '0';
+        }
         $suffix = bin2hex(random_bytes(6));
         $publicVideoWithThumbnail = new Video(
             'Public home video thumbnail '.$suffix,
@@ -122,6 +136,7 @@ final class HomePageTest extends WebTestCase
             PublishingStatus::Published,
             false,
             true,
+            'Editorial Desk',
         );
         $publicArticleWithThumbnail->attachThumbnail(hash('sha256', 'public-news-'.$suffix), 'image/webp', 128);
         $publicArticleWithoutThumbnail = new NewsArticle(
@@ -150,9 +165,38 @@ final class HomePageTest extends WebTestCase
         $publicArticleWithoutThumbnail->setPublicationAt(new \DateTimeImmutable('-1 minute', new \DateTimeZone('UTC')));
         $membersOnlyArticle->setPublicationAt(new \DateTimeImmutable('-5 seconds', new \DateTimeZone('UTC')));
         $articles = [$publicArticleWithThumbnail, $publicArticleWithoutThumbnail, $membersOnlyArticle];
+        $publicApprovedComment = new ContentComment(
+            CommentContentType::News,
+            $publicArticleWithoutThumbnail->getId(),
+            $publicArticleWithoutThumbnail->getTitle(),
+            'Reader',
+            'Approved comment counted on the public homepage card.',
+        );
+        $publicApprovedComment->approve();
+        $publicPendingComment = new ContentComment(
+            CommentContentType::News,
+            $publicArticleWithoutThumbnail->getId(),
+            $publicArticleWithoutThumbnail->getTitle(),
+            'Reader',
+            'Pending comment must not affect the public count.',
+        );
+        $membersOnlyApprovedComment = new ContentComment(
+            CommentContentType::News,
+            $membersOnlyArticle->getId(),
+            $membersOnlyArticle->getTitle(),
+            'Reader',
+            'Member-only comment must not produce a public count.',
+        );
+        $membersOnlyApprovedComment->approve();
+        $comments = [$publicApprovedComment, $publicPendingComment, $membersOnlyApprovedComment];
+        $enabledFeatureModules = $originalFeatureModules;
+        $enabledFeatureModules[FeatureModule::News->inputName()] = '1';
+        $enabledFeatureModules[FeatureModule::Comments->inputName()] = '1';
 
         try {
-            foreach ([...$videos, ...$articles] as $content) {
+            self::assertSame([], $settingsManager->updateFeatureModules($enabledFeatureModules));
+            self::assertSame([], $settingsManager->update(['comment_provider' => CommentProvider::Native->value]));
+            foreach ([...$videos, ...$articles, ...$comments] as $content) {
                 $entityManager->persist($content);
             }
             $entityManager->flush();
@@ -184,6 +228,11 @@ final class HomePageTest extends WebTestCase
                 '/news/'.$publicArticleWithThumbnail->getId().'/thumbnail',
                 $publicArticleCard->filter('img.video-thumbnail')->attr('src'),
             );
+            self::assertSame(1, $publicArticleCard->filter('.news-article-meta .byline')->count());
+            self::assertStringContainsString('Editorial Desk', $publicArticleCard->filter('.news-article-meta')->text());
+            self::assertSame(1, $publicArticleCard->filter('.news-article-meta time')->count());
+            self::assertSame(1, $publicArticleCard->filter('.news-article-meta .news-reading-time')->count());
+            self::assertStringEndsWith('0', trim($publicArticleCard->filter('.news-article-meta .news-comment-count')->text()));
 
             foreach ([
                 [
@@ -221,10 +270,47 @@ final class HomePageTest extends WebTestCase
                 self::assertStringContainsString('portal-', (string) $artwork->attr('src'));
             }
 
+            $publicNewsWithoutThumbnailCard = $crawler->filterXPath(sprintf(
+                '//article[contains(concat(" ", normalize-space(@class), " "), " content-card ")][.//a[@href="/news/%s"]]',
+                $publicArticleWithoutThumbnail->getSlug(),
+            ));
+            self::assertSame(1, $publicNewsWithoutThumbnailCard->filter('.news-article-meta .news-reading-time')->count());
+            self::assertStringEndsWith('1', trim($publicNewsWithoutThumbnailCard->filter('.news-article-meta .news-comment-count')->text()));
+            $membersNewsCard = $crawler->filterXPath(sprintf(
+                '//article[contains(concat(" ", normalize-space(@class), " "), " content-card ")][.//a[@href="/news/%s"]]',
+                $membersOnlyArticle->getSlug(),
+            ));
+            self::assertSame(0, $membersNewsCard->filter('.news-article-meta .news-comment-count')->count());
+
             $html = (string) $client->getResponse()->getContent();
             self::assertStringNotContainsString('/videos/'.$membersOnlyVideo->getId().'/thumbnail', $html);
             self::assertStringNotContainsString('/news/'.$membersOnlyArticle->getId().'/thumbnail', $html);
+
+            $disabledFeatureModules = $enabledFeatureModules;
+            $disabledFeatureModules[FeatureModule::Comments->inputName()] = '0';
+            self::assertSame([], $settingsManager->updateFeatureModules($disabledFeatureModules));
+            $client->request('GET', '/');
+            self::assertResponseIsSuccessful();
+            self::assertSelectorNotExists('.portal-home .news-comment-count');
+
+            self::assertSame([], $settingsManager->updateFeatureModules($enabledFeatureModules));
+            self::assertSame([], $settingsManager->update([
+                'comment_provider' => CommentProvider::Disqus->value,
+                'disqus_comments_shortname' => 'homepage-news-test',
+                'cookie_consent_enabled' => '1',
+            ]));
+            $client->request('GET', '/');
+            self::assertResponseIsSuccessful();
+            self::assertSelectorNotExists('.portal-home .news-comment-count');
         } finally {
+            $entityManager->getConnection()->executeStatement(
+                'DELETE FROM content_comments WHERE id IN (:public_approved, :public_pending, :members_approved)',
+                [
+                    'public_approved' => $publicApprovedComment->getId(),
+                    'public_pending' => $publicPendingComment->getId(),
+                    'members_approved' => $membersOnlyApprovedComment->getId(),
+                ],
+            );
             $entityManager->getConnection()->executeStatement(
                 'DELETE FROM videos WHERE id IN (:first, :second, :third)',
                 ['first' => $publicVideoWithThumbnail->getId(), 'second' => $publicVideoWithoutThumbnail->getId(), 'third' => $membersOnlyVideo->getId()],
@@ -237,6 +323,8 @@ final class HomePageTest extends WebTestCase
                 'homepage_video_limit' => (string) $originalVideoLimit,
                 'homepage_news_limit' => (string) $originalNewsLimit,
             ]));
+            self::assertSame([], $settingsManager->updateFeatureModules($originalFeatureModules));
+            self::assertSame([], $settingsManager->update($originalCommentSettings));
         }
     }
 

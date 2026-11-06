@@ -52,6 +52,7 @@ on:
           - admin-design-settings-followup
           - classic-public-shell-followup
           - homepage-artwork-followup
+          - homepage-news-metadata-followup
           - manual-video-source-check-followup
           - historical-core-data-rollback-testfix
           - historical-rollback-pending-gates
@@ -2649,7 +2650,7 @@ jobs:
         run: node --test arcanorum-snapshot/tests/JavaScript/provider-embed-consent.test.mjs
 
   validate-member-activity-focused:
-    if: github.event_name == 'workflow_dispatch' && (inputs.validation_scope == 'member-activity-focused' || inputs.validation_scope == 'member-activity-followup' || inputs.validation_scope == 'dashboard-latest-content' || inputs.validation_scope == 'dashboard-latest-content-followup' || inputs.validation_scope == 'admin-password-change-followup' || inputs.validation_scope == 'video-provider-player-followup' || inputs.validation_scope == 'auto-feature-threshold-followup' || inputs.validation_scope == 'public-share-widget-followup' || inputs.validation_scope == 'public-share-widget-testfix-followup' || inputs.validation_scope == 'news-archive-filter-testfix-followup' || inputs.validation_scope == 'news-module-disabled-followup' || inputs.validation_scope == 'video-report-heading-testfix-followup' || inputs.validation_scope == 'admin-design-settings-followup' || inputs.validation_scope == 'classic-public-shell-followup' || inputs.validation_scope == 'homepage-artwork-followup')
+    if: github.event_name == 'workflow_dispatch' && (inputs.validation_scope == 'member-activity-focused' || inputs.validation_scope == 'member-activity-followup' || inputs.validation_scope == 'dashboard-latest-content' || inputs.validation_scope == 'dashboard-latest-content-followup' || inputs.validation_scope == 'admin-password-change-followup' || inputs.validation_scope == 'video-provider-player-followup' || inputs.validation_scope == 'auto-feature-threshold-followup' || inputs.validation_scope == 'public-share-widget-followup' || inputs.validation_scope == 'public-share-widget-testfix-followup' || inputs.validation_scope == 'news-archive-filter-testfix-followup' || inputs.validation_scope == 'news-module-disabled-followup' || inputs.validation_scope == 'video-report-heading-testfix-followup' || inputs.validation_scope == 'admin-design-settings-followup' || inputs.validation_scope == 'classic-public-shell-followup' || inputs.validation_scope == 'homepage-artwork-followup' || inputs.validation_scope == 'homepage-news-metadata-followup')
     name: Focused regression checks
     runs-on: ubuntu-26.04
     timeout-minutes: 45
@@ -2696,7 +2697,7 @@ jobs:
       - name: Verify exact source commit and exclude credentials
         shell: bash
         env:
-          EXPECTED_SOURCE_SHA: ${{ (inputs.validation_scope == 'classic-public-shell-followup' || inputs.validation_scope == 'homepage-artwork-followup' || inputs.validation_scope == 'video-provider-player-followup' || inputs.validation_scope == 'news-archive-filter-testfix-followup' || inputs.validation_scope == 'news-module-disabled-followup') && inputs.source_commit || 'c96df1383aa1377bba3cf7ac3016a4ea5eb3742c' }}
+          EXPECTED_SOURCE_SHA: ${{ (inputs.validation_scope == 'classic-public-shell-followup' || inputs.validation_scope == 'homepage-artwork-followup' || inputs.validation_scope == 'homepage-news-metadata-followup' || inputs.validation_scope == 'video-provider-player-followup' || inputs.validation_scope == 'news-archive-filter-testfix-followup' || inputs.validation_scope == 'news-module-disabled-followup') && inputs.source_commit || 'c96df1383aa1377bba3cf7ac3016a4ea5eb3742c' }}
         run: |
           set -euo pipefail
           printf '%s\n' "$EXPECTED_SOURCE_SHA" | cmp -s - SOURCE_BASE_SHA
@@ -2741,7 +2742,7 @@ jobs:
           PY
 
       - name: Verify complete manifest for the News archive test correction
-        if: inputs.validation_scope == 'news-archive-filter-testfix-followup' || inputs.validation_scope == 'news-module-disabled-followup' || inputs.validation_scope == 'homepage-artwork-followup'
+        if: inputs.validation_scope == 'news-archive-filter-testfix-followup' || inputs.validation_scope == 'news-module-disabled-followup' || inputs.validation_scope == 'homepage-artwork-followup' || inputs.validation_scope == 'homepage-news-metadata-followup'
         run: |
           python3 - <<'PY'
           from hashlib import sha256
@@ -2787,7 +2788,7 @@ jobs:
           node-version: '24'
 
       - name: Validate and install locked Composer dependencies
-        if: inputs.validation_scope == 'member-activity-focused' || inputs.validation_scope == 'admin-password-change-followup' || inputs.validation_scope == 'video-provider-player-followup' || inputs.validation_scope == 'auto-feature-threshold-followup' || inputs.validation_scope == 'admin-design-settings-followup' || inputs.validation_scope == 'classic-public-shell-followup' || inputs.validation_scope == 'homepage-artwork-followup' || inputs.validation_scope == 'news-archive-filter-testfix-followup'
+        if: inputs.validation_scope == 'member-activity-focused' || inputs.validation_scope == 'admin-password-change-followup' || inputs.validation_scope == 'video-provider-player-followup' || inputs.validation_scope == 'auto-feature-threshold-followup' || inputs.validation_scope == 'admin-design-settings-followup' || inputs.validation_scope == 'classic-public-shell-followup' || inputs.validation_scope == 'homepage-artwork-followup' || inputs.validation_scope == 'homepage-news-metadata-followup' || inputs.validation_scope == 'news-archive-filter-testfix-followup'
         run: |
           touch .env
           composer validate --strict --no-interaction
@@ -3727,6 +3728,31 @@ jobs:
             --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
             --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
             "$test_file"
+          python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
+
+      - name: Validate homepage news metadata and comment visibility
+        if: inputs.validation_scope == 'homepage-news-metadata-followup'
+        shell: bash
+        run: |
+          set -euo pipefail
+          php_files=(
+            src/Module/Platform/Controller/HomeController.php
+            tests/Controller/HomePageTest.php
+          )
+          for file in "${php_files[@]}"; do php -l "$file"; done
+          php bin/console lint:twig templates/home/index.html.twig
+          php bin/console lint:container --env=dev
+          APP_ENV=prod APP_DEBUG=0 php bin/console lint:container --env=prod
+          vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --no-progress --error-format=github --memory-limit=1G "${php_files[@]}"
+          vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --diff --using-cache=no "${php_files[@]}"
+          vendor/bin/rector process "${php_files[@]}" --config=rector.php --dry-run --no-progress-bar --output-format=github
+          mkdir -p var/test-results
+          vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm.sarif "${php_files[@]}"
+          php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
+            --fail-on-risky --fail-on-warning --fail-on-deprecation \
+            --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
+            --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
+            tests/Controller/HomePageTest.php
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
 
   validate-video-thumbnail-concurrency:

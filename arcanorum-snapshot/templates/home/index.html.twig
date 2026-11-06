@@ -235,7 +235,13 @@
                                 <p class="card-kicker">{{ article.category ?? ('News'|trans) }}</p>
                                 <h3><a href="{{ path('news_show', {slug: article.slug}) }}">{{ article.title }}</a></h3>
                                 {% if article.summary %}<p>{{ article.summary }}</p>{% elseif article.membersOnly %}<p>{{ 'Der vollständige Beitrag ist Mitgliedern vorbehalten.'|trans }}</p>{% else %}<p>{{ article.body|striptags|slice(0, 180) }}</p>{% endif %}
-                                <time datetime="{{ article.publishedAt|date('c') }}">{{ article.publishedAt|date('d.m.Y') }}</time>
+                                <div class="news-article-meta">
+                                    <p class="byline">{{ 'Von %author%'|trans({'%author%': article.authorName}) }}</p>
+                                    <time datetime="{{ article.publishedAt|date('c') }}">{{ article.publishedAt|date('d.m.Y') }}</time>
+                                    {% if not article.membersOnly %}<span class="news-reading-time">{{ 'Ca. %minutes% Min. Lesezeit'|trans({'%minutes%': article.estimatedReadingMinutes}) }}</span>
+                                        {% if home_news_comment_counts_enabled and article.commentsEnabled %}<span class="news-comment-count">{{ 'Kommentare'|trans }}: {{ home_news_comment_counts[article.id] ?? 0 }}</span>{% endif %}
+                                    {% endif %}
+                                </div>
                             </article>
                         {% else %}
                             <p class="empty-state">{{ 'Noch keine News veröffentlicht.'|trans }}</p>
