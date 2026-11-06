@@ -7,12 +7,20 @@
 
 {% block body %}
     {{ include('partials/public_site_header.html.twig') }}
-    <main class="public-main">
-        <section class="public-page-heading">
-            <p class="eyebrow">{{ 'Redaktion'|trans }}</p><h1>{{ category_page ? category_page.name : 'News und Artikel'|trans }}</h1>
-            <div class="lead category-description">{% if category_page and category_page.description %}{{ category_page.description|rich_text_for_category(category_page) }}{% else %}{{ 'Aktuelle Beiträge aus der Redaktion.'|trans }}{% endif %}</div>
-            {% if category_page and category_page.parent %}<p><a class="category-parent-link" href="{{ path('news_category', {slug: category_page.parent.slug}) }}">{{ 'Übergeordnete Kategorie'|trans }}: {{ category_page.parent.name }}</a></p>{% endif %}
-            <p><a href="{{ path('news_feed') }}">{{ 'RSS-Feed abonnieren'|trans }}</a></p>
+    <main class="public-main news-index">
+        <section class="public-page-heading news-page-heading">
+            <p class="eyebrow">{{ 'Redaktion'|trans }}</p>
+            <h1>{{ category_page ? category_page.name : 'News und Artikel'|trans }}</h1>
+            <div class="lead category-description">
+                {% if category_page and category_page.description %}
+                    {{ category_page.description|rich_text_for_category(category_page) }}
+                {% else %}
+                    {{ 'Aktuelle Beiträge aus der Redaktion.'|trans }}
+                {% endif %}
+            </div>
+            {% if category_page and category_page.parent %}
+                <p><a class="category-parent-link" href="{{ path('news_category', {slug: category_page.parent.slug}) }}">{{ 'Übergeordnete Kategorie'|trans }}: {{ category_page.parent.name }}</a></p>
+            {% endif %}
         </section>
         {% if category_page and child_categories is not empty %}
             <section class="public-section" aria-labelledby="news-subcategories-heading">
@@ -27,54 +35,90 @@
                 </div>
             </section>
         {% endif %}
-        <nav class="category-directory" aria-label="{{ 'News-Kategorien'|trans }}">
-            <ul>{% for option in categories %}<li class="category-level-{{ option.depth }}">{% if option.depth > 0 %}<span aria-hidden="true">{% for level in 1..option.depth %}— {% endfor %}</span>{% endif %}<a href="{{ path('news_category', {slug: option.slug}) }}">{{ option.name }}</a></li>{% endfor %}</ul>
-        </nav>
-        <form class="content-search" method="get" action="{{ path('news_index') }}">
-            <label for="news-search">{{ 'News suchen'|trans }}</label>
-            <input id="news-search" type="search" name="q" value="{{ search }}" maxlength="100">
-            <label for="news-category">{{ 'Kategorie'|trans }}</label>
-            <select id="news-category" name="category">
-                <option value="">{{ 'Alle Kategorien'|trans }}</option>
-                {% for option in categories %}
-                    <option value="{{ option.name }}"{% if category == option.name %} selected{% endif %}>{{ option.name }}</option>
-                {% endfor %}
-            </select>
-            <label for="news-tag">{{ 'Schlagwort'|trans }}</label>
-            <input id="news-tag" type="search" name="tag" value="{{ tag }}" maxlength="100" placeholder="{{ 'Schlagwort'|trans }}">
-            <label for="news-order">{{ 'News sortieren nach'|trans }}</label>
-            <select id="news-order" name="order">
-                <option value="newest"{% if sort.value == 'newest' %} selected{% endif %}>{{ 'Neueste zuerst'|trans }}</option>
-                <option value="popular"{% if sort.value == 'popular' %} selected{% endif %}>{{ 'Beliebteste zuerst'|trans }}</option>
-                {% if comments_sort_available %}<option value="comments"{% if sort.value == 'comments' %} selected{% endif %}>{{ 'Meiste freigegebene Kommentare'|trans }}</option>{% endif %}
-            </select>
-            <button class="button button-secondary" type="submit">{{ 'Filtern'|trans }}</button>
+        <form class="content-search news-search-form" method="get" action="{{ path('news_index') }}">
+            <div class="news-filter-field news-filter-query">
+                <label for="news-search">{{ 'News suchen'|trans }}</label>
+                <input id="news-search" type="search" name="q" value="{{ search }}" maxlength="100">
+            </div>
+            <div class="news-filter-field">
+                <label for="news-category">{{ 'Kategorie'|trans }}</label>
+                <select id="news-category" name="category">
+                    <option value="">{{ 'Alle Kategorien'|trans }}</option>
+                    {% for option in categories %}
+                        <option value="{{ option.name }}"{% if category == option.name %} selected{% endif %}>{{ option.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="news-filter-field">
+                <label for="news-tag">{{ 'Schlagwort'|trans }}</label>
+                <input id="news-tag" type="search" name="tag" value="{{ tag }}" maxlength="100" placeholder="{{ 'Schlagwort'|trans }}">
+            </div>
+            <div class="news-filter-field">
+                <label for="news-order">{{ 'News sortieren nach'|trans }}</label>
+                <select id="news-order" name="order">
+                    <option value="newest"{% if sort.value == 'newest' %} selected{% endif %}>{{ 'Neueste zuerst'|trans }}</option>
+                    <option value="popular"{% if sort.value == 'popular' %} selected{% endif %}>{{ 'Beliebteste zuerst'|trans }}</option>
+                    {% if comments_sort_available %}<option value="comments"{% if sort.value == 'comments' %} selected{% endif %}>{{ 'Meiste freigegebene Kommentare'|trans }}</option>{% endif %}
+                </select>
+            </div>
+            <div class="news-filter-actions">
+                <button class="button button-secondary" type="submit">{{ 'Filtern'|trans }}</button>
+            </div>
         </form>
-        <div class="content-grid">
-            {% for article in articles %}
-                <article class="content-card news-card{% if article.featured and not article.membersOnly %} news-card-featured{% endif %}">
-                    {% if article.thumbnailObjectId and not article.membersOnly %}<img class="video-thumbnail" src="{{ path('news_thumbnail', {id: article.id}) }}" alt="{{ 'Vorschaubild für %title%'|trans({'%title%': article.title}) }}" loading="lazy" decoding="async">{% endif %}
-                    <p class="card-kicker">{{ article.category ?? ('News'|trans) }}</p>
-                    {% if article.featured %}<p class="news-card-badges"><span class="news-featured-badge">{{ 'Hervorgehoben'|trans }}</span></p>{% endif %}
-                    <h2><a href="{{ path('news_show', {slug: article.slug}) }}">{{ article.title }}</a></h2>
-                    {% if article.summary %}<p class="news-card-summary">{{ article.summary }}</p>{% elseif article.membersOnly %}<p class="news-card-summary">{{ 'Der vollständige Beitrag ist Mitgliedern vorbehalten.'|trans }}</p>{% else %}<p class="news-card-summary">{{ article.body|striptags|slice(0, 240) }}</p>{% endif %}
-                    <div class="news-article-meta">
-                        <p class="byline">{{ 'Von %author%'|trans({'%author%': article.authorName}) }}</p>
-                        <time datetime="{{ article.publishedAt|date('c') }}">{{ article.publishedAt|date('d.m.Y') }}</time>
-                        {% if not article.membersOnly %}<span class="news-reading-time">{{ 'Ca. %minutes% Min. Lesezeit'|trans({'%minutes%': article.estimatedReadingMinutes}) }}</span>{% endif %}
-                        {% if comments_sort_available and not article.membersOnly and article.commentsEnabled %}<span class="news-comment-count">{{ 'Kommentare'|trans }}: {{ comment_counts[article.id] ?? 0 }}</span>{% endif %}
-                    </div>
-                </article>
-            {% else %}
-                <p class="empty-state">{{ (search or category or tag ? 'Keine Beiträge mit diesen Filtern gefunden.' : 'Noch keine News veröffentlicht.')|trans }}</p>
-            {% endfor %}
+
+        <div class="news-index-content">
+            <section class="news-results" aria-label="{{ 'News und Artikel'|trans }}">
+                <div class="content-grid news-archive-grid">
+                    {% for article in articles %}
+                        <article class="content-card news-card{% if article.featured and not article.membersOnly %} news-card-featured{% endif %}">
+                            <a class="news-card-image{% if not article.thumbnailObjectId or article.membersOnly %} news-card-image-placeholder{% endif %}" href="{{ path('news_show', {slug: article.slug}) }}" aria-label="{{ article.title }}">
+                                {% if article.thumbnailObjectId and not article.membersOnly %}
+                                    <img class="video-thumbnail" src="{{ path('news_thumbnail', {id: article.id}) }}" alt="{{ 'Vorschaubild für %title%'|trans({'%title%': article.title}) }}" loading="lazy" decoding="async">
+                                {% else %}
+                                    <span aria-hidden="true"></span>
+                                {% endif %}
+                            </a>
+                            <div class="news-card-copy">
+                                <p class="card-kicker">{{ article.category ?? ('News'|trans) }}</p>
+                                {% if article.featured and not article.membersOnly %}<p class="news-card-badges"><span class="news-featured-badge">{{ 'Hervorgehoben'|trans }}</span></p>{% endif %}
+                                <h2><a href="{{ path('news_show', {slug: article.slug}) }}">{{ article.title }}</a></h2>
+                                {% if article.summary %}<p class="news-card-summary">{{ article.summary }}</p>{% elseif article.membersOnly %}<p class="news-card-summary">{{ 'Der vollständige Beitrag ist Mitgliedern vorbehalten.'|trans }}</p>{% else %}<p class="news-card-summary">{{ article.body|striptags|slice(0, 240) }}</p>{% endif %}
+                                <div class="news-article-meta">
+                                    <p class="byline">{{ 'Von %author%'|trans({'%author%': article.authorName}) }}</p>
+                                    <time datetime="{{ article.publishedAt|date('c') }}">{{ article.publishedAt|date('d.m.Y') }}</time>
+                                    {% if not article.membersOnly %}<span class="news-reading-time">{{ 'Ca. %minutes% Min. Lesezeit'|trans({'%minutes%': article.estimatedReadingMinutes}) }}</span>{% endif %}
+                                    {% if comments_sort_available and not article.membersOnly and article.commentsEnabled %}<span class="news-comment-count">{{ 'Kommentare'|trans }}: {{ comment_counts[article.id] ?? 0 }}</span>{% endif %}
+                                </div>
+                            </div>
+                        </article>
+                    {% else %}
+                        <p class="empty-state">{{ (search or category or tag ? 'Keine Beiträge mit diesen Filtern gefunden.' : 'Noch keine News veröffentlicht.')|trans }}</p>
+                    {% endfor %}
+                </div>
+                {% if page > 1 or has_next %}
+                    <nav class="pagination" aria-label="{{ 'News-Seiten'|trans }}">
+                        {% if page > 1 %}<a href="{{ path(category_page ? 'news_category' : 'news_index', (category_page ? {slug: category_page.slug} : {})|merge({q: search, category: category, tag: tag, order: sort.value, page: page - 1})) }}">{{ 'Vorherige Seite'|trans }}</a>{% endif %}
+                        <span>{{ 'Seite %page%'|trans({'%page%': page}) }}</span>
+                        {% if has_next %}<a href="{{ path(category_page ? 'news_category' : 'news_index', (category_page ? {slug: category_page.slug} : {})|merge({q: search, category: category, tag: tag, order: sort.value, page: page + 1})) }}">{{ 'Nächste Seite'|trans }}</a>{% endif %}
+                    </nav>
+                {% endif %}
+            </section>
+
+            <aside class="news-index-sidebar" aria-label="{{ 'News-Kategorien'|trans }}">
+                <section class="news-sidebar-panel" aria-labelledby="news-category-heading">
+                    <h2 id="news-category-heading">{{ 'Kategorien'|trans }}</h2>
+                    <nav class="category-directory" aria-label="{{ 'News-Kategorien'|trans }}">
+                        <ul>
+                            {% for option in categories %}
+                                <li class="category-level-{{ option.depth }}">
+                                    <a href="{{ path('news_category', {slug: option.slug}) }}">{{ option.name }}</a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </nav>
+                    <a class="news-feed-link" href="{{ path('news_feed') }}">{{ 'RSS-Feed abonnieren'|trans }}</a>
+                </section>
+            </aside>
         </div>
-        {% if page > 1 or has_next %}
-            <nav class="pagination" aria-label="{{ 'News-Seiten'|trans }}">
-                {% if page > 1 %}<a href="{{ path(category_page ? 'news_category' : 'news_index', (category_page ? {slug: category_page.slug} : {})|merge({q: search, category: category, tag: tag, order: sort.value, page: page - 1})) }}">{{ 'Vorherige Seite'|trans }}</a>{% endif %}
-                <span>{{ 'Seite %page%'|trans({'%page%': page}) }}</span>
-                {% if has_next %}<a href="{{ path(category_page ? 'news_category' : 'news_index', (category_page ? {slug: category_page.slug} : {})|merge({q: search, category: category, tag: tag, order: sort.value, page: page + 1})) }}">{{ 'Nächste Seite'|trans }}</a>{% endif %}
-            </nav>
-        {% endif %}
     </main>
 {% endblock %}

@@ -98,9 +98,18 @@ final class NewsArchiveSortFlowTest extends WebTestCase
             $publicCard = $archive->filterXPath(sprintf('//article[contains(@class, "content-card") and contains(., "%s")]', $publicTitle));
             $normalCard = $archive->filterXPath(sprintf('//article[contains(@class, "content-card") and contains(., "%s")]', $normalTitle));
             $membersCard = $archive->filterXPath(sprintf('//article[contains(@class, "content-card") and contains(., "%s")]', $memberTitle));
+            self::assertCount(1, $archive->filter('.news-index'));
+            self::assertCount(1, $archive->filter('.news-index-content .news-archive-grid'));
+            self::assertCount(1, $archive->filter('.news-index-sidebar .category-directory'));
+            self::assertCount(1, $archive->filter('.news-search-form input[name="q"]'));
+            self::assertCount(1, $archive->filter('.news-sidebar-panel .news-feed-link'));
             self::assertCount(1, $publicCard);
             self::assertCount(1, $normalCard);
             self::assertCount(1, $membersCard);
+            self::assertCount(1, $publicCard->filter('.news-card-image.news-card-image-placeholder'));
+            self::assertCount(1, $membersCard->filter('.news-card-image.news-card-image-placeholder'));
+            self::assertCount(0, $membersCard->filter('.news-card-image img'));
+            self::assertStringNotContainsString($memberBodyMarker, (string) $archive->html());
             self::assertSelectorExists('#news-order option[value="comments"]');
             self::assertCount(1, $publicCard->filter('.news-featured-badge'));
             self::assertSame('Hervorgehoben', $publicCard->filter('.news-featured-badge')->text());
