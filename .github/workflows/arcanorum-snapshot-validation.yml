@@ -46,6 +46,7 @@ on:
           - public-share-widget-followup
           - public-share-widget-testfix-followup
           - news-archive-filter-testfix-followup
+          - news-module-disabled-followup
           - video-report-heading-testfix-followup
           - admin-design-settings-followup
           - classic-public-shell-followup
@@ -2556,7 +2557,7 @@ jobs:
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
 
   validate-member-activity-focused:
-    if: github.event_name == 'workflow_dispatch' && (inputs.validation_scope == 'member-activity-focused' || inputs.validation_scope == 'member-activity-followup' || inputs.validation_scope == 'dashboard-latest-content' || inputs.validation_scope == 'dashboard-latest-content-followup' || inputs.validation_scope == 'admin-password-change-followup' || inputs.validation_scope == 'video-provider-player-followup' || inputs.validation_scope == 'auto-feature-threshold-followup' || inputs.validation_scope == 'public-share-widget-followup' || inputs.validation_scope == 'public-share-widget-testfix-followup' || inputs.validation_scope == 'news-archive-filter-testfix-followup' || inputs.validation_scope == 'video-report-heading-testfix-followup' || inputs.validation_scope == 'admin-design-settings-followup' || inputs.validation_scope == 'classic-public-shell-followup')
+    if: github.event_name == 'workflow_dispatch' && (inputs.validation_scope == 'member-activity-focused' || inputs.validation_scope == 'member-activity-followup' || inputs.validation_scope == 'dashboard-latest-content' || inputs.validation_scope == 'dashboard-latest-content-followup' || inputs.validation_scope == 'admin-password-change-followup' || inputs.validation_scope == 'video-provider-player-followup' || inputs.validation_scope == 'auto-feature-threshold-followup' || inputs.validation_scope == 'public-share-widget-followup' || inputs.validation_scope == 'public-share-widget-testfix-followup' || inputs.validation_scope == 'news-archive-filter-testfix-followup' || inputs.validation_scope == 'news-module-disabled-followup' || inputs.validation_scope == 'video-report-heading-testfix-followup' || inputs.validation_scope == 'admin-design-settings-followup' || inputs.validation_scope == 'classic-public-shell-followup')
     name: Focused regression checks
     runs-on: ubuntu-26.04
     timeout-minutes: 45
@@ -2603,7 +2604,7 @@ jobs:
       - name: Verify exact source commit and exclude credentials
         shell: bash
         env:
-          EXPECTED_SOURCE_SHA: ${{ (inputs.validation_scope == 'classic-public-shell-followup' || inputs.validation_scope == 'video-provider-player-followup' || inputs.validation_scope == 'news-archive-filter-testfix-followup') && inputs.source_commit || 'c96df1383aa1377bba3cf7ac3016a4ea5eb3742c' }}
+          EXPECTED_SOURCE_SHA: ${{ (inputs.validation_scope == 'classic-public-shell-followup' || inputs.validation_scope == 'video-provider-player-followup' || inputs.validation_scope == 'news-archive-filter-testfix-followup' || inputs.validation_scope == 'news-module-disabled-followup') && inputs.source_commit || 'c96df1383aa1377bba3cf7ac3016a4ea5eb3742c' }}
         run: |
           set -euo pipefail
           printf '%s\n' "$EXPECTED_SOURCE_SHA" | cmp -s - SOURCE_BASE_SHA
@@ -2648,7 +2649,7 @@ jobs:
           PY
 
       - name: Verify complete manifest for the News archive test correction
-        if: inputs.validation_scope == 'news-archive-filter-testfix-followup'
+        if: inputs.validation_scope == 'news-archive-filter-testfix-followup' || inputs.validation_scope == 'news-module-disabled-followup'
         run: |
           python3 - <<'PY'
           from hashlib import sha256
@@ -2694,7 +2695,7 @@ jobs:
           node-version: '24'
 
       - name: Validate and install locked Composer dependencies
-        if: inputs.validation_scope == 'member-activity-focused' || inputs.validation_scope == 'admin-password-change-followup' || inputs.validation_scope == 'video-provider-player-followup' || inputs.validation_scope == 'auto-feature-threshold-followup' || inputs.validation_scope == 'admin-design-settings-followup' || inputs.validation_scope == 'classic-public-shell-followup' || inputs.validation_scope == 'news-archive-filter-testfix-followup'
+        if: inputs.validation_scope == 'member-activity-focused' || inputs.validation_scope == 'admin-password-change-followup' || inputs.validation_scope == 'video-provider-player-followup' || inputs.validation_scope == 'auto-feature-threshold-followup' || inputs.validation_scope == 'admin-design-settings-followup' || inputs.validation_scope == 'classic-public-shell-followup' || inputs.validation_scope == 'news-archive-filter-testfix-followup' || inputs.validation_scope == 'news-module-disabled-followup'
         run: |
           touch .env
           composer validate --strict --no-interaction
@@ -2779,6 +2780,10 @@ jobs:
       - name: Check News archive filter regression syntax
         if: inputs.validation_scope == 'news-archive-filter-testfix-followup'
         run: php -l tests/Controller/NewsArchiveSortFlowTest.php
+
+      - name: Check News module availability regression syntax
+        if: inputs.validation_scope == 'news-module-disabled-followup'
+        run: php -l tests/Controller/NewsModuleAvailabilityFlowTest.php
 
       - name: Check video report share heading regression syntax
         if: inputs.validation_scope == 'video-report-heading-testfix-followup'
@@ -2924,6 +2929,16 @@ jobs:
           --error-format=table
           --memory-limit=1G
           tests/Controller/NewsArchiveSortFlowTest.php
+
+      - name: PHPStan on News module availability regression
+        if: inputs.validation_scope == 'news-module-disabled-followup'
+        run: >-
+          vendor/bin/phpstan analyse
+          --configuration=phpstan.neon.dist
+          --no-progress
+          --error-format=table
+          --memory-limit=1G
+          tests/Controller/NewsModuleAvailabilityFlowTest.php
 
       - name: PHPStan on administrator password change
         if: inputs.validation_scope == 'admin-password-change-followup'
@@ -3121,6 +3136,15 @@ jobs:
           --using-cache=no
           tests/Controller/NewsArchiveSortFlowTest.php
 
+      - name: PHP CS Fixer on News module availability regression
+        if: inputs.validation_scope == 'news-module-disabled-followup'
+        run: >-
+          vendor/bin/php-cs-fixer check
+          --config=.php-cs-fixer.dist.php
+          --diff
+          --using-cache=no
+          tests/Controller/NewsModuleAvailabilityFlowTest.php
+
       - name: PHP CS Fixer on video report share heading regression
         if: inputs.validation_scope == 'video-report-heading-testfix-followup'
         run: >-
@@ -3237,6 +3261,15 @@ jobs:
           --dry-run
           --no-progress-bar
 
+      - name: Rector dry run on News module availability regression
+        if: inputs.validation_scope == 'news-module-disabled-followup'
+        run: >-
+          vendor/bin/rector process
+          tests/Controller/NewsModuleAvailabilityFlowTest.php
+          --config=rector.php
+          --dry-run
+          --no-progress-bar
+
       - name: Rector dry run on corrected public display admin test
         if: inputs.validation_scope == 'public-share-widget-testfix-followup'
         run: >-
@@ -3280,6 +3313,13 @@ jobs:
           mkdir -p var/test-results
           vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm.sarif \
             tests/Controller/NewsArchiveSortFlowTest.php
+
+      - name: Psalm taint analysis on News module availability regression
+        if: inputs.validation_scope == 'news-module-disabled-followup'
+        run: |
+          mkdir -p var/test-results
+          vendor/bin/psalm --config=psalm.xml --taint-analysis --report=var/test-results/psalm.sarif \
+            tests/Controller/NewsModuleAvailabilityFlowTest.php
 
       - name: Psalm taint analysis on corrected public display admin test
         if: inputs.validation_scope == 'public-share-widget-testfix-followup'
@@ -3392,6 +3432,64 @@ jobs:
             echo 'News archive JUnit report completeness: FAIL; diagnostics withheld.'
             exit 1
           fi
+
+      - name: Run News module availability regression
+        if: inputs.validation_scope == 'news-module-disabled-followup'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p var/test-results
+          if php -d memory_limit=1G vendor/bin/phpunit --configuration=phpunit.dist.xml \
+            --fail-on-risky --fail-on-warning --fail-on-deprecation \
+            --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
+            --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
+            tests/Controller/NewsModuleAvailabilityFlowTest.php > var/test-results/phpunit.log 2>&1; then
+            echo 'News module availability PHPUnit regression: PASS; detailed results withheld.'
+          else
+            echo 'News module availability PHPUnit regression: FAIL; detailed results withheld.'
+            exit 1
+          fi
+
+      - name: Validate News module availability PHPUnit report completeness
+        if: inputs.validation_scope == 'news-module-disabled-followup'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml > var/test-results/junit-validation.log 2>&1; then
+            echo 'News module availability JUnit report completeness: PASS.'
+          else
+            echo 'News module availability JUnit report completeness: FAIL; diagnostics withheld.'
+            exit 1
+          fi
+
+      - name: Record sanitized News module availability failure coordinates
+        if: failure() && inputs.validation_scope == 'news-module-disabled-followup'
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import re
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          report = Path('var/test-results/junit.xml')
+          references = []
+          if report.is_file():
+              try:
+                  root = ET.parse(report).getroot()
+              except ET.ParseError:
+                  root = None
+              if root is not None:
+                  for issue in (node for node in root.iter() if node.tag in {'failure', 'error'}):
+                      details = issue.attrib.get('message', '') + ' ' + ''.join(issue.itertext())
+                      for source_path, line_number in re.findall(
+                          r'((?:src|tests)/[A-Za-z0-9_./-]+\.php):(\d+)', details,
+                      ):
+                          path = Path(source_path)
+                          reference = f'{path.name}:{line_number}'
+                          if '..' not in path.parts and reference not in references:
+                              references.append(reference)
+          print('Sanitized News module availability failure coordinates: ' + (', '.join(references[:6]) or 'unavailable'))
+          PY
 
       - name: Record sanitized News archive failure coordinates
         if: failure() && inputs.validation_scope == 'news-archive-filter-testfix-followup'
