@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Entity\CommentContentType;
+use App\Entity\ContentCategory;
+use App\Entity\ContentCategoryType;
 use App\Entity\ContentComment;
 use App\Entity\ContentTag;
 use App\Entity\NewsArticle;
@@ -153,6 +155,8 @@ final class NewsArchiveSortFlowTest extends WebTestCase
         $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
         self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
         $suffix = bin2hex(random_bytes(6));
+        $categoryName = 'Archive category '.$suffix;
+        $category = new ContentCategory($categoryName, ContentCategoryType::News);
         $tag = new ContentTag('archive-sort-'.$suffix);
         $articles = [];
 
@@ -160,7 +164,7 @@ final class NewsArchiveSortFlowTest extends WebTestCase
             $article = new NewsArticle(
                 'Archive sort search '.$suffix.' '.$index,
                 'archive-sort-'.$suffix.'-'.$index,
-                'Archive category '.$suffix,
+                $categoryName,
                 'Archive summary '.$suffix,
                 'Archive test body.',
                 PublishingStatus::Published,
@@ -172,6 +176,7 @@ final class NewsArchiveSortFlowTest extends WebTestCase
         }
 
         try {
+            $entityManager->persist($category);
             $entityManager->persist($tag);
             foreach ($articles as $article) {
                 $entityManager->persist($article);
@@ -184,7 +189,7 @@ final class NewsArchiveSortFlowTest extends WebTestCase
 
             $client->request('GET', '/news?'.http_build_query([
                 'q' => 'Archive sort search '.$suffix,
-                'category' => 'Archive category '.$suffix,
+                'category' => $categoryName,
                 'tag' => 'archive-sort-'.$suffix,
                 'order' => 'popular',
             ]));
@@ -197,14 +202,14 @@ final class NewsArchiveSortFlowTest extends WebTestCase
             $nextUrl = (string) $client->getCrawler()->filter('.pagination a')->last()->attr('href');
             parse_str((string) parse_url($nextUrl, PHP_URL_QUERY), $nextQuery);
             self::assertSame('Archive sort search '.$suffix, $nextQuery['q'] ?? null);
-            self::assertSame('Archive category '.$suffix, $nextQuery['category'] ?? null);
+            self::assertSame($categoryName, $nextQuery['category'] ?? null);
             self::assertSame('archive-sort-'.$suffix, $nextQuery['tag'] ?? null);
             self::assertSame('popular', $nextQuery['order'] ?? null);
             self::assertSame('2', $nextQuery['page'] ?? null);
 
             $client->request('GET', '/news?'.http_build_query([
                 'q' => 'Archive sort search '.$suffix,
-                'category' => 'Archive category '.$suffix,
+                'category' => $categoryName,
                 'tag' => 'archive-sort-'.$suffix,
                 'order' => 'comments',
                 'page' => '2',
@@ -215,14 +220,14 @@ final class NewsArchiveSortFlowTest extends WebTestCase
             $filterForm = $client->getCrawler()->filter('.content-search');
             self::assertSame('get', strtolower((string) $filterForm->attr('method')));
             self::assertSame('Archive sort search '.$suffix, $filterForm->filter('input[name="q"]')->attr('value'));
-            self::assertSame('Archive category '.$suffix, $filterForm->filter('#news-category option[selected]')->attr('value'));
+            self::assertSame($categoryName, $filterForm->filter('#news-category option[selected]')->attr('value'));
             self::assertSame('archive-sort-'.$suffix, $filterForm->filter('input[name="tag"]')->attr('value'));
             self::assertSame($selectedOrder, $filterForm->filter('#news-order option[selected]')->attr('value'));
             self::assertSame(0, $filterForm->filter('input[name="page"]')->count());
             $previousUrl = (string) $client->getCrawler()->filter('.pagination a')->first()->attr('href');
             parse_str((string) parse_url($previousUrl, PHP_URL_QUERY), $previousQuery);
             self::assertSame('Archive sort search '.$suffix, $previousQuery['q'] ?? null);
-            self::assertSame('Archive category '.$suffix, $previousQuery['category'] ?? null);
+            self::assertSame($categoryName, $previousQuery['category'] ?? null);
             self::assertSame('archive-sort-'.$suffix, $previousQuery['tag'] ?? null);
             self::assertSame($selectedOrder, $previousQuery['order'] ?? null);
             self::assertSame('1', $previousQuery['page'] ?? null);
@@ -233,6 +238,7 @@ final class NewsArchiveSortFlowTest extends WebTestCase
                 ['ids' => ArrayParameterType::STRING],
             );
             $entityManager->getConnection()->executeStatement('DELETE FROM content_tags WHERE id = :id', ['id' => $tag->getId()]);
+            $entityManager->getConnection()->executeStatement('DELETE FROM content_categories WHERE id = :id', ['id' => $category->getId()]);
         }
     }
 
