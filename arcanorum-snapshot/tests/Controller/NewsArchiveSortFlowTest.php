@@ -231,6 +231,28 @@ final class NewsArchiveSortFlowTest extends WebTestCase
             self::assertSame('archive-sort-'.$suffix, $previousQuery['tag'] ?? null);
             self::assertSame($selectedOrder, $previousQuery['order'] ?? null);
             self::assertSame('1', $previousQuery['page'] ?? null);
+
+            $client->request('GET', '/news/category/'.$category->getSlug().'?'.http_build_query([
+                'q' => 'Archive sort search '.$suffix,
+                'tag' => 'archive-sort-'.$suffix,
+                'order' => 'popular',
+                'page' => '2',
+            ]));
+            self::assertResponseIsSuccessful();
+            $categoryFilterForm = $client->getCrawler()->filter('.content-search');
+            self::assertSame('Archive sort search '.$suffix, $categoryFilterForm->filter('input[name="q"]')->attr('value'));
+            self::assertSame($categoryName, $categoryFilterForm->filter('#news-category option[selected]')->attr('value'));
+            self::assertSame('archive-sort-'.$suffix, $categoryFilterForm->filter('input[name="tag"]')->attr('value'));
+            self::assertSame('popular', $categoryFilterForm->filter('#news-order option[selected]')->attr('value'));
+            self::assertSame(0, $categoryFilterForm->filter('input[name="page"]')->count());
+            $categoryPreviousUrl = (string) $client->getCrawler()->filter('.pagination a')->first()->attr('href');
+            self::assertSame('/news/category/'.$category->getSlug(), parse_url($categoryPreviousUrl, PHP_URL_PATH));
+            parse_str((string) parse_url($categoryPreviousUrl, PHP_URL_QUERY), $categoryPreviousQuery);
+            self::assertSame('Archive sort search '.$suffix, $categoryPreviousQuery['q'] ?? null);
+            self::assertSame($categoryName, $categoryPreviousQuery['category'] ?? null);
+            self::assertSame('archive-sort-'.$suffix, $categoryPreviousQuery['tag'] ?? null);
+            self::assertSame('popular', $categoryPreviousQuery['order'] ?? null);
+            self::assertSame('1', $categoryPreviousQuery['page'] ?? null);
         } finally {
             $entityManager->getConnection()->executeStatement(
                 'DELETE FROM news_articles WHERE id IN (:ids)',
