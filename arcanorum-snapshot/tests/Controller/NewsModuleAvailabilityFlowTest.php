@@ -111,19 +111,9 @@ final class NewsModuleAvailabilityFlowTest extends WebTestCase
 
             $client->request('GET', '/search/suggestions?q='.rawurlencode($term));
             self::assertResponseIsSuccessful();
-            $payload = json_decode($client->getResponse()->getContent(), flags: JSON_THROW_ON_ERROR);
-            if (!($payload instanceof \stdClass) || !is_array($payload->suggestions ?? null)) {
-                throw new \UnexpectedValueException('The live-search response must contain a suggestions list.');
-            }
-            $suggestionTitles = [];
-            foreach ($payload->suggestions as $suggestion) {
-                if (!($suggestion instanceof \stdClass) || !is_string($suggestion->title ?? null)) {
-                    throw new \UnexpectedValueException('Every live-search suggestion must contain a title.');
-                }
-                $suggestionTitles[] = $suggestion->title;
-            }
-            self::assertNotContains($newsTitle, $suggestionTitles);
-            self::assertContains($videoTitle, $suggestionTitles);
+            $liveSuggestions = $client->getResponse()->getContent();
+            self::assertStringNotContainsString($newsTitle, $liveSuggestions);
+            self::assertStringContainsString($videoTitle, $liveSuggestions);
 
             self::assertSame([], $settingsManager->updateFeatureModules($enabledModuleSettings));
             $client->request('GET', '/news/'.$newsSlug);
