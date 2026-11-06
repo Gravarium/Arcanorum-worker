@@ -176,7 +176,6 @@ final class NewsModuleAvailabilityFlowTest extends WebTestCase
                 $body = $client->getResponse()->getContent();
                 self::assertIsString($body);
                 self::assertSame('', $body);
-                self::assertStringNotContainsString('Capability probe diagnostic marker', $body);
             }
         } finally {
             self::assertSame([], $settingsManager->updateFeatureModules($originalModuleSettings));
