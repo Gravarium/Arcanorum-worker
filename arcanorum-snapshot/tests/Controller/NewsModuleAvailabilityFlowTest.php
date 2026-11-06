@@ -9,6 +9,8 @@ use App\Entity\NewsArticle;
 use App\Entity\PublishingStatus;
 use App\Entity\Video;
 use App\Entity\VideoSourceType;
+use App\Platform\Hosting\CapabilityProbeInterface;
+use App\Platform\Hosting\HostingProfileDetector;
 use App\Service\SiteSettingsManager;
 use App\Service\SiteSettingsProvider;
 use Doctrine\ORM\EntityManagerInterface;
@@ -129,6 +131,53 @@ final class NewsModuleAvailabilityFlowTest extends WebTestCase
             $connection->executeStatement('DELETE FROM search_term_daily WHERE day = CURRENT_DATE AND term = :term', ['term' => $term]);
             $connection->executeStatement('DELETE FROM news_articles WHERE id = :id', ['id' => $article->getId()]);
             $connection->executeStatement('DELETE FROM videos WHERE id = :id', ['id' => $video->getId()]);
+        }
+    }
+
+    public function testNewsRoutesFailClosedWhenHostingCapabilityProbeThrows(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+
+        $container = $client->getContainer();
+        $settingsProvider = $container->get(SiteSettingsProvider::class);
+        $settingsManager = $container->get(SiteSettingsManager::class);
+        self::assertInstanceOf(SiteSettingsProvider::class, $settingsProvider);
+        self::assertInstanceOf(SiteSettingsManager::class, $settingsManager);
+
+        $originalModuleSettings = [];
+        foreach (FeatureModule::cases() as $module) {
+            $originalModuleSettings[$module->inputName()] = $settingsProvider->current()->isFeatureModuleEnabled($module) ? '1' : '0';
+        }
+
+        $enabledModuleSettings = $originalModuleSettings;
+        $enabledModuleSettings[FeatureModule::News->inputName()] = '1';
+
+        try {
+            self::assertSame([], $settingsManager->updateFeatureModules($enabledModuleSettings));
+
+            $throwingProbe = new class implements CapabilityProbeInterface {
+                public function probe(): iterable
+                {
+                    throw new \RuntimeException('Capability probe diagnostic marker.');
+                }
+            };
+            $container->set(HostingProfileDetector::class, new HostingProfileDetector([$throwingProbe]));
+
+            $client->request('GET', '/');
+            self::assertResponseIsSuccessful('A failed capability check must not disable the public platform home page.');
+            self::assertStringNotContainsString('Capability probe diagnostic marker', $client->getResponse()->getContent());
+
+            foreach (['/news', '/news/category/g54-unavailable', '/news/g54-unavailable', '/news.rss'] as $path) {
+                $client->request('GET', $path);
+                self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND, sprintf('Expected %s to remain unavailable.', $path));
+                self::assertPrivateNoStore($client->getResponse()->headers->get('Cache-Control'));
+                self::assertSame('noindex, nofollow', $client->getResponse()->headers->get('X-Robots-Tag'));
+                self::assertSame('', $client->getResponse()->getContent());
+                self::assertStringNotContainsString('Capability probe diagnostic marker', $client->getResponse()->getContent());
+            }
+        } finally {
+            self::assertSame([], $settingsManager->updateFeatureModules($originalModuleSettings));
         }
     }
 
