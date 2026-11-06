@@ -78,6 +78,12 @@ final class HomePageTest extends WebTestCase
         $settings = $settingsProvider->current();
         $originalVideoLimit = $settings->getHomepageVideoLimit();
         $originalNewsLimit = $settings->getHomepageNewsLimit();
+        $originalGeneralSettings = [
+            'site_name' => $settings->getSiteName(),
+            'tagline' => $settings->getTagline(),
+            'locale' => $settings->getDefaultLocale(),
+            'timezone' => $settings->getTimezone(),
+        ];
         $originalCommentSettings = [
             'comment_provider' => $settings->getCommentProvider()->value,
             'facebook_comments_app_id' => $settings->getFacebookCommentsAppId(),
@@ -195,7 +201,11 @@ final class HomePageTest extends WebTestCase
 
         try {
             self::assertSame([], $settingsManager->updateFeatureModules($enabledFeatureModules));
-            self::assertSame([], $settingsManager->update(['comment_provider' => CommentProvider::Native->value]));
+            self::assertSame([], $settingsManager->update([
+                ...$originalGeneralSettings,
+                ...$originalCommentSettings,
+                'comment_provider' => CommentProvider::Native->value,
+            ]));
             foreach ([...$videos, ...$articles, ...$comments] as $content) {
                 $entityManager->persist($content);
             }
@@ -295,6 +305,7 @@ final class HomePageTest extends WebTestCase
 
             self::assertSame([], $settingsManager->updateFeatureModules($enabledFeatureModules));
             self::assertSame([], $settingsManager->update([
+                ...$originalGeneralSettings,
                 'comment_provider' => CommentProvider::Disqus->value,
                 'disqus_comments_shortname' => 'homepage-news-test',
                 'cookie_consent_enabled' => '1',
@@ -324,7 +335,7 @@ final class HomePageTest extends WebTestCase
                 'homepage_news_limit' => (string) $originalNewsLimit,
             ]));
             self::assertSame([], $settingsManager->updateFeatureModules($originalFeatureModules));
-            self::assertSame([], $settingsManager->update($originalCommentSettings));
+            self::assertSame([], $settingsManager->update([...$originalGeneralSettings, ...$originalCommentSettings]));
         }
     }
 
