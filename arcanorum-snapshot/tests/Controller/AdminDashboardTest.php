@@ -4717,6 +4717,8 @@ final class AdminDashboardTest extends WebTestCase
             self::assertSame($png, $client->getResponse()->getContent());
 
             $client->request('GET', '/admin/videos/'.$video->getId().'/edit');
+            self::assertResponseIsSuccessful();
+            self::assertSelectorExists('img.video-thumbnail-admin[src="/admin/videos/'.$video->getId().'/thumbnail"]');
             $csrfToken = $client->getCrawler()
                 ->filter('form[action="/admin/videos/'.$video->getId().'/thumbnail"] input[name="_token"]')
                 ->eq(1)
@@ -4733,6 +4735,9 @@ final class AdminDashboardTest extends WebTestCase
             $storedVideo = $entityManager->getRepository(Video::class)->find($video->getId());
             self::assertInstanceOf(Video::class, $storedVideo);
             self::assertNull($storedVideo->getThumbnailObjectId());
+            $client->request('GET', '/admin/videos/'.$video->getId().'/edit');
+            self::assertResponseIsSuccessful();
+            self::assertSelectorNotExists('img.video-thumbnail-admin');
             $client->request('GET', '/admin/videos/'.$video->getId().'/thumbnail');
             self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
         } finally {
@@ -7869,6 +7874,199 @@ final class AdminDashboardTest extends WebTestCase
         } finally {
             $connection->delete('videos', ['title' => $validTitle]);
             $connection->delete('videos', ['title' => $invalidTitle]);
+            $this->removeUser($client, $email);
+        }
+    }
+
+    public function testAdminVideoFormCreatesAndAssignsCategoriesAtomicallyWithCompleteRoundTrip(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $client->getContainer()->set(
+            RuntimeAttestationReportProviderInterface::class,
+            new VerifiedRuntimeAttestationReportProvider(),
+        );
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        $connection = $entityManager->getConnection();
+
+        $marker = 'video-editor-roundtrip-'.bin2hex(random_bytes(6));
+        $email = $marker.'@example.test';
+        $password = 'VideoRoundTrip-'.bin2hex(random_bytes(6)).'-B8!';
+        $title = 'Round-trip video '.$marker;
+        $slug = 'round-trip-video-'.bin2hex(random_bytes(6));
+        $sourceUrl = 'https://www.youtube.com/watch?v='.substr(bin2hex(random_bytes(8)), 0, 11);
+        $tagName = 'roundtrip-'.$marker;
+        $categoryNames = ['Round-trip A '.$marker, 'Round-trip B '.$marker];
+        $categories = [
+            new ContentCategory($categoryNames[0], ContentCategoryType::Video),
+            new ContentCategory($categoryNames[1], ContentCategoryType::Video),
+        ];
+        $customFields = [
+            ['key' => 'Episode', 'value' => 'Season four'],
+            ['key' => 'License', 'value' => 'Editorial permission'],
+        ];
+        $initialDescription = 'All persisted editorial fields survive loading and a limited edit.';
+        $updatedDescription = 'Only this description changes.';
+        $publishAt = '2027-02-03T04:05';
+        $videoId = null;
+
+        try {
+            foreach ($categories as $category) {
+                $entityManager->persist($category);
+            }
+            $entityManager->flush();
+
+            $this->persistUser($client, $email, $password, ['ROLE_ADMIN']);
+            $this->submitLogin($client, $email, $password);
+            self::assertResponseRedirects('/admin');
+
+            $client->request('GET', '/admin/videos/new');
+            self::assertResponseIsSuccessful();
+            $token = $client->getCrawler()->filter('form[data-video-source-metadata] input[name="_token"]')->attr('value');
+            self::assertIsString($token);
+
+            $client->request('POST', '/admin/videos/new', [
+                '_token' => $token,
+                'title' => $title,
+                'slug' => $slug,
+                'description' => $initialDescription,
+                'category_ids_present' => '1',
+                'category_ids' => array_map(static fn (ContentCategory $category): string => $category->getId(), $categories),
+                'new_category_name' => '',
+                'new_category_slug' => '',
+                'tags' => $tagName,
+                'source_type' => 'embed',
+                'source_url' => $sourceUrl,
+                'duration_minutes' => '12',
+                'duration_seconds_part' => '34',
+                'status' => 'published',
+                'publish_at' => $publishAt,
+                'author_name' => 'Video Desk',
+                'language_code' => 'de-AT',
+                'featured' => '1',
+                'comments_enabled' => '1',
+                'members_only' => '0',
+                'embedding_enabled' => '1',
+                'view_count' => '93',
+                'embed_origins' => 'https://portal.example.test',
+                'custom_fields_present' => '1',
+                'custom_fields' => $customFields,
+            ]);
+            self::assertResponseRedirects('/admin/videos');
+
+            $videoId = $connection->fetchOne('SELECT id FROM videos WHERE slug = :slug', ['slug' => $slug]);
+            self::assertIsString($videoId);
+            $persistedBeforeEdit = $connection->fetchAssociative(
+                'SELECT title, slug, description, category, source_type, source_url, duration_seconds, status,
+                        published_at, author_name, language_code, featured, comments_enabled, members_only,
+                        embedding_enabled, view_count, embed_allowed_origins::text AS embed_allowed_origins,
+                        custom_fields::text AS custom_fields
+                   FROM videos WHERE id = :id',
+                ['id' => $videoId],
+            );
+            self::assertIsArray($persistedBeforeEdit);
+            self::assertSame($title, $persistedBeforeEdit['title']);
+            self::assertSame($slug, $persistedBeforeEdit['slug']);
+            self::assertSame($initialDescription, $persistedBeforeEdit['description']);
+            self::assertSame($categoryNames[0], $persistedBeforeEdit['category']);
+            self::assertSame('embed', $persistedBeforeEdit['source_type']);
+            self::assertSame($sourceUrl, $persistedBeforeEdit['source_url']);
+            self::assertSame('754', (string) $persistedBeforeEdit['duration_seconds']);
+            self::assertSame('published', $persistedBeforeEdit['status']);
+            self::assertSame('Video Desk', $persistedBeforeEdit['author_name']);
+            self::assertSame('de-AT', $persistedBeforeEdit['language_code']);
+            self::assertTrue((bool) $persistedBeforeEdit['featured']);
+            self::assertTrue((bool) $persistedBeforeEdit['comments_enabled']);
+            self::assertFalse((bool) $persistedBeforeEdit['members_only']);
+            self::assertTrue((bool) $persistedBeforeEdit['embedding_enabled']);
+            self::assertSame('93', (string) $persistedBeforeEdit['view_count']);
+            self::assertSame(
+                ['https://portal.example.test'],
+                json_decode((string) $persistedBeforeEdit['embed_allowed_origins'], true, 512, JSON_THROW_ON_ERROR),
+            );
+            self::assertSame(
+                $customFields,
+                json_decode((string) $persistedBeforeEdit['custom_fields'], true, 512, JSON_THROW_ON_ERROR),
+            );
+            self::assertNotNull($persistedBeforeEdit['published_at']);
+            self::assertSame(2, (int) $connection->fetchOne(
+                'SELECT COUNT(*) FROM video_categories WHERE video_id = :id',
+                ['id' => $videoId],
+            ));
+
+            $client->request('GET', '/admin/videos/'.$videoId.'/edit');
+            self::assertResponseIsSuccessful();
+            $crawler = $client->getCrawler();
+            self::assertSame($title, $crawler->filter('input[name="title"]')->attr('value'));
+            self::assertSame($slug, $crawler->filter('input[name="slug"]')->attr('value'));
+            self::assertSame($sourceUrl, $crawler->filter('input[name="source_url"]')->attr('value'));
+            self::assertSame($tagName, $crawler->filter('input[name="tags"]')->attr('value'));
+            self::assertSame('12', $crawler->filter('input[name="duration_minutes"]')->attr('value'));
+            self::assertSame('34', $crawler->filter('input[name="duration_seconds_part"]')->attr('value'));
+            self::assertSame($publishAt, $crawler->filter('input[name="publish_at"]')->attr('value'));
+            self::assertSame('Video Desk', $crawler->filter('input[name="author_name"]')->attr('value'));
+            self::assertSame('de-AT', $crawler->filter('input[name="language_code"]')->attr('value'));
+            self::assertSame('93', $crawler->filter('input[name="view_count"]')->attr('value'));
+            self::assertSame($initialDescription, $crawler->filter('textarea[name="description"]')->text());
+            self::assertSame('https://portal.example.test', $crawler->filter('textarea[name="embed_origins"]')->text());
+            self::assertSelectorExists('select[name="source_type"] option[value="embed"][selected]');
+            self::assertSelectorExists('select[name="status"] option[value="published"][selected]');
+            self::assertSelectorExists('input[name="featured"][checked]');
+            self::assertSelectorExists('input[name="comments_enabled"][checked]');
+            self::assertSelectorExists('input[name="members_only"][value="0"][checked]');
+            self::assertSelectorExists('input[name="embedding_enabled"][checked]');
+            foreach ($categories as $category) {
+                self::assertSelectorExists(sprintf('input[name="category_ids[]"][value="%s"][checked]', $category->getId()));
+            }
+            foreach ($customFields as $index => $field) {
+                self::assertSame(
+                    $field['key'],
+                    $crawler->filter(sprintf('input[name="custom_fields[%d][key]"]', $index))->attr('value'),
+                );
+                self::assertSame(
+                    $field['value'],
+                    $crawler->filter(sprintf('input[name="custom_fields[%d][value]"]', $index))->attr('value'),
+                );
+            }
+
+            $client->submitForm('Änderungen speichern', ['description' => $updatedDescription]);
+            self::assertResponseRedirects('/admin/videos');
+            $persistedAfterEdit = $connection->fetchAssociative(
+                'SELECT title, slug, description, category, source_type, source_url, duration_seconds, status,
+                        published_at, author_name, language_code, featured, comments_enabled, members_only,
+                        embedding_enabled, view_count, embed_allowed_origins::text AS embed_allowed_origins,
+                        custom_fields::text AS custom_fields
+                   FROM videos WHERE id = :id',
+                ['id' => $videoId],
+            );
+            self::assertIsArray($persistedAfterEdit);
+            $expectedAfterEdit = $persistedBeforeEdit;
+            $expectedAfterEdit['description'] = $updatedDescription;
+            self::assertSame(
+                $expectedAfterEdit,
+                $persistedAfterEdit,
+                'A description-only edit must preserve all other persisted video fields.',
+            );
+            self::assertSame(2, (int) $connection->fetchOne(
+                'SELECT COUNT(*) FROM video_categories WHERE video_id = :id',
+                ['id' => $videoId],
+            ));
+
+            $client->request('GET', '/admin/videos/'.$videoId.'/edit');
+            self::assertResponseIsSuccessful();
+            self::assertSame($updatedDescription, $client->getCrawler()->filter('textarea[name="description"]')->text());
+            self::assertSame($sourceUrl, $client->getCrawler()->filter('input[name="source_url"]')->attr('value'));
+        } finally {
+            $cleanupVideoId = $videoId ?? $connection->fetchOne('SELECT id FROM videos WHERE slug = :slug', ['slug' => $slug]);
+            if (is_string($cleanupVideoId)) {
+                $connection->delete('video_categories', ['video_id' => $cleanupVideoId]);
+                $connection->delete('videos', ['id' => $cleanupVideoId]);
+            }
+            foreach ($categories as $category) {
+                $connection->delete('content_categories', ['id' => $category->getId()]);
+            }
+            $connection->delete('content_tags', ['normalized_name' => $tagName]);
             $this->removeUser($client, $email);
         }
     }
