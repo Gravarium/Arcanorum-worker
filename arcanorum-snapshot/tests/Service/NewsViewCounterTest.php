@@ -10,6 +10,7 @@ use App\Platform\Security\RateLimitKeyFactory;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\RateLimiter\RateLimiterFactoryInterface;
 
 final class NewsViewCounterTest extends WebTestCase
@@ -44,7 +45,7 @@ final class NewsViewCounterTest extends WebTestCase
             self::assertSame('0', $entityManager->getConnection()->fetchOne('SELECT view_count::text FROM news_articles WHERE id = :id', ['id' => $restricted->getId()]));
 
             $client->request('GET', '/news/'.$draft->getSlug());
-            self::assertResponseNotFound();
+            self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
             self::assertSame('0', $entityManager->getConnection()->fetchOne('SELECT view_count::text FROM news_articles WHERE id = :id', ['id' => $draft->getId()]));
         } finally {
             $entityManager->getConnection()->executeStatement('DELETE FROM news_articles WHERE id IN (:ids)', [

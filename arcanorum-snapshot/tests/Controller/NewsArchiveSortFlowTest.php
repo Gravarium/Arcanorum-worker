@@ -116,7 +116,9 @@ final class NewsArchiveSortFlowTest extends WebTestCase
         $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
         self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
         $connection = $entityManager->getConnection();
-        $previousProvider = (string) $connection->fetchOne('SELECT comment_provider FROM site_settings WHERE id = 1');
+        $previousProviderValue = $connection->fetchOne('SELECT comment_provider FROM site_settings WHERE id = 1');
+        self::assertIsString($previousProviderValue);
+        $previousProvider = $previousProviderValue;
 
         try {
             $connection->executeStatement("UPDATE site_settings SET comment_provider = 'disqus' WHERE id = 1");
