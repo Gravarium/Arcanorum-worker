@@ -114,7 +114,7 @@ final class NewsArchiveSortFlowTest extends WebTestCase
             self::assertSame('/news/'.$publicArticle->getId().'/thumbnail', $publicThumbnailSource);
             self::assertCount(1, $membersCard->filter('.news-card-image.news-card-image-placeholder'));
             self::assertCount(0, $membersCard->filter('.news-card-image img'));
-            self::assertStringNotContainsString($memberBodyMarker, (string) $archive->html());
+            self::assertStringNotContainsString($memberBodyMarker, $archive->html());
             self::assertSelectorExists('#news-order option[value="comments"]');
             self::assertCount(1, $publicCard->filter('.news-featured-badge'));
             self::assertSame('Hervorgehoben', $publicCard->filter('.news-featured-badge')->text());
