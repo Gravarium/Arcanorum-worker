@@ -3,7 +3,7 @@
 {% block title %}{{ site_settings().siteName }} – {{ 'News und Videos'|trans }}{% endblock %}
 
 {% block stylesheets %}
-    <link rel="stylesheet" href="{{ asset('styles/portal-home.css') }}?v=20261106-2">
+    <link rel="stylesheet" href="{{ asset('styles/portal-home.css') }}?v=20261106-3">
     {% if featured_uses_videojs %}<link rel="stylesheet" href="{{ asset('third-party/video.js-8.23.4/video-js.min.css') }}">{% endif %}
 {% endblock %}
 
@@ -319,22 +319,34 @@
             <div class="portal-footer-grid">
                 <div class="portal-footer-brand">
                     <a href="{{ path('platform_home') }}">{{ site_settings().siteName }}</a>
-                    {% if site_settings().tagline is not empty %}<p>{{ site_settings().tagline }}</p>{% endif %}
+                    <span class="portal-footer-tagline">{{ site_settings().tagline is not empty ? site_settings().tagline : ('Gaming Universe'|trans) }}</span>
+                    <p>{{ 'Ein modulares Gaming-CMS für Communities, Spielewelten und redaktionelle Inhalte.'|trans }}</p>
                 </div>
-                <nav aria-label="{{ 'Hauptnavigation'|trans }}">
-                    <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
+                <nav aria-label="{{ 'Entdecken'|trans }}">
+                    <h2>{{ 'Entdecken'|trans }}</h2>
                     {% if module_enabled('news') %}<a href="{{ path('news_index') }}">{{ 'News'|trans }}</a>{% endif %}
+                    <a href="{{ path('video_index') }}">{{ 'Videos'|trans }}</a>
                     {% if module_enabled('series') %}<a href="{{ path('series_index') }}">{{ 'Serien'|trans }}</a>{% endif %}
                     {% if module_enabled('pages') %}<a href="{{ path('page_index') }}">{{ 'Seiten'|trans }}</a>{% endif %}
                 </nav>
-                <nav aria-label="{{ 'Mitglieder'|trans }}">
+                <nav aria-label="{{ 'Community'|trans }}">
+                    <h2>{{ 'Community'|trans }}</h2>
                     <a href="{{ path('public_member_index') }}">{{ 'Mitglieder'|trans }}</a>
                     {% if site_settings().isMemberRegistrationEnabled %}<a href="{{ path('member_register') }}">{{ 'Registrieren'|trans }}</a>{% endif %}
+                    {% if site_settings().isPublicVideoSubmissionsEnabled %}<a href="{{ path('public_video_submission_new') }}">{{ 'Video einreichen'|trans }}</a>{% endif %}
+                    {% if module_enabled('search') %}<a href="{{ path('public_search') }}">{{ 'Suche'|trans }}</a>{% endif %}
+                </nav>
+                <nav aria-label="{{ 'Service'|trans }}">
+                    <h2>{{ 'Service'|trans }}</h2>
                     {% if module_enabled('contact') %}<a href="{{ path('contact_new') }}">{{ 'Kontakt'|trans }}</a>{% endif %}
+                    <a href="{{ path('cookie_consent_preferences', {return_to: path('platform_home')}) }}">{{ 'Cookie-Einstellungen'|trans }}</a>
                     <a href="{{ path('content_sitemap') }}">{{ 'Sitemap'|trans }}</a>
                 </nav>
             </div>
-            <p class="portal-copyright">© {{ 'now'|date('Y') }} {{ site_settings().siteName }}</p>
+            <div class="portal-footer-bottom">
+                <p class="portal-copyright">© {{ 'now'|date('Y') }} {{ site_settings().siteName }} — {{ 'Design Concept'|trans }}</p>
+                <p class="portal-footer-note">{{ 'Demo · frei konfigurierbare Portal-Zonen'|trans }}</p>
+            </div>
         </footer>
     </div>
 {% endblock %}

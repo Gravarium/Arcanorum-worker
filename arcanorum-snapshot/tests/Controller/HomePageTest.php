@@ -60,10 +60,15 @@ final class HomePageTest extends WebTestCase
         self::assertSelectorExists('.portal-layout > aside[data-testid="home-left-rail"]');
         self::assertSelectorExists('.portal-layout > main[data-testid="home-main-column"]');
         self::assertSelectorExists('.portal-layout > aside[data-testid="home-right-rail"]');
+        self::assertSelectorExists('.portal-home > footer.portal-footer .portal-footer-brand');
+        self::assertSelectorTextContains('.portal-footer-grid nav[aria-label="Entdecken"]', 'Videos');
+        self::assertSelectorTextContains('.portal-footer-grid nav[aria-label="Community"]', 'Mitglieder');
+        self::assertSelectorTextContains('.portal-footer-grid nav[aria-label="Service"]', 'Cookie-Einstellungen');
+        self::assertSelectorExists('.portal-footer-bottom .portal-footer-note');
         self::assertSelectorTextContains('h1', 'Betritt eine');
         self::assertSelectorTextContains('h1', 'Geschichten.');
         self::assertSelectorTextContains('.portal-hero-intro', 'News, Gilden, Welten');
-        self::assertSelectorExists('link[rel="stylesheet"][href*="portal-home.css?v=20261106-2"]');
+        self::assertSelectorExists('link[rel="stylesheet"][href*="portal-home.css?v=20261106-3"]');
         self::assertSelectorTextContains('main', 'Neueste Videos');
     }
 

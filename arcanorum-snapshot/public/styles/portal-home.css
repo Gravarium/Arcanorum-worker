@@ -4,6 +4,11 @@ body.public-site:has(.portal-home) {
     color-scheme: dark;
 }
 
+body.public-site:has(.portal-home) .site-preferences,
+body.public-site:has(.portal-home) .site-view-preferences {
+    display: none;
+}
+
 html[data-public-theme] .portal-home[data-testid="home-portal"] {
     width: min(1170px, calc(100% - 2rem));
     max-width: 1170px;
@@ -745,7 +750,7 @@ html[data-public-theme] .portal-home .portal-footer {
 
 html[data-public-theme] .portal-home .portal-footer-grid {
     display: grid;
-    grid-template-columns: minmax(12rem, 1.4fr) repeat(2, minmax(9rem, 1fr));
+    grid-template-columns: minmax(15rem, 1.5fr) repeat(3, minmax(8rem, 1fr));
     gap: 1.5rem;
     width: 100%;
     max-width: none;
@@ -754,28 +759,60 @@ html[data-public-theme] .portal-home .portal-footer-grid {
 
 html[data-public-theme] .portal-home .portal-footer-brand > a {
     color: #f0d793;
-    font: 700 1.35rem Georgia, "Times New Roman", serif;
+    font: 700 1.4rem Georgia, "Times New Roman", serif;
     letter-spacing: 0.08em;
+    text-transform: uppercase;
 }
 
-html[data-public-theme] .portal-home .portal-footer-brand p,
+html[data-public-theme] .portal-home .portal-footer-tagline {
+    display: block;
+    margin-top: 0.2rem;
+    color: #83c5dc;
+    font-size: 0.58rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+}
+
+html[data-public-theme] .portal-home .portal-footer-brand p {
+    max-width: 17rem;
+    margin: 0.7rem 0 0;
+    color: #89877f;
+    font-size: 0.68rem;
+    line-height: 1.65;
+}
+
+html[data-public-theme] .portal-home .portal-footer-grid nav h2 {
+    margin: 0 0 0.7rem;
+    color: #f0d793;
+    font: 700 0.8rem Georgia, "Times New Roman", serif;
+}
+
 html[data-public-theme] .portal-home .portal-footer-grid nav a {
     color: #a9a397;
-    font-size: 0.75rem;
+    font-size: 0.68rem;
 }
 
 html[data-public-theme] .portal-home .portal-footer-grid nav {
     display: grid;
     align-content: start;
-    gap: 0.45rem;
+    gap: 0.55rem;
 }
 
-html[data-public-theme] .portal-home .portal-copyright {
+html[data-public-theme] .portal-home .portal-footer-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
     width: 100%;
     max-width: none;
     margin: 1.5rem 0 0;
     padding-top: 0.8rem;
     border-top: 1px solid rgb(255 255 255 / 7%);
+}
+
+html[data-public-theme] .portal-home .portal-copyright,
+html[data-public-theme] .portal-home .portal-footer-note {
+    margin: 0;
     color: #706c65;
     font-size: 0.65rem;
 }
@@ -942,6 +979,12 @@ html[data-public-theme] .portal-home .portal-copyright {
 
     html[data-public-theme] .portal-home .portal-footer-brand {
         grid-column: 1 / -1;
+    }
+
+    html[data-public-theme] .portal-home .portal-footer-bottom {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.4rem;
     }
 }
 
