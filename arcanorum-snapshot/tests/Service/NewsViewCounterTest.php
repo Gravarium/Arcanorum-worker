@@ -80,7 +80,7 @@ final class NewsViewCounterTest extends WebTestCase
         $request = Request::create('/news/example');
         $request->server->set('REMOTE_ADDR', '192.0.2.44');
         $articleId = 'news-article-private-id';
-        $key = (new RateLimitKeyFactory('test-news-rate-limit-secret'))->forIdentityAndIp($articleId, $request, 'news-view');
+        $key = new RateLimitKeyFactory('test-news-rate-limit-secret')->forIdentityAndIp($articleId, $request, 'news-view');
 
         self::assertMatchesRegularExpression('/\A[a-f0-9]{64}\z/D', $key);
         self::assertStringNotContainsString('192.0.2.44', $key);
