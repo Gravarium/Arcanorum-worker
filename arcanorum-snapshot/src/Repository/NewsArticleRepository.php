@@ -289,6 +289,61 @@ final class NewsArticleRepository extends ServiceEntityRepository
         return $article instanceof NewsArticle ? $article : null;
     }
 
+    /** @return list<NewsArticle> */
+    public function findRelatedPublished(NewsArticle $source, int $limit = 3): array
+    {
+        if ($limit <= 0) {
+            return [];
+        }
+
+        $tagIds = [];
+        foreach ($source->getTags() as $tag) {
+            $tagIds[] = $tag->getId();
+        }
+        $tagIds = array_values(array_unique($tagIds));
+        $category = mb_strtolower(trim($source->getCategory() ?? ''));
+        if ([] === $tagIds && '' === $category) {
+            return [];
+        }
+
+        $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $queryBuilder = $this->createQueryBuilder('related')
+            ->andWhere('related.status = :status')
+            ->andWhere('related.publishedAt IS NOT NULL')
+            ->andWhere('related.publishedAt <= :now')
+            ->andWhere('related.membersOnly = false')
+            ->andWhere('related.id <> :sourceId')
+            ->setParameter('status', PublishingStatus::Published)
+            ->setParameter('now', $now)
+            ->setParameter('sourceId', $source->getId());
+
+        $conditions = [];
+        if ('' !== $category) {
+            $conditions[] = 'LOWER(TRIM(related.category)) = :category';
+            $queryBuilder->setParameter('category', $category);
+        }
+        if ([] !== $tagIds) {
+            $taggedArticles = $this->getEntityManager()->createQueryBuilder()
+                ->select('taggedArticle.id')
+                ->from(NewsArticle::class, 'taggedArticle')
+                ->innerJoin('taggedArticle.tags', 'sharedTag')
+                ->andWhere('sharedTag.id IN (:tagIds)');
+            $conditions[] = 'related.id IN ('.$taggedArticles->getDQL().')';
+            $queryBuilder->setParameter('tagIds', $tagIds);
+        }
+        $queryBuilder->andWhere('('.implode(' OR ', $conditions).')');
+
+        /** @var list<NewsArticle> $articles */
+        $articles = $queryBuilder
+            ->orderBy('related.publishedAt', \SortDirection::Descending)
+            ->addOrderBy('related.id', \SortDirection::Ascending)
+            ->setMaxResults(min(3, $limit))
+            ->getQuery()
+            ->getResult();
+
+        return $articles;
+    }
+
     public function findOneBySlug(string $slug): ?NewsArticle
     {
         $article = $this->findOneBy(['slug' => $slug]);

@@ -50,6 +50,31 @@
                 </section>
             {% endif %}
         </article>
+        {% if related_articles is not empty %}
+            <section class="public-section news-related" aria-labelledby="news-related-heading">
+                <div class="public-section-heading">
+                    <h2 id="news-related-heading">{{ 'Weitere News'|trans }}</h2>
+                </div>
+                <div class="content-grid">
+                    {% for related_article in related_articles %}
+                        <article class="content-card news-related-card">
+                            <p class="card-kicker">{{ related_article.category ?? ('News'|trans) }}</p>
+                            {% if related_article.thumbnailObjectId %}
+                                <div class="news-related-image" aria-hidden="true">
+                                    <img src="{{ path('news_thumbnail', {id: related_article.id}) }}" alt="" loading="lazy" decoding="async">
+                                </div>
+                            {% endif %}
+                            <h3><a href="{{ path('news_show', {slug: related_article.slug}) }}">{{ related_article.title }}</a></h3>
+                            {% if related_article.summary %}<p>{{ related_article.summary }}</p>{% endif %}
+                            <div class="news-article-meta">
+                                <p class="byline">{{ 'Von %author%'|trans({'%author%': related_article.authorName}) }}</p>
+                                <time datetime="{{ related_article.publishedAt|date('c') }}">{{ related_article.publishedAt|date('d.m.Y') }}</time>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            </section>
+        {% endif %}
         {% if can_read_article and module_enabled('comments') %}<section class="comment-section" id="comments" aria-labelledby="comments-heading">
             <h2 id="comments-heading">{{ 'Kommentare'|trans }}</h2>
             {% if not article.commentsEnabled %}

@@ -1810,6 +1810,14 @@ h1 {
 .news-article-meta{display:flex;align-items:baseline;flex-wrap:wrap;gap:.25rem .75rem;margin-top:auto;padding-top:.65rem;border-top:1px solid #e1e6ef;color:#596783;font-size:.875rem}
 .news-article-meta .byline{margin:0}
 .news-article-meta time,.news-article-meta .news-reading-time,.news-article-meta .news-comment-count{margin:0;color:#596783;font-size:.85rem}
+.news-related{margin:2.5rem auto;max-width:70rem}
+.news-related-card{gap:.55rem}
+.news-related-card .card-kicker{margin:0;color:#66728a;font-size:.8rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.news-related-card h3{margin:0;font-size:1.1rem;line-height:1.35}
+.news-related-card>p:not(.card-kicker){margin:.15rem 0;color:var(--site-content-text);line-height:1.55}
+.news-related-image{display:block;overflow:hidden;aspect-ratio:16/9;border-radius:.55rem;background:#101820}
+.news-related-image img{display:block;width:100%;height:100%;object-fit:cover}
+.news-related-card .news-article-meta{margin-top:auto;padding-top:.55rem;font-size:.8rem}
 html[data-public-theme="arcanorum"] .news-featured-badge{border-color:#806a31;background:#3b321d;color:#f3d37a}
 html[data-public-theme="arcanorum"] .news-article-meta{border-color:#34373a;color:#b4bdc2}
 html[data-public-theme="arcanorum"] .news-article-meta time,html[data-public-theme="arcanorum"] .news-article-meta .news-reading-time,html[data-public-theme="arcanorum"] .news-article-meta .news-comment-count{color:#b4bdc2}

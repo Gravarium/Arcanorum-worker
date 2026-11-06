@@ -143,6 +143,9 @@ final class NewsPublicController extends AbstractController
         if ($canReadArticle && !$article->isMembersOnly()) {
             $viewCounter->record($article, $request);
         }
+        $relatedArticles = $canReadArticle && !$article->isMembersOnly()
+            ? $articles->findRelatedPublished($article, 3)
+            : [];
         $memberId = $member instanceof MemberAccount ? $member->getId() : null;
         $commentsAvailable = $canReadArticle && CommentProvider::Native === $settings->getCommentProvider();
         $commentCount = $commentsAvailable
@@ -168,6 +171,7 @@ final class NewsPublicController extends AbstractController
         $response = $this->render('news/show.html.twig', [
             'article' => $article,
             'can_read_article' => $canReadArticle,
+            'related_articles' => $relatedArticles,
             'comments' => $approvedComments,
             'comment_page' => $commentPage,
             'comment_page_count' => $commentPageCount,
