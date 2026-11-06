@@ -122,7 +122,9 @@ test('loads a private Vimeo video with one strictly validated privacy hash', () 
 
     state.button.click();
 
-    assert.equal(state.container.frame.src, source);
+    assert.equal(state.player.frame.src, source);
+    assert.equal(state.player.frame.referrerPolicy, 'no-referrer');
+    assert.deepEqual(state.player.frame.sandbox.values, ['allow-scripts', 'allow-same-origin', 'allow-presentation']);
     assert.equal(state.status.textContent, 'Provider loaded');
 });
 
@@ -132,7 +134,9 @@ test('loads a configured Dailymotion player with its required video identifier',
 
     state.button.click();
 
-    assert.equal(state.container.frame.src, source);
+    assert.equal(state.player.frame.src, source);
+    assert.equal(state.player.frame.referrerPolicy, 'no-referrer');
+    assert.deepEqual(state.player.frame.sandbox.values, ['allow-scripts', 'allow-same-origin', 'allow-presentation']);
     assert.equal(state.status.textContent, 'Provider loaded');
 });
 

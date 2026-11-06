@@ -35,6 +35,7 @@ on:
           - dashboard-latest-content-followup
           - admin-password-change-followup
           - video-provider-player-followup
+          - video-provider-player-javascript-testfix
           - video-thumbnail-concurrency-followup
           - private-artwork-concurrency-followup
           - site-logo-concurrency-followup
@@ -2555,6 +2556,96 @@ jobs:
             tests/Controller/GoogleAnalyticsConsentFlowTest.php \
             tests/Migration/GoogleAnalyticsSettingsMigrationTest.php
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
+
+  validate-provider-player-script-test:
+    if: github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'video-provider-player-javascript-testfix'
+    name: Provider player JavaScript regression
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Check out public validation branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Verify exact source snapshot and exclude credentials
+        shell: bash
+        env:
+          SOURCE_COMMIT: ${{ inputs.source_commit }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$SOURCE_COMMIT" =~ ^[0-9a-f]{40}$ ]]; then
+            echo 'The source commit must be a full lowercase Git SHA.' >&2
+            exit 1
+          fi
+          printf '%s\n' "$SOURCE_COMMIT" | cmp -s - arcanorum-snapshot/SOURCE_BASE_SHA
+          python3 - <<'PY'
+          from hashlib import sha256
+          from pathlib import Path
+          import re
+
+          root = Path('arcanorum-snapshot')
+          blocked = []
+          patterns = {
+              'private-key': re.compile(rb'-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----'),
+              'github-token': re.compile(rb'(?:gh[pousr]_[A-Za-z0-9_]{30,}|github_pat_[A-Za-z0-9_]{30,})'),
+              'aws-key': re.compile(rb'AKIA[0-9A-Z]{16}'),
+              'stripe-live': re.compile(rb'sk_live_[A-Za-z0-9]{16,}'),
+              'slack-token': re.compile(rb'xox[baprs]-[A-Za-z0-9-]{20,}'),
+          }
+          matches = []
+          for path in root.rglob('*'):
+              if path.is_symlink():
+                  raise SystemExit(f'Snapshot contains a symbolic link: {path.relative_to(root)}')
+              if not path.is_file():
+                  continue
+              relative = path.relative_to(root).as_posix()
+              if (path.name.startswith('.env')
+                  or '/secrets/' in f'/{relative}/'
+                  or relative.startswith(('var/', 'vendor/', 'node_modules/', 'logs/', 'test-results/', 'coverage/', 'public/uploads/', 'storage/private/', 'backups/'))
+                  or path.suffix.lower() in {'.pem', '.p12', '.key', '.sql', '.dump', '.sqlite', '.db'}):
+                  blocked.append(relative)
+              data = path.read_bytes()
+              for name, pattern in patterns.items():
+                  if pattern.search(data):
+                      matches.append((name, relative))
+
+          if blocked or matches:
+              for relative in blocked:
+                  print(f'Forbidden file path: {relative}')
+              for name, relative in matches:
+                  print(f'Credential pattern {name} in {relative}')
+              raise SystemExit('Snapshot security check failed.')
+
+          manifest_path = root / 'SOURCE_MANIFEST.sha256'
+          manifest = {}
+          for line in manifest_path.read_text(encoding='utf-8').splitlines():
+              digest, separator, relative = line.partition('  ')
+              path = Path(relative)
+              if (not separator or not re.fullmatch(r'[a-f0-9]{64}', digest)
+                      or not relative or path.is_absolute() or '..' in path.parts
+                      or relative in manifest):
+                  raise SystemExit('The source manifest contains an invalid entry.')
+              manifest[relative] = digest
+
+          actual = {}
+          for path in root.rglob('*'):
+              if path.is_file() and path.name not in {'SOURCE_BASE_SHA', 'SOURCE_MANIFEST.sha256'}:
+                  actual[path.relative_to(root).as_posix()] = sha256(path.read_bytes()).hexdigest()
+          if actual != manifest:
+              raise SystemExit('The source snapshot does not match its complete file manifest.')
+          print(f'Source snapshot passed: {len(actual)} files match; no blocked paths or high-confidence credentials.')
+          PY
+
+      - name: Set up Node 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+
+      - name: Run provider player browser-script regressions
+        run: node --test arcanorum-snapshot/tests/JavaScript/provider-embed-consent.test.mjs
 
   validate-member-activity-focused:
     if: github.event_name == 'workflow_dispatch' && (inputs.validation_scope == 'member-activity-focused' || inputs.validation_scope == 'member-activity-followup' || inputs.validation_scope == 'dashboard-latest-content' || inputs.validation_scope == 'dashboard-latest-content-followup' || inputs.validation_scope == 'admin-password-change-followup' || inputs.validation_scope == 'video-provider-player-followup' || inputs.validation_scope == 'auto-feature-threshold-followup' || inputs.validation_scope == 'public-share-widget-followup' || inputs.validation_scope == 'public-share-widget-testfix-followup' || inputs.validation_scope == 'news-archive-filter-testfix-followup' || inputs.validation_scope == 'news-module-disabled-followup' || inputs.validation_scope == 'video-report-heading-testfix-followup' || inputs.validation_scope == 'admin-design-settings-followup' || inputs.validation_scope == 'classic-public-shell-followup')
