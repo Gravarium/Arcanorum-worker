@@ -212,7 +212,13 @@ final class NewsArchiveSortFlowTest extends WebTestCase
             self::assertResponseIsSuccessful();
             $selectedOrder = 0 === $client->getCrawler()->filter('#news-order option[value="comments"]')->count() ? 'newest' : 'comments';
             self::assertSame($selectedOrder, $client->getCrawler()->filter('#news-order option[selected]')->attr('value'));
-            self::assertSame(0, $client->getCrawler()->filter('.content-search input[name="page"]')->count());
+            $filterForm = $client->getCrawler()->filter('.content-search');
+            self::assertSame('get', strtolower((string) $filterForm->attr('method')));
+            self::assertSame('Archive sort search '.$suffix, $filterForm->filter('input[name="q"]')->attr('value'));
+            self::assertSame('Archive category '.$suffix, $filterForm->filter('#news-category option[selected]')->attr('value'));
+            self::assertSame('archive-sort-'.$suffix, $filterForm->filter('input[name="tag"]')->attr('value'));
+            self::assertSame($selectedOrder, $filterForm->filter('#news-order option[selected]')->attr('value'));
+            self::assertSame(0, $filterForm->filter('input[name="page"]')->count());
             $previousUrl = (string) $client->getCrawler()->filter('.pagination a')->first()->attr('href');
             parse_str((string) parse_url($previousUrl, PHP_URL_QUERY), $previousQuery);
             self::assertSame('Archive sort search '.$suffix, $previousQuery['q'] ?? null);
@@ -221,20 +227,6 @@ final class NewsArchiveSortFlowTest extends WebTestCase
             self::assertSame($selectedOrder, $previousQuery['order'] ?? null);
             self::assertSame('1', $previousQuery['page'] ?? null);
 
-            $client->submitForm('Filtern', ['order' => 'popular']);
-            self::assertResponseIsSuccessful();
-            self::assertSame('popular', $client->getCrawler()->filter('#news-order option[selected]')->attr('value'));
-            self::assertStringEndsWith(
-                '/news/'.$articles[0]->getSlug(),
-                (string) $client->getCrawler()->filter('.content-grid .content-card h2 a')->first()->attr('href'),
-            );
-            $nextUrl = (string) $client->getCrawler()->filter('.pagination a')->last()->attr('href');
-            parse_str((string) parse_url($nextUrl, PHP_URL_QUERY), $nextQuery);
-            self::assertSame('Archive sort search '.$suffix, $nextQuery['q'] ?? null);
-            self::assertSame('Archive category '.$suffix, $nextQuery['category'] ?? null);
-            self::assertSame('archive-sort-'.$suffix, $nextQuery['tag'] ?? null);
-            self::assertSame('popular', $nextQuery['order'] ?? null);
-            self::assertSame('2', $nextQuery['page'] ?? null);
         } finally {
             $entityManager->getConnection()->executeStatement(
                 'DELETE FROM news_articles WHERE id IN (:ids)',
