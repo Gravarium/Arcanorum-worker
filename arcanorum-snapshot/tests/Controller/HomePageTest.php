@@ -25,6 +25,7 @@ use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\NamespacedPoolInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class HomePageTest extends WebTestCase
 {
@@ -70,6 +71,46 @@ final class HomePageTest extends WebTestCase
         self::assertSelectorTextContains('.portal-hero-intro', 'News, Gilden, Welten');
         self::assertSelectorExists('link[rel="stylesheet"][href*="portal-home.css?v=20261106-3"]');
         self::assertSelectorTextContains('main', 'Neueste Videos');
+    }
+
+    public function testPortalFooterTranslationsLoadForEverySupportedLocale(): void
+    {
+        static::createClient();
+        $translator = static::getContainer()->get(TranslatorInterface::class);
+        self::assertInstanceOf(TranslatorInterface::class, $translator);
+
+        $translations = [
+            'de' => [
+                'Entdecken' => 'Entdecken',
+                'Community' => 'Community',
+                'Service' => 'Service',
+                'Ein modulares Gaming-CMS für Communities, Spielewelten und redaktionelle Inhalte.' => 'Ein modulares Gaming-CMS für Communities, Spielewelten und redaktionelle Inhalte.',
+                'Design Concept' => 'Design Concept',
+                'Demo · frei konfigurierbare Portal-Zonen' => 'Demo · frei konfigurierbare Portal-Zonen',
+            ],
+            'en' => [
+                'Entdecken' => 'Explore',
+                'Community' => 'Community',
+                'Service' => 'Service',
+                'Ein modulares Gaming-CMS für Communities, Spielewelten und redaktionelle Inhalte.' => 'A modular gaming CMS for communities, game worlds, and editorial content.',
+                'Design Concept' => 'Design concept',
+                'Demo · frei konfigurierbare Portal-Zonen' => 'Demo · freely configurable portal sections',
+            ],
+            'ar' => [
+                'Entdecken' => 'استكشف',
+                'Community' => 'المجتمع',
+                'Service' => 'الخدمة',
+                'Ein modulares Gaming-CMS für Communities, Spielewelten und redaktionelle Inhalte.' => 'نظام إدارة محتوى ألعاب معياري للمجتمعات وعوالم الألعاب والمحتوى التحريري.',
+                'Design Concept' => 'تصميم تجريبي',
+                'Demo · frei konfigurierbare Portal-Zonen' => 'عرض توضيحي · أقسام بوابة قابلة للتخصيص بحرية',
+            ],
+        ];
+
+        foreach ($translations as $locale => $messages) {
+            foreach ($messages as $message => $expected) {
+                self::assertSame($expected, $translator->trans($message, [], 'messages', $locale));
+            }
+        }
     }
 
     public function testHomeCardsUseLocalArtworkWithoutExposingMemberThumbnails(): void
