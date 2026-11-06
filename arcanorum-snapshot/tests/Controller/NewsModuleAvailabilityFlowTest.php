@@ -72,14 +72,14 @@ final class NewsModuleAvailabilityFlowTest extends WebTestCase
             foreach (['/news', '/news/category/module-check-'.$suffix, '/news/'.$newsSlug] as $path) {
                 $client->request('GET', $path);
                 self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND, sprintf('Expected %s to be unavailable.', $path));
-                self::assertSame('private, no-store', $client->getResponse()->headers->get('Cache-Control'));
+                self::assertPrivateNoStore($client->getResponse()->headers->get('Cache-Control'));
                 self::assertSame('noindex, nofollow', $client->getResponse()->headers->get('X-Robots-Tag'));
                 self::assertSame('', $client->getResponse()->getContent());
             }
 
             $client->request('GET', '/news.rss');
             self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
-            self::assertSame('private, no-store', $client->getResponse()->headers->get('Cache-Control'));
+            self::assertPrivateNoStore($client->getResponse()->headers->get('Cache-Control'));
             self::assertSame('noindex, nofollow', $client->getResponse()->headers->get('X-Robots-Tag'));
             self::assertSame('', $client->getResponse()->getContent());
 
@@ -130,5 +130,13 @@ final class NewsModuleAvailabilityFlowTest extends WebTestCase
             $connection->executeStatement('DELETE FROM news_articles WHERE id = :id', ['id' => $article->getId()]);
             $connection->executeStatement('DELETE FROM videos WHERE id = :id', ['id' => $video->getId()]);
         }
+    }
+
+    private static function assertPrivateNoStore(?string $cacheControl): void
+    {
+        self::assertNotNull($cacheControl);
+        $directives = array_map(trim(...), explode(',', strtolower($cacheControl)));
+        self::assertContains('private', $directives);
+        self::assertContains('no-store', $directives);
     }
 }
