@@ -18,7 +18,6 @@ use App\Entity\VideoSourceType;
 use App\Module\Video\Service\VideoStreamSourceResolver;
 use App\Platform\Hosting\HostingCachePoolProvider;
 use App\Repository\ContentTagRepository;
-use App\Repository\NewsArticleRepository;
 use App\Service\SiteSettingsManager;
 use App\Service\SiteSettingsProvider;
 use Doctrine\ORM\EntityManagerInterface;
