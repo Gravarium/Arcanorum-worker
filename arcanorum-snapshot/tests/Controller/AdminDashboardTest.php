@@ -7972,7 +7972,7 @@ final class AdminDashboardTest extends WebTestCase
             self::assertSame($categoryNames[0], $persistedBeforeEdit['category']);
             self::assertSame('embed', $persistedBeforeEdit['source_type']);
             self::assertSame($sourceUrl, $persistedBeforeEdit['source_url']);
-            self::assertSame('754', (string) $persistedBeforeEdit['duration_seconds']);
+            self::assertTrue(in_array($persistedBeforeEdit['duration_seconds'], [754, '754'], true));
             self::assertSame('published', $persistedBeforeEdit['status']);
             self::assertSame('Video Desk', $persistedBeforeEdit['author_name']);
             self::assertSame('de-AT', $persistedBeforeEdit['language_code']);
@@ -7980,20 +7980,25 @@ final class AdminDashboardTest extends WebTestCase
             self::assertTrue((bool) $persistedBeforeEdit['comments_enabled']);
             self::assertFalse((bool) $persistedBeforeEdit['members_only']);
             self::assertTrue((bool) $persistedBeforeEdit['embedding_enabled']);
-            self::assertSame('93', (string) $persistedBeforeEdit['view_count']);
+            self::assertTrue(in_array($persistedBeforeEdit['view_count'], [93, '93'], true));
+            $embedOriginsJson = $persistedBeforeEdit['embed_allowed_origins'];
+            self::assertIsString($embedOriginsJson);
             self::assertSame(
                 ['https://portal.example.test'],
-                json_decode((string) $persistedBeforeEdit['embed_allowed_origins'], true, 512, JSON_THROW_ON_ERROR),
+                json_decode($embedOriginsJson, true, 512, JSON_THROW_ON_ERROR),
             );
+            $customFieldsJson = $persistedBeforeEdit['custom_fields'];
+            self::assertIsString($customFieldsJson);
             self::assertSame(
                 $customFields,
-                json_decode((string) $persistedBeforeEdit['custom_fields'], true, 512, JSON_THROW_ON_ERROR),
+                json_decode($customFieldsJson, true, 512, JSON_THROW_ON_ERROR),
             );
             self::assertNotNull($persistedBeforeEdit['published_at']);
-            self::assertSame(2, (int) $connection->fetchOne(
+            $categoryCount = $connection->fetchOne(
                 'SELECT COUNT(*) FROM video_categories WHERE video_id = :id',
                 ['id' => $videoId],
-            ));
+            );
+            self::assertTrue(in_array($categoryCount, [2, '2'], true));
 
             $client->request('GET', '/admin/videos/'.$videoId.'/edit');
             self::assertResponseIsSuccessful();
@@ -8048,10 +8053,11 @@ final class AdminDashboardTest extends WebTestCase
                 $persistedAfterEdit,
                 'A description-only edit must preserve all other persisted video fields.',
             );
-            self::assertSame(2, (int) $connection->fetchOne(
+            $categoryCount = $connection->fetchOne(
                 'SELECT COUNT(*) FROM video_categories WHERE video_id = :id',
                 ['id' => $videoId],
-            ));
+            );
+            self::assertTrue(in_array($categoryCount, [2, '2'], true));
 
             $client->request('GET', '/admin/videos/'.$videoId.'/edit');
             self::assertResponseIsSuccessful();
