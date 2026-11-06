@@ -173,8 +173,10 @@ final class NewsModuleAvailabilityFlowTest extends WebTestCase
                 self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND, sprintf('Expected %s to remain unavailable.', $path));
                 self::assertPrivateNoStore($client->getResponse()->headers->get('Cache-Control'));
                 self::assertSame('noindex, nofollow', $client->getResponse()->headers->get('X-Robots-Tag'));
-                self::assertSame('', $client->getResponse()->getContent());
-                self::assertStringNotContainsString('Capability probe diagnostic marker', $client->getResponse()->getContent());
+                $body = $client->getResponse()->getContent();
+                self::assertIsString($body);
+                self::assertSame('', $body);
+                self::assertStringNotContainsString('Capability probe diagnostic marker', $body);
             }
         } finally {
             self::assertSame([], $settingsManager->updateFeatureModules($originalModuleSettings));
