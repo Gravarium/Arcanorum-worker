@@ -140,6 +140,14 @@ final class NewsModuleAvailabilityFlowTest extends WebTestCase
         $client->disableReboot();
 
         $container = $client->getContainer();
+        $throwingProbe = new class implements CapabilityProbeInterface {
+            public function probe(): iterable
+            {
+                throw new \RuntimeException('Capability probe diagnostic marker.');
+            }
+        };
+        $container->set(HostingProfileDetector::class, new HostingProfileDetector([$throwingProbe]));
+
         $settingsProvider = $container->get(SiteSettingsProvider::class);
         $settingsManager = $container->get(SiteSettingsManager::class);
         self::assertInstanceOf(SiteSettingsProvider::class, $settingsProvider);
@@ -155,14 +163,6 @@ final class NewsModuleAvailabilityFlowTest extends WebTestCase
 
         try {
             self::assertSame([], $settingsManager->updateFeatureModules($enabledModuleSettings));
-
-            $throwingProbe = new class implements CapabilityProbeInterface {
-                public function probe(): iterable
-                {
-                    throw new \RuntimeException('Capability probe diagnostic marker.');
-                }
-            };
-            $container->set(HostingProfileDetector::class, new HostingProfileDetector([$throwingProbe]));
 
             $client->request('GET', '/');
             self::assertResponseIsSuccessful('A failed capability check must not disable the public platform home page.');
