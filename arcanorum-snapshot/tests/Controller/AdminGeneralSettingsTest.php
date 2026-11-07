@@ -753,7 +753,8 @@ final class AdminGeneralSettingsTest extends WebTestCase
             $client->request('GET', '/');
             self::assertResponseIsSuccessful();
             self::assertStringContainsString('<html lang="en"', (string) $client->getResponse()->getContent());
-            self::assertSelectorTextContains('#home-site-heading', 'Arcanorum');
+            self::assertSelectorTextContains('.public-brand-name', 'Arcanorum');
+            self::assertSelectorTextContains('#home-site-heading', 'Enter a');
 
             $client->request('GET', '/admin/settings/general');
             self::assertResponseIsSuccessful();

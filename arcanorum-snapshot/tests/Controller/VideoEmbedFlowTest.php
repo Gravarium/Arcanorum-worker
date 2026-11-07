@@ -101,7 +101,14 @@ final class VideoEmbedFlowTest extends WebTestCase
         self::assertInstanceOf(SiteSettingsManager::class, $settingsManager);
         self::assertInstanceOf(CookieConsentService::class, $consent);
 
-        $previousConsentSetting = $settings->current()->isCookieConsentEnabled();
+        $currentSettings = $settings->current();
+        $previousConsentSetting = $currentSettings->isCookieConsentEnabled();
+        $requiredGeneralSettings = [
+            'site_name' => $currentSettings->getSiteName(),
+            'tagline' => $currentSettings->getTagline(),
+            'locale' => $currentSettings->getDefaultLocale(),
+            'timezone' => $currentSettings->getTimezone(),
+        ];
         $video = new Video(
             'Consent-approved inline player '.bin2hex(random_bytes(6)),
             'Saved optional consent should load the validated provider iframe in the video player.',
@@ -114,7 +121,10 @@ final class VideoEmbedFlowTest extends WebTestCase
         );
 
         try {
-            self::assertSame([], $settingsManager->update(['cookie_consent_enabled' => '1']));
+            self::assertSame([], $settingsManager->update([
+                ...$requiredGeneralSettings,
+                'cookie_consent_enabled' => '1',
+            ]));
             $signedCookie = $consent->createConsentCookie(Request::create('http://localhost'), 'all');
             $client->getCookieJar()->set(new BrowserCookie(
                 $signedCookie->getName(),
@@ -144,7 +154,10 @@ final class VideoEmbedFlowTest extends WebTestCase
             );
         } finally {
             try {
-                $settingsManager->update(['cookie_consent_enabled' => $previousConsentSetting ? '1' : '0']);
+                $settingsManager->update([
+                    ...$requiredGeneralSettings,
+                    'cookie_consent_enabled' => $previousConsentSetting ? '1' : '0',
+                ]);
             } finally {
                 $entityManager->getConnection()->executeStatement(
                     'DELETE FROM videos WHERE id = :id',
