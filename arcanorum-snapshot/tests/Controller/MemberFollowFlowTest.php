@@ -310,8 +310,9 @@ final class MemberFollowFlowTest extends WebTestCase
             $client->request('GET', '/konto/folgen?view=feed');
             self::assertResponseIsSuccessful();
             $filteredFeed = (string) $client->getResponse()->getContent();
-            self::assertStringNotContainsString($publicVideo->getTitle(), $filteredFeed);
-            self::assertStringNotContainsString($publicPlaylist->getName(), $filteredFeed);
+            self::assertStringNotContainsString('hat ein Video veröffentlicht:', $filteredFeed);
+            self::assertStringNotContainsString('hat eine öffentliche Wiedergabeliste aktualisiert:', $filteredFeed);
+            self::assertStringContainsString($publicVideo->getTitle(), $filteredFeed);
             self::assertStringContainsString('hat ein veröffentlichtes Video kommentiert:', $filteredFeed);
 
             $socialDisabledSettings = [...$originalModuleSettings, ...$originalSocialSettings];
