@@ -11,7 +11,7 @@ final readonly class BuiltInModule
 {
     /**
      * @param list<HostingCapability> $requiredCapabilities
-     * @param list<class-string> $controllerClasses
+     * @param list<class-string>      $controllerClasses
      */
     public function __construct(
         public string $id,

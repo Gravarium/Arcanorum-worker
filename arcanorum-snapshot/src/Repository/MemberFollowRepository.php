@@ -8,8 +8,8 @@ use App\Entity\MemberAccount;
 use App\Entity\MemberActivityType;
 use App\Entity\MemberFollow;
 use App\Entity\MemberFollowResult;
-use Doctrine\DBAL\Connection;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -265,6 +265,7 @@ final class MemberFollowRepository extends ServiceEntityRepository
 
     /**
      * @param list<mixed>|null $enabledTypes
+     *
      * @return list<array{
      *     kind: string,
      *     occurred_at: \DateTimeImmutable,
