@@ -78,14 +78,27 @@ final class MemberFollowRepository extends ServiceEntityRepository
                 return MemberFollowResult::AlreadyFollowing;
             }
 
-            if (0 === $maximumFollowing || (int) $connection->fetchOne(
+            if (0 === $maximumFollowing) {
+                return MemberFollowResult::LimitReached;
+            }
+
+            $visibleFollowingCountValue = $connection->fetchOne(
                 'SELECT COUNT(*) FROM member_follows relation '
                 .'INNER JOIN member_accounts followed ON followed.id = relation.followed_id '
                 .'WHERE relation.follower_id = :follower_id AND followed.is_active = TRUE '
                 .'AND followed.email_verified = TRUE AND followed.public_profile = TRUE',
                 ['follower_id' => $followerId],
                 ['follower_id' => Types::STRING],
-            ) >= $maximumFollowing) {
+            );
+            if (!is_int($visibleFollowingCountValue) && !is_string($visibleFollowingCountValue)) {
+                throw new \UnexpectedValueException('Die Anzahl sichtbarer Folgebeziehungen konnte nicht ausgewertet werden.');
+            }
+            $visibleFollowingCountText = (string) $visibleFollowingCountValue;
+            if (!ctype_digit($visibleFollowingCountText)) {
+                throw new \UnexpectedValueException('Die Anzahl sichtbarer Folgebeziehungen ist ungültig.');
+            }
+
+            if ((int) $visibleFollowingCountText >= $maximumFollowing) {
                 return MemberFollowResult::LimitReached;
             }
 
@@ -115,11 +128,13 @@ final class MemberFollowRepository extends ServiceEntityRepository
                 return MemberFollowResult::Added;
             }
 
-            return false !== $connection->fetchOne(
-                'SELECT 1 FROM member_follows WHERE follower_id = :follower_id AND followed_id = :followed_id',
+            $existingFollow = $connection->fetchAssociative(
+                'SELECT 1 AS followed FROM member_follows WHERE follower_id = :follower_id AND followed_id = :followed_id',
                 ['follower_id' => $followerId, 'followed_id' => $followedId],
                 ['follower_id' => Types::STRING, 'followed_id' => Types::STRING],
-            ) ? MemberFollowResult::AlreadyFollowing : MemberFollowResult::Unavailable;
+            );
+
+            return is_array($existingFollow) ? MemberFollowResult::AlreadyFollowing : MemberFollowResult::Unavailable;
         });
     }
 
@@ -249,6 +264,7 @@ final class MemberFollowRepository extends ServiceEntityRepository
     }
 
     /**
+     * @param list<mixed>|null $enabledTypes
      * @return list<array{
      *     kind: string,
      *     occurred_at: \DateTimeImmutable,
@@ -260,7 +276,6 @@ final class MemberFollowRepository extends ServiceEntityRepository
      *     target_title: string
      * }>
      */
-    /** @param list<MemberActivityType>|null $enabledTypes */
     public function findPublicActivityFor(MemberAccount $viewer, int $limit, int $offset, ?array $enabledTypes = null): array
     {
         $enabledTypes ??= MemberActivityType::cases();
