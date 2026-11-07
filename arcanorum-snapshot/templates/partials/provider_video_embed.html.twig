@@ -8,11 +8,16 @@
     data-error-label="{{ 'Diese externe Videoquelle ist ungültig.'|trans }}"
 >
     <div class="provider-video-player" data-provider-embed-player>
-        <button class="button provider-video-play-button" type="button" data-provider-embed-load disabled hidden>
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5.5v13l10-6.5z" fill="currentColor"/></svg>
-            <span>{{ 'Video im Player starten'|trans }}</span>
-        </button>
-        <noscript><a class="provider-video-noscript-link" href="{{ embed_url }}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">{{ 'Video beim Anbieter öffnen'|trans }}</a></noscript>
+        {% if cookie_consent_allows_optional() %}
+            <iframe src="{{ embed_url }}" title="{{ embed_title }}" loading="lazy" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-presentation" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen data-testid="video-embed-provider"></iframe>
+        {% else %}
+            <button class="button provider-video-play-button" type="button" data-provider-embed-load disabled hidden>
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5.5v13l10-6.5z" fill="currentColor"/></svg>
+                <span>{{ 'Video im Player starten'|trans }}</span>
+            </button>
+            <noscript><a class="provider-video-noscript-link" href="{{ embed_url }}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">{{ 'Video beim Anbieter öffnen'|trans }}</a></noscript>
+        {% endif %}
     </div>
-    <p data-provider-embed-status role="status">{{ 'Wähle „Video im Player starten“, um das Video hier wiederzugeben. Erst danach erhält der Anbieter deine Verbindungsdaten.'|trans }}</p>
+    <p data-provider-embed-status role="status">{% if cookie_consent_allows_optional() %}{{ 'Du hast optionale Inhalte freigegeben. Der geprüfte Anbieterplayer wird hier geladen und erhält übliche Verbindungsdaten.'|trans }}{% else %}{{ 'Wähle „Video im Player starten“, um das Video hier wiederzugeben. Erst danach erhält der Anbieter deine Verbindungsdaten.'|trans }}{% endif %}</p>
+    {% if app.request.attributes.get('_route') != 'video_embed_show' %}<a class="provider-video-privacy-link" href="{{ path('cookie_consent_preferences', {return_to: cookie_consent_return_to()}) }}">{{ 'Cookie-Einstellungen'|trans }}</a>{% endif %}
 </section>

@@ -106,7 +106,7 @@
 'Websiteanalyse': 'تحليلات الموقع'
 'Google-Analytics-4-Mess-ID': 'معرّف قياس Google Analytics 4'
 'Nur eine gültige G-XXXXXXXXXX-Mess-ID wird akzeptiert. Die feste GA4-Einbindung lädt ausschließlich nach gültiger Zustimmung zu optionalen Cookies auf öffentlichen Inhaltsseiten. Suchbegriffe, Seitenpfade, Seitentitel und Referrer werden nicht übertragen; Google erhält bei Einwilligung weiterhin technische Verbindungsdaten.': 'يُقبل معرّف قياس بصيغة G-XXXXXXXXXX فقط. لا يُحمّل تكامل GA4 الثابت إلا بعد الموافقة الصالحة على ملفات تعريف الارتباط الاختيارية وعلى صفحات المحتوى العامة فقط. لا تُرسل عبارات البحث أو مسارات الصفحات أو عناوينها أو المُحيل؛ وتظل بيانات الاتصال التقنية متاحة لـ Google بعد الموافقة.'
-'Notwendige Sicherheits- und Sitzungscookies bleiben aktiv. Optionale externe Dienste wie die konfigurierte Websiteanalyse und externe Kommentare werden nur nach gültiger Einwilligung geladen.': 'تبقى ملفات تعريف الارتباط الضرورية للأمان والجلسة مفعّلة. لا تُحمّل الخدمات الخارجية الاختيارية، ومنها التحليلات والتعليقات الخارجية، إلا بعد موافقة صالحة.'
+'Notwendige Sicherheits- und Sitzungscookies bleiben aktiv. Externe Video-Player werden nach Einwilligung oder einem einzelnen Startklick geladen. Websiteanalyse und externe Kommentare benötigen eine gültige optionale Einwilligung.': 'تبقى ملفات تعريف الارتباط الضرورية للأمان والجلسات فعّالة. تُحمّل مشغلات الفيديو الخارجية بعد الموافقة أو بنقرة تشغيل منفردة. وتتطلب تحليلات الموقع والتعليقات الخارجية موافقة اختيارية صالحة.'
 'Wir verwenden notwendige Cookies für Anmeldung, Sicherheit und die Ansichtspräferenz in diesem Browser. Optionale Analyse- und Werbedienste werden nur nach Ihrer Zustimmung geladen.': 'نستخدم ملفات تعريف الارتباط الضرورية لتسجيل الدخول والأمان وتفضيل العرض في هذا المتصفح. لا تُحمّل خدمات التحليل والإعلانات الاختيارية إلا بعد موافقتك.'
 'Bitte gib eine gültige GA4-Mess-ID im Format G-XXXXXXXXXX ein oder lasse das Feld leer.': 'أدخل معرّف قياس GA4 صالحًا بصيغة G-XXXXXXXXXX، أو اترك الحقل فارغًا.'
 
@@ -400,3 +400,5 @@
 'Videos, News und Seiten erstellen und veröffentlichen.': 'أنشئ الفيديوهات والأخبار والصفحات وانشرها.'
 'Weitere Aktionen': 'إجراءات أخرى'
 'Mitglieder, geplante Aufgaben und Systemhinweise verwalten.': 'أدر الأعضاء والمهام المجدولة وتنبيهات النظام.'
+'Du hast optionale Inhalte freigegeben. Der geprüfte Anbieterplayer wird hier geladen und erhält übliche Verbindungsdaten.': 'لقد سمحت بالمحتوى الاختياري. سيتم تحميل مشغّل مزوّد الفيديو الموثوق هنا وسيتلقى بيانات الاتصال المعتادة.'
+'Wenn du optionale Inhalte zulässt, werden geprüfte externe Video-Player direkt eingebettet. Ohne Zustimmung werden sie nur nach deinem Klick auf „Video im Player starten“ geladen. Der Anbieter erhält dabei übliche Verbindungsdaten.': 'عند السماح بالمحتوى الاختياري، تُضمّن مشغلات الفيديو الخارجية الموثوقة مباشرةً. ومن دون الموافقة لا تُحمّل إلا بعد اختيار «تشغيل الفيديو هنا». ويتلقى المزوّد بيانات الاتصال المعتادة.'

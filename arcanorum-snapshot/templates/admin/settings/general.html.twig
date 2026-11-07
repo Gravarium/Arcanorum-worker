@@ -103,7 +103,7 @@
                 <label for="cookie_consent_message">{{ 'Hinweistext'|trans }}</label>
                 <textarea id="cookie_consent_message" name="cookie_consent_message" maxlength="320" required form="general-settings-form">{{ form.cookie_consent_message }}</textarea>
                 {% if errors.cookie_consent_message is defined %}<p class="field-error" role="alert">{{ errors.cookie_consent_message|trans }}</p>{% endif %}
-                <p class="muted">{{ 'Notwendige Sicherheits- und Sitzungscookies bleiben aktiv. Optionale externe Dienste wie die konfigurierte Websiteanalyse und externe Kommentare werden nur nach gültiger Einwilligung geladen.'|trans }}</p>
+                <p class="muted">{{ 'Notwendige Sicherheits- und Sitzungscookies bleiben aktiv. Externe Video-Player werden nach Einwilligung oder einem einzelnen Startklick geladen. Websiteanalyse und externe Kommentare benötigen eine gültige optionale Einwilligung.'|trans }}</p>
             </div>
         </div>
         <div class="form-actions">

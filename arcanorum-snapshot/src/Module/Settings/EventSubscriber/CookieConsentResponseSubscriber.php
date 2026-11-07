@@ -27,16 +27,34 @@ final readonly class CookieConsentResponseSubscriber implements EventSubscriberI
         }
 
         $request = $event->getRequest();
-        if (!$this->consent->csrfResponseNeedsPrivateCache($request)) {
+        $response = $event->getResponse();
+        if ($this->consent->csrfResponseNeedsPrivateCache($request)) {
+            $response->headers->set('Cache-Control', 'private, no-store');
+            $response->headers->set('X-Robots-Tag', 'noindex, nofollow');
+            $csrfCookie = $this->consent->csrfCookieForResponse($request);
+            if (null !== $csrfCookie) {
+                $response->headers->setCookie($csrfCookie);
+            }
+
             return;
         }
 
-        $response = $event->getResponse();
-        $response->headers->set('Cache-Control', 'private, no-store');
-        $response->headers->set('X-Robots-Tag', 'noindex, nofollow');
-        $csrfCookie = $this->consent->csrfCookieForResponse($request);
-        if (null !== $csrfCookie) {
-            $response->headers->setCookie($csrfCookie);
+        if (null === $this->consent->currentChoice()
+            || $response->isRedirect()
+            || !str_starts_with((string) $response->headers->get('Content-Type', ''), 'text/html')
+        ) {
+            return;
         }
+
+        $vary = $response->getVary();
+        $hasCookieVary = array_any(
+            $vary,
+            static fn (mixed $value): bool => is_string($value) && 0 === strcasecmp($value, 'cookie'),
+        );
+        if (!$hasCookieVary) {
+            $vary[] = 'Cookie';
+        }
+        $response->setVary($vary);
+        $response->headers->set('Cache-Control', 'private, no-store');
     }
 }

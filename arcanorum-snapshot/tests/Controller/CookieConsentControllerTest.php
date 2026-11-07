@@ -36,6 +36,7 @@ final class CookieConsentControllerTest extends WebTestCase
         $client->request('GET', '/');
         self::assertResponseIsSuccessful();
         self::assertSelectorExists('.cookie-consent-banner');
+        self::assertSelectorTextContains('.cookie-consent-banner', 'geprüfte externe Video-Player');
         self::assertStringContainsString('private', (string) $client->getResponse()->headers->get('Cache-Control'));
         self::assertStringContainsString('no-store', (string) $client->getResponse()->headers->get('Cache-Control'));
         $token = (string) $client->getCrawler()->filter('.cookie-consent-banner input[name="token"]')->attr('value');
@@ -96,6 +97,7 @@ final class CookieConsentControllerTest extends WebTestCase
         $client->request('GET', '/cookie-einstellungen');
         self::assertResponseIsSuccessful();
         self::assertStringContainsString('private', (string) $client->getResponse()->headers->get('Cache-Control'));
+        self::assertSelectorTextContains('main', 'geprüfte externe Video-Player');
         self::assertStringContainsString('Auswahl speichern', (string) $client->getResponse()->getContent());
 
         $preferencesToken = (string) $client->getCrawler()->filter('form[action="/cookie-einstellungen"] input[name="token"]')->attr('value');

@@ -8,6 +8,7 @@
         <h1 id="cookie-preferences-heading">{{ 'Cookie-Einstellungen'|trans }}</h1>
         <p class="lead">{{ settings.cookieConsentMessage }}</p>
         <p>{{ 'Notwendige Cookies unterstützen Anmeldung, Sicherheit und die Ansichtspräferenz in diesem Browser. Derzeit werden keine Analyse- oder Werbecookies gesetzt.'|trans }}</p>
+        <p>{{ 'Wenn du optionale Inhalte zulässt, werden geprüfte externe Video-Player direkt eingebettet. Ohne Zustimmung werden sie nur nach deinem Klick auf „Video im Player starten“ geladen. Der Anbieter erhält dabei übliche Verbindungsdaten.'|trans }}</p>
         {% if settings.commentProvider.value != 'native' %}
             {% set external_comment_provider = settings.commentProvider.value == 'facebook' ? 'Facebook' : 'Disqus' %}
             <p>{{ 'Wenn du optionale Inhalte erlaubst, wird %provider% geladen und erhält die öffentliche Seitenadresse sowie übliche Verbindungsdaten wie IP-Adresse und Browserinformationen.'|trans({'%provider%': external_comment_provider}) }}</p>

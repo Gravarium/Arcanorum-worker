@@ -17,6 +17,7 @@ use App\Platform\Security\AdminMfaProvisioningService;
 use App\Platform\Security\AdminMfaSecretCipher;
 use App\Platform\Security\RuntimeAttestationReportProviderInterface;
 use App\Platform\Security\TotpVerifier;
+use App\Service\CookieConsentService;
 use App\Service\ExternalVideoEmbedResolver;
 use App\Service\SiteSettingsManager;
 use App\Service\SiteSettingsProvider;
@@ -24,6 +25,8 @@ use App\Tests\Support\VerifiedRuntimeAttestationReportProvider;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\BrowserKit\Cookie as BrowserCookie;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 final class VideoEmbedFlowTest extends WebTestCase
@@ -82,6 +85,73 @@ final class VideoEmbedFlowTest extends WebTestCase
                 ['id' => $video->getId()],
                 ['id' => \Doctrine\DBAL\ParameterType::STRING],
             );
+        }
+    }
+
+    public function testSavedOptionalConsentLoadsProviderPlayerInlineAndPreventsSharedCaching(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+        $settings = $client->getContainer()->get(SiteSettingsProvider::class);
+        $settingsManager = $client->getContainer()->get(SiteSettingsManager::class);
+        $consent = $client->getContainer()->get(CookieConsentService::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        self::assertInstanceOf(SiteSettingsProvider::class, $settings);
+        self::assertInstanceOf(SiteSettingsManager::class, $settingsManager);
+        self::assertInstanceOf(CookieConsentService::class, $consent);
+
+        $previousConsentSetting = $settings->current()->isCookieConsentEnabled();
+        $video = new Video(
+            'Consent-approved inline player '.bin2hex(random_bytes(6)),
+            'Saved optional consent should load the validated provider iframe in the video player.',
+            null,
+            VideoSourceType::Url,
+            'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            PublishingStatus::Published,
+            false,
+            false,
+        );
+
+        try {
+            self::assertSame([], $settingsManager->update(['cookie_consent_enabled' => '1']));
+            $signedCookie = $consent->createConsentCookie(Request::create('http://localhost'), 'all');
+            $client->getCookieJar()->set(new BrowserCookie(
+                $signedCookie->getName(),
+                $signedCookie->getValue(),
+                0,
+                $signedCookie->getPath(),
+                null,
+                false,
+                true,
+                false,
+                $signedCookie->getSameSite(),
+            ));
+            $entityManager->persist($video);
+            $entityManager->flush();
+
+            $client->request('GET', '/videos/'.$video->getId());
+
+            self::assertResponseIsSuccessful();
+            self::assertSelectorExists('iframe[data-testid="video-embed-provider"][src="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ"]');
+            self::assertSelectorNotExists('[data-provider-embed-load]');
+            self::assertTrue($client->getResponse()->headers->getCacheControlDirective('private'));
+            self::assertTrue($client->getResponse()->headers->getCacheControlDirective('no-store'));
+            self::assertContains('cookie', array_map('strtolower', $client->getResponse()->getVary()));
+            self::assertStringContainsString(
+                "frame-src 'self' https://www.youtube-nocookie.com",
+                (string) $client->getResponse()->headers->get('Content-Security-Policy-Report-Only'),
+            );
+        } finally {
+            try {
+                $settingsManager->update(['cookie_consent_enabled' => $previousConsentSetting ? '1' : '0']);
+            } finally {
+                $entityManager->getConnection()->executeStatement(
+                    'DELETE FROM videos WHERE id = :id',
+                    ['id' => $video->getId()],
+                    ['id' => \Doctrine\DBAL\ParameterType::STRING],
+                );
+            }
         }
     }
 
