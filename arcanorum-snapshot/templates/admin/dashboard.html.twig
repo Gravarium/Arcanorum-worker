@@ -12,8 +12,39 @@
         </div>
     </div>
 
-    <section aria-labelledby="dashboard-metrics-heading">
-        <h2 class="visually-hidden" id="dashboard-metrics-heading">{{ 'Inhalts- und Moderationszahlen'|trans }}</h2>
+    <section class="admin-dashboard-welcome" aria-labelledby="dashboard-welcome-heading" data-dashboard-welcome>
+        <header class="admin-dashboard-welcome-header">
+            <h2 id="dashboard-welcome-heading">{{ 'Willkommen bei %site%!'|trans({'%site%': site_settings().siteName}) }}</h2>
+            <p>{{ 'Wähle eine Aufgabe oder passe dein Portal an.'|trans }}</p>
+        </header>
+        <div class="admin-dashboard-welcome-column">
+            <h3>{{ 'Dein Portal gestalten'|trans }}</h3>
+            <p>{{ 'Name, Logo und Darstellung anpassen.'|trans }}</p>
+            <a href="{{ path('admin_design_settings_index') }}">{{ 'Theme und Layout'|trans }}</a>
+        </div>
+        <div class="admin-dashboard-welcome-column">
+            <h3>{{ 'Inhalte veröffentlichen'|trans }}</h3>
+            <p>{{ 'Videos, News und Seiten erstellen und veröffentlichen.'|trans }}</p>
+            <ul class="admin-dashboard-welcome-links">
+                <li><a href="{{ path('admin_video_new') }}">{{ 'Video hinzufügen'|trans }}</a></li>
+                {% if module_enabled('news') %}<li><a href="{{ path('admin_news_new') }}">{{ 'News verfassen'|trans }}</a></li>{% endif %}
+                {% if module_enabled('pages') %}<li><a href="{{ path('admin_page_new') }}">{{ 'Neue Seite'|trans }}</a></li>{% endif %}
+            </ul>
+        </div>
+        <div class="admin-dashboard-welcome-column">
+            <h3>{{ 'Weitere Aktionen'|trans }}</h3>
+            <p>{{ 'Mitglieder, geplante Aufgaben und Systemhinweise verwalten.'|trans }}</p>
+            <ul class="admin-dashboard-welcome-links">
+                <li><a href="{{ path('admin_member_index') }}">{{ 'Nutzer verwalten'|trans }}</a></li>
+                <li><a href="{{ path('admin_system_index') }}">{{ 'Hosting und System'|trans }}</a></li>
+            </ul>
+        </div>
+    </section>
+
+    <section class="admin-panel admin-dashboard-quick-stats" aria-labelledby="dashboard-metrics-heading">
+        <header class="panel-heading">
+            <h2 id="dashboard-metrics-heading">{{ 'Schnellübersicht'|trans }}</h2>
+        </header>
         <div class="dashboard-metrics">
             {% if module_enabled('news') %}<a class="dashboard-metric-card" href="{{ path('admin_news_index') }}" data-dashboard-metric="news">
                 <span class="dashboard-metric-label">{{ 'News'|trans }}</span>
@@ -91,12 +122,6 @@
         </div>
     </section>
 
-    <div class="form-actions" aria-label="{{ 'Schnellaktionen'|trans }}">
-        {% if module_enabled('news') %}<a class="button" href="{{ path('admin_news_new') }}">{{ 'News verfassen'|trans }}</a>{% endif %}
-        <a class="button button-secondary" href="{{ path('admin_video_new') }}">{{ 'Video hinzufügen'|trans }}</a>
-        <a class="button button-secondary" href="{{ path('admin_system_index') }}">{{ 'System prüfen'|trans }}</a>
-    </div>
-
     <section class="admin-panel" aria-labelledby="dashboard-latest-videos-heading" data-dashboard-latest-videos>
         <header class="panel-heading">
             <h2 id="dashboard-latest-videos-heading">{{ 'Neueste Videos'|trans }}</h2>
@@ -123,35 +148,6 @@
             </ul>
         {% endif %}
     </section>
-
-    {% if module_enabled('news') %}
-        <section class="admin-panel" aria-labelledby="dashboard-latest-articles-heading" data-dashboard-latest-articles>
-            <header class="panel-heading">
-                <h2 id="dashboard-latest-articles-heading">{{ 'Neueste Artikel'|trans }}</h2>
-                <a href="{{ path('admin_news_index') }}">{{ 'News verwalten'|trans }}</a>
-            </header>
-            {% if latest_articles is empty %}
-                <p>{{ 'Noch keine Artikel vorhanden.'|trans }}</p>
-            {% else %}
-                <ul class="admin-dashboard-content-list">
-                    {% for article in latest_articles %}
-                        <li class="admin-dashboard-content-row">
-                            <span class="admin-content-title-row">
-                                {% if article.thumbnailObjectId %}
-                                    <img class="admin-content-list-thumbnail" src="{{ path('admin_news_thumbnail_preview', {id: article.id}) }}" alt="" loading="lazy" decoding="async">
-                                {% else %}
-                                    <span class="admin-content-thumbnail-placeholder" aria-hidden="true">▤</span>
-                                {% endif %}
-                                <a href="{{ path('admin_news_edit', {id: article.id}) }}">{{ article.title }}</a>
-                            </span>
-                            <span class="status-pill {{ article.status.cssClass }}">{{ article.status.label|trans }}</span>
-                            <time datetime="{{ article.createdAt|date('c', 'UTC') }}">{{ 'Erstellt am %date% UTC'|trans({'%date%': article.createdAt|date(app.request.locale starts with 'en' ? 'Y-m-d H:i' : 'd.m.Y H:i', 'UTC')}) }}</time>
-                        </li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-        </section>
-    {% endif %}
 
     <section class="admin-panel" aria-labelledby="dashboard-latest-members-heading" data-dashboard-latest-members>
         <header class="panel-heading">
@@ -190,6 +186,35 @@
                             <p>{{ comment.body|slice(0, 160) }}{% if comment.body|length > 160 %}…{% endif %}</p>
                             <span class="status-pill is-{{ comment.status.value }}">{{ comment.status.label|trans }}</span>
                             <time datetime="{{ comment.createdAt|date('c', 'UTC') }}">{{ 'Erstellt am %date% UTC'|trans({'%date%': comment.createdAt|date(app.request.locale starts with 'en' ? 'Y-m-d H:i' : 'd.m.Y H:i', 'UTC')}) }}</time>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </section>
+    {% endif %}
+
+    {% if module_enabled('news') %}
+        <section class="admin-panel" aria-labelledby="dashboard-latest-articles-heading" data-dashboard-latest-articles>
+            <header class="panel-heading">
+                <h2 id="dashboard-latest-articles-heading">{{ 'Neueste Artikel'|trans }}</h2>
+                <a href="{{ path('admin_news_index') }}">{{ 'News verwalten'|trans }}</a>
+            </header>
+            {% if latest_articles is empty %}
+                <p>{{ 'Noch keine Artikel vorhanden.'|trans }}</p>
+            {% else %}
+                <ul class="admin-dashboard-content-list">
+                    {% for article in latest_articles %}
+                        <li class="admin-dashboard-content-row">
+                            <span class="admin-content-title-row">
+                                {% if article.thumbnailObjectId %}
+                                    <img class="admin-content-list-thumbnail" src="{{ path('admin_news_thumbnail_preview', {id: article.id}) }}" alt="" loading="lazy" decoding="async">
+                                {% else %}
+                                    <span class="admin-content-thumbnail-placeholder" aria-hidden="true">▤</span>
+                                {% endif %}
+                                <a href="{{ path('admin_news_edit', {id: article.id}) }}">{{ article.title }}</a>
+                            </span>
+                            <span class="status-pill {{ article.status.cssClass }}">{{ article.status.label|trans }}</span>
+                            <time datetime="{{ article.createdAt|date('c', 'UTC') }}">{{ 'Erstellt am %date% UTC'|trans({'%date%': article.createdAt|date(app.request.locale starts with 'en' ? 'Y-m-d H:i' : 'd.m.Y H:i', 'UTC')}) }}</time>
                         </li>
                     {% endfor %}
                 </ul>

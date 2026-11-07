@@ -493,6 +493,15 @@ final class AdminDashboardTest extends WebTestCase
             $client->request('GET', '/admin');
             self::assertResponseIsSuccessful();
             self::assertSelectorExists('.admin-quick-add[href="/admin/videos/new"]');
+            self::assertSelectorExists('[data-dashboard-welcome] > .admin-dashboard-welcome-header');
+            self::assertSelectorTextContains('[data-dashboard-welcome] h2', 'Willkommen bei');
+            self::assertSelectorTextContains('[data-dashboard-welcome]', 'Dein Portal gestalten');
+            self::assertCount(3, $client->getCrawler()->filter('[data-dashboard-welcome] .admin-dashboard-welcome-column'));
+            self::assertSelectorExists('[data-dashboard-welcome] a[href="/admin/settings/design"]');
+            self::assertSelectorExists('[data-dashboard-welcome] a[href="/admin/videos/new"]');
+            self::assertSelectorExists('[data-dashboard-welcome] a[href="/admin/news/new"]');
+            self::assertSelectorExists('[data-dashboard-welcome] a[href="/admin/pages/new"]');
+            self::assertSelectorTextContains('#dashboard-metrics-heading', 'Schnellübersicht');
             self::assertSelectorTextContains('#dashboard-notices-heading', 'Systemhinweise');
             self::assertSelectorTextContains('section[data-dashboard-latest-videos]', 'Neueste Videos');
             self::assertSelectorTextContains('section[data-dashboard-latest-videos]', 'Noch keine Videos. Füge die erste Videoquelle hinzu.');
@@ -642,6 +651,23 @@ final class AdminDashboardTest extends WebTestCase
             self::assertStringContainsString('private', $cacheControl);
             self::assertStringContainsString('no-store', $cacheControl);
             self::assertResponseHeaderSame('X-Robots-Tag', 'noindex, nofollow');
+
+            $dashboardSectionHeadings = $client->getCrawler()->filter('.admin-dashboard-page > section')->each(
+                static fn (Crawler $section): ?string => $section->attr('aria-labelledby'),
+            );
+            self::assertSame(
+                [
+                    'dashboard-welcome-heading',
+                    'dashboard-metrics-heading',
+                    'dashboard-latest-videos-heading',
+                    'dashboard-latest-members-heading',
+                    'dashboard-latest-comments-heading',
+                    'dashboard-latest-articles-heading',
+                ],
+                array_slice($dashboardSectionHeadings, 0, 6),
+            );
+            self::assertSelectorTextContains('[data-dashboard-welcome] h2', 'Willkommen bei');
+            self::assertSelectorTextContains('#dashboard-metrics-heading', 'Schnellübersicht');
 
             $latestArticles = $client->getCrawler()->filter('[data-dashboard-latest-articles] li');
             self::assertCount(5, $latestArticles);
@@ -1600,21 +1626,22 @@ final class AdminDashboardTest extends WebTestCase
             self::assertSelectorTextContains('section[aria-labelledby="webserver-integrity-heading"]', 'Unabhängige Host-Prüfung');
             self::assertSelectorTextContains('section[aria-labelledby="webserver-integrity-heading"]', 'Für diese Anfrage bestätigt');
             self::assertSelectorExists('aside.admin-sidebar nav[aria-label="Hauptnavigation"] a[aria-current="page"]');
-            self::assertSame('right', $client->getCrawler()->filter('.admin-shell')->attr('data-admin-navigation-placement'));
+            self::assertSame('left', $client->getCrawler()->filter('.admin-shell')->attr('data-admin-navigation-placement'));
             self::assertSelectorExists('.admin-shell > aside.admin-sidebar');
+            self::assertSelectorExists('aside.admin-sidebar details.admin-mobile-menu[open] > nav[aria-label="Hauptnavigation"]');
             self::assertSelectorExists('.admin-shell > main.admin-main > section.admin-page');
             self::assertSelectorTextContains('nav[aria-label="Hauptnavigation"]', 'Videos');
             self::assertSelectorTextContains('nav[aria-label="Hauptnavigation"]', 'News');
             self::assertSelectorTextContains('nav[aria-label="Hauptnavigation"]', 'Kommentare');
             self::assertSelectorTextContains('nav[aria-label="Hauptnavigation"]', 'Einstellungen');
             self::assertCount(12, $client->getCrawler()->filter('details.navigation-group'));
-            self::assertCount(0, $client->getCrawler()->filter('details.navigation-group:not([open])'));
+            self::assertCount(12, $client->getCrawler()->filter('details.navigation-group:not([open])'));
             self::assertCount(1, $client->getCrawler()->filterXPath('//nav[@aria-label="Hauptnavigation"]//a[normalize-space()="Video und Wiedergabe"]'));
             self::assertSelectorExists('nav[aria-label="Hauptnavigation"] > a.navigation-dashboard[href="/admin"]');
             self::assertSelectorTextContains('nav[aria-label="Hauptnavigation"] > details.navigation-group:nth-of-type(1) > summary', 'Videos');
             self::assertStringNotContainsString('Fortress', (string) $client->getResponse()->getContent());
             self::assertSelectorTextContains('nav[aria-label="Hauptnavigation"] summary[title="Videos"]', 'Videos');
-            self::assertSelectorNotExists('.admin-navigation-icon');
+            self::assertSelectorExists('.admin-navigation-icon[aria-hidden="true"]');
             self::assertSelectorExists('nav[aria-label="Hauptnavigation"] a[href="/admin/videos/new?source_type=embed"]');
             self::assertSelectorExists('nav[aria-label="Hauptnavigation"] a[href="/admin/videos/new?source_type=url"]');
             self::assertSelectorExists('nav[aria-label="Hauptnavigation"] a[href="/admin/videos/new?source_type=stream"]');
@@ -7437,9 +7464,9 @@ final class AdminDashboardTest extends WebTestCase
             self::assertSelectorExists('input[name="custom_fields[0][key]"]');
             self::assertSelectorExists('input[name="custom_fields[0][value]"]');
             self::assertSelectorExists('a[href="/admin/categories?type=video"]');
-            self::assertSelectorNotExists('.admin-navigation-icon');
-            self::assertCount(0, $client->getCrawler()->filter('details.navigation-group:not([open])'));
-            self::assertCount(0, $client->getCrawler()->filter('details.navigation-subgroup:not([open])'));
+            self::assertSelectorExists('.admin-navigation-icon[aria-hidden="true"]');
+            self::assertCount(11, $client->getCrawler()->filter('details.navigation-group:not([open])'));
+            self::assertCount(1, $client->getCrawler()->filter('details.navigation-subgroup:not([open])'));
             self::assertSelectorExists('details.navigation-group[open] > summary[title="Videos"]');
             self::assertSelectorTextContains('details.navigation-subgroup[open] > summary', 'Video hinzufügen');
             self::assertSelectorExists('nav[aria-label="Hauptnavigation"] a[href="/admin/videos/new?source_type=embed"][aria-current="page"]');

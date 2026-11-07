@@ -6535,3 +6535,601 @@ html[data-public-theme="arcanorum"] .public-main.news-index .news-card-copy h2 a
         transition: none;
     }
 }
+
+/* Verwaltungsoberfläche: linke Navigation und Inhaltsfläche im Portalthema. */
+html[data-public-theme="arcanorum"] .admin-shell {
+    --admin-background: #080b0f;
+    --admin-surface: #10171d;
+    --admin-surface-raised: #141c22;
+    --admin-border: #34312a;
+    --admin-text: #e9e1d0;
+    --admin-muted: #a9aaa2;
+    --admin-gold: #d5b56a;
+    --admin-gold-bright: #f0d793;
+    --admin-cyan: #8dcddd;
+    color-scheme: dark;
+    grid-template-columns: 15rem minmax(0, 1fr);
+    background: var(--admin-background);
+    color: var(--admin-text);
+}
+
+html[data-public-theme="arcanorum"] .admin-topbar {
+    border-bottom-color: var(--admin-border);
+    background: #0d1217;
+    box-shadow: 0 0.2rem 0.8rem rgb(0 0 0 / 22%);
+}
+
+html[data-public-theme="arcanorum"] .admin-topbar .brand-name,
+html[data-public-theme="arcanorum"] .admin-topbar .topbar-label,
+html[data-public-theme="arcanorum"] .admin-topbar .topbar-label strong {
+    color: var(--admin-text);
+}
+
+html[data-public-theme="arcanorum"] .admin-sidebar {
+    border-right-color: var(--admin-border);
+    background: linear-gradient(180deg, #10171d 0%, #090d12 100%);
+    color: var(--admin-text);
+}
+
+html[data-public-theme="arcanorum"] .admin-sidebar > .brand {
+    border-bottom-color: var(--admin-border);
+    color: var(--admin-gold-bright);
+}
+
+html[data-public-theme="arcanorum"] .admin-sidebar .brand-name {
+    color: var(--admin-gold-bright);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.12rem;
+    letter-spacing: 0.045em;
+}
+
+html[data-public-theme="arcanorum"] .admin-sidebar .admin-brand-mark {
+    display: grid;
+    width: 2.1rem;
+    height: 2.1rem;
+    margin-bottom: 0.7rem;
+    place-items: center;
+    border: 1px solid var(--admin-gold);
+    color: var(--admin-gold-bright);
+    font-family: Georgia, "Times New Roman", serif;
+}
+
+html[data-public-theme="arcanorum"] .admin-sidebar .brand-caption,
+html[data-public-theme="arcanorum"] .admin-sidebar .brand-tagline,
+html[data-public-theme="arcanorum"] .sidebar-footer {
+    color: var(--admin-muted);
+}
+
+html[data-public-theme="arcanorum"] .admin-navigation {
+    gap: 0.2rem;
+    margin-top: 0.9rem;
+}
+
+html[data-public-theme="arcanorum"] .admin-navigation-icon {
+    display: inline-grid;
+    width: 1.25rem;
+    flex: 0 0 1.25rem;
+    place-items: center;
+    color: var(--admin-cyan);
+    font-family: Arial, sans-serif;
+    font-size: 0.9rem;
+    line-height: 1;
+}
+
+html[data-public-theme="arcanorum"] .navigation-dashboard,
+html[data-public-theme="arcanorum"] .navigation-group > summary {
+    min-height: 2.45rem;
+    padding: 0.55rem 0.7rem;
+    border-top: 1px solid transparent;
+    border-radius: 0.15rem;
+    color: #d8d0c1;
+    font-size: 0.83rem;
+    font-weight: 650;
+    letter-spacing: 0.025em;
+}
+
+html[data-public-theme="arcanorum"] .navigation-dashboard {
+    gap: 0.6rem;
+    margin-bottom: 0.35rem;
+}
+
+html[data-public-theme="arcanorum"] .navigation-group > summary {
+    gap: 0.5rem;
+    border-top-color: #282925;
+    background: transparent;
+}
+
+html[data-public-theme="arcanorum"] .navigation-group > summary::after {
+    margin-left: auto;
+    color: #a99c79;
+}
+
+html[data-public-theme="arcanorum"] .navigation-group > summary:hover,
+html[data-public-theme="arcanorum"] .navigation-group > summary:focus-visible,
+html[data-public-theme="arcanorum"] .navigation-group[open] > summary,
+html[data-public-theme="arcanorum"] .navigation-dashboard:hover,
+html[data-public-theme="arcanorum"] .navigation-dashboard:focus-visible {
+    background: #1a2228;
+    color: var(--admin-gold-bright);
+}
+
+html[data-public-theme="arcanorum"] .navigation-items {
+    margin: 0.1rem 0 0.5rem 0.7rem;
+    padding: 0.15rem 0 0.15rem 0.55rem;
+    border-left-color: #464234;
+}
+
+html[data-public-theme="arcanorum"] .navigation-items .navigation-link {
+    min-height: 2.15rem;
+    padding: 0.45rem 0.65rem;
+    border-radius: 0.15rem;
+    color: #c4c4bc;
+    font-size: 0.8rem;
+}
+
+html[data-public-theme="arcanorum"] .navigation-items .navigation-link:hover,
+html[data-public-theme="arcanorum"] .navigation-items .navigation-link:focus-visible {
+    background: #171f24;
+    color: var(--admin-cyan);
+}
+
+html[data-public-theme="arcanorum"] .navigation-link.is-active,
+html[data-public-theme="arcanorum"] .navigation-items .navigation-link.is-active {
+    border-left: 3px solid var(--admin-gold);
+    border-radius: 0.1rem;
+    background: #24231e;
+    color: var(--admin-gold-bright);
+}
+
+html[data-public-theme="arcanorum"] .navigation-subgroup > summary {
+    color: #ded3ba;
+}
+
+html[data-public-theme="arcanorum"] .navigation-subgroup .navigation-items {
+    border-left-color: #3d3a30;
+}
+
+html[data-public-theme="arcanorum"] .admin-sidebar :is(a, summary):focus-visible,
+html[data-public-theme="arcanorum"] .admin-main :is(a, button, input, select, textarea, summary):focus-visible {
+    outline-color: var(--admin-gold-bright);
+}
+
+html[data-public-theme="arcanorum"] .sidebar-footer {
+    border-top-color: var(--admin-border);
+}
+
+html[data-public-theme="arcanorum"] .admin-main {
+    min-width: 0;
+    background:
+        radial-gradient(ellipse at 50% 0%, rgb(25 39 45 / 45%), transparent 58%),
+        var(--admin-background);
+}
+
+html[data-public-theme="arcanorum"] .admin-page {
+    max-width: 100rem;
+    background: transparent;
+    color: var(--admin-text);
+}
+
+html[data-public-theme="arcanorum"] .admin-page h1,
+html[data-public-theme="arcanorum"] .admin-page h2,
+html[data-public-theme="arcanorum"] .admin-page h3,
+html[data-public-theme="arcanorum"] .admin-page .page-heading h1 {
+    color: var(--admin-gold-bright);
+    font-family: Georgia, "Times New Roman", serif;
+}
+
+html[data-public-theme="arcanorum"] .admin-page .eyebrow,
+html[data-public-theme="arcanorum"] .admin-page .muted,
+html[data-public-theme="arcanorum"] .admin-page .page-heading .muted {
+    color: var(--admin-muted);
+}
+
+html[data-public-theme="arcanorum"] .admin-shell a:not(.button) {
+    color: var(--admin-cyan);
+}
+
+html[data-public-theme="arcanorum"] .admin-panel,
+html[data-public-theme="arcanorum"] .admin-toolbar .admin-filter-form,
+html[data-public-theme="arcanorum"] .admin-toolbar > form,
+html[data-public-theme="arcanorum"] .activity-clear-form,
+html[data-public-theme="arcanorum"] .admin-form,
+html[data-public-theme="arcanorum"] .video-editor-main,
+html[data-public-theme="arcanorum"] .video-editor-sidebar,
+html[data-public-theme="arcanorum"] .video-editor-section {
+    border-color: var(--admin-border);
+    background: var(--admin-surface);
+    color: var(--admin-text);
+    box-shadow: none;
+}
+
+html[data-public-theme="arcanorum"] .admin-panel > p,
+html[data-public-theme="arcanorum"] .admin-panel > ul,
+html[data-public-theme="arcanorum"] .admin-panel > section,
+html[data-public-theme="arcanorum"] .video-editor-section > p,
+html[data-public-theme="arcanorum"] .video-editor-section > small {
+    color: var(--admin-text);
+}
+
+html[data-public-theme="arcanorum"] .panel-heading,
+html[data-public-theme="arcanorum"] .video-editor-section > h3 {
+    border-bottom-color: var(--admin-border);
+    background: #151b20;
+    color: var(--admin-gold-bright);
+}
+
+html[data-public-theme="arcanorum"] .panel-heading h2 {
+    color: var(--admin-gold-bright);
+}
+
+html[data-public-theme="arcanorum"] .panel-heading p,
+html[data-public-theme="arcanorum"] .admin-dashboard-content-row > time,
+html[data-public-theme="arcanorum"] .admin-page .admin-content-title-row > a,
+html[data-public-theme="arcanorum"] .admin-page .admin-table tbody td,
+html[data-public-theme="arcanorum"] .admin-page .admin-table tbody th {
+    color: var(--admin-text);
+}
+
+html[data-public-theme="arcanorum"] .admin-table th,
+html[data-public-theme="arcanorum"] .admin-table td,
+html[data-public-theme="arcanorum"] .admin-dashboard-content-row {
+    border-bottom-color: #2b302f;
+}
+
+html[data-public-theme="arcanorum"] .admin-table thead th {
+    background: #171d21;
+    color: var(--admin-cyan);
+}
+
+html[data-public-theme="arcanorum"] .admin-table tbody tr:hover {
+    background: #151c20;
+}
+
+html[data-public-theme="arcanorum"] .admin-form label,
+html[data-public-theme="arcanorum"] .admin-filter-form label,
+html[data-public-theme="arcanorum"] .video-editor-section > label > span,
+html[data-public-theme="arcanorum"] .video-editor-section > .video-source-url-field > label > span {
+    color: var(--admin-text);
+}
+
+html[data-public-theme="arcanorum"] .admin-form input:not([type="checkbox"]):not([type="radio"]),
+html[data-public-theme="arcanorum"] .admin-form select,
+html[data-public-theme="arcanorum"] .admin-form textarea,
+html[data-public-theme="arcanorum"] .admin-filter-form input,
+html[data-public-theme="arcanorum"] .admin-filter-form select,
+html[data-public-theme="arcanorum"] .video-editor-section input,
+html[data-public-theme="arcanorum"] .video-editor-section select,
+html[data-public-theme="arcanorum"] .video-editor-section textarea {
+    border-color: #46443a;
+    background: #090e12;
+    color: var(--admin-text);
+}
+
+html[data-public-theme="arcanorum"] .admin-form input::placeholder,
+html[data-public-theme="arcanorum"] .admin-filter-form input::placeholder,
+html[data-public-theme="arcanorum"] .video-editor-section input::placeholder {
+    color: #a09b8f;
+}
+
+html[data-public-theme="arcanorum"] .rich-text-toolbar button,
+html[data-public-theme="arcanorum"] .rich-text-surface {
+    border-color: #46443a;
+    background: #090e12;
+    color: var(--admin-text);
+}
+
+html[data-public-theme="arcanorum"] .admin-quick-add,
+html[data-public-theme="arcanorum"] .admin-shell .button:not(.button-secondary),
+html[data-public-theme="arcanorum"] .admin-shell .admin-panel .button:not(.button-secondary) {
+    border-color: #e0c578;
+    background: linear-gradient(180deg, #d7b967 0%, #ae873d 100%);
+    color: #15130e;
+}
+
+html[data-public-theme="arcanorum"] .admin-quick-add:hover,
+html[data-public-theme="arcanorum"] .admin-shell .button:not(.button-secondary):hover,
+html[data-public-theme="arcanorum"] .admin-shell .button:not(.button-secondary):focus-visible {
+    border-color: var(--admin-gold-bright);
+    background: linear-gradient(180deg, #edd083 0%, #c79e4d 100%);
+}
+
+html[data-public-theme="arcanorum"] .admin-shell .button-secondary,
+html[data-public-theme="arcanorum"] .admin-shell .logout-button,
+html[data-public-theme="arcanorum"] .admin-shell .admin-shortcut-toggle,
+html[data-public-theme="arcanorum"] .admin-shell .admin-shortcut-help > summary {
+    border-color: #41413a;
+    background: #12191e;
+    color: var(--admin-text);
+}
+
+html[data-public-theme="arcanorum"] .admin-shell .button-secondary:hover,
+html[data-public-theme="arcanorum"] .admin-shell .logout-button:hover,
+html[data-public-theme="arcanorum"] .admin-shell .admin-shortcut-toggle:hover,
+html[data-public-theme="arcanorum"] .admin-shell .admin-shortcut-help > summary:hover {
+    border-color: var(--admin-gold);
+    background: #1a2227;
+    color: var(--admin-gold-bright);
+}
+
+html[data-public-theme="arcanorum"] .admin-shortcut-help[open] > div {
+    border-color: var(--admin-border);
+    background: #11181e;
+    color: var(--admin-text);
+    box-shadow: 0 0.7rem 1.8rem rgb(0 0 0 / 45%);
+}
+
+html[data-public-theme="arcanorum"] .flash-message {
+    border-color: #385849;
+    background: #14231d;
+    color: #b9e3c8;
+}
+
+html[data-public-theme="arcanorum"] .flash-message.is-error {
+    border-color: #74413b;
+    background: #2b1715;
+    color: #f2c4bc;
+}
+
+html[data-public-theme="arcanorum"] .admin-dashboard-page {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+    gap: 1rem;
+}
+
+html[data-public-theme="arcanorum"] .admin-dashboard-page > .page-heading,
+html[data-public-theme="arcanorum"] .admin-dashboard-page > section[aria-labelledby="dashboard-metrics-heading"],
+html[data-public-theme="arcanorum"] .admin-dashboard-page > .admin-dashboard-welcome,
+html[data-public-theme="arcanorum"] .admin-dashboard-page > section[aria-labelledby="dashboard-open-heading"],
+html[data-public-theme="arcanorum"] .admin-dashboard-page > section[aria-labelledby="dashboard-notices-heading"],
+html[data-public-theme="arcanorum"] .admin-dashboard-page > section[aria-labelledby="host-capability-heading"],
+html[data-public-theme="arcanorum"] .admin-dashboard-page > section[aria-labelledby="webserver-integrity-heading"] {
+    grid-column: 1 / -1;
+}
+
+html[data-public-theme="arcanorum"] .admin-dashboard-page > .admin-panel {
+    margin-top: 0;
+}
+
+html[data-public-theme="arcanorum"] .dashboard-metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0;
+    overflow: hidden;
+    border: 1px solid var(--admin-border);
+    background: var(--admin-surface);
+}
+
+html[data-public-theme="arcanorum"] .dashboard-metric-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-content: start;
+    min-height: 5.7rem;
+    gap: 0.35rem 0.7rem;
+    padding: 0.8rem 0.9rem;
+    border: 0;
+    border-right: 1px solid #2b302f;
+    border-bottom: 1px solid #2b302f;
+    border-radius: 0;
+    background: transparent;
+    color: var(--admin-text);
+}
+
+html[data-public-theme="arcanorum"] .dashboard-metric-card:hover {
+    border-color: #2b302f;
+    background: #182126;
+    box-shadow: none;
+    transform: none;
+}
+
+html[data-public-theme="arcanorum"] .dashboard-metric-label {
+    color: var(--admin-cyan);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    align-self: center;
+    overflow-wrap: anywhere;
+}
+
+html[data-public-theme="arcanorum"] .dashboard-metric-total {
+    color: var(--admin-gold-bright);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.55rem;
+    line-height: 1.1;
+    text-align: right;
+}
+
+html[data-public-theme="arcanorum"] .dashboard-metric-detail,
+html[data-public-theme="arcanorum"] .dashboard-metric-detail strong {
+    color: var(--admin-muted);
+}
+
+html[data-public-theme="arcanorum"] .dashboard-metric-detail {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem 0.75rem;
+    font-size: 0.76rem;
+}
+
+html[data-public-theme="arcanorum"] .admin-dashboard-welcome {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border: 1px solid #34463f;
+    border-left: 3px solid var(--admin-cyan);
+    background: linear-gradient(110deg, #12201f 0%, #11191d 60%, #11171c 100%);
+}
+
+html[data-public-theme="arcanorum"] .admin-dashboard-welcome-header {
+    grid-column: 1 / -1;
+    padding: 0.9rem 1.1rem;
+    border-bottom: 1px solid #34413c;
+}
+
+html[data-public-theme="arcanorum"] .admin-dashboard-welcome-header h2 {
+    margin: 0 0 0.25rem;
+    color: var(--admin-gold-bright);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.15rem;
+}
+
+html[data-public-theme="arcanorum"] .admin-dashboard-welcome-header p {
+    margin: 0;
+    color: #bec3ba;
+    font-size: 0.82rem;
+    line-height: 1.45;
+}
+
+html[data-public-theme="arcanorum"] .admin-dashboard-welcome-column {
+    min-width: 0;
+    padding: 1rem 1.1rem;
+}
+
+html[data-public-theme="arcanorum"] .admin-dashboard-welcome-column + .admin-dashboard-welcome-column {
+    border-left: 1px solid #34413c;
+}
+
+html[data-public-theme="arcanorum"] .admin-dashboard-welcome-column h3 {
+    margin: 0 0 0.45rem;
+    color: var(--admin-gold-bright);
+    font-family: inherit;
+    font-size: 0.93rem;
+    font-weight: 650;
+}
+
+html[data-public-theme="arcanorum"] .admin-dashboard-welcome p {
+    margin: 0 0 0.65rem;
+    color: #bec3ba;
+    font-size: 0.82rem;
+    line-height: 1.45;
+}
+
+html[data-public-theme="arcanorum"] .admin-dashboard-welcome a {
+    font-size: 0.8rem;
+    line-height: 1.6;
+}
+
+html[data-public-theme="arcanorum"] .admin-dashboard-welcome-links {
+    display: grid;
+    gap: 0.12rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+html[data-public-theme="arcanorum"] .admin-dashboard-content-list {
+    padding-inline: 1rem;
+}
+
+html[data-public-theme="arcanorum"] .admin-dashboard-quick-stats .dashboard-metrics {
+    margin: 0;
+    border: 0;
+}
+
+html[data-public-theme="arcanorum"] .admin-dashboard-quick-stats .panel-heading {
+    min-height: 2.75rem;
+}
+
+html[data-public-theme="arcanorum"] .admin-page .status-pill {
+    border: 1px solid #315347;
+    background: #14251f;
+    color: #b7e0c6;
+}
+
+html[data-public-theme="arcanorum"] .admin-page .status-pill.is-warning,
+html[data-public-theme="arcanorum"] .admin-page .status-pill.is-filtered {
+    border-color: #645536;
+    background: #292317;
+    color: var(--admin-gold-bright);
+}
+
+html[data-public-theme="arcanorum"] .admin-page .status-pill.is-critical {
+    border-color: #74413b;
+    background: #2b1715;
+    color: #f2c4bc;
+}
+
+html[data-public-theme="arcanorum"] .site-preferences {
+    border-color: var(--admin-border);
+    background: #0d1217;
+}
+
+@media (max-width: 56rem) {
+    html[data-public-theme="arcanorum"] .admin-dashboard-page {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    html[data-public-theme="arcanorum"] .admin-dashboard-page > * {
+        grid-column: 1;
+    }
+
+    html[data-public-theme="arcanorum"] .admin-dashboard-welcome {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    html[data-public-theme="arcanorum"] .admin-dashboard-welcome-column + .admin-dashboard-welcome-column {
+        border-top: 1px solid #34413c;
+        border-left: 0;
+    }
+}
+
+@media (max-width: 48rem) {
+    html[data-public-theme="arcanorum"] .admin-shell {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto minmax(0, 1fr);
+    }
+
+    html[data-public-theme="arcanorum"] .admin-topbar {
+        grid-column: 1;
+        grid-row: 1;
+        min-height: 4rem;
+        padding-inline: 1rem;
+    }
+
+    html[data-public-theme="arcanorum"] .admin-sidebar {
+        position: static;
+        grid-column: 1;
+        grid-row: 2;
+        height: auto;
+        max-height: none;
+        overflow: visible;
+        padding: 0.2rem 1rem;
+        border-bottom-color: var(--admin-border);
+        background: #0d1318;
+    }
+
+    html[data-public-theme="arcanorum"] .admin-main {
+        grid-column: 1;
+        grid-row: 3;
+    }
+
+    html[data-public-theme="arcanorum"] .admin-mobile-menu > summary {
+        color: var(--admin-gold-bright);
+    }
+
+    html[data-public-theme="arcanorum"] .admin-page {
+        padding: 1.25rem 1rem 2rem;
+    }
+
+    html[data-public-theme="arcanorum"] .admin-table {
+        min-width: 40rem;
+    }
+
+    html[data-public-theme="arcanorum"] .dashboard-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    html[data-public-theme="arcanorum"] .dashboard-metric-label,
+    html[data-public-theme="arcanorum"] .dashboard-metric-total {
+        grid-column: 1 / -1;
+        text-align: left;
+    }
+
+    html[data-public-theme="arcanorum"] .dashboard-metric-label {
+        font-size: 0.65rem;
+        line-height: 1.35;
+    }
+
+    html[data-public-theme="arcanorum"] .dashboard-metric-total {
+        font-size: 1.35rem;
+    }
+}

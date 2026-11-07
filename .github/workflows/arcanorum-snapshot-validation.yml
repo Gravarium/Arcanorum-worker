@@ -2697,7 +2697,7 @@ jobs:
       - name: Verify exact source commit and exclude credentials
         shell: bash
         env:
-          EXPECTED_SOURCE_SHA: ${{ (inputs.validation_scope == 'classic-public-shell-followup' || inputs.validation_scope == 'homepage-artwork-followup' || inputs.validation_scope == 'homepage-news-metadata-followup' || inputs.validation_scope == 'video-provider-player-followup' || inputs.validation_scope == 'news-archive-filter-testfix-followup' || inputs.validation_scope == 'news-module-disabled-followup') && inputs.source_commit || 'c96df1383aa1377bba3cf7ac3016a4ea5eb3742c' }}
+          EXPECTED_SOURCE_SHA: ${{ (inputs.validation_scope == 'classic-public-shell-followup' || inputs.validation_scope == 'homepage-artwork-followup' || inputs.validation_scope == 'homepage-news-metadata-followup' || inputs.validation_scope == 'video-provider-player-followup' || inputs.validation_scope == 'news-archive-filter-testfix-followup' || inputs.validation_scope == 'news-module-disabled-followup' || inputs.validation_scope == 'dashboard-latest-content-followup') && inputs.source_commit || 'c96df1383aa1377bba3cf7ac3016a4ea5eb3742c' }}
         run: |
           set -euo pipefail
           printf '%s\n' "$EXPECTED_SOURCE_SHA" | cmp -s - SOURCE_BASE_SHA
@@ -2742,7 +2742,7 @@ jobs:
           PY
 
       - name: Verify complete manifest for the News archive test correction
-        if: inputs.validation_scope == 'news-archive-filter-testfix-followup' || inputs.validation_scope == 'news-module-disabled-followup' || inputs.validation_scope == 'homepage-artwork-followup' || inputs.validation_scope == 'homepage-news-metadata-followup'
+        if: inputs.validation_scope == 'news-archive-filter-testfix-followup' || inputs.validation_scope == 'news-module-disabled-followup' || inputs.validation_scope == 'homepage-artwork-followup' || inputs.validation_scope == 'homepage-news-metadata-followup' || inputs.validation_scope == 'dashboard-latest-content-followup'
         run: |
           python3 - <<'PY'
           from hashlib import sha256
@@ -2924,7 +2924,7 @@ jobs:
       - name: Lint dashboard Twig template and service containers
         if: inputs.validation_scope == 'dashboard-latest-content' || inputs.validation_scope == 'dashboard-latest-content-followup'
         run: |
-          php bin/console lint:twig templates/admin/dashboard.html.twig
+          php bin/console lint:twig templates/admin/layout.html.twig templates/admin/dashboard.html.twig
           php bin/console lint:container --env=dev
           APP_ENV=prod APP_DEBUG=0 php bin/console lint:container --env=prod
 
@@ -3436,7 +3436,7 @@ jobs:
             --fail-on-risky --fail-on-warning --fail-on-deprecation \
             --fail-on-phpunit-notice --fail-on-skipped --fail-on-incomplete \
             --fail-on-empty-test-suite --log-junit=var/test-results/junit.xml \
-            --filter='testSystemOverviewShowsOnlyCuratedRuntimeValuesToAdmin|testDashboardShowsBoundedPendingVideoReviewQueuesWithoutPrivateDetails' \
+            --filter='testSystemOverviewShowsOnlyCuratedRuntimeValuesToAdmin|testDashboardShowsLatestArticlesMembersAndCommentsWithoutPrivateOrUnsafeData|testDashboardShowsBoundedPendingVideoReviewQueuesWithoutPrivateDetails|testAdminVideoFormPrefillsSafeSourceModesAndShowsMinuteAndSecondFields' \
             tests/Controller/AdminDashboardTest.php
           python3 ../scripts/validate-arcanorum-junit.py var/test-results/junit.xml
 
