@@ -830,7 +830,7 @@ final class SiteSettings
     {
         return array_values(array_filter(
             MemberActivityType::cases(),
-            fn (MemberActivityType $type): bool => $this->isMemberActivityEnabled($type),
+            $this->isMemberActivityEnabled(...),
         ));
     }
 
