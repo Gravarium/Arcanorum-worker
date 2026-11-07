@@ -21,9 +21,10 @@
                 <label for="playlist-visibility">{{ 'Sichtbarkeit'|trans }}</label>
                 <select id="playlist-visibility" name="visibility">
                     <option value="private"{% if values.visibility == 'private' %} selected{% endif %}>{{ 'Privat'|trans }}</option>
-                    <option value="public"{% if values.visibility == 'public' %} selected{% endif %}>{{ 'Öffentlich'|trans }}</option>
+                    {% if social_enabled %}<option value="public"{% if values.visibility == 'public' %} selected{% endif %}>{{ 'Öffentlich'|trans }}</option>{% endif %}
                 </select>
                 <p class="field-hint">{{ 'Öffentliche Listen erscheinen nur, wenn auch dein Kanal öffentlich ist. Nicht veröffentlichte Videos bleiben aus öffentlichen Listen ausgeblendet.'|trans }}</p>
+                {% if not social_enabled %}<p class="field-hint">{{ 'Der öffentliche Community-Bereich ist deaktiviert. Private Listen funktionieren weiter.'|trans }}</p>{% endif %}
                 <input type="hidden" name="_token" value="{{ csrf_token('playlist_create') }}">
                 <button class="button" type="submit">{{ 'Wiedergabeliste erstellen'|trans }}</button>
             </form>
@@ -42,6 +43,7 @@
                         {% elseif playlist.isPublic %}
                             <p class="muted">{{ 'Die Liste bleibt verborgen, bis dein Kanal öffentlich ist.'|trans }}</p>
                         {% endif %}
+                        {% if playlist.isPublic and not social_enabled %}<p class="muted">{{ 'Der öffentliche Community-Bereich ist deaktiviert. Die Liste bleibt gespeichert und ist nicht öffentlich erreichbar.'|trans }}</p>{% endif %}
                         <form class="comment-form" action="{{ path('member_playlist_update', {id: playlist.id}) }}" method="post">
                             <label for="playlist-name-{{ playlist.id }}">{{ 'Name'|trans }}</label>
                             <input id="playlist-name-{{ playlist.id }}" name="name" value="{{ playlist.name }}" maxlength="80" required>
@@ -50,7 +52,7 @@
                             <label for="playlist-visibility-{{ playlist.id }}">{{ 'Sichtbarkeit'|trans }}</label>
                             <select id="playlist-visibility-{{ playlist.id }}" name="visibility">
                                 <option value="private"{% if not playlist.isPublic %} selected{% endif %}>{{ 'Privat'|trans }}</option>
-                                <option value="public"{% if playlist.isPublic %} selected{% endif %}>{{ 'Öffentlich'|trans }}</option>
+                                {% if social_enabled %}<option value="public"{% if playlist.isPublic %} selected{% endif %}>{{ 'Öffentlich'|trans }}</option>{% endif %}
                             </select>
                             <input type="hidden" name="_token" value="{{ csrf_token('playlist_update_' ~ playlist.id) }}">
                             <button class="button button-secondary" type="submit">{{ 'Änderungen speichern'|trans }}</button>

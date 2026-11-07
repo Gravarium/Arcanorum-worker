@@ -11,6 +11,7 @@ final readonly class BuiltInModule
 {
     /**
      * @param list<HostingCapability> $requiredCapabilities
+     * @param list<class-string> $controllerClasses
      */
     public function __construct(
         public string $id,
@@ -20,6 +21,7 @@ final readonly class BuiltInModule
         public bool $configurable,
         public ?FeatureModule $featureModule,
         public array $requiredCapabilities,
+        public array $controllerClasses = [],
     ) {
         if (1 !== preg_match('/\A[a-z][a-z0-9_]*\z/', $id)
             || '' === trim($name)
@@ -32,6 +34,16 @@ final readonly class BuiltInModule
 
         if (count($requiredCapabilities) !== count(array_unique($requiredCapabilities, SORT_REGULAR))) {
             throw new \InvalidArgumentException('Ein Modul darf dieselbe erforderliche Fähigkeit nicht mehrfach deklarieren.');
+        }
+
+        if (count($controllerClasses) !== count(array_unique($controllerClasses))) {
+            throw new \InvalidArgumentException('Ein Modul darf dieselbe Controllerklasse nicht mehrfach deklarieren.');
+        }
+
+        foreach ($controllerClasses as $controllerClass) {
+            if (!str_starts_with($controllerClass, 'App\\Module\\')) {
+                throw new \InvalidArgumentException('Modulrouten müssen aus einem verwalteten App-Modul stammen.');
+            }
         }
     }
 }

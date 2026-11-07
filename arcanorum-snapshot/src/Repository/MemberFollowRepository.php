@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Entity\MemberAccount;
+use App\Entity\MemberActivityType;
 use App\Entity\MemberFollow;
+use App\Entity\MemberFollowResult;
+use Doctrine\DBAL\Connection;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\Persistence\ManagerRegistry;
@@ -37,35 +40,87 @@ final class MemberFollowRepository extends ServiceEntityRepository
      * statement so a profile made private between the page request and POST
      * cannot be followed.
      */
-    public function follow(MemberAccount $follower, MemberAccount $followed, \DateTimeImmutable $now): bool
+    public function follow(MemberAccount $follower, MemberAccount $followed, \DateTimeImmutable $now, int $maximumFollowing): MemberFollowResult
     {
         if ($follower->getId() === $followed->getId()) {
-            return false;
+            return MemberFollowResult::Unavailable;
         }
 
-        $affectedRows = $this->getEntityManager()->getConnection()->executeStatement(
-            'INSERT INTO member_follows (id, follower_id, followed_id, created_at) '
-            .'SELECT :id, account.id, target.id, :created_at '
-            .'FROM member_accounts account CROSS JOIN member_accounts target '
-            .'WHERE account.id = :follower_id AND target.id = :followed_id '
-            .'AND account.is_active = TRUE AND account.email_verified = TRUE '
-            .'AND target.is_active = TRUE AND target.email_verified = TRUE AND target.public_profile = TRUE '
-            .'ON CONFLICT (follower_id, followed_id) DO NOTHING',
-            [
-                'id' => bin2hex(random_bytes(16)),
-                'created_at' => $now,
-                'follower_id' => $follower->getId(),
-                'followed_id' => $followed->getId(),
-            ],
-            [
-                'id' => Types::STRING,
-                'created_at' => Types::DATETIME_IMMUTABLE,
-                'follower_id' => Types::STRING,
-                'followed_id' => Types::STRING,
-            ],
-        );
+        if ($maximumFollowing < 0 || $maximumFollowing > 5000) {
+            throw new \InvalidArgumentException('Die konfigurierte Folgegrenze liegt außerhalb des erlaubten Bereichs.');
+        }
 
-        return 1 === $affectedRows;
+        $connection = $this->getEntityManager()->getConnection();
+
+        return $connection->transactional(function (Connection $connection) use ($follower, $followed, $now, $maximumFollowing): MemberFollowResult {
+            $followerId = $follower->getId();
+            $followedId = $followed->getId();
+            // Serialize new edges per follower without locking an account row that may
+            // simultaneously be the target of a reciprocal follow.
+            $connection->fetchOne(
+                'SELECT pg_advisory_xact_lock(hashtextextended(:follower_id, 0))',
+                ['follower_id' => $followerId],
+                ['follower_id' => Types::STRING],
+            );
+            if (false === $connection->fetchOne(
+                'SELECT 1 FROM member_accounts WHERE id = :follower_id AND is_active = TRUE AND email_verified = TRUE',
+                ['follower_id' => $followerId],
+                ['follower_id' => Types::STRING],
+            )) {
+                return MemberFollowResult::Unavailable;
+            }
+
+            if (false !== $connection->fetchOne(
+                'SELECT 1 FROM member_follows WHERE follower_id = :follower_id AND followed_id = :followed_id',
+                ['follower_id' => $followerId, 'followed_id' => $followedId],
+                ['follower_id' => Types::STRING, 'followed_id' => Types::STRING],
+            )) {
+                return MemberFollowResult::AlreadyFollowing;
+            }
+
+            if (0 === $maximumFollowing || (int) $connection->fetchOne(
+                'SELECT COUNT(*) FROM member_follows relation '
+                .'INNER JOIN member_accounts followed ON followed.id = relation.followed_id '
+                .'WHERE relation.follower_id = :follower_id AND followed.is_active = TRUE '
+                .'AND followed.email_verified = TRUE AND followed.public_profile = TRUE',
+                ['follower_id' => $followerId],
+                ['follower_id' => Types::STRING],
+            ) >= $maximumFollowing) {
+                return MemberFollowResult::LimitReached;
+            }
+
+            $affectedRows = $connection->executeStatement(
+                'INSERT INTO member_follows (id, follower_id, followed_id, created_at) '
+                .'SELECT :id, account.id, target.id, :created_at '
+                .'FROM member_accounts account CROSS JOIN member_accounts target '
+                .'WHERE account.id = :follower_id AND target.id = :followed_id '
+                .'AND account.is_active = TRUE AND account.email_verified = TRUE '
+                .'AND target.is_active = TRUE AND target.email_verified = TRUE AND target.public_profile = TRUE '
+                .'ON CONFLICT (follower_id, followed_id) DO NOTHING',
+                [
+                    'id' => bin2hex(random_bytes(16)),
+                    'created_at' => $now,
+                    'follower_id' => $followerId,
+                    'followed_id' => $followedId,
+                ],
+                [
+                    'id' => Types::STRING,
+                    'created_at' => Types::DATETIME_IMMUTABLE,
+                    'follower_id' => Types::STRING,
+                    'followed_id' => Types::STRING,
+                ],
+            );
+
+            if (1 === $affectedRows) {
+                return MemberFollowResult::Added;
+            }
+
+            return false !== $connection->fetchOne(
+                'SELECT 1 FROM member_follows WHERE follower_id = :follower_id AND followed_id = :followed_id',
+                ['follower_id' => $followerId, 'followed_id' => $followedId],
+                ['follower_id' => Types::STRING, 'followed_id' => Types::STRING],
+            ) ? MemberFollowResult::AlreadyFollowing : MemberFollowResult::Unavailable;
+        });
     }
 
     public function unfollow(MemberAccount $follower, MemberAccount $followed): bool
@@ -205,8 +260,18 @@ final class MemberFollowRepository extends ServiceEntityRepository
      *     target_title: string
      * }>
      */
-    public function findPublicActivityFor(MemberAccount $viewer, int $limit, int $offset): array
+    /** @param list<MemberActivityType>|null $enabledTypes */
+    public function findPublicActivityFor(MemberAccount $viewer, int $limit, int $offset, ?array $enabledTypes = null): array
     {
+        $enabledTypes ??= MemberActivityType::cases();
+        $enabledTypeValues = [];
+        foreach ($enabledTypes as $enabledType) {
+            if (!$enabledType instanceof MemberActivityType) {
+                throw new \InvalidArgumentException('Unbekannter Aktivitätstyp für den Mitgliederfeed.');
+            }
+            $enabledTypeValues[$enabledType->value] = true;
+        }
+
         $sql = <<<'SQL'
             SELECT activity.kind, activity.occurred_at, activity.member_handle, activity.member_name,
                    activity.event_id, activity.target_id, activity.target_slug, activity.target_title
@@ -219,7 +284,7 @@ final class MemberFollowRepository extends ServiceEntityRepository
                 INNER JOIN videos video ON video.id = submission.video_id
                 INNER JOIN member_accounts member ON member.id = submission.submitter_id
                 INNER JOIN member_follows follow ON follow.followed_id = member.id AND follow.follower_id = :viewer_video_submission
-                WHERE submission.status = 'approved' AND video.status = 'published' AND video.published_at IS NOT NULL
+                WHERE :show_video_submission = TRUE AND submission.status = 'approved' AND video.status = 'published' AND video.published_at IS NOT NULL
                   AND member.is_active = TRUE AND member.email_verified = TRUE AND member.public_profile = TRUE
                   AND NOT EXISTS (SELECT 1 FROM member_activity_moderations moderation WHERE moderation.activity_type = 'video_submission' AND moderation.video_submission_id = submission.id AND moderation.status IN ('hidden', 'removed'))
                 UNION ALL
@@ -230,7 +295,7 @@ final class MemberFollowRepository extends ServiceEntityRepository
                 FROM member_playlists playlist
                 INNER JOIN member_accounts member ON member.id = playlist.owner_id
                 INNER JOIN member_follows follow ON follow.followed_id = member.id AND follow.follower_id = :viewer_playlist
-                WHERE playlist.is_public = TRUE
+                WHERE :show_playlist = TRUE AND playlist.is_public = TRUE
                   AND member.is_active = TRUE AND member.email_verified = TRUE AND member.public_profile = TRUE
                   AND NOT EXISTS (SELECT 1 FROM member_activity_moderations moderation WHERE moderation.activity_type = 'playlist' AND moderation.playlist_id = playlist.id AND moderation.status IN ('hidden', 'removed'))
                 UNION ALL
@@ -242,7 +307,7 @@ final class MemberFollowRepository extends ServiceEntityRepository
                 INNER JOIN videos video ON comment.content_type = 'video' AND video.id = comment.content_id
                 INNER JOIN member_accounts member ON member.id = comment.member_id
                 INNER JOIN member_follows follow ON follow.followed_id = member.id AND follow.follower_id = :viewer_video_comment
-                WHERE comment.status = 'approved' AND video.status = 'published' AND video.published_at IS NOT NULL AND video.comments_enabled = TRUE
+                WHERE :show_video_comment = TRUE AND comment.status = 'approved' AND video.status = 'published' AND video.published_at IS NOT NULL AND video.comments_enabled = TRUE
                   AND member.is_active = TRUE AND member.email_verified = TRUE AND member.public_profile = TRUE
                   AND NOT EXISTS (SELECT 1 FROM member_activity_moderations moderation WHERE moderation.activity_type = 'video_comment' AND moderation.comment_id = comment.id AND moderation.status IN ('hidden', 'removed'))
                 UNION ALL
@@ -254,7 +319,7 @@ final class MemberFollowRepository extends ServiceEntityRepository
                 INNER JOIN news_articles article ON comment.content_type = 'news' AND article.id = comment.content_id
                 INNER JOIN member_accounts member ON member.id = comment.member_id
                 INNER JOIN member_follows follow ON follow.followed_id = member.id AND follow.follower_id = :viewer_news_comment
-                WHERE comment.status = 'approved' AND article.status = 'published' AND article.published_at IS NOT NULL AND article.comments_enabled = TRUE
+                WHERE :show_news_comment = TRUE AND comment.status = 'approved' AND article.status = 'published' AND article.published_at IS NOT NULL AND article.comments_enabled = TRUE
                   AND member.is_active = TRUE AND member.email_verified = TRUE AND member.public_profile = TRUE
                   AND NOT EXISTS (SELECT 1 FROM member_activity_moderations moderation WHERE moderation.activity_type = 'news_comment' AND moderation.comment_id = comment.id AND moderation.status IN ('hidden', 'removed'))
             ) activity
@@ -269,6 +334,10 @@ final class MemberFollowRepository extends ServiceEntityRepository
                 'viewer_playlist' => $viewer->getId(),
                 'viewer_video_comment' => $viewer->getId(),
                 'viewer_news_comment' => $viewer->getId(),
+                'show_video_submission' => isset($enabledTypeValues[MemberActivityType::VideoSubmission->value]),
+                'show_playlist' => isset($enabledTypeValues[MemberActivityType::Playlist->value]),
+                'show_video_comment' => isset($enabledTypeValues[MemberActivityType::VideoComment->value]),
+                'show_news_comment' => isset($enabledTypeValues[MemberActivityType::NewsComment->value]),
                 'limit' => max(1, min(100, $limit)),
                 'offset' => max(0, $offset),
             ],
@@ -277,6 +346,10 @@ final class MemberFollowRepository extends ServiceEntityRepository
                 'viewer_playlist' => Types::STRING,
                 'viewer_video_comment' => Types::STRING,
                 'viewer_news_comment' => Types::STRING,
+                'show_video_submission' => Types::BOOLEAN,
+                'show_playlist' => Types::BOOLEAN,
+                'show_video_comment' => Types::BOOLEAN,
+                'show_news_comment' => Types::BOOLEAN,
                 'limit' => Types::INTEGER,
                 'offset' => Types::INTEGER,
             ],

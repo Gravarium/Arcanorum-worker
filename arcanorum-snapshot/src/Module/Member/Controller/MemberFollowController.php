@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Module\Member\Controller;
 
 use App\Entity\MemberAccount;
+use App\Entity\MemberFollowResult;
 use App\Platform\Security\RateLimitKeyFactory;
 use App\Repository\MemberAccountRepository;
 use App\Repository\MemberFollowRepository;
+use App\Service\SiteSettingsProvider;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -24,7 +26,7 @@ final class MemberFollowController extends AbstractController
     private const int MAX_PAGE = 5000;
 
     #[Route('/konto/folgen', name: 'member_follow_index', methods: ['GET'])]
-    public function index(Request $request, MemberFollowRepository $follows): Response
+    public function index(Request $request, MemberFollowRepository $follows, SiteSettingsProvider $settings): Response
     {
         $member = $this->currentMember();
         $query = $request->query->all();
@@ -49,7 +51,12 @@ final class MemberFollowController extends AbstractController
             'following' => $follows->findFollowing($member, self::PAGE_SIZE + 1, $offset),
             'followers' => $follows->findFollowers($member, self::PAGE_SIZE + 1, $offset),
             'suggestions' => $follows->findSuggestions($member, self::PAGE_SIZE + 1, $offset),
-            default => $follows->findPublicActivityFor($member, self::PAGE_SIZE + 1, $offset),
+            default => $follows->findPublicActivityFor(
+                $member,
+                self::PAGE_SIZE + 1,
+                $offset,
+                $settings->current()->enabledMemberActivityTypes(),
+            ),
         };
         $hasNext = count($entries) > self::PAGE_SIZE;
 
@@ -81,6 +88,7 @@ final class MemberFollowController extends AbstractController
         #[Autowire(service: 'limiter.member_follow_account')] RateLimiterFactory $accountLimiter,
         #[Autowire(service: 'limiter.member_follow_ip')] RateLimiterFactory $ipLimiter,
         RateLimitKeyFactory $rateLimitKeys,
+        SiteSettingsProvider $settings,
         LoggerInterface $logger,
     ): Response {
         $member = $this->currentMember();
@@ -125,10 +133,18 @@ final class MemberFollowController extends AbstractController
                     return $this->noStore(new Response('', Response::HTTP_NOT_FOUND));
                 }
 
-                if ($follows->follow($member, $target, new \DateTimeImmutable('now', new \DateTimeZone('UTC')))) {
+                $result = $follows->follow(
+                    $member,
+                    $target,
+                    new \DateTimeImmutable('now', new \DateTimeZone('UTC')),
+                    $settings->current()->getSocialFollowingLimit(),
+                );
+                if (MemberFollowResult::Added === $result) {
                     $this->addFlash('member_success', 'Du folgst jetzt diesem Mitglied.');
-                } elseif ($follows->hasFollowed($member, $target)) {
+                } elseif (MemberFollowResult::AlreadyFollowing === $result) {
                     $this->addFlash('member_success', 'Du folgst diesem Mitglied bereits.');
+                } elseif (MemberFollowResult::LimitReached === $result) {
+                    $this->addFlash('member_error', 'Du hast die maximale Zahl an Mitgliedern erreicht, denen du folgen kannst.');
                 } else {
                     return $this->noStore(new Response('', Response::HTTP_NOT_FOUND));
                 }

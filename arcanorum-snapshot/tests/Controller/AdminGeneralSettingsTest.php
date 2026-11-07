@@ -942,16 +942,21 @@ final class AdminGeneralSettingsTest extends WebTestCase
             self::assertSelectorExists('form[action="/admin/settings/modules"]');
             self::assertSelectorExists('#module-admin-name');
             self::assertSelectorTextContains('#module-admin-name + p', 'immer verfügbar');
+            self::assertSelectorExists('#module-social-enabled');
+            self::assertSelectorExists('#social-following-limit');
+            self::assertSelectorExists('#social_activity_playlist_enabled');
             $token = (string) $client->getCrawler()->filter('form input[name="token"]')->attr('value');
 
             $client->request('POST', '/admin/settings/modules', [
                 'token' => $token,
+                ...$this->defaultSocialSettingsInput(),
                 'module_news_enabled' => '0',
                 'module_series_enabled' => '0',
                 'module_comments_enabled' => '1',
                 'module_contact_enabled' => '1',
                 'module_pages_enabled' => '1',
                 'module_search_enabled' => '1',
+                'module_social_enabled' => '1',
             ]);
             self::assertResponseRedirects('/admin/settings/modules');
 
@@ -986,14 +991,22 @@ final class AdminGeneralSettingsTest extends WebTestCase
             $token = (string) $client->getCrawler()->filter('form input[name="token"]')->attr('value');
             $client->request('POST', '/admin/settings/modules', [
                 'token' => $token,
+                ...$this->defaultSocialSettingsInput(),
                 'module_news_enabled' => '0',
                 'module_series_enabled' => '0',
                 'module_comments_enabled' => '0',
                 'module_contact_enabled' => '0',
                 'module_pages_enabled' => '0',
                 'module_search_enabled' => '0',
+                'module_social_enabled' => '0',
             ]);
             self::assertResponseRedirects('/admin/settings/modules');
+
+            $client->request('GET', '/mitglieder');
+            self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+            self::assertStringContainsString('no-store', (string) $client->getResponse()->headers->get('Cache-Control'));
+            $client->request('GET', '/konto/anmelden');
+            self::assertResponseIsSuccessful('Disabling the social area must not disable member sign-in.');
 
             foreach (['/contact', '/pages', '/search?q=disabled', '/hilfe/emoji', '/hilfe/emoji/katalog.json', '/admin/contact-messages', '/admin/pages', '/admin/comments', '/admin/search-statistics'] as $disabledRoute) {
                 $client->request('GET', $disabledRoute);
@@ -1020,9 +1033,75 @@ final class AdminGeneralSettingsTest extends WebTestCase
             self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
             self::assertSame('false', $entityManager->getConnection()->fetchOne('SELECT module_news_enabled::text FROM site_settings WHERE id = 1'));
             self::assertSame('false', $entityManager->getConnection()->fetchOne('SELECT module_series_enabled::text FROM site_settings WHERE id = 1'));
+            self::assertSame('false', $entityManager->getConnection()->fetchOne('SELECT module_social_enabled::text FROM site_settings WHERE id = 1'));
             self::assertNotFalse($entityManager->getConnection()->fetchOne(
                 "SELECT id FROM admin_activity_entries WHERE route_name = 'admin_module_settings_update' LIMIT 1",
             ));
+        } finally {
+            $this->restoreDefaults($client, $email);
+        }
+    }
+
+    public function testAdministratorCanConfigureCommunityFeedEventsAndFollowLimit(): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $client->getContainer()->set(
+            RuntimeAttestationReportProviderInterface::class,
+            new VerifiedRuntimeAttestationReportProvider(),
+        );
+        $email = 'community-settings-'.bin2hex(random_bytes(6)).'@example.test';
+
+        try {
+            $this->persistUser($client, $email, 'CommunitySettings!2026', [AdminRole::Administrator->value]);
+            $this->submitLogin($client, $email, 'CommunitySettings!2026');
+            self::assertResponseRedirects('/admin');
+
+            $client->request('GET', '/admin/settings/modules');
+            self::assertResponseIsSuccessful();
+            $token = (string) $client->getCrawler()->filter('form input[name="token"]')->attr('value');
+            $input = [
+                'token' => $token,
+                'module_news_enabled' => '1',
+                'module_series_enabled' => '1',
+                'module_comments_enabled' => '1',
+                'module_contact_enabled' => '1',
+                'module_pages_enabled' => '1',
+                'module_search_enabled' => '1',
+                ...$this->defaultSocialSettingsInput(),
+                'social_following_limit' => '3',
+                'social_activity_playlist_enabled' => '0',
+                'social_activity_video_comment_enabled' => '0',
+            ];
+            $client->request('POST', '/admin/settings/modules', $input);
+            self::assertResponseRedirects('/admin/settings/modules');
+
+            $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+            self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+            $connection = $entityManager->getConnection();
+            self::assertSame('3', $connection->fetchOne('SELECT social_following_limit::text FROM site_settings WHERE id = 1'));
+            self::assertSame('false', $connection->fetchOne('SELECT social_activity_playlist_enabled::text FROM site_settings WHERE id = 1'));
+            self::assertSame('false', $connection->fetchOne('SELECT social_activity_video_comment_enabled::text FROM site_settings WHERE id = 1'));
+            self::assertSame('true', $connection->fetchOne('SELECT social_activity_news_comment_enabled::text FROM site_settings WHERE id = 1'));
+
+            $client->request('GET', '/admin/settings/modules');
+            self::assertResponseIsSuccessful();
+            $token = (string) $client->getCrawler()->filter('form input[name="token"]')->attr('value');
+            $input['token'] = $token;
+            $input['social_following_limit'] = '5001';
+            $client->request('POST', '/admin/settings/modules', $input);
+            self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+            self::assertSame('3', $connection->fetchOne('SELECT social_following_limit::text FROM site_settings WHERE id = 1'));
+
+            $client->request('GET', '/admin/settings/modules');
+            self::assertResponseIsSuccessful();
+            $token = (string) $client->getCrawler()->filter('form input[name="token"]')->attr('value');
+            $input['token'] = $token;
+            $input['social_following_limit'] = '3';
+            $input['social_activity_playlist_enabled'] = ['1'];
+            $client->request('POST', '/admin/settings/modules', $input);
+            self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+            self::assertSame('false', $connection->fetchOne('SELECT social_activity_playlist_enabled::text FROM site_settings WHERE id = 1'));
         } finally {
             $this->restoreDefaults($client, $email);
         }
@@ -1054,12 +1133,14 @@ final class AdminGeneralSettingsTest extends WebTestCase
             $token = (string) $client->getCrawler()->filter('form input[name="token"]')->attr('value');
             $client->request('POST', '/admin/settings/modules', [
                 'token' => $token,
+                ...$this->defaultSocialSettingsInput(),
                 'module_news_enabled' => '1',
                 'module_series_enabled' => '1',
                 'module_comments_enabled' => '1',
                 'module_contact_enabled' => '1',
                 'module_pages_enabled' => '1',
                 'module_search_enabled' => '1',
+                'module_social_enabled' => '1',
                 'module_future_enabled' => '1',
             ]);
             self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
@@ -1074,6 +1155,7 @@ final class AdminGeneralSettingsTest extends WebTestCase
                 'module_contact_enabled' => '1',
                 'module_pages_enabled' => '1',
                 'module_search_enabled' => '1',
+                'module_social_enabled' => '1',
             ];
             self::assertSame([], $manager->updateFeatureModules($allModulesEnabled));
 
@@ -1088,6 +1170,7 @@ final class AdminGeneralSettingsTest extends WebTestCase
             );
             self::assertFalse($availability->isEnabled('news'));
             self::assertTrue($availability->isEnabled('admin'));
+            self::assertTrue($availability->controllerIsEnabled('App\\Module\\Member\\Controller\\MemberFollowController::index'));
             self::assertTrue($availability->controllerIsEnabled('App\\Module\\Automation\\Controller\\AdminScheduledTaskController::index'));
             self::assertTrue($availability->controllerIsEnabled('App\\Module\\Installer\\Controller\\InstallerSecurityProfileController::index'));
             self::assertTrue($availability->controllerIsEnabled('App\\Module\\Content\\Controller\\AdminContentInlineImageController::upload'));
@@ -1110,6 +1193,7 @@ final class AdminGeneralSettingsTest extends WebTestCase
                 new NullLogger(),
             );
             self::assertFalse($failedAvailability->isEnabled('news'));
+            self::assertTrue($failedAvailability->isEnabled('social'));
 
             self::assertSame([], $manager->updateFeatureModules([
                 ...$allModulesEnabled,
@@ -1420,7 +1504,7 @@ final class AdminGeneralSettingsTest extends WebTestCase
 
         $connection = $entityManager->getConnection();
         $connection->executeStatement(
-            "UPDATE site_settings SET site_name = 'Arcanorum', tagline = '', default_locale = 'de', timezone = 'Europe/Berlin', seo_description = '', search_indexing_enabled = TRUE, maintenance_mode_enabled = FALSE, maintenance_message = 'Die Website wird gewartet. Bitte versuchen Sie es später erneut.', cookie_consent_enabled = TRUE, cookie_consent_message = 'Wir verwenden notwendige Cookies für Anmeldung, Sicherheit und die Ansichtspräferenz in diesem Browser. Optionale Analyse- und Werbedienste werden nur nach Ihrer Zustimmung geladen.', google_analytics_measurement_id = '', module_news_enabled = TRUE, module_series_enabled = TRUE, module_comments_enabled = TRUE, module_contact_enabled = TRUE, module_pages_enabled = TRUE, module_search_enabled = TRUE, video_player_engine = 'native', provider_thumbnail_resolution = 'medium', video_preload_mode = 'metadata', video_player_aspect_ratio = '16:9', video_player_max_width = 'fluid', video_player_embed_max_width = 'fluid', video_player_home_max_width = 'fluid', player_featured_autoplay_enabled = FALSE, auto_feature_view_threshold = 0, video_player_color_scheme = 'midnight', video_player_watermark_enabled = FALSE, video_player_watermark_object_id = NULL, video_player_watermark_mime_type = NULL, video_player_watermark_size = NULL, video_player_watermark_sha256 = NULL, public_video_embedding_enabled = TRUE, player_autoplay_enabled = FALSE, player_autoplay_muted = TRUE, default_comments_enabled = TRUE, guest_comments_enabled = TRUE, comment_default_sort = 'added', comment_rating_hide_threshold = 0, comments_per_page = 10, public_video_submissions_enabled = TRUE, homepage_featured_limit = 1, homepage_video_limit = 6, homepage_news_limit = 6, public_video_page_limit = 24, popular_video_sort = 'views', popular_video_period_days = 30, currently_watching_limit = 0, public_statistics_enabled = FALSE, tag_cloud_enabled = FALSE, tag_cloud_limit = 20, tag_cloud_shuffle = FALSE, related_video_limit = 6, top_rated_video_limit = 0, video_share_widget_enabled = TRUE, member_registration_enabled = TRUE, social_google_enabled = FALSE, social_facebook_enabled = FALSE, social_twitter_enabled = FALSE, comment_provider = 'native', facebook_comments_app_id = '', disqus_comments_shortname = '' WHERE id = 1",
+            "UPDATE site_settings SET site_name = 'Arcanorum', tagline = '', default_locale = 'de', timezone = 'Europe/Berlin', seo_description = '', search_indexing_enabled = TRUE, maintenance_mode_enabled = FALSE, maintenance_message = 'Die Website wird gewartet. Bitte versuchen Sie es später erneut.', cookie_consent_enabled = TRUE, cookie_consent_message = 'Wir verwenden notwendige Cookies für Anmeldung, Sicherheit und die Ansichtspräferenz in diesem Browser. Optionale Analyse- und Werbedienste werden nur nach Ihrer Zustimmung geladen.', google_analytics_measurement_id = '', module_news_enabled = TRUE, module_series_enabled = TRUE, module_comments_enabled = TRUE, module_contact_enabled = TRUE, module_pages_enabled = TRUE, module_search_enabled = TRUE, module_social_enabled = TRUE, social_following_limit = 500, social_activity_video_submission_enabled = TRUE, social_activity_playlist_enabled = TRUE, social_activity_video_comment_enabled = TRUE, social_activity_news_comment_enabled = TRUE, video_player_engine = 'native', provider_thumbnail_resolution = 'medium', video_preload_mode = 'metadata', video_player_aspect_ratio = '16:9', video_player_max_width = 'fluid', video_player_embed_max_width = 'fluid', video_player_home_max_width = 'fluid', player_featured_autoplay_enabled = FALSE, auto_feature_view_threshold = 0, video_player_color_scheme = 'midnight', video_player_watermark_enabled = FALSE, video_player_watermark_object_id = NULL, video_player_watermark_mime_type = NULL, video_player_watermark_size = NULL, video_player_watermark_sha256 = NULL, public_video_embedding_enabled = TRUE, player_autoplay_enabled = FALSE, player_autoplay_muted = TRUE, default_comments_enabled = TRUE, guest_comments_enabled = TRUE, comment_default_sort = 'added', comment_rating_hide_threshold = 0, comments_per_page = 10, public_video_submissions_enabled = TRUE, homepage_featured_limit = 1, homepage_video_limit = 6, homepage_news_limit = 6, public_video_page_limit = 24, popular_video_sort = 'views', popular_video_period_days = 30, currently_watching_limit = 0, public_statistics_enabled = FALSE, tag_cloud_enabled = FALSE, tag_cloud_limit = 20, tag_cloud_shuffle = FALSE, related_video_limit = 6, top_rated_video_limit = 0, video_share_widget_enabled = TRUE, member_registration_enabled = TRUE, social_google_enabled = FALSE, social_facebook_enabled = FALSE, social_twitter_enabled = FALSE, comment_provider = 'native', facebook_comments_app_id = '', disqus_comments_shortname = '' WHERE id = 1",
         );
         $user = $entityManager->getRepository(AdminUser::class)->findOneBy(['email' => $email]);
         if ($user instanceof AdminUser) {
@@ -1428,5 +1512,18 @@ final class AdminGeneralSettingsTest extends WebTestCase
             $entityManager->remove($user);
             $entityManager->flush();
         }
+    }
+
+    /** @return array<string, string> */
+    private function defaultSocialSettingsInput(): array
+    {
+        return [
+            'module_social_enabled' => '1',
+            'social_following_limit' => '500',
+            'social_activity_video_submission_enabled' => '1',
+            'social_activity_playlist_enabled' => '1',
+            'social_activity_video_comment_enabled' => '1',
+            'social_activity_news_comment_enabled' => '1',
+        ];
     }
 }

@@ -28,6 +28,21 @@ final readonly class BuiltInModuleCatalog
             new BuiltInModule('platform', 'Öffentliche Plattform', 'Startseite und zentrale Plattformrouten bleiben immer verfügbar.', 'Platform', false, null, []),
             new BuiltInModule('search', 'Suche', 'Öffentliche Inhaltssuche und Suchverwaltung.', 'Search', true, FeatureModule::Search, $database),
             new BuiltInModule('series', 'Serien', 'Serien, Staffeln, Folgen, Genres und zugehörige Inhalte.', 'Series', true, FeatureModule::Series, $database),
+            new BuiltInModule(
+                'social',
+                'Social und Community',
+                'Mitgliederverbindungen, öffentliche Profile, Community-Feeds und Wiedergabelisten.',
+                'Social',
+                true,
+                FeatureModule::Social,
+                [],
+                [
+                    \App\Module\Member\Controller\MemberFollowController::class,
+                    \App\Module\Member\Controller\PublicMemberDirectoryController::class,
+                    \App\Module\Member\Controller\PublicMemberProfileController::class,
+                    \App\Module\Member\Controller\PublicPlaylistController::class,
+                ],
+            ),
             new BuiltInModule('settings', 'Einstellungen', 'Website- und Datenschutzkonfiguration bleiben immer verfügbar.', 'Settings', false, null, []),
             new BuiltInModule('tags', 'Schlagwörter', 'Gemeinsame Schlagwortverwaltung für Inhalte.', 'Tag', false, null, []),
             new BuiltInModule('videos', 'Videokatalog', 'Der zentrale Videokatalog und die Wiedergabe bleiben immer verfügbar.', 'Video', false, null, []),
@@ -50,6 +65,12 @@ final readonly class BuiltInModuleCatalog
         $prefix = 'App\\Module\\';
         if (!str_starts_with($controllerClass, $prefix)) {
             return null;
+        }
+
+        foreach ($this->all() as $module) {
+            if (in_array($controllerClass, $module->controllerClasses, true)) {
+                return $module;
+            }
         }
 
         foreach ($this->all() as $module) {

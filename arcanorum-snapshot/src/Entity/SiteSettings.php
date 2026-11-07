@@ -116,6 +116,24 @@ final class SiteSettings
     #[ORM\Column(name: 'module_search_enabled', type: Types::BOOLEAN, options: ['default' => true])]
     private bool $searchModuleEnabled;
 
+    #[ORM\Column(name: 'module_social_enabled', type: Types::BOOLEAN, options: ['default' => true])]
+    private bool $socialModuleEnabled;
+
+    #[ORM\Column(name: 'social_following_limit', type: Types::INTEGER, options: ['default' => 500])]
+    private int $socialFollowingLimit = 500;
+
+    #[ORM\Column(name: 'social_activity_video_submission_enabled', type: Types::BOOLEAN, options: ['default' => true])]
+    private bool $socialVideoSubmissionActivityEnabled = true;
+
+    #[ORM\Column(name: 'social_activity_playlist_enabled', type: Types::BOOLEAN, options: ['default' => true])]
+    private bool $socialPlaylistActivityEnabled = true;
+
+    #[ORM\Column(name: 'social_activity_video_comment_enabled', type: Types::BOOLEAN, options: ['default' => true])]
+    private bool $socialVideoCommentActivityEnabled = true;
+
+    #[ORM\Column(name: 'social_activity_news_comment_enabled', type: Types::BOOLEAN, options: ['default' => true])]
+    private bool $socialNewsCommentActivityEnabled = true;
+
     #[ORM\Column(name: 'player_autoplay_enabled', type: Types::BOOLEAN, options: ['default' => false])]
     private bool $playerAutoplayEnabled;
 
@@ -329,6 +347,7 @@ final class SiteSettings
         $this->contactModuleEnabled = true;
         $this->pagesModuleEnabled = true;
         $this->searchModuleEnabled = true;
+        $this->socialModuleEnabled = true;
         $this->playerAutoplayEnabled = false;
         $this->playerAutoplayMuted = true;
         $this->defaultCommentsEnabled = true;
@@ -674,10 +693,16 @@ final class SiteSettings
     {
         $errors = [];
         $enabled = [];
-        $knownFields = array_fill_keys(array_map(
+        $moduleFields = array_map(
             static fn (FeatureModule $module): string => $module->inputName(),
             FeatureModule::cases(),
-        ), true);
+        );
+        $activityFields = [];
+        foreach (MemberActivityType::cases() as $activityType) {
+            $activityFields[$activityType->value] = self::memberActivityInputName($activityType);
+        }
+        $socialFields = ['social_following_limit', ...array_values($activityFields)];
+        $knownFields = array_fill_keys([...$moduleFields, ...$socialFields], true);
 
         foreach ($input as $field => $_value) {
             if (!isset($knownFields[$field])) {
@@ -699,6 +724,33 @@ final class SiteSettings
             $enabled[$module->value] = self::normalizeBoolean($input[$field], $fallback, $field, $errors);
         }
 
+        $hasSocialSettings = [] !== array_intersect($socialFields, array_keys($input));
+        $socialFollowingLimit = $this->socialFollowingLimit;
+        $socialActivityEnabled = [];
+        if ($hasSocialSettings) {
+            if (!array_key_exists('social_following_limit', $input)) {
+                $errors['social_following_limit'] = 'Bitte geben Sie eine gültige Folgegrenze an.';
+            } else {
+                $socialFollowingLimit = self::boundedInteger($input['social_following_limit'], 0, 5000, 'social_following_limit', $errors);
+            }
+
+            foreach (MemberActivityType::cases() as $activityType) {
+                $field = self::memberActivityInputName($activityType);
+                if (!array_key_exists($field, $input)) {
+                    $errors[$field] = 'Bitte wählen Sie einen gültigen Ein/Aus-Wert.';
+
+                    continue;
+                }
+
+                $socialActivityEnabled[$activityType->value] = self::normalizeBoolean(
+                    $input[$field],
+                    $this->isMemberActivityEnabled($activityType),
+                    $field,
+                    $errors,
+                );
+            }
+        }
+
         if ([] !== $errors) {
             return $errors;
         }
@@ -710,6 +762,17 @@ final class SiteSettings
             }
 
             $this->setFeatureModuleEnabled($module, $moduleEnabled);
+        }
+        if ($hasSocialSettings) {
+            $this->socialFollowingLimit = $socialFollowingLimit;
+            foreach (MemberActivityType::cases() as $activityType) {
+                $activityEnabled = $socialActivityEnabled[$activityType->value] ?? null;
+                if (!is_bool($activityEnabled)) {
+                    throw new \LogicException('Die geprüften Social-Einstellungen sind unvollständig.');
+                }
+
+                $this->setMemberActivityEnabled($activityType, $activityEnabled);
+            }
         }
         $this->updatedAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
 
@@ -725,6 +788,7 @@ final class SiteSettings
             FeatureModule::Contact => $this->contactModuleEnabled,
             FeatureModule::Pages => $this->pagesModuleEnabled,
             FeatureModule::Search => $this->searchModuleEnabled,
+            FeatureModule::Social => $this->socialModuleEnabled,
         };
     }
 
@@ -737,6 +801,46 @@ final class SiteSettings
             FeatureModule::Contact => $this->contactModuleEnabled = $enabled,
             FeatureModule::Pages => $this->pagesModuleEnabled = $enabled,
             FeatureModule::Search => $this->searchModuleEnabled = $enabled,
+            FeatureModule::Social => $this->socialModuleEnabled = $enabled,
+        };
+    }
+
+    public static function memberActivityInputName(MemberActivityType $type): string
+    {
+        return 'social_activity_'.$type->value.'_enabled';
+    }
+
+    public function getSocialFollowingLimit(): int
+    {
+        return $this->socialFollowingLimit;
+    }
+
+    public function isMemberActivityEnabled(MemberActivityType $type): bool
+    {
+        return match ($type) {
+            MemberActivityType::VideoSubmission => $this->socialVideoSubmissionActivityEnabled,
+            MemberActivityType::Playlist => $this->socialPlaylistActivityEnabled,
+            MemberActivityType::VideoComment => $this->socialVideoCommentActivityEnabled,
+            MemberActivityType::NewsComment => $this->socialNewsCommentActivityEnabled,
+        };
+    }
+
+    /** @return list<MemberActivityType> */
+    public function enabledMemberActivityTypes(): array
+    {
+        return array_values(array_filter(
+            MemberActivityType::cases(),
+            fn (MemberActivityType $type): bool => $this->isMemberActivityEnabled($type),
+        ));
+    }
+
+    private function setMemberActivityEnabled(MemberActivityType $type, bool $enabled): void
+    {
+        match ($type) {
+            MemberActivityType::VideoSubmission => $this->socialVideoSubmissionActivityEnabled = $enabled,
+            MemberActivityType::Playlist => $this->socialPlaylistActivityEnabled = $enabled,
+            MemberActivityType::VideoComment => $this->socialVideoCommentActivityEnabled = $enabled,
+            MemberActivityType::NewsComment => $this->socialNewsCommentActivityEnabled = $enabled,
         };
     }
 

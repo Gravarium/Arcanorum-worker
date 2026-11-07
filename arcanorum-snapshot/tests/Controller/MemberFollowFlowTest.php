@@ -6,17 +6,25 @@ namespace App\Tests\Controller;
 
 use App\Entity\CommentContentType;
 use App\Entity\ContentComment;
+use App\Entity\FeatureModule;
 use App\Entity\MemberAccount;
+use App\Entity\MemberActivityType;
 use App\Entity\MemberFollow;
+use App\Entity\MemberFollowResult;
 use App\Entity\NewsArticle;
 use App\Entity\Playlist;
 use App\Entity\PublishingStatus;
+use App\Entity\SiteSettings;
 use App\Entity\Video;
 use App\Entity\VideoSourceType;
 use App\Entity\VideoSubmission;
 use App\Entity\VideoSubmissionStatus;
 use App\Repository\MemberFollowRepository;
+use App\Service\SiteSettingsManager;
+use App\Service\SiteSettingsProvider;
 use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\DBAL\Exception\DriverException;
+use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -35,10 +43,22 @@ final class MemberFollowFlowTest extends WebTestCase
         $client->setServerParameter('REMOTE_ADDR', $remoteAddress);
         $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
         $followRepository = $client->getContainer()->get(MemberFollowRepository::class);
+        $settingsManager = $client->getContainer()->get(SiteSettingsManager::class);
+        $settingsProvider = $client->getContainer()->get(SiteSettingsProvider::class);
         $passwordHasher = $client->getContainer()->get(UserPasswordHasherInterface::class);
         self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
         self::assertInstanceOf(MemberFollowRepository::class, $followRepository);
+        self::assertInstanceOf(SiteSettingsManager::class, $settingsManager);
+        self::assertInstanceOf(SiteSettingsProvider::class, $settingsProvider);
         self::assertInstanceOf(UserPasswordHasherInterface::class, $passwordHasher);
+        $originalModuleSettings = [];
+        foreach (FeatureModule::cases() as $module) {
+            $originalModuleSettings[$module->inputName()] = $settingsProvider->current()->isFeatureModuleEnabled($module) ? '1' : '0';
+        }
+        $originalSocialSettings = ['social_following_limit' => (string) $settingsProvider->current()->getSocialFollowingLimit()];
+        foreach (MemberActivityType::cases() as $activityType) {
+            $originalSocialSettings[SiteSettings::memberActivityInputName($activityType)] = $settingsProvider->current()->isMemberActivityEnabled($activityType) ? '1' : '0';
+        }
 
         $suffix = bin2hex(random_bytes(6));
         $password = 'Member-Follow-'.$suffix.'-T8!';
@@ -164,9 +184,42 @@ final class MemberFollowFlowTest extends WebTestCase
             $entityManager->flush();
 
             $followNow = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
-            self::assertFalse($followRepository->follow($viewer, $viewer, $followNow));
-            self::assertFalse($followRepository->follow($viewer, $private, $followNow));
-            self::assertFalse($followRepository->follow($viewer, $unverified, $followNow));
+            self::assertSame(MemberFollowResult::Unavailable, $followRepository->follow($viewer, $viewer, $followNow, 500));
+            self::assertSame(MemberFollowResult::Unavailable, $followRepository->follow($viewer, $private, $followNow, 500));
+            self::assertSame(MemberFollowResult::Unavailable, $followRepository->follow($viewer, $unverified, $followNow, 500));
+
+            $connection = $entityManager->getConnection();
+            $concurrentConnection = DriverManager::getConnection($connection->getParams());
+            try {
+                $concurrentConnection->beginTransaction();
+                $concurrentConnection->fetchOne(
+                    'SELECT pg_advisory_xact_lock(hashtextextended(:follower_id, 0))',
+                    ['follower_id' => $viewer->getId()],
+                );
+                $connection->beginTransaction();
+                $connection->executeStatement("SET LOCAL lock_timeout = '250ms'");
+                try {
+                    $followRepository->follow($viewer, $followed, $followNow, 1);
+                    self::fail('A same-member follow request must wait for the concurrent limit transaction.');
+                } catch (DriverException $exception) {
+                    self::assertSame('55P03', $exception->getSQLState());
+                    self::assertTrue($connection->isTransactionActive());
+                } finally {
+                    if ($connection->isTransactionActive()) {
+                        $connection->rollBack();
+                    }
+                }
+            } finally {
+                if ($concurrentConnection->isTransactionActive()) {
+                    $concurrentConnection->rollBack();
+                }
+                $concurrentConnection->close();
+            }
+
+            self::assertSame(MemberFollowResult::Added, $followRepository->follow($viewer, $followed, $followNow, 1));
+            self::assertSame(MemberFollowResult::LimitReached, $followRepository->follow($viewer, $otherFollower, $followNow, 1));
+            self::assertTrue($followRepository->unfollow($viewer, $followed));
+            self::assertSame(MemberFollowResult::LimitReached, $followRepository->follow($viewer, $otherFollower, $followNow, 0));
 
             $client->request('GET', '/konto/anmelden');
             $loginToken = (string) $client->getCrawler()->filter('input[name="_csrf_token"]')->attr('value');
@@ -250,6 +303,35 @@ final class MemberFollowFlowTest extends WebTestCase
             self::assertStringNotContainsString($unfollowedVideo->getTitle(), $feedHtml);
             self::assertStringNotContainsString('<script>', $feedHtml);
 
+            $withoutMediaActivity = [...$originalModuleSettings, ...$originalSocialSettings];
+            $withoutMediaActivity[SiteSettings::memberActivityInputName(MemberActivityType::VideoSubmission)] = '0';
+            $withoutMediaActivity[SiteSettings::memberActivityInputName(MemberActivityType::Playlist)] = '0';
+            self::assertSame([], $settingsManager->updateFeatureModules($withoutMediaActivity));
+            $client->request('GET', '/konto/folgen?view=feed');
+            self::assertResponseIsSuccessful();
+            $filteredFeed = (string) $client->getResponse()->getContent();
+            self::assertStringNotContainsString($publicVideo->getTitle(), $filteredFeed);
+            self::assertStringNotContainsString($publicPlaylist->getName(), $filteredFeed);
+            self::assertStringContainsString('hat ein veröffentlichtes Video kommentiert:', $filteredFeed);
+
+            $socialDisabledSettings = [...$originalModuleSettings, ...$originalSocialSettings];
+            $socialDisabledSettings[FeatureModule::Social->inputName()] = '0';
+            self::assertSame([], $settingsManager->updateFeatureModules($socialDisabledSettings));
+            foreach ([
+                '/mitglieder',
+                '/kanal/'.$followed->getHandle(),
+                '/wiedergabelisten/'.$publicPlaylist->getId(),
+                '/konto/folgen?view=feed',
+            ] as $socialRoute) {
+                $client->request('GET', $socialRoute);
+                self::assertResponseStatusCodeSame(404, sprintf('Expected the disabled Social route %s to be unavailable.', $socialRoute));
+                self::assertStringContainsString('no-store', (string) $client->getResponse()->headers->get('Cache-Control'));
+            }
+            $client->request('GET', '/konto/wiedergabelisten');
+            self::assertResponseIsSuccessful('Private playlists remain part of the member account when public community features are paused.');
+            self::assertStringNotContainsString('value="public"', (string) $client->getResponse()->getContent());
+            self::assertSame([], $settingsManager->updateFeatureModules([...$originalModuleSettings, ...$originalSocialSettings]));
+
             $client->request('GET', '/kanal/'.$followed->getHandle());
             $unfollowAction = '/konto/folgen/'.$followed->getHandle().'/entfolgen';
             $unfollowToken = (string) $client->getCrawler()->filter('form[action="'.$unfollowAction.'"] input[name="_token"]')->attr('value');
@@ -314,6 +396,7 @@ final class MemberFollowFlowTest extends WebTestCase
             $client->request('GET', '/konto/folgen?view=feed&page=2');
             self::assertResponseIsSuccessful();
         } finally {
+            $settingsManager->updateFeatureModules([...$originalModuleSettings, ...$originalSocialSettings]);
             $cleanupEntityManager = $client->getContainer()->get(EntityManagerInterface::class);
             self::assertInstanceOf(EntityManagerInterface::class, $cleanupEntityManager);
             $connection = $cleanupEntityManager->getConnection();

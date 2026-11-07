@@ -2337,3 +2337,18 @@ Admin: Administration
 'Mitglieder, geplante Aufgaben und Systemhinweise verwalten.': 'Manage members, scheduled tasks, and system notices.'
 'Du hast optionale Inhalte freigegeben. Der geprüfte Anbieterplayer wird hier geladen und erhält übliche Verbindungsdaten.': 'You allowed optional content. The verified provider player will load here and receive ordinary connection data.'
 'Wenn du optionale Inhalte zulässt, werden geprüfte externe Video-Player direkt eingebettet. Ohne Zustimmung werden sie nur nach deinem Klick auf „Video im Player starten“ geladen. Der Anbieter erhält dabei übliche Verbindungsdaten.': 'If you allow optional content, verified external video players are embedded directly. Without consent, they load only after you select “Play video here”. The provider receives ordinary connection data.'
+
+"Social und Community": "Social and community"
+"Mitgliederverbindungen, öffentliche Profile, Community-Feeds und Wiedergabelisten.": "Member connections, public profiles, community feeds, and playlists."
+"Community-Einstellungen": "Community settings"
+"Maximale Zahl sichtbarer Mitgliedsbeziehungen": "Maximum visible member connections"
+"Null verhindert neue Folgebeziehungen. Bereits gespeicherte Beziehungen können weiterhin beendet werden.": "Zero prevents new follows. Existing relationships can still be ended."
+"Aktivitäten im Mitgliederfeed": "Member feed activities"
+"Freigegebene Videoeinreichungen": "Approved video submissions"
+"News-Kommentare": "News comments"
+"Weitere Ereignisarten erscheinen erst hier, wenn sie in Arcanorum mit Datenschutz- und Berechtigungsregeln umgesetzt sind.": "Other event types will appear here when privacy and permission rules are implemented for them."
+"Öffentliche Wiedergabelisten sind derzeit deaktiviert.": "Public playlists are currently disabled."
+"Der öffentliche Community-Bereich ist deaktiviert. Private Listen funktionieren weiter.": "The public community area is disabled. Private playlists still work."
+"Der öffentliche Community-Bereich ist deaktiviert. Die Liste bleibt gespeichert und ist nicht öffentlich erreichbar.": "The public community area is disabled. The playlist is retained and cannot be accessed publicly."
+"Du hast die maximale Zahl an Mitgliedern erreicht, denen du folgen kannst.": "You have reached the maximum number of members you can follow."
+"Bitte geben Sie alle Community-Einstellungen an.": "Please provide all community settings."

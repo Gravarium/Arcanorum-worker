@@ -37,6 +37,28 @@
                             {% if errors['module_' ~ module.id ~ '_enabled'] is defined %}
                                 <p class="field-error" role="alert">{{ errors['module_' ~ module.id ~ '_enabled']|trans }}</p>
                             {% endif %}
+                            {% if module.id == 'social' %}
+                                <fieldset class="module-social-settings" aria-labelledby="social-settings-heading">
+                                    <legend id="social-settings-heading">{{ 'Community-Einstellungen'|trans }}</legend>
+                                    <label for="social-following-limit">{{ 'Maximale Zahl sichtbarer Mitgliedsbeziehungen'|trans }}</label>
+                                    <input id="social-following-limit" name="social_following_limit" type="number" min="0" max="5000" step="1" required value="{{ form.social_following_limit }}">
+                                    {% if errors.social_following_limit is defined %}<p class="field-error" role="alert">{{ errors.social_following_limit|trans }}</p>{% endif %}
+                                    <p class="muted">{{ 'Null verhindert neue Folgebeziehungen. Bereits gespeicherte Beziehungen können weiterhin beendet werden.'|trans }}</p>
+                                    <p class="muted">{{ 'Aktivitäten im Mitgliederfeed'|trans }}</p>
+                                    {% for key, label in {
+                                        'video_submission': 'Freigegebene Videoeinreichungen',
+                                        'playlist': 'Öffentliche Wiedergabelisten',
+                                        'video_comment': 'Videokommentare',
+                                        'news_comment': 'News-Kommentare'
+                                    } %}
+                                        {% set field = 'social_activity_' ~ key ~ '_enabled' %}
+                                        <input type="hidden" name="{{ field }}" value="0">
+                                        <label for="{{ field }}"><input id="{{ field }}" name="{{ field }}" type="checkbox" value="1"{% if form[field] == '1' %} checked{% endif %}> {{ label|trans }}</label>
+                                        {% if errors[field] is defined %}<p class="field-error" role="alert">{{ errors[field]|trans }}</p>{% endif %}
+                                    {% endfor %}
+                                    <p class="muted">{{ 'Weitere Ereignisarten erscheinen erst hier, wenn sie in Arcanorum mit Datenschutz- und Berechtigungsregeln umgesetzt sind.'|trans }}</p>
+                                </fieldset>
+                            {% endif %}
                         </div>
                         <div class="module-settings-control">
                             {% if module.configurable %}

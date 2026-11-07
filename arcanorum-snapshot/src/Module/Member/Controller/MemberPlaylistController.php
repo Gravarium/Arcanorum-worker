@@ -6,6 +6,7 @@ namespace App\Module\Member\Controller;
 
 use App\Entity\MemberAccount;
 use App\Entity\Playlist;
+use App\Module\Settings\Service\ModuleAvailability;
 use App\Repository\PlaylistRepository;
 use App\Repository\VideoRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -22,8 +23,10 @@ final class MemberPlaylistController extends AbstractController
         Request $request,
         EntityManagerInterface $entityManager,
         PlaylistRepository $playlists,
+        ModuleAvailability $modules,
     ): Response {
         $member = $this->currentMember();
+        $socialEnabled = $modules->isEnabled('social');
         $values = ['name' => '', 'description' => '', 'visibility' => 'private'];
         $errors = [];
 
@@ -46,6 +49,8 @@ final class MemberPlaylistController extends AbstractController
                 || !in_array($visibility, ['private', 'public'], true)
             ) {
                 $errors[] = 'Die Eingabe ist ungültig oder zu groß.';
+            } elseif ('public' === $visibility && !$socialEnabled) {
+                $errors[] = 'Öffentliche Wiedergabelisten sind derzeit deaktiviert.';
             } else {
                 try {
                     $playlist = new Playlist($member, $values['name'], $values['description'], 'public' === $visibility);
@@ -65,6 +70,7 @@ final class MemberPlaylistController extends AbstractController
             'playlists' => $playlists->findOwnedBy($member),
             'values' => $values,
             'errors' => $errors,
+            'social_enabled' => $socialEnabled,
         ], new Response(status: [] === $errors ? Response::HTTP_OK : Response::HTTP_UNPROCESSABLE_ENTITY));
 
         return $this->noStore($response);
@@ -120,6 +126,7 @@ final class MemberPlaylistController extends AbstractController
         Request $request,
         EntityManagerInterface $entityManager,
         PlaylistRepository $playlists,
+        ModuleAvailability $modules,
     ): Response {
         if (!$this->isCsrfTokenValid('playlist_update_'.$id, $request->request->getString('_token'))) {
             return $this->noStore(new Response('', Response::HTTP_FORBIDDEN));
@@ -139,6 +146,11 @@ final class MemberPlaylistController extends AbstractController
             || !in_array($visibility, ['private', 'public'], true)
         ) {
             $this->addFlash('playlist_error', 'Die Eingabe ist ungültig oder zu groß.');
+
+            return $this->noStore($this->redirectToRoute('member_playlist_index', ['_fragment' => 'playlist-'.$id]));
+        }
+        if ('public' === $visibility && !$modules->isEnabled('social')) {
+            $this->addFlash('playlist_error', 'Öffentliche Wiedergabelisten sind derzeit deaktiviert.');
 
             return $this->noStore($this->redirectToRoute('member_playlist_index', ['_fragment' => 'playlist-'.$id]));
         }

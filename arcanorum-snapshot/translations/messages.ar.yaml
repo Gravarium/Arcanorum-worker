@@ -402,3 +402,20 @@
 'Mitglieder, geplante Aufgaben und Systemhinweise verwalten.': 'أدر الأعضاء والمهام المجدولة وتنبيهات النظام.'
 'Du hast optionale Inhalte freigegeben. Der geprüfte Anbieterplayer wird hier geladen und erhält übliche Verbindungsdaten.': 'لقد سمحت بالمحتوى الاختياري. سيتم تحميل مشغّل مزوّد الفيديو الموثوق هنا وسيتلقى بيانات الاتصال المعتادة.'
 'Wenn du optionale Inhalte zulässt, werden geprüfte externe Video-Player direkt eingebettet. Ohne Zustimmung werden sie nur nach deinem Klick auf „Video im Player starten“ geladen. Der Anbieter erhält dabei übliche Verbindungsdaten.': 'عند السماح بالمحتوى الاختياري، تُضمّن مشغلات الفيديو الخارجية الموثوقة مباشرةً. ومن دون الموافقة لا تُحمّل إلا بعد اختيار «تشغيل الفيديو هنا». ويتلقى المزوّد بيانات الاتصال المعتادة.'
+
+"Social und Community": "التواصل والمجتمع"
+"Mitgliederverbindungen, öffentliche Profile, Community-Feeds und Wiedergabelisten.": "علاقات الأعضاء والملفات العامة وخلاصات المجتمع وقوائم التشغيل."
+"Community-Einstellungen": "إعدادات المجتمع"
+"Maximale Zahl sichtbarer Mitgliedsbeziehungen": "الحد الأقصى للعلاقات الظاهرة بين الأعضاء"
+"Null verhindert neue Folgebeziehungen. Bereits gespeicherte Beziehungen können weiterhin beendet werden.": "القيمة صفر تمنع إنشاء علاقات متابعة جديدة، مع إمكانية إنهاء العلاقات الحالية."
+"Aktivitäten im Mitgliederfeed": "أنشطة موجز الأعضاء"
+"Freigegebene Videoeinreichungen": "إرسالات الفيديو المعتمدة"
+"Öffentliche Wiedergabelisten": "قوائم التشغيل العامة"
+"Videokommentare": "تعليقات الفيديو"
+"News-Kommentare": "تعليقات الأخبار"
+"Weitere Ereignisarten erscheinen erst hier, wenn sie in Arcanorum mit Datenschutz- und Berechtigungsregeln umgesetzt sind.": "ستظهر أنواع أخرى من الأحداث هنا بعد تنفيذ ضوابط الخصوصية والصلاحيات الخاصة بها."
+"Öffentliche Wiedergabelisten sind derzeit deaktiviert.": "قوائم التشغيل العامة معطلة حاليًا."
+"Der öffentliche Community-Bereich ist deaktiviert. Private Listen funktionieren weiter.": "قسم المجتمع العام معطل. تستمر قوائم التشغيل الخاصة بالعمل."
+"Der öffentliche Community-Bereich ist deaktiviert. Die Liste bleibt gespeichert und ist nicht öffentlich erreichbar.": "قسم المجتمع العام معطل. تبقى القائمة محفوظة وغير متاحة للعامة."
+"Du hast die maximale Zahl an Mitgliedern erreicht, denen du folgen kannst.": "لقد بلغت الحد الأقصى للأعضاء الذين يمكنك متابعتهم."
+"Bitte geben Sie alle Community-Einstellungen an.": "يرجى إدخال جميع إعدادات المجتمع."

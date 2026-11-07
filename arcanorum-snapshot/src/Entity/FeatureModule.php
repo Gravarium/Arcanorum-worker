@@ -12,6 +12,7 @@ enum FeatureModule: string
     case Contact = 'contact';
     case Pages = 'pages';
     case Search = 'search';
+    case Social = 'social';
 
     public function inputName(): string
     {
