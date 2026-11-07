@@ -121,7 +121,7 @@ final class VideoEmbedFlowTest extends WebTestCase
                 $signedCookie->getValue(),
                 0,
                 $signedCookie->getPath(),
-                null,
+                'localhost',
                 false,
                 true,
                 false,
@@ -137,7 +137,7 @@ final class VideoEmbedFlowTest extends WebTestCase
             self::assertSelectorNotExists('[data-provider-embed-load]');
             self::assertTrue($client->getResponse()->headers->getCacheControlDirective('private'));
             self::assertTrue($client->getResponse()->headers->getCacheControlDirective('no-store'));
-            self::assertContains('cookie', array_map('strtolower', $client->getResponse()->getVary()));
+            self::assertContains('Cookie', $client->getResponse()->getVary());
             self::assertStringContainsString(
                 "frame-src 'self' https://www.youtube-nocookie.com",
                 (string) $client->getResponse()->headers->get('Content-Security-Policy-Report-Only'),
