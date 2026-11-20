@@ -26,7 +26,9 @@ Dieser Plan ist die Arbeitsanweisung für die Fortsetzung des Projekts im Codex-
 | Quellen- und Versionskarte | Quellstand, ROM-Kennungen, Modulzuordnung und Grenzen der Belege | USA-ROM erkannt und Ressourcencheck bestanden; Japan-ROM erkannt, Regionsanalyse offen; übrige Systeme offen |
 | Zufallssystem | Zustand/Seed, Zufallsbereich, Tabellen, Aufrufreihenfolge und Verbrauch | Kernfunktionen in einem temporären C-Harness geprüft; Seedquelle und vollständiger spielweiter Verbrauch offen ([research/rng.md](research/rng.md)) |
 | Ahnenhöhle / Ancient Cave | Eintritt, Reset, Stockwerksgenerator, Räume, Verbindungen, Treppen, Objekte, Truhen, Beute, Tod und Verlassen | Phasenfolge, Zähler, Itemfilter, USA-Beutetabellen und Loot-Schwellen geprüft; Graph, Objekttabellen, vollständiger RNG-Trace und Persistenz offen ([research/ancient-cave.md](research/ancient-cave.md)) |
-| Ereignisse und Rätsel | Auslöser, Schalter/Flags, Objekte, Bedingungen, Reihenfolge, Lösung und Folgen | Offen |
+| Quests und Story-Fortschritt | Haupt- und Nebenquests, Questflags, Voraussetzungen, Reihenfolge, Wiederholungen, Belohnungen und Folgen | Offen; Ereignis-VM-Grundlagen werden zuerst beschrieben |
+| Ereignisse und Rätsel | Auslöser, Bedingungen, Schalter/Flags, Objekte, Rätselzustand, Lösung, Fehlschläge und Folgen je Ort | VM-Mechanik teilweise nachvollzogen; konkrete Quest- und Rätselketten offen ([research/events-and-puzzles.md](research/events-and-puzzles.md)) |
+| Initialisierung, Reset und Wiederherstellung | Spielstart, neues Spiel, Laden, Kartenwechsel, Ereigniszustand, Rast/Heilung, Niederlage, Ahnenhöhle und Wiederaufnahme | Boot-, Feldszene-, Save-/Load-, Recovery-, Karten-Event- und Höhlenroutinen erfasst; komplette Aufrufer-/Lebenszyklusmatrix offen ([research/initialization-and-resets.md](research/initialization-and-resets.md)) |
 | Feldbewegung und Kollision | Eingaben, Tile-Prüfung, Bewegung, Übergänge und Sonderfälle | Offen |
 | Kampf | Zugreihenfolge, Aktionen, Treffer, Schaden, Status, Gegner-KI und Ergebnis | Offen |
 | Gruppe und Wachstum | Erfahrung, Levelgrenzen, Werte, Zufalls-/Tabellenwachstum und Grenzen | Offen |
@@ -41,9 +43,10 @@ Ein Bereich gilt erst als implementierungsbereit, wenn die Regeln mit Quellen be
 
 1. Die vorhandenen Aussagen in `README.md` gegen den konkreten Stand der Referenzquellen prüfen und eine Quellenkarte erstellen.
 2. Zufallssystem und Ahnenhöhle vom RNG-Einstieg bis zu den wesentlichen Ergebnissen verfolgen. Generatorphasen und Reihenfolge der Zufallsaufrufe festhalten.
-3. Ereignisabläufe und Rätselbedingungen systematisch untersuchen und als allgemeines, programmierbares Ereignissystem beschreiben.
-4. Kampf, Gruppe/Wachstum, Ausrüstung, Gegenstände, Zauber, Kapselmonster, Feld, Menüs und Speichern in derselben Form rekonstruieren.
-5. Japanische und deutsche Fassung gezielt mit der USA-Referenz vergleichen; ungeprüfte Bereiche offen lassen.
+3. Ereignis-VM, Skriptauslöser und Bedingungsarten rekonstruieren; danach Questketten und Rätsel je Karte mit Voraussetzungen, Zustandsänderungen und Folgen katalogisieren.
+4. Initialisierungs- und Resetpfade quer durch Spielstart, Laden, Kartenwechsel, Rast/Heilung, Kampf/Niederlage, Ahnenhöhle und Speicherstände verfolgen.
+5. Kampf, Feld und Kollision, Gruppe/Wachstum, Ausrüstung, Gegenstände, Zauber, Kapselmonster, Menüs und Speichern in derselben Belegform rekonstruieren.
+6. Japanische und deutsche Fassung gezielt mit der USA-Referenz vergleichen; ungeprüfte Bereiche offen lassen.
 
 ## Vorgesehene Forschungsdateien
 
@@ -51,6 +54,8 @@ Ein Bereich gilt erst als implementierungsbereit, wenn die Regeln mit Quellen be
 - `research/rng.md`
 - `research/ancient-cave.md`
 - `research/events-and-puzzles.md`
+- `research/quests-and-story.md`
+- `research/initialization-and-resets.md`
 - `research/field-and-collision.md`
 - `research/battle.md`
 - `research/party-and-progression.md`
@@ -81,3 +86,11 @@ Für jeden abgeschlossenen Schritt werden Datum, betroffene Systeme, geänderte 
 - C-Laufzeitfälle: `RandomScale` 65.536, `CaveRandomBelow` 65.536, `CaveRandomIndex` 32.768 und `CaveRandomMean` 458.752 Fälle. Zusätzlich stimmten Seedroutine und erster anschließender Rohbyte für alle 256 Seedbytes bei D=0 mit einer unabhängigen Referenzberechnung überein.
 - Grenzen: Der temporäre Harness testete rekonstruierten C-Code gegen Formeln. Er führte keine Original-ROM-Maschinencodepfade aus. `ctest` fand im öffentlichen Referenzcheckout keine Tests. Der strenge GCC-14-Build scheiterte an zwei `-Wimplicit-fallthrough`-Warnungen in `src/battle/battle_targets.c` bei den Zeilen 160 und 170. Der vollständige Release-Build gelang mit `LUFIA2_WARNINGS_AS_ERRORS=OFF`. `python3 scripts/metadata_index.py --check` bestand.
 - Offen: ROM-Differenztests, Spielbeobachtungen, Japan-/Deutschlandvergleich, Seed-Aufrufpfad, vollständiger RNG-Verbrauch und Raumgraph.
+
+### Gesamtumfang präzisiert am 2026-11-20
+
+- Auftrag: vollständige technische Analyse des Spiels, einschließlich Quests und Story-Fortschritt, Rätseln und Karteninteraktionen sowie aller Initialisierungs-, Reset-, Heilungs-/Rast-, Lade- und Wiederherstellungspfade.
+- Geänderte Dateien: `PLAN.md`, `README.md`, `research/events-and-puzzles.md`, `research/initialization-and-resets.md`.
+- Geprüfter Quellstand: Lufia2Decomp `cc7e14744606e2e3b642101e8d440d8cc0e1f98f`.
+- Belegstatus: Ereignis-VM-Grundstruktur sowie Reset-/Wiederherstellungsroutinen für Boot, Feldszene, Standarddatensätze, Save/Load, HP/MP-Recovery, Karten-Events und Ahnenhöhle aus den US-Quellen nachvollzogen. Konkrete Questketten, Rätsellösungen, weitere Funktionsaufrufer und die spielweite Lebenszyklusmatrix bleiben offen.
+- Prüfungen: gezielte Quelltextlektüre und Abgleich ausgewählter Funktionen mit `metadata/functions.toml`; `git diff --check` ausgeführt. Keine neuen ROM- oder Laufzeitprüfungen in diesem Schritt.

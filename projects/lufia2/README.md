@@ -44,7 +44,9 @@ Quellen: [Lufia2Decomp](https://github.com/Cellenseres/Lufia2Decomp), [Architekt
 | System | Zu erfassende Regeln | Status |
 |---|---|---|
 | Feldsteuerung und Kollision | Bewegung, Tile-Prüfung, Laufzustände, Übergänge | Offen |
-| Ereignisse und Rätsel | Schalter, Flags, Objekte, Bedingungen, Ausgänge und Reihenfolge | Quellenbereich bekannt; Rätselregeln noch nicht systematisch erfasst |
+| Quests und Story-Fortschritt | Voraussetzungen, Flagketten, Reihenfolge, optionale Inhalte, Wiederholungen, Belohnungen und Folgen | Offen; wird je Quest und Karte erfasst |
+| Ereignisse und Rätsel | Auslöser, Bedingungen, Schalter, Objekte, Reihenfolge, Lösung, Fehlschläge und Folgen | VM-Grundlagen nachvollzogen; einzelne Quest- und Rätselketten offen ([Forschung](research/events-and-puzzles.md)) |
+| Initialisierung und Reset | Neues Spiel, Laden, Kartenwechsel, Event-/Objektzustand, Rast/Heilung, Niederlage und Wiederaufnahme | Boot-, Feldszene-, Save-/Load-, Recovery-, Karten-Event- und Höhlenroutinen erfasst; kompletter Aufruferpfad offen ([Forschung](research/initialization-and-resets.md)) |
 | Kampf | Zugreihenfolge, Aktionen, Schaden, Treffer, Status, Gegnerverhalten, Belohnungen | Quellroutinen gefunden; vollständige Regelbeschreibung offen |
 | Gruppe und Wachstum | Erfahrungskurven, Levelaufstieg, Grundwerte, Zufalls-/Tabellenwachstum, Grenzen | Quellroutinen für Erfahrung und Stat-Wachstum gefunden; Formeln noch auszuarbeiten |
 | Zauber, Fähigkeiten und Gegenstände | Kosten, Ziele, Wirkungen, Statusänderungen, Benutzung und Ausrüstung | Offen |
@@ -54,13 +56,15 @@ Quellen: [Lufia2Decomp](https://github.com/Cellenseres/Lufia2Decomp), [Architekt
 | Speichern und Menüs | Speicherformat, Auswahl, Inventar, Statusanzeigen und Bedienabläufe | Offen |
 | Regionsvergleich | gemeinsame Regeln sowie Abweichungen USA/Japan/Deutschland | USA- und Japan-ROM erkannt; Code- und Datenvergleich offen |
 
+Der Arbeitsauftrag gilt für das **gesamte Spielsystem**. Dazu gehören auch Questketten und konkrete Rätsel pro Ort sowie sämtliche Wege, auf denen Spielzustände initialisiert, zurückgesetzt, gespeichert, geladen, geheilt oder nach einem Szenenwechsel wiederhergestellt werden. Ein allgemeiner VM-Befund gilt nicht als fertige Quest- oder Rätselanalyse.
+
 ## Codebefunde zu RNG und Ahnenhöhle
 
 Der Referenzstand wurde auf `cc7e14744606e2e3b642101e8d440d8cc0e1f98f` festgesetzt. Der RNG nutzt eine 55-Byte-Tabelle mit in-place XOR-Refills. Zufallswerte mit Grenze entstehen durch das obere Produktbyte. Die Seedroutine mischt die Tabelle vor dem ersten anschließenden Bytezugriff dreimal vor; dieser Zugriff löst wegen des gespeicherten Index 54 noch einen Refill aus. Herkunft des Seedwerts und Aufrufpfad bleiben offen.
 
 Der Höhlengenerator verwendet getrennte 16×16-Raster. Sein belegter Phasenablauf reicht vom Listenaufbau und den Truhen über Raumplatzierung, Verbindungen und Objekte bis zu Tiles, Dekorationen und Kartenkopf. Feldgegenstände müssen feldbenutzbar, nicht ausgeschlossen und billiger als die Grenze sein. Die Grenze ist intern `1000 × (Etagenzähler + 1)` unterhalb `0x3C`, danach `0xFFFF`. Story-/Scrolltruhen haben eigene Pfade. Die USA-ROM besteht den Ressourcencheck mit 680 von 680 Ressourcen. Die Kardinalitäten der vier direkten Beutetabellen wurden erfasst. Vollständiger Ziehungs-Trace, Graphregeln, Japan-Abgleich und Exit-Persistenz sind offen.
 
-Die Belege, Quellfunktionen und Prüfergebnisse stehen in [Quellenkarte](research/source-map.md), [Zufallssystem](research/rng.md) und [Ahnenhöhle](research/ancient-cave.md). Die kompilierten RNG-Helfer bestanden 622.592 Formelvergleiche und die Seedroutine 256 Seedfälle. Das Originalspiel wurde nicht gestartet und es wurde kein ROM-Differenztest ausgeführt.
+Die Belege, Quellfunktionen und Prüfergebnisse stehen in [Quellenkarte](research/source-map.md), [Zufallssystem](research/rng.md), [Ahnenhöhle](research/ancient-cave.md), [Ereignis-VM/Rätselgrundlagen](research/events-and-puzzles.md) und [Initialisierung/Reset/Wiederherstellung](research/initialization-and-resets.md). Die kompilierten RNG-Helfer bestanden 622.592 Formelvergleiche und die Seedroutine 256 Seedfälle. Das Originalspiel wurde nicht gestartet und es wurde kein ROM-Differenztest ausgeführt.
 
 ## Format für jede fertige Mechanik
 
