@@ -49,18 +49,18 @@ Quellen: [Lufia2Decomp](https://github.com/Cellenseres/Lufia2Decomp), [Architekt
 | Gruppe und Wachstum | Erfahrungskurven, Levelaufstieg, Grundwerte, Zufalls-/Tabellenwachstum, Grenzen | Quellroutinen für Erfahrung und Stat-Wachstum gefunden; Formeln noch auszuarbeiten |
 | Zauber, Fähigkeiten und Gegenstände | Kosten, Ziele, Wirkungen, Statusänderungen, Benutzung und Ausrüstung | Offen |
 | Kapselmonster | Werte, Formen, Erfahrung, Fähigkeiten, Lernen und Kampfeinbindung | Quellroutinen gefunden; vollständige Regeln offen |
-| Ahnenhöhle / Ancient Cave | Eintritt, Gruppenreset, Stockwerksaufbau, Räume, Objekte, Truhen, Beute, Tod und Verlassen | Etagenzähler, Phasenfolge, Itemfilter und Truhenschwellen am US-Code nachvollzogen; vollständiger Graph, ROM-Tabellen, RNG-Trace und Exit offen ([Forschung](research/ancient-cave.md)) |
-| Zufallssystem | Seed, Zufallszustand, Tabelle, Zufallsbereich und Aufrufreihenfolge | 55-Byte-RNG, Seed, Refill und Skalierung aus dem Code nachvollzogen; Seedquelle und spielweiter Verbrauch offen ([Forschung](research/rng.md)) |
+| Ahnenhöhle / Ancient Cave | Eintritt, Gruppenreset, Stockwerksaufbau, Räume, Objekte, Truhen, Beute, Tod und Verlassen | Etagenzähler, Phasenfolge, Itemfilter und USA-Beutetabellen geprüft; Graph, Objekttabellen, voller RNG-Trace und Exit-Persistenz offen ([Forschung](research/ancient-cave.md)) |
+| Zufallssystem | Seed, Zufallszustand, Tabelle, Zufallsbereich und Aufrufreihenfolge | Vier RNG-Helfer bestanden 622.592 Fälle, die Seedroutine weitere 256; Seedquelle und spielweiter Verbrauch offen ([Forschung](research/rng.md)) |
 | Speichern und Menüs | Speicherformat, Auswahl, Inventar, Statusanzeigen und Bedienabläufe | Offen |
-| Regionsvergleich | gemeinsame Regeln sowie Abweichungen USA/Japan/Deutschland | ROMs identifiziert; Code- und Datenvergleich offen |
+| Regionsvergleich | gemeinsame Regeln sowie Abweichungen USA/Japan/Deutschland | USA- und Japan-ROM erkannt; Code- und Datenvergleich offen |
 
 ## Codebefunde zu RNG und Ahnenhöhle
 
 Der Referenzstand wurde auf `cc7e14744606e2e3b642101e8d440d8cc0e1f98f` festgesetzt. Der RNG nutzt eine 55-Byte-Tabelle mit in-place XOR-Refills. Zufallswerte mit Grenze entstehen durch das obere Produktbyte. Die Seedroutine mischt die Tabelle vor dem ersten anschließenden Bytezugriff dreimal vor; dieser Zugriff löst wegen des gespeicherten Index 54 noch einen Refill aus. Herkunft des Seedwerts und Aufrufpfad bleiben offen.
 
-Der Höhlengenerator verwendet getrennte 16×16-Raster. Sein belegter Phasenablauf reicht vom Listenaufbau und den Truhen über Raumplatzierung, Verbindungen und Objekte bis zu Tiles, Dekorationen und Kartenkopf. Feldgegenstände müssen feldbenutzbar, nicht ausgeschlossen und billiger als die Grenze sein. Die Grenze ist intern `1000 × (Etagenzähler + 1)` unterhalb `0x3C`, danach `0xFFFF`. Story-/Scrolltruhen haben eigene Pfade. Konkrete ROM-Tabellen, vollständiger Ziehungs-Trace, Graphregeln und Exit-Persistenz sind offen.
+Der Höhlengenerator verwendet getrennte 16×16-Raster. Sein belegter Phasenablauf reicht vom Listenaufbau und den Truhen über Raumplatzierung, Verbindungen und Objekte bis zu Tiles, Dekorationen und Kartenkopf. Feldgegenstände müssen feldbenutzbar, nicht ausgeschlossen und billiger als die Grenze sein. Die Grenze ist intern `1000 × (Etagenzähler + 1)` unterhalb `0x3C`, danach `0xFFFF`. Story-/Scrolltruhen haben eigene Pfade. Die USA-ROM besteht den Ressourcencheck mit 680 von 680 Ressourcen. Die Kardinalitäten der vier direkten Beutetabellen wurden erfasst. Vollständiger Ziehungs-Trace, Graphregeln, Japan-Abgleich und Exit-Persistenz sind offen.
 
-Die Belege, Quellfunktionen und abgeleiteten Prüffälle stehen in [Quellenkarte](research/source-map.md), [Zufallssystem](research/rng.md) und [Ahnenhöhle](research/ancient-cave.md). Es gab in diesem Arbeitslauf keine Originalbeobachtung und keine ROM-Prüfung.
+Die Belege, Quellfunktionen und Prüfergebnisse stehen in [Quellenkarte](research/source-map.md), [Zufallssystem](research/rng.md) und [Ahnenhöhle](research/ancient-cave.md). Die kompilierten RNG-Helfer bestanden 622.592 Formelvergleiche und die Seedroutine 256 Seedfälle. Das Originalspiel wurde nicht gestartet und es wurde kein ROM-Differenztest ausgeführt.
 
 ## Format für jede fertige Mechanik
 

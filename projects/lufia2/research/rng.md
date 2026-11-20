@@ -106,9 +106,21 @@ Danach läuft die belegte Generatorreihenfolge aus `Lufia2CaveBuildFloor`:
 
 Diese Liste beschreibt die im C sichtbaren Zufallsstellen, aber noch keinen vollständigen reproduzierbaren Ziehungs-Trace. Dazu fehlen unter anderem alle Tabelleninhalte, die konkrete Eingabe für DP `$40`, einige von Zell- und Raumzuständen abhängige Schleifenpfade und ein geprüfter Seed-Aufrufpfad.
 
-## Aus dem Code abgeleitete Prüffälle
+## Laufzeitprüfung der rekonstruierten C-Helfer
 
-Die folgenden Fälle sind Vorhersagen aus den Formeln und wurden nicht am Originalspiel ausgeführt:
+Ein temporärer Test-Harness führte die kompilierten RNG-Funktionen aus `Lufia2Decomp` Commit `cc7e14744606e2e3b642101e8d440d8cc0e1f98f` aus. Die USA-ROM wurde in den Bus eingebunden. Die Tabellenadresse `$83:9F49` wurde dabei auf Datei-Offset `$19F49` und Byte `0x3B` abgebildet.
+
+- `RandomScale`: alle 65.536 Kombinationen aus Grenze und Rohbyte.
+- `CaveRandomBelow`: alle 65.536 Kombinationen aus Grenze und Rohbyte, einschließlich der signierten Grenzen 128 bis 255.
+- `CaveRandomIndex`: 32.768 Kombinationen mit Grenzen 0 bis 127 und allen Rohbytes.
+- `CaveRandomMean`: 458.752 Kombinationen für Grenzen 0, 1, 4, 9, 127, 128 und 255 sowie alle Rohbytepaare.
+- `SeedRandom`: alle 256 Seedbytes bei D=0, einschließlich Tabellenvergleich nach drei Refills und des ersten Rohbytes nach dem anschließenden Refill.
+
+Alle Fälle stimmten mit einer unabhängigen Berechnung der dokumentierten Formeln überein. Tabellenindex, Stack und Datenbank-Rückgabe wurden ebenfalls geprüft. Die RNG-Helfer lasen während dieser Funktionsfälle keine Bytes aus der ROM. Der Harness führte daher die rekonstruierten C-Routinen aus, nicht die Original-Maschinencodefunktionen. Das ist kein Original-ROM-Differenztest und keine Beobachtung im Spiel.
+
+## Weitere aus dem Code abgeleitete Prüffälle
+
+Die folgenden Vorhersagen sind nicht in diesen C-Helferprüfungen enthalten und wurden nicht am Originalspiel ausgeführt:
 
 - RandomScale mit Grenze 5 und Rohbyte 0 ergibt 0; Rohbyte 255 ergibt 4.
 - RandomMean mit Grenze 4 und Zwischenergebnissen 0 sowie 3 ergibt 1. Mit Zwischenergebnissen 200 sowie 100 ergibt die 8-Bit-Summe 44 und danach 22.

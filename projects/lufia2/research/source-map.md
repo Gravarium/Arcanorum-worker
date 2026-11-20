@@ -9,6 +9,17 @@
 
 Laut README des Referenzprojekts bedeutet `verified`, dass eine Funktion die private differenzielle Prüfung gegen die unterstützte Original-ROM bestanden hat. Diese Aussage wurde hier nicht erneut gegen eine ROM ausgeführt. Sie bestätigt außerdem nur den Funktionsstatus, nicht automatisch die Vollständigkeit der folgenden Regelbeschreibung.
 
+## Bereitgestellte ROMs und Prüfungen
+
+| Fassung | Größe | SHA-256 | Prüfung |
+|---|---:|---|---|
+| USA, `Lufia II - Rise of the Sinistrals (USA).sfc` | 2.621.440 Byte | `7c34ecb16c10f551120ed7b86cfbc947042f479b52ee74bb3c40e92fdd192b3a` | Das ROM-Werkzeug des Referenzprojekts dekodierte 680 von 680 Ressourcen. |
+| Japan, `Estpolis Denki II (Japan).sfc` | 2.621.440 Byte | `f62df5ffda3042b7d7717cb49be1029defa0de28191a8c66e380d1c9adbebc6f` | SNES-LoROM erkannt. Das ROM-Werkzeug weist es zurück, weil es nur die US-Fassung unterstützt. |
+
+Der dritte hochgeladene Anhang ist ein DEGAS-Bild und keine Spiel-ROM. Die ROM-Dateien blieben außerhalb des öffentlichen Repositories.
+
+Für den kompilierten RNG-Code wurde ein temporärer Bus-Harness verwendet. Er bestätigte die LoROM-Abbildung der US-Adresse `$83:9F49` auf Datei-Offset `$19F49`. Die Funktionsfälle selbst lasen keine Bytes aus dem ROM. Die getesteten Formeln und Grenzen stehen in [rng.md](rng.md).
+
 ## Fundstellen für RNG und Ahnenhöhle
 
 | Bereich | Fundstelle im Commit `cc7e147…` | Befund und Grenze |
@@ -38,10 +49,11 @@ Folgende frühere Hinweise sind am geprüften Commit bestätigt:
 - Interne Preisgrenze `1000 × (Etagenzähler + 1)` unterhalb `0x3C` und ab `0x3C` auf `0xFFFF`. Der strikte Preisvergleich lässt auch den Wert `0xFFFF` selbst nicht zu.
 - Gesonderte Rollpfade für Story-/Scrolltruhen und normale Truheninhalte.
 
-Die Liste der Phasen und die Kernberechnungen sind damit am US-Referenzcode geprüft. Die drei Höhlenzufallseinstiege sind zusätzlich als eigenständige Funktionen in `metadata/functions.toml` verzeichnet. Exakte Itemidentitäten, Tabellengewichte, vollständiger RNG-Verbrauch aller Bedingungen und das beobachtete Verhalten im Spiel bleiben offen.
+Die Liste der Phasen und die Kernberechnungen sind damit am US-Referenzcode geprüft. Die drei Höhlenzufallseinstiege sind zusätzlich als eigenständige Funktionen in `metadata/functions.toml` verzeichnet. Kardinalitäten ausgewählter USA-Beutetabellen wurden an der bereitgestellten ROM geprüft. Itemnamen, Objekttabellen, vollständiger RNG-Verbrauch aller Bedingungen und das beobachtete Verhalten im Spiel bleiben offen.
 
 ## Nicht abgedeckte Belege
 
-- Es wurden hier keine ROM-Dateien eingelesen. Es gibt daher keine neue ROM-Identifizierung und keine Originalbeobachtung.
-- Der Quellstand enthält nur die US-Fassung. Gemeinsame Regeln mit Japanisch oder Deutsch sind nicht belegt.
-- Es wurden keine differenziellen Laufzeittests gegen das Original ausgeführt. Die Statusangabe `verified` wird ausschließlich als Metadatenbefund des Referenzprojekts wiedergegeben.
+- Die USA-ROM wurde identifiziert und ihre 680 komprimierten Ressourcen wurden dekodiert. Ausgewählte Höhlen-Beutetabellen wurden gelesen, ohne ihre Rohdaten zu diesem Repository hinzuzufügen.
+- Die Japan-ROM wurde erkannt, aber nicht gegen US-Adressen ausgewertet. Dafür fehlen eine japanische Quell- und Adresskarte sowie passende Differentialtests. Aussagen zu gemeinsamen Regeln oder Regionsunterschieden bleiben offen.
+- Der temporäre Harness führte rekonstruierten C-Code gegen mathematische Referenzen aus. Das Originalspiel und seine ROM-Maschinencodepfade wurden nicht ausgeführt. Es gibt daher weiterhin keine Originalbeobachtung oder ROM-Differenzprüfung dieser Mechaniken.
+- Der lokale `ctest`-Aufruf fand im öffentlichen Referenzcheckout keine Tests. Die private ROM-Differenzsuite ist dort nicht enthalten.

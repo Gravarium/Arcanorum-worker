@@ -23,9 +23,9 @@ Dieser Plan ist die Arbeitsanweisung für die Fortsetzung des Projekts im Codex-
 
 | Bereich | Implementierungsziel | Status |
 |---|---|---|
-| Quellen- und Versionskarte | Quellstand, ROM-Kennungen, Modulzuordnung und Grenzen der Belege | RNG-/Höhlenquellen am Commit `cc7e14744606e2e3b642101e8d440d8cc0e1f98f` geprüft; übrige Systembereiche offen |
-| Zufallssystem | Zustand/Seed, Zufallsbereich, Tabellen, Aufrufreihenfolge und Verbrauch | Kernalgorithmus nachvollzogen; Seedquelle und vollständiger Verbrauch offen ([research/rng.md](research/rng.md)) |
-| Ahnenhöhle / Ancient Cave | Eintritt, Reset, Stockwerksgenerator, Räume, Verbindungen, Treppen, Objekte, Truhen, Beute, Tod und Verlassen | Phasenfolge, Zähler, Itemfilter und Loot-Schwellen nachvollzogen; Graph, ROM-Tabellen, vollständiger RNG-Trace und Persistenz offen ([research/ancient-cave.md](research/ancient-cave.md)) |
+| Quellen- und Versionskarte | Quellstand, ROM-Kennungen, Modulzuordnung und Grenzen der Belege | USA-ROM erkannt und Ressourcencheck bestanden; Japan-ROM erkannt, Regionsanalyse offen; übrige Systeme offen |
+| Zufallssystem | Zustand/Seed, Zufallsbereich, Tabellen, Aufrufreihenfolge und Verbrauch | Kernfunktionen in einem temporären C-Harness geprüft; Seedquelle und vollständiger spielweiter Verbrauch offen ([research/rng.md](research/rng.md)) |
+| Ahnenhöhle / Ancient Cave | Eintritt, Reset, Stockwerksgenerator, Räume, Verbindungen, Treppen, Objekte, Truhen, Beute, Tod und Verlassen | Phasenfolge, Zähler, Itemfilter, USA-Beutetabellen und Loot-Schwellen geprüft; Graph, Objekttabellen, vollständiger RNG-Trace und Persistenz offen ([research/ancient-cave.md](research/ancient-cave.md)) |
 | Ereignisse und Rätsel | Auslöser, Schalter/Flags, Objekte, Bedingungen, Reihenfolge, Lösung und Folgen | Offen |
 | Feldbewegung und Kollision | Eingaben, Tile-Prüfung, Bewegung, Übergänge und Sonderfälle | Offen |
 | Kampf | Zugreihenfolge, Aktionen, Treffer, Schaden, Status, Gegner-KI und Ergebnis | Offen |
@@ -33,7 +33,7 @@ Dieser Plan ist die Arbeitsanweisung für die Fortsetzung des Projekts im Codex-
 | Ausrüstung, Gegenstände und Zauber | Nutzung, Ziele, Kosten, Wirkungen, Status und Ausrüstungswechsel | Offen |
 | Kapselmonster | Werte, Formen, Entwicklung, Erfahrung, Fähigkeiten und Kampfeinbindung | Erste Codehinweise; Regeln offen |
 | Menüs und Speichern | Bedienabläufe, Zustände, Speicherformat und Laden | Offen |
-| Regionsvergleich | Abweichungen und Gemeinsamkeiten USA/Japan/Deutschland | ROM-Fassungen identifiziert; Vergleich offen |
+| Regionsvergleich | Abweichungen und Gemeinsamkeiten USA/Japan/Deutschland | USA- und Japan-ROM identifiziert; japanische Adresskarte und Code-/Datenvergleich offen |
 
 Ein Bereich gilt erst als implementierungsbereit, wenn die Regeln mit Quellen belegt, die Zustandsänderungen beschrieben und die noch offenen Ausnahmen ausdrücklich markiert sind. Ein bloßer Dateiname oder eine als geprüft markierte Quellfunktion reicht dafür nicht.
 
@@ -73,3 +73,11 @@ Für jeden abgeschlossenen Schritt werden Datum, betroffene Systeme, geänderte 
 - Belegstatus: RNG- und Höhleneinstiege sind im Referenz-Metadatenindex `verified`; Kernabläufe sind aus den Fundstellen nachvollzogen. Keine Original-ROM-Beobachtung.
 - Tatsächlich ausgeführte Prüfungen: Python `tomllib` zählte 2.305 Funktionsdatensätze mit Status `verified`. Quellaufrufe und Generatorphasen wurden per Textsuche und Quelltextlektüre verfolgt. Keine Laufzeittests oder ROM-Differenztests ausgeführt.
 - Offen: Seedherkunft und Aufrufer, ROM-Tabellenwerte, vollständiger bedingter RNG-Trace, Raumgraph-/Formregeln, Exit-/Niederlagen-Persistenz, Japan-/Deutschlandvergleich.
+
+### Ergänzende ROM- und Laufzeitprüfungen am 2026-11-20
+
+- Eingaben: USA-ROM, 2.621.440 Byte, SHA-256 `7c34ecb16c10f551120ed7b86cfbc947042f479b52ee74bb3c40e92fdd192b3a`; Japan-ROM, 2.621.440 Byte, SHA-256 `f62df5ffda3042b7d7717cb49be1029defa0de28191a8c66e380d1c9adbebc6f`. Die dritte Datei wurde als DEGAS-Bitmap erkannt.
+- ROM-Prüfung: Das US-spezifische Werkzeug dekodierte 680 von 680 Ressourcen der USA-ROM. Es weist die Japan-ROM wegen des Regionslimits zurück.
+- C-Laufzeitfälle: `RandomScale` 65.536, `CaveRandomBelow` 65.536, `CaveRandomIndex` 32.768 und `CaveRandomMean` 458.752 Fälle. Zusätzlich stimmten Seedroutine und erster anschließender Rohbyte für alle 256 Seedbytes bei D=0 mit einer unabhängigen Referenzberechnung überein.
+- Grenzen: Der temporäre Harness testete rekonstruierten C-Code gegen Formeln. Er führte keine Original-ROM-Maschinencodepfade aus. `ctest` fand im öffentlichen Referenzcheckout keine Tests. Der strenge GCC-14-Build scheiterte an zwei `-Wimplicit-fallthrough`-Warnungen in `src/battle/battle_targets.c` bei den Zeilen 160 und 170. Der vollständige Release-Build gelang mit `LUFIA2_WARNINGS_AS_ERRORS=OFF`. `python3 scripts/metadata_index.py --check` bestand.
+- Offen: ROM-Differenztests, Spielbeobachtungen, Japan-/Deutschlandvergleich, Seed-Aufrufpfad, vollständiger RNG-Verbrauch und Raumgraph.
