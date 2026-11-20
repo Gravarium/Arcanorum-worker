@@ -33,7 +33,7 @@ Die ROM-Dateien bleiben außerhalb des öffentlichen Repositorys. Für den Arbei
 
 ## Rekonstruktionsbasis
 
-- **Lufia2Decomp:** portable semantische Rekonstruktion der US-SNES-Spiel-Logik in C. Das Projekt führt 2.305 Funktionen als geprüft. Es rekonstruiert beobachtbares Verhalten und ist keine bytegenaue Original-Disassemblierung.
+- **Lufia2Decomp:** portable semantische Rekonstruktion der US-SNES-Spiel-Logik in C. Am geprüften Commit `cc7e14744606e2e3b642101e8d440d8cc0e1f98f` weist `metadata/functions.toml` 2.305 Funktionen als `verified` aus. Diese Metadaten wurden gezählt, die private differenzielle ROM-Prüfung wurde in diesem Auftrag nicht wiederholt. Das Projekt rekonstruiert beobachtbares Verhalten und ist keine bytegenaue Original-Disassemblierung.
 - **Lufia2SNESRecomp:** nativer PC-Recompiler für die US-Fassung. Er führt das ursprüngliche 2D-Spiel aus; er ist keine 3D-Umsetzung.
 - Die Quellbereiche umfassen unter anderem Actor/Objekt-VM, Kampf, Höhle, Feld und Ereignisskripte, Gegenstände, Menüs, Gruppe, System, Text, Titel und Weltkarte.
 
@@ -49,21 +49,18 @@ Quellen: [Lufia2Decomp](https://github.com/Cellenseres/Lufia2Decomp), [Architekt
 | Gruppe und Wachstum | Erfahrungskurven, Levelaufstieg, Grundwerte, Zufalls-/Tabellenwachstum, Grenzen | Quellroutinen für Erfahrung und Stat-Wachstum gefunden; Formeln noch auszuarbeiten |
 | Zauber, Fähigkeiten und Gegenstände | Kosten, Ziele, Wirkungen, Statusänderungen, Benutzung und Ausrüstung | Offen |
 | Kapselmonster | Werte, Formen, Erfahrung, Fähigkeiten, Lernen und Kampfeinbindung | Quellroutinen gefunden; vollständige Regeln offen |
-| Ahnenhöhle / Ancient Cave | Eintritt, Gruppenreset, Stockwerksaufbau, Räume, Objekte, Truhen, Beute, Tod und Verlassen | Generator und zentrale Quelldateien identifiziert; Algorithmus noch zu verfolgen |
-| Zufallssystem | Seed, Zufallszustand, Tabelle, Zufallsbereich und Aufrufreihenfolge | Routinen für Zufallsbyte, Seed und Tabellennachfüllung identifiziert; Verhalten offen |
+| Ahnenhöhle / Ancient Cave | Eintritt, Gruppenreset, Stockwerksaufbau, Räume, Objekte, Truhen, Beute, Tod und Verlassen | Etagenzähler, Phasenfolge, Itemfilter und Truhenschwellen am US-Code nachvollzogen; vollständiger Graph, ROM-Tabellen, RNG-Trace und Exit offen ([Forschung](research/ancient-cave.md)) |
+| Zufallssystem | Seed, Zufallszustand, Tabelle, Zufallsbereich und Aufrufreihenfolge | 55-Byte-RNG, Seed, Refill und Skalierung aus dem Code nachvollzogen; Seedquelle und spielweiter Verbrauch offen ([Forschung](research/rng.md)) |
 | Speichern und Menüs | Speicherformat, Auswahl, Inventar, Statusanzeigen und Bedienabläufe | Offen |
 | Regionsvergleich | gemeinsame Regeln sowie Abweichungen USA/Japan/Deutschland | ROMs identifiziert; Code- und Datenvergleich offen |
 
-## Erste Hinweise zur Ahnenhöhle
+## Codebefunde zu RNG und Ahnenhöhle
 
-Die Quellbasis beschreibt den Stockwerksgenerator in src/cave/ancient_cave.c und die Objekt-/Truhenlogik in src/cave/cave_objects.c. Die Konstanten liegen in src/cave/wram.h.
+Der Referenzstand wurde auf `cc7e14744606e2e3b642101e8d440d8cc0e1f98f` festgesetzt. Der RNG nutzt eine 55-Byte-Tabelle mit in-place XOR-Refills. Zufallswerte mit Grenze entstehen durch das obere Produktbyte. Die Seedroutine mischt die Tabelle vor dem ersten anschließenden Bytezugriff dreimal vor; dieser Zugriff löst wegen des gespeicherten Index 54 noch einen Refill aus. Herkunft des Seedwerts und Aufrufpfad bleiben offen.
 
-- Der Generator verwendet getrennte 16×16-Zellenraster für Räume und Formen.
-- Der Ablauf umfasst Rasteraufbau, Verbindungen, Zeichnen der Zellen sowie Platzierung von Objekten und Truhen.
-- Die Item-Auswahl filtert anhand von Feldbenutzbarkeit und Ausschlussflags; unterhalb des Grenzwerts wird aus dem Stockwerkszähler und einem Preisfaktor von 1.000 eine Preisgrenze gebildet. Ab Zählerwert 0x3C wird im Code eine unbegrenzte Preisgrenze gesetzt. Die Abbildung auf die sichtbare Stockwerksnummer muss noch bestätigt werden.
-- Es gibt getrennte Beutegruppen und Sonderbehandlungen für Story-/Scroll-Truhen. Chancen und genaue Ziehungsreihenfolge werden erst nach vollständiger Verfolgung der Zufallsaufrufe als Regeln eingetragen.
+Der Höhlengenerator verwendet getrennte 16×16-Raster. Sein belegter Phasenablauf reicht vom Listenaufbau und den Truhen über Raumplatzierung, Verbindungen und Objekte bis zu Tiles, Dekorationen und Kartenkopf. Feldgegenstände müssen feldbenutzbar, nicht ausgeschlossen und billiger als die Grenze sein. Die Grenze ist intern `1000 × (Etagenzähler + 1)` unterhalb `0x3C`, danach `0xFFFF`. Story-/Scrolltruhen haben eigene Pfade. Konkrete ROM-Tabellen, vollständiger Ziehungs-Trace, Graphregeln und Exit-Persistenz sind offen.
 
-Diese Punkte sind vorläufige Codebefunde, noch keine abgeschlossene Spielanleitung oder vollständige Generatorbeschreibung.
+Die Belege, Quellfunktionen und abgeleiteten Prüffälle stehen in [Quellenkarte](research/source-map.md), [Zufallssystem](research/rng.md) und [Ahnenhöhle](research/ancient-cave.md). Es gab in diesem Arbeitslauf keine Originalbeobachtung und keine ROM-Prüfung.
 
 ## Format für jede fertige Mechanik
 
@@ -79,8 +76,8 @@ Diese Punkte sind vorläufige Codebefunde, noch keine abgeschlossene Spielanleit
 
 ## Nächste Arbeitsschritte
 
-1. USA-Fassung als technische Referenz festlegen und den Regionsvergleich sauber auf Byte-/Codebereiche abbilden.
-2. Zufallszahlengenerator und Ahnenhöhlen-Stockwerksgenerator vom Seed bis zu Räumen, Treppen, Objekten und Beute verfolgen.
+1. Fehlende RNG-Eingabequelle und Referenz-ROM-Daten für einen Seed-bis-Ergebnis-Trace klären.
+2. Raumgraph, Zellformen, Tabellenwerte und Exit-/Defeat-Persistenz der Ahnenhöhle vollständig verfolgen.
 3. Ereignis-VM und Rätselbedingungen aus Feldskripten systematisch katalogisieren.
 4. Kampf, Gruppenwerte, Erfahrung, Ausrüstung, Zauber und Kapselmonster als Implementierungsregeln dokumentieren.
 5. Regeln gegen beobachtete Originalabläufe prüfen und die Unterschiede der deutschen und japanischen Fassungen markieren.

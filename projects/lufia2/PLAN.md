@@ -23,9 +23,9 @@ Dieser Plan ist die Arbeitsanweisung für die Fortsetzung des Projekts im Codex-
 
 | Bereich | Implementierungsziel | Status |
 |---|---|---|
-| Quellen- und Versionskarte | Quellstand, ROM-Kennungen, Modulzuordnung und Grenzen der Belege | Angelegt; Aussagen noch systematisch zu verifizieren |
-| Zufallssystem | Zustand/Seed, Zufallsbereich, Tabellen, Aufrufreihenfolge und Verbrauch | Offen |
-| Ahnenhöhle / Ancient Cave | Eintritt, Reset, Stockwerksgenerator, Räume, Verbindungen, Treppen, Objekte, Truhen, Beute, Tod und Verlassen | Erste Codehinweise; Algorithmus offen |
+| Quellen- und Versionskarte | Quellstand, ROM-Kennungen, Modulzuordnung und Grenzen der Belege | RNG-/Höhlenquellen am Commit `cc7e14744606e2e3b642101e8d440d8cc0e1f98f` geprüft; übrige Systembereiche offen |
+| Zufallssystem | Zustand/Seed, Zufallsbereich, Tabellen, Aufrufreihenfolge und Verbrauch | Kernalgorithmus nachvollzogen; Seedquelle und vollständiger Verbrauch offen ([research/rng.md](research/rng.md)) |
+| Ahnenhöhle / Ancient Cave | Eintritt, Reset, Stockwerksgenerator, Räume, Verbindungen, Treppen, Objekte, Truhen, Beute, Tod und Verlassen | Phasenfolge, Zähler, Itemfilter und Loot-Schwellen nachvollzogen; Graph, ROM-Tabellen, vollständiger RNG-Trace und Persistenz offen ([research/ancient-cave.md](research/ancient-cave.md)) |
 | Ereignisse und Rätsel | Auslöser, Schalter/Flags, Objekte, Bedingungen, Reihenfolge, Lösung und Folgen | Offen |
 | Feldbewegung und Kollision | Eingaben, Tile-Prüfung, Bewegung, Übergänge und Sonderfälle | Offen |
 | Kampf | Zugreihenfolge, Aktionen, Treffer, Schaden, Status, Gegner-KI und Ergebnis | Offen |
@@ -64,3 +64,12 @@ Dateien werden ergänzt, sobald belastbare Befunde vorliegen; leere Platzhalter 
 ## Arbeitsprotokoll
 
 Für jeden abgeschlossenen Schritt werden Datum, betroffene Systeme, geänderte Dateien, geprüfter Quellstand, Belegstatus und offene Punkte festgehalten. Prüfergebnisse werden nur genannt, wenn die Prüfung für den konkreten Stand tatsächlich ausgeführt wurde.
+
+### Arbeitsprotokoll am 2026-11-20
+
+- Systeme: Quellenstand, RNG und Ahnenhöhle.
+- Geänderte Dateien: `README.md`, `PLAN.md`, `research/source-map.md`, `research/rng.md`, `research/ancient-cave.md`.
+- Geprüfter Quellstand: `Lufia2Decomp` `cc7e14744606e2e3b642101e8d440d8cc0e1f98f`; dieser Commit stimmte mit `main` auf GitHub überein. Der Aufgabenbranch stand vor den Änderungen auf `78fcea6ccbf828aa09f04b14949ffbeefe5de0da`.
+- Belegstatus: RNG- und Höhleneinstiege sind im Referenz-Metadatenindex `verified`; Kernabläufe sind aus den Fundstellen nachvollzogen. Keine Original-ROM-Beobachtung.
+- Tatsächlich ausgeführte Prüfungen: Python `tomllib` zählte 2.305 Funktionsdatensätze mit Status `verified`. Quellaufrufe und Generatorphasen wurden per Textsuche und Quelltextlektüre verfolgt. Keine Laufzeittests oder ROM-Differenztests ausgeführt.
+- Offen: Seedherkunft und Aufrufer, ROM-Tabellenwerte, vollständiger bedingter RNG-Trace, Raumgraph-/Formregeln, Exit-/Niederlagen-Persistenz, Japan-/Deutschlandvergleich.
