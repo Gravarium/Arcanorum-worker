@@ -128,7 +128,14 @@ Für jede Karte und Questkette wird ein eigenes Ablaufblatt erstellt mit:
 5. Änderungen an Flags, Variablen, Objekten, Gruppe, Inventar, Karte oder Folgeereignis;
 6. Spielbeobachtung und Regionsvergleich, soweit verfügbar.
 
-Die konkrete US-ROM wurde zuvor identifiziert und der Ressourcen-Decoder bestand den Vollständigkeitscheck. In diesem Analyseschritt wurden die Kartenkopf- und Eventzeigertabellen direkt gelesen und der Ereignislistenbestand gezählt; es wurden keine Skriptinhalte als Ressourcendump abgelegt und keine Originalspielabläufe beobachtet. Eine interaktive Emulatorlaufzeit stand nicht zur Verfügung: Es gab kein Emulatorbinary in der Shell und die Desktopinitialisierung scheiterte. Deshalb stehen noch keine einzelnen Questlösungen als bestätigt im Dokument. Japan- und Deutschlandabweichungen bleiben ebenfalls offen.
+Die konkrete US-ROM wurde zuvor identifiziert und der Ressourcen-Decoder bestand den Vollständigkeitscheck. Kartenkopf- und Eventzeigertabellen wurden direkt gelesen; außerdem wurde ein kurzer Originalspielstart beobachtet. Dadurch sind Start und Texteingabe als Laufzeitpfad belegt, nicht aber Questlösungen oder Rätselmechaniken. Japan- und Deutschlandabweichungen bleiben offen.
+
+### Laufzeitbeobachtung der USA-Fassung
+
+- Umgebung: RetroArch 1.20.0 mit BSNES Mercury v0.94 Performance. Die offiziellen Debian-Pakete wurden nur nach `/tmp` entpackt; es gab keine Systeminstallation. Der Emulator lud die bereitgestellte USA-ROM direkt. Alle Save-/State-Pfade lagen unter `/tmp/lufia-runtime/`.
+- Ablauf: Der Startbildschirm zeigte vier freie Speicherplätze. Die Auswahl von „Start“ begann einen frischen Durchlauf. Die erste Dialogszene zeigte Maxim und Tia in einem Innenraum; Tia begrüßte Maxim nach der Arbeit. Die Taste `x` (RetroArch-Tastaturbelegung für A) schaltete den Dialog weiter. `Return` wurde als Start verwendet.
+- Reichweite: Bestätigt sind ROM-Laden, Speicherplatzauswahl, Start eines neuen Durchlaufs und Dialogfortschritt. Keine Questflagänderung, Rätsellösung, Resetfolge oder Speicherwiederherstellung wurde in diesem kurzen Lauf geprüft.
+- Die CUA-Bridge meldet weiterhin `the gaas-browser node_repl sandbox cannot be disabled`. Die bestehende X11-Sitzung ließ sich als Ausweichweg aufnehmen und per XTest-Tastatureingabe steuern. Es wurden weder Emulator, ROM, Saves noch Screenshots in das Repository gelegt.
 
 ## Quellen im Referenzcheckout
 
