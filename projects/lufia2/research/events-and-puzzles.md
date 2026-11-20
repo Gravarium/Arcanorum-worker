@@ -19,6 +19,10 @@ Beim Laden des Kartenkopfs ruft der rekonstruierte Ablauf `$80:E844` `Lufia2Fiel
 
 Dies ist eine **Karten-Skriptinitialisierung**, keine nachgewiesene Komplettlöschung sämtlicher Ereigniszustände.
 
+Die ROM-Tabelle wurde stichprobenartig mit der bereitgestellten USA-Fassung abgeglichen: Kartenindex 5 hat den Offset `$02D6`, Bankzusatz `$00` und wird daher als Skriptbasis `$8F:82D6` geladen. Die Tabelle bestätigt die 3-Byte-Eintragsform; Karten mit `$FFFF` haben keinen Karten-Eventblock. Der konkrete Ortsname von Kartenindex 5 ist hier absichtlich noch nicht zugeordnet.
+
+Die Header-Zeigertabelle ab `$CF:FCBC` wurde als unabhängige Kartenindex-Grenze herangezogen: Die USA-ROM hat dort 242 zusammenhängende gültige Kartenköpfe (IDs 0–241); ID 242 ist kein gültiger Kartenkopf. Für genau diesen Indexbereich ergibt die lokale Tabellenprüfung 146 Karten mit einem Eventblock und 825 Schlüssel-/Skriptverweisen in den Ereignislisten. Die Listenenden und Zeiger waren bei dieser Prüfung strukturell gültig. Das ist ein Bestandszähler, keine Questzuordnung; die Einzellisten und Originaldaten werden nicht ins Projekt kopiert.
+
 ### Auslöser finden
 
 - `Lufia2FieldStartEventAtProbe` (`$80:E7FA`) sucht zunächst einen Punkt-Eintrag. Für diesen Aufruf setzt es den Datensatzabstand auf 3 Bytes. `Lufia2FieldFindPointRecord` (`$83:B851`) durchläuft die Liste ab `$7E:F000` bis zum Endmarker `$FF`; X und Y müssen exakt übereinstimmen. Die Suchroutine nimmt den Abstand vom Aufrufer entgegen, daher gilt der Abstand 3 nicht automatisch für andere Suchlisten.
@@ -27,10 +31,34 @@ Dies ist eine **Karten-Skriptinitialisierung**, keine nachgewiesene Komplettlös
 - Eine getrennte Suchroutine, `Lufia2FieldFindRectangleRecord` (`$83:B882`), prüft X und Y innerhalb der beiden Grenzen einschließlich Rand. Der konkrete Zusammenhang dieser Rechteckdatensätze mit einzelnen Rätselarten ist noch nicht vollständig kartiert.
 - Szenen-/Dialogsteuerung ist ein eigener Pfad: `Lufia2SceneScriptFindRecord` (`$80:C12E`) sucht einen angeforderten Kennwert in einer terminatorbeendeten Liste und liest den zugehörigen relativen Skriptoffset. Dialogdatensätze und Kartenereignisse dürfen daher nicht ungeprüft als dasselbe Datenformat behandelt werden.
 
+### Aufrufer-Kontext und Trigger-ID auseinanderhalten
+
+Für die spätere Zuordnung von Kartenrätseln müssen zwei verschiedene Werte protokolliert werden: `X` wählt den Listenbereich im Karten-Eventblock; `Y / 2` wählt innerhalb dieser Liste den Skripteintrag. Bei Punktabfragen kommt die Trigger-ID aus Byte 0 des gefundenen Punktdatensatzes. `Lufia2FieldStartEventAtProbe` setzt für die Punktsuche vorübergehend den Datensatzabstand auf 3, stellt danach das ursprüngliche `Y` wieder her und verwendet genau dieses als Eventlisten-Kontext. Das ursprüngliche `X` ist dabei der Startbereich der Punktdatensatzsuche, nicht der Eventlisten-Kontext.
+
+Belegte feste Startwerte aus den Aufrufern:
+
+| Aufruferpfad | Werte vor der Eventsuche | Effektiver Listen-Kontext | Schlüssel bzw. Herkunft |
+|---|---|---:|---|
+| Kartenkopf laden (`field_map_load.c`, nach `$80:E844`) | `X=0`, `Y=$1E` | `$00` | `$0F` (Kartenstart-Ereignis) |
+| Objekt-/Akteurereignis am Spieler (`Lufia2FieldStartObjectEvent`, `field_object_graphics.c`) | `X=0`, `Y=$1C` | `$00` | `$0E` |
+| Objekt-VM-Anführerereignis (`ObjectStartLeaderEvent` → `ObjectStartHeaderEvent`, `actor/object_vm.c`) | `X=0`, `Y=$12` | `$00` | `$09` |
+| Anführerinteraktion mit Akteur (`field_leader_interaction.c`) | Akteurdatensatz wird gefunden; danach `X=2`, `Y=2×Datensatzbyte0` | `$02` | Byte 0 des gefundenen Akteurdatensatzes |
+| Zellaktion vor der Punktabfrage (`Lufia2FieldHandleFacingCellAction`) | zuerst `X=0`, `Y=$0E`; danach Punktabfrage mit Listenstart `$1C`, ursprünglichem `Y=4` | `$00`, danach `$04` | zuerst `$07`, danach Byte 0 des gefundenen Punktdatensatzes |
+| Objektinteraktion vor dem Spieler (`Lufia2ObjectStartInteractionEvent`) | Punktabfrage ab `$2A`, ursprüngliches `Y=$0E` | `$0E` | Byte 0 des gefundenen Punktdatensatzes |
+| Objekt-/Kollisionsabfrage (`ObjectWakeOrApplyRecord`, `object_vm.c`) | Punktabfrage ab `$1A`, ursprüngliches `Y=8` | `$08` | Byte 0 des gefundenen Punktdatensatzes; anschließend ein separater Header-Eintrag mit `X=0`, `Y=$10` |
+| Benutzter Gegenstand (`field_selected_item_action.c`) | `X=0`, `Y=$16` | `$00` | `$0B` |
+| Rückkehr aus dem Kampf (`field_battle_transition.c`) | `X=0`, `Y=$0C` | `$00` | `$06` |
+| Aktions-/Schrittprobe (`field_probe_dispatchers.c`) | `X=0`, `Y=2` | `$00` | `$01` |
+| Ausstehendes Feldereignis (`field_triggers.c`) | `X=0`, `Y=0` | `$00` | `$00` |
+
+Diese Tabelle beschreibt Aufrufverträge, noch keine Spielbedeutung der jeweiligen IDs. Für variable Skript- und Szenenaufrufe müssen die übergebenen Registerwerte weiter bis zu ihrem Ursprung verfolgt werden.
+
 ### VM, Ausführung und Warten
 
 - Der Opcode-Index adressiert eine Dispatch-Tabelle ab `$80:E5A4`. Der Event-Interpreter läuft über `Lufia2FieldRunEventScript` (`$80:CC35`).
 - Ein unbedingter Sprung addiert einen 16-Bit-Operand zur Skriptbasis. `Lufia2EventNextByte` (`$80:E8B9`) bewegt den Zeiger über LoROM-Bankfenster weiter; `Lufia2EventNextWord` liest Operanden Little-Endian.
+- `Lufia2EventFindList` (`$80:E78D`) zeigt die Verweisform der Kartenevents: Für den vom Aufrufer gelieferten Kontext `X` wird ab `Skriptbasis + X` ein relativer 16-Bit-Zeiger zur Liste gelesen. Die Liste besteht aus Einträgen `{Schlüsselbyte, relativer 16-Bit-Skriptzeiger}` und endet mit Schlüssel `$FF`. Der Vergleichsschlüssel kommt aus `Y / 2`; beim Treffer wird der relative Zeiger zur Skriptbasis addiert und als Start des Eventskripts gespeichert.
+- Damit sind Kontext und Schlüssel getrennte Größen. Der Aufrufpfad der Objektinteraktion übergibt beispielsweise den Kontext über `$83:EC4F` und die gefundene Trigger-ID als Schlüssel; Positionsereignisse und andere Startpfade verwenden eigene Kontext-/Schlüsselwerte. Eine Questkarte muss beide Werte aus ihrem konkreten Aufrufer und ihrem ROM-Datensatz zusammenführen.
 - Es gibt acht Timer-/Skriptplätze bei `$7F:D18C`. Bit 7 kennzeichnet einen aktiven Timer, die unteren sieben Bits zählen Frames. Beim Timerlauf wird ein aktiver Zähler dekrementiert; erreicht er 0, wird der gespeicherte Skriptzeiger wieder aufgenommen. Ein aktives `$80` wird zu `$7F` und dadurch entwaffnet.
 - Der Interpreter hat eine Arbeitsgrenze von 4096 Zähleinheiten pro Lauf. Schwerere Bild-/Objekt-/Scrolloperationen belasten dieses Budget mit zusätzlichen 63 oder 255 Einheiten. Das ist keine allgemeine Zusage, dass 4096 gleichartige Befehle in jedem Tick ausgeführt werden.
 - Aufrufe und Rückgaben speichern den Zustand der lokalen Variablen und Bedingungen in Ereignis-Aufzeichnungsfeldern. Die genaue Interaktion mit verschachtelten Slots und Grenzfällen wird separat weiter geprüft.
@@ -100,17 +128,18 @@ Für jede Karte und Questkette wird ein eigenes Ablaufblatt erstellt mit:
 5. Änderungen an Flags, Variablen, Objekten, Gruppe, Inventar, Karte oder Folgeereignis;
 6. Spielbeobachtung und Regionsvergleich, soweit verfügbar.
 
-Die konkrete US-ROM wurde zuvor identifiziert und der Ressourcen-Decoder bestand den Vollständigkeitscheck. In diesem Analyseschritt wurden jedoch keine Karten-/Szenenressourcen extrahiert oder Originalspielabläufe beobachtet; deshalb stehen noch keine einzelnen Questlösungen als bestätigt im Dokument. Japan- und Deutschlandabweichungen bleiben ebenfalls offen.
+Die konkrete US-ROM wurde zuvor identifiziert und der Ressourcen-Decoder bestand den Vollständigkeitscheck. In diesem Analyseschritt wurden die Kartenkopf- und Eventzeigertabellen direkt gelesen und der Ereignislistenbestand gezählt; es wurden keine Skriptinhalte als Ressourcendump abgelegt und keine Originalspielabläufe beobachtet. Eine interaktive Emulatorlaufzeit stand nicht zur Verfügung: Es gab kein Emulatorbinary in der Shell und die Desktopinitialisierung scheiterte. Deshalb stehen noch keine einzelnen Questlösungen als bestätigt im Dokument. Japan- und Deutschlandabweichungen bleiben ebenfalls offen.
 
 ## Quellen im Referenzcheckout
 
 | Adresse | Funktion/Datei | Belegstatus und verwendeter Befund |
 |---|---|---|
 | `$80:E844` | `Lufia2FieldInitializeMapEvents`, `src/field/field_map_load.c` | Metadaten `verified`; Kartenparameter, Skriptbasis und Aufzeichnungsfelder. |
+| `$CF:FCBC` | Kartenkopf-Zeigertabelle, `src/field/field_map_load.c` (`MapHeaderSource`) | USA-ROM-Indexbereich 0–241 gegen bereitgestellte ROM geprüft; ID 242 ist kein gültiger Header. |
 | `$80:E722` | `Lufia2FieldStartEvent`, `src/field/field_event_script.c` | Metadaten `verified`; Slotbelegung und Zeigerspeicherung. |
 | `$80:E7FA` | `Lufia2FieldStartEventAtProbe`, `src/field/field_event_triggers.c` | Metadaten `verified`; Punktabfrage und Ereignisstart. |
 | `$83:B851`, `$83:B882` | `field_record_search.c` | Metadaten `verified`; Punkt- und Rechtecksuche. |
-| `$80:CC35`, `$80:CBAE` | Event-VM und Timertick, `src/field/field_event_script.c` | VM-Aufbau aus Quelltext nachvollzogen; 4096er Budget mit Kostenaufschlägen und Timerverhalten. |
+| `$80:CC35`, `$80:CBAE`, `$80:E78D` | Event-VM, Timertick und Ereignislistenauflösung, `src/field/field_event_script.c`, `field_event_conditions.c` | VM-Aufbau, 4096er Budget mit Kostenaufschlägen, Timerverhalten und Kontext-/Schlüssel-/Zeigerform nachvollzogen. |
 | `$80:C12E` | `Lufia2SceneScriptFindRecord`, `src/field/field_scene_records.c` | Metadaten `verified`; Szenenrecord-Auswahl. |
 | `$80:E3D9–$80:E400`, `$80:E132`, `$80:CD81` u. a. | Bedingungen, `src/field/field_event_conditions.c` | Bedingungsfamilien aus Handlern und gemeinsamen Ergebnisroutinen abgeleitet. |
 | `$80:BE1E`, `$80:A074`, `$80:A29C`, `$80:AC28`, `$80:AE03`, `$80:AE24` | Text-/Partybedingungen, `src/text/text_engine.c`, `text_conditions.c`, `text_party_commands.c` | Allgemeine Eventflags, item-/gold-/objektbasierte Checks und Party-/Questaktionen. |

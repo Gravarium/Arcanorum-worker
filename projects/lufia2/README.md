@@ -44,8 +44,8 @@ Quellen: [Lufia2Decomp](https://github.com/Cellenseres/Lufia2Decomp), [Architekt
 | System | Zu erfassende Regeln | Status |
 |---|---|---|
 | Feldsteuerung und Kollision | Bewegung, Tile-Prüfung, Laufzustände, Übergänge | Offen |
-| Quests und Story-Fortschritt | Voraussetzungen, Flagketten, Reihenfolge, optionale Inhalte, Wiederholungen, Belohnungen und Folgen | Offen; wird je Quest und Karte erfasst |
-| Ereignisse und Rätsel | Auslöser, Bedingungen, Schalter, Objekte, Reihenfolge, Lösung, Fehlschläge und Folgen | VM-Grundlagen nachvollzogen; einzelne Quest- und Rätselketten offen ([Forschung](research/events-and-puzzles.md)) |
+| Quests und Story-Fortschritt | Voraussetzungen, Flagketten, Reihenfolge, optionale Inhalte, Wiederholungen, Belohnungen und Folgen | Flag-/Dialogebenen identifiziert; konkrete Questketten und Ortszuordnungen offen |
+| Ereignisse und Rätsel | Auslöser, Bedingungen, Schalter, Objekte, Reihenfolge, Lösung, Fehlschläge und Folgen | VM und Aufrufer-Kontexte nachvollzogen; USA-ROM-Index mit 242 Karten-IDs, 146 Eventblöcken und 825 Verweisen geprüft; konkrete Lösungen offen ([Forschung](research/events-and-puzzles.md)) |
 | Initialisierung und Reset | Neues Spiel, Laden, Kartenwechsel, Event-/Objektzustand, Rast/Heilung, Niederlage und Wiederaufnahme | Boot-, Feldszene-, Save-/Load-, Recovery-, Karten-Event- und Höhlenroutinen erfasst; kompletter Aufruferpfad offen ([Forschung](research/initialization-and-resets.md)) |
 | Kampf | Zugreihenfolge, Aktionen, Schaden, Treffer, Status, Gegnerverhalten, Belohnungen | Quellroutinen gefunden; vollständige Regelbeschreibung offen |
 | Gruppe und Wachstum | Erfahrungskurven, Levelaufstieg, Grundwerte, Zufalls-/Tabellenwachstum, Grenzen | Quellroutinen für Erfahrung und Stat-Wachstum gefunden; Formeln noch auszuarbeiten |
@@ -64,7 +64,7 @@ Der Referenzstand wurde auf `cc7e14744606e2e3b642101e8d440d8cc0e1f98f` festgeset
 
 Der Höhlengenerator verwendet getrennte 16×16-Raster. Sein belegter Phasenablauf reicht vom Listenaufbau und den Truhen über Raumplatzierung, Verbindungen und Objekte bis zu Tiles, Dekorationen und Kartenkopf. Feldgegenstände müssen feldbenutzbar, nicht ausgeschlossen und billiger als die Grenze sein. Die Grenze ist intern `1000 × (Etagenzähler + 1)` unterhalb `0x3C`, danach `0xFFFF`. Story-/Scrolltruhen haben eigene Pfade. Die USA-ROM besteht den Ressourcencheck mit 680 von 680 Ressourcen. Die Kardinalitäten der vier direkten Beutetabellen wurden erfasst. Vollständiger Ziehungs-Trace, Graphregeln, Japan-Abgleich und Exit-Persistenz sind offen.
 
-Die Belege, Quellfunktionen und Prüfergebnisse stehen in [Quellenkarte](research/source-map.md), [Zufallssystem](research/rng.md), [Ahnenhöhle](research/ancient-cave.md), [Ereignis-VM/Rätselgrundlagen](research/events-and-puzzles.md) und [Initialisierung/Reset/Wiederherstellung](research/initialization-and-resets.md). Die kompilierten RNG-Helfer bestanden 622.592 Formelvergleiche und die Seedroutine 256 Seedfälle. Das Originalspiel wurde nicht gestartet und es wurde kein ROM-Differenztest ausgeführt.
+Die Belege, Quellfunktionen und Prüfergebnisse stehen in [Quellenkarte](research/source-map.md), [Zufallssystem](research/rng.md), [Ahnenhöhle](research/ancient-cave.md), [Ereignis-VM/Rätselgrundlagen](research/events-and-puzzles.md) und [Initialisierung/Reset/Wiederherstellung](research/initialization-and-resets.md). Die bereitgestellte USA-ROM wurde zusätzlich auf Kartenkopf- und Eventzeigerlisten untersucht; das ergab 242 Karten-IDs, 146 Eventblöcke und 825 Listenverweise. Die kompilierten RNG-Helfer bestanden 622.592 Formelvergleiche und die Seedroutine 256 Seedfälle. Ein Originalspielablauf wurde weiterhin nicht beobachtet: Es gibt kein Emulatorbinary in der Shell, und die Desktoplaufzeit ließ sich nicht initialisieren.
 
 ## Format für jede fertige Mechanik
 
@@ -82,6 +82,6 @@ Die Belege, Quellfunktionen und Prüfergebnisse stehen in [Quellenkarte](researc
 
 1. Fehlende RNG-Eingabequelle und Referenz-ROM-Daten für einen Seed-bis-Ergebnis-Trace klären.
 2. Raumgraph, Zellformen, Tabellenwerte und Exit-/Defeat-Persistenz der Ahnenhöhle vollständig verfolgen.
-3. Ereignis-VM und Rätselbedingungen aus Feldskripten systematisch katalogisieren.
+3. Karten-IDs Orts-/Szenenbezeichnungen zuordnen und Ereignis-/Textskripte systematisch in Quest- und Rätselabläufe übersetzen.
 4. Kampf, Gruppenwerte, Erfahrung, Ausrüstung, Zauber und Kapselmonster als Implementierungsregeln dokumentieren.
 5. Regeln gegen beobachtete Originalabläufe prüfen und die Unterschiede der deutschen und japanischen Fassungen markieren.
