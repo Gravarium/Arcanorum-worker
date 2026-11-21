@@ -2,7 +2,7 @@
 
 ## Zweck und Beleggrenze
 
-Diese Datei sammelt Rücksetz- und Wiederaufnahmewege quer durch das Spiel. **Reset** bedeutet hier nicht eine einzelne Funktion: Kaltstart, Standarddatensatz, Event-Neustart, Heilung, Laden und Ahnenhöhlen-Reset schreiben jeweils andere Zustandsbereiche.
+Diese Datei sammelt Rücksetz- und Wiederaufnahmewege quer durch das Spiel. **Reset** bedeutet hier nicht eine einzelne Funktion: Kaltstart, Standarddatensatz, Event-Neustart, Heilung, Laden und Ahnenhöhlen-Reset schreiben jeweils andere Zustandsbereiche. Der im Secret-Skills-Cave getestete Reset-Zauber ist ein eigener Rätselraum-Reset und kein Beleg für einen globalen Spiel-, Speicher- oder Konfigurationsreset.
 
 Referenzstand: `Lufia2Decomp` `cc7e14744606e2e3b642101e8d440d8cc0e1f98f`. Die unten genannten öffentlichen Funktionen tragen im Index den Status `verified`; die private ROM-Differentialprüfung wurde in diesem Auftrag nicht wiederholt. Der Ablauf wurde aus C rekonstruiert. Für die konkreten Aufrufpfade aus Spielzuständen und für sichtbare Originalspiel-Ergebnisse bleibt die Matrix teilweise offen.
 
@@ -25,6 +25,7 @@ Referenzstand: `Lufia2Decomp` `cc7e14744606e2e3b642101e8d440d8cc0e1f98f`. Die un
 | Ahnenhöhle betreten | `Lufia2AncientCaveEnter` (`$84:878A`) erhöht den Eintrittszähler mit Sättigung, setzt mehrere Höhlenzustandsbytes zurück, sammelt erlaubte blaue Gegenstände aus Inventar/Ausrüstung, sichert mehrere WRAM-Ranges als Backup und geht in den Höhlenpfad. | Vollständige Bedeutung aller Backup-Ranges und Persistenz außerhalb der Höhle bleibt Teil der offenen Höhlenanalyse. |
 | Ahnenhöhlenparty zurücksetzen | `Lufia2AncientCaveResetParty` (`$84:8888`) leert die über eine terminierte Range-Tabelle beschriebenen Partybereiche, setzt `$0A8D` auf `$1402`, fügt gespeicherte Startitems nur bei Inventarmodus 0 wieder hinzu, wendet Standardpartyrecords an und ruft danach einen weiteren Partyservice auf. | Exakte Feldbedeutung der Range-Tabelle und des Zusatzservice noch nicht vollständig erschlossen. |
 | Ahnenhöhlen-Niederlage | `Lufia2AncientCaveDefeat` (`$84:8B9C`) setzt Inventarmodus auf `$FF`, löst Partyreset aus, zählt Niederlagen und setzt Feld-/Reloadflags für die Rückkehr. | Ob Exit, Niederlage und manuelles Verlassen dieselben gespeicherten Ausrüstungs-/Carrywerte behandeln, wird noch verglichen. |
+| Rätselraum-Reset durch Zauber | Im USA-Original der Secret Skills Cave war „Reset“ im Spell-Menü mit Kosten 0 gelistet. Nach dem Einsatz kehrte Maxim an einen anderen Punkt des Höhlenabschnitts zurück; die bewegte Säule stand wieder an ihrer Ausgangsposition und die zuvor offene Tür war geschlossen. | Nur dieser Raumablauf ist beobachtet. Exakte Zielposition, Gegner-/Questflagwirkung und Verhalten in anderen Räumen sind offen. Dies ist kein Befund über Kaltstart, Spielstand, Konfiguration oder globale Initialisierung. |
 
 ### Reihenfolge im Feldszene-Reset
 
@@ -57,6 +58,7 @@ Das ist ein direkter Beleg dafür, dass Flag- und Objektzustand Speicherrelevanz
 4. **Erholung:** aktuelle HP/MP und Statuswerte; nicht gleichbedeutend mit Questreset.
 5. **Speicherstand:** ausgewählte, gepackte Fortschritts- und Feldzustände, die nach Prüfung geladen werden.
 6. **Ahnenhöhlenreset:** getrennte Backup-, Carry- und Partylogik mit Rückkehrpfad.
+7. **Rätselraum-Reset-Zauber:** setzt in der beobachteten Höhlenprobe bewegliche Rätselobjekte und Türzustand zurück und versetzt die Figur; eine globale oder questweite Wirkung ist nicht belegt.
 
 Diese Einteilung ist ein Recherchemodell. Die exakten Übergänge zwischen den Ebenen werden erst dann als vollständig markiert, wenn ihre Aufrufer im Titel-, Menü-, Feld- und Kampfablauf verknüpft sind.
 
@@ -69,10 +71,11 @@ Diese Einteilung ist ein Recherchemodell. Die exakten Übergänge zwischen den E
 - Rast/Herberge: Kartenobjekt-/Szenenrecord und verwendeter Recoverybefehl pro Ort.
 - Kampfende, Niederlage/Game Over und Wiederbelebung außerhalb der Ahnenhöhle.
 - Alle Quest-/Scriptflags: welche beim Neuanfang genullt, beim Laden wiederhergestellt oder beim Kartenwechsel erhalten werden.
+- Reset-Zauber: Rückkehrkoordinate, betroffene Gegner/Objekte/Questflags und Verhalten in weiteren Räumen mit Originalabläufen und USA-Skript verknüpfen.
 - Japanische und deutsche Varianten, danach beobachtete Spielzustände für die USA-Fassung.
 
 ## Quellen und Status
 
 Referenzfunktionen in `metadata/functions.toml` sind für diese Einträge mit `verified` ausgewiesen: `Lufia2ResetSystem`, `Lufia2RunBootSequence`, `Lufia2ClearStartupWorkRam`, `Lufia2InitializeRuntimeDefaults`, `Lufia2InitializeDefaultRecords`, `Lufia2StartDefaultRecords`, `Lufia2PartyResetDefaultRecords`, `Lufia2FieldResetScene`, `Lufia2FieldResetSavedScene`, `Lufia2MenuResetSessionRecords`, `Lufia2ActorResetSceneSlots`, `Lufia2FieldInstallMap`, `Lufia2FieldResetMapEventState`, `Lufia2CaptureFieldSaveState`, `Lufia2RestoreSavedFieldState`, `Lufia2SavePackState`, `Lufia2SaveRestoreState`, `Lufia2LoadGameFile`, `Lufia2SaveGameFile`, `Lufia2FieldStartHpRecovery`, `Lufia2FieldStartMpRecovery`, `Lufia2PartyRestoreVitals`, `Lufia2PartyRestore11`, `Lufia2PartyRestore13`, `Lufia2AncientCaveEnter`, `Lufia2AncientCaveResetParty` und `Lufia2AncientCaveDefeat`.
 
-Die Statusangabe ist keine neue ROM-Ausführung. Es wurden keine neuen Laufzeitfälle oder Tests für diese Resetroutinen ausgeführt.
+Die Statusangabe zu den oben genannten C-Routinen ist keine neue ROM-Ausführung; diese Routinen wurden in diesem Arbeitsschritt nicht separat ausgeführt. Der davon getrennte Reset-Zauber wurde im USA-Original direkt benutzt und sein sichtbarer Raum-/Objekteffekt ist in `events-and-puzzles.md` protokolliert.
