@@ -137,6 +137,25 @@ Die konkrete US-ROM wurde zuvor identifiziert und der Ressourcen-Decoder bestand
 - Reichweite: Bestätigt sind ROM-Laden, Speicherplatzauswahl, Start eines neuen Durchlaufs und Dialogfortschritt. Keine Questflagänderung, Rätsellösung, Resetfolge oder Speicherwiederherstellung wurde in diesem kurzen Lauf geprüft.
 - Die CUA-Bridge meldet weiterhin `the gaas-browser node_repl sandbox cannot be disabled`. Die bestehende X11-Sitzung ließ sich als Ausweichweg aufnehmen und per XTest-Tastatureingabe steuern. Es wurden weder Emulator, ROM, Saves noch Screenshots in das Repository gelegt.
 
+### Weiterer Originalspielablauf: Secret Skills Cave (USA, 2026-11-21)
+
+#### Direkt beobachtet
+
+- Der südliche Ausgang Elcids löst einen Dialog mit dem alten Mann aus: Er spricht den Spieler als „Od“ an und verspricht, die geheimen Kampftechniken für Dungeons zu zeigen. „Od“ ist der Name im isolierten Testspielstand, kein hier abgeleiteter Standardname.
+- In der Secret Skills Cave beginnt der Unterricht. Der Alte erklärt, dass Gegner nur bei Spielerbewegung ziehen; manche Gegner seien doppelt so schnell und machten zwei Schritte pro Spielerschritt, und mehrere Gegner könnten den Spieler einkreisen. Der Hinweis, vor jeder Bewegung innezuhalten und zu planen, ist ausdrücklich Teil des Dialogs.
+- Ein Red Jelly wurde im Feld angesprochen. Im Kampf zeigte die Befehlsauswahl Maxim/Od auf Level 1 mit HP 20 und MP 0. Ein normaler Angriff besiegte das Jelly in einem Treffer; die Ergebnisanzeige gab 2 EXP.
+- In Raum 2 erklärt der Alte: Select zeigt Skills, Arrow wird ausgewählt und mit Y eingesetzt. Der Text sagt, ein Treffer lähme Gegner vorübergehend, Zusammenstoß mit einem gelähmten Gegner starte keinen Kampf und Skills würden nicht verbraucht. Der Lauf demonstrierte diese drei Arrow-Effekte an einem Gegner noch nicht; durch die Navigation begann stattdessen ein weiterer Red-Jelly-Kampf, der ebenfalls 2 EXP gab.
+- Im Hubraum sagte der Alte, die eingestürzte Brücke könne über einen Schalter im hinteren Bereich wiederhergestellt werden. Der Schalter sei außer Reichweite; Skills könnten auch Umgebungsobjekte treffen. Nach Auswahl von Arrow und Einsatz mit Y wechselten der Schalterarm/die rote Markierung sichtbar die Seite und die Brücke fuhr aus. Damit sind Fernaktivierung und das unmittelbare Brückenergebnis am USA-Original beobachtet.
+- Eine Bodenplatte vor einer verschlossenen Tür wurde betreten; die Tür wechselte sichtbar von geschlossen zu offen. Nach einem Schritt von der Platte war die Tür in der unmittelbar folgenden Ansicht weiterhin offen. Die genaue Offenzeit bzw. der Schließauslöser ist nicht ermittelt.
+
+#### Belegstatus und offene Fragen
+
+- Status: **Im USA-Original beobachtet** für Tutorialdialoge, den einfachen Kampfablauf, den unmittelbaren Schalter-/Brückeneffekt und das Öffnen der Tür durch die Bodenplatte. **Nur im Dialog beschrieben** für das Lähmen durch Arrow und das Vermeiden eines Kampfes durch Zusammenstoß mit einem gelähmten Gegner.
+- Ein Eintritt durch die geöffnete Tür führte zu einer stabilen Raum-/Kameraansicht, in der die Spielfigur zunächst nicht klar erkennbar war. Nach weiteren Eingaben war sie wieder sichtbar. Der Übergang wurde nicht als abgeschlossener Raumwechsel gewertet und bleibt zu wiederholen.
+- Beim weiteren Navigieren war die Brücke wieder geschlossen. Ob das durch einen Timer, ein erneutes Umschalten, Raumzustandsreset oder eine andere Eingabe verursacht wurde, ist offen.
+- Der angekündigte Reset-Zauber ist noch nicht erreicht. Sein Wirkungsbereich, ob er Gegner und Rätselzustände zurücksetzt, wohin er die Spielfigur versetzt und welche Zustände erhalten bleiben, sind im Original noch nicht getestet.
+- Dieser Höhlenabschnitt belegt keine allgemeine Regel für Questflags, andere Rätsel oder Spielzustands-Resets. Er muss mit dem konkreten Karten-/Textskript und den Flagänderungen in der USA-ROM verknüpft werden.
+
 ## Quellen im Referenzcheckout
 
 | Adresse | Funktion/Datei | Belegstatus und verwendeter Befund |

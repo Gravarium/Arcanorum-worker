@@ -45,7 +45,7 @@ Quellen: [Lufia2Decomp](https://github.com/Cellenseres/Lufia2Decomp), [Architekt
 |---|---|---|
 | Feldsteuerung und Kollision | Bewegung, Tile-Prüfung, Laufzustände, Übergänge | Offen |
 | Quests und Story-Fortschritt | Voraussetzungen, Flagketten, Reihenfolge, optionale Inhalte, Wiederholungen, Belohnungen und Folgen | Flag-/Dialogebenen identifiziert; konkrete Questketten und Ortszuordnungen offen |
-| Ereignisse und Rätsel | Auslöser, Bedingungen, Schalter, Objekte, Reihenfolge, Lösung, Fehlschläge und Folgen | VM/Aufrufer-Kontexte und USA-ROM-Index geprüft; erster Spielstart und Dialogeingabe beobachtet; konkrete Lösungen offen ([Forschung](research/events-and-puzzles.md)) |
+| Ereignisse und Rätsel | Auslöser, Bedingungen, Schalter, Objekte, Reihenfolge, Lösung, Fehlschläge und Folgen | Frischer USA-Spielstart/Dialogeingabe und Tutorialstart der Secret Skills Cave mit Kampf-, Pfeil-/Schalter- und Türmechanik im Original beobachtet; vollständige Rätselzuordnung offen ([Forschung](research/events-and-puzzles.md)) |
 | Initialisierung und Reset | Neues Spiel, Laden, Kartenwechsel, Event-/Objektzustand, Rast/Heilung, Niederlage und Wiederaufnahme | Boot-, Feldszene-, Save-/Load-, Recovery-, Karten-Event- und Höhlenroutinen erfasst; kompletter Aufruferpfad offen ([Forschung](research/initialization-and-resets.md)) |
 | Kampf | Zugreihenfolge, Aktionen, Schaden, Treffer, Status, Gegnerverhalten, Belohnungen | Quellroutinen gefunden; vollständige Regelbeschreibung offen |
 | Gruppe und Wachstum | Erfahrungskurven, Levelaufstieg, Grundwerte, Zufalls-/Tabellenwachstum, Grenzen | Quellroutinen für Erfahrung und Stat-Wachstum gefunden; Formeln noch auszuarbeiten |
